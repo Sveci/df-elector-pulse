@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Users, MessageSquare, ThumbsUp, Eye, Loader2, RefreshCw, Zap, BarChart3 } from "lucide-react";
 import { useMonitoredEntities, usePoOverviewStats, useCollectMentions, useAnalyzePending, usePendingMentionsCount } from "@/hooks/public-opinion/usePublicOpinion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from "recharts";
@@ -28,14 +29,74 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 const Overview = () => {
-  const { data: entities } = useMonitoredEntities();
+  const { data: entities, isLoading: isLoadingEntities } = useMonitoredEntities();
   const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const { stats, snapshots, sourceBreakdown } = usePoOverviewStats(principalEntity?.id);
+  const { stats, snapshots, sourceBreakdown, isLoading: isLoadingStats } = usePoOverviewStats(principalEntity?.id);
   const collectMentions = useCollectMentions();
   const analyzePending = useAnalyzePending();
   const { data: pendingCount = 0 } = usePendingMentionsCount(principalEntity?.id);
 
+  const isLoading = isLoadingEntities || isLoadingStats;
+
   const hasRealData = !!stats && stats.total > 0;
+
+  if (isLoading) {
+    return (
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-72 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-9 w-36" />
+        </div>
+
+        {/* KPI Cards skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-3 w-24 mb-2" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader><Skeleton className="h-5 w-44" /></CardHeader>
+              <CardContent>
+                <Skeleton className="h-[280px] w-full rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Timeline skeleton */}
+        <Card>
+          <CardHeader><Skeleton className="h-5 w-52" /></CardHeader>
+          <CardContent>
+            <div className="relative">
+              <Skeleton className="h-[300px] w-full rounded" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+                <p className="text-sm text-muted-foreground font-medium">Carregando dados de opinião pública...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const overviewData = hasRealData ? {
     total_mentions: stats.total,
