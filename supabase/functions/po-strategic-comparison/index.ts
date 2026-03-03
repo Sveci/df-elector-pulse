@@ -42,10 +42,11 @@ ${aspects.map((a, i) => `${i + 1}. ${a}`).join('\n')}
 
 INSTRUÇÕES:
 1. Atribua uma nota de 0 a 100 para CADA entidade em CADA aspecto, baseado nos dados reais fornecidos.
-2. Identifique fraquezas do principal (aspectos onde perde para adversários).
-3. Identifique forças do principal (aspectos onde supera adversários).
-4. Gere oportunidades estratégicas baseadas nos gaps.
-5. Crie um plano de cobertura de 14 dias com mensagens recomendadas e mensagens a evitar.
+2. MUITO IMPORTANTE: No campo entity_name do radar_scores, use EXATAMENTE o nome da entidade como fornecido acima, sem abreviar ou alterar. Exemplo: se o nome é "${entities[0]?.nome}", use exatamente "${entities[0]?.nome}".
+3. Identifique fraquezas do principal (aspectos onde perde para adversários).
+4. Identifique forças do principal (aspectos onde supera adversários).
+5. Gere oportunidades estratégicas baseadas nos gaps.
+6. Crie um plano de cobertura de 14 dias com mensagens recomendadas e mensagens a evitar.
 
 Seja realista e baseie-se nos dados fornecidos. Se os dados são limitados, indique baixa confiança.`;
 
