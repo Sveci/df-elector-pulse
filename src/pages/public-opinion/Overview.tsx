@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Users, MessageSquare, ThumbsUp, Eye, Loader2, RefreshCw, Zap } from "lucide-react";
-import { SENTIMENT_OVERVIEW, SENTIMENT_TIMELINE } from "@/data/public-opinion/demoPublicOpinionData";
+import { TrendingUp, TrendingDown, Users, MessageSquare, ThumbsUp, Eye, Loader2, RefreshCw, Zap, BarChart3 } from "lucide-react";
 import { useMonitoredEntities, usePoOverviewStats, useCollectMentions, useAnalyzePending, usePendingMentionsCount } from "@/hooks/public-opinion/usePublicOpinion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from "recharts";
 
@@ -22,39 +20,41 @@ const sourceColors: Record<string, string> = {
 };
 const sentimentColors = ['#22c55e', '#ef4444', '#94a3b8'];
 
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+    <BarChart3 className="h-12 w-12 mb-3 opacity-40" />
+    <p className="text-sm">{message}</p>
+  </div>
+);
+
 const Overview = () => {
   const { data: entities } = useMonitoredEntities();
   const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const { stats, snapshots, analyses, sourceBreakdown } = usePoOverviewStats(principalEntity?.id);
+  const { stats, snapshots, sourceBreakdown } = usePoOverviewStats(principalEntity?.id);
   const collectMentions = useCollectMentions();
   const analyzePending = useAnalyzePending();
   const { data: pendingCount = 0 } = usePendingMentionsCount(principalEntity?.id);
 
   const hasRealData = !!stats && stats.total > 0;
 
-  // Use real data or fallback to mock
   const overviewData = hasRealData ? {
     total_mentions: stats.total,
-    sentiment_score: Math.round((stats.avgScore + 1) * 5 * 10) / 10, // normalize -1..1 to 0..10
+    sentiment_score: Math.round((stats.avgScore + 1) * 5 * 10) / 10,
     positive_pct: Math.round(stats.positive / stats.total * 100),
     negative_pct: Math.round(stats.negative / stats.total * 100),
     neutral_pct: Math.round(stats.neutral / stats.total * 100),
     trend: stats.avgScore >= 0 ? 'up' as const : 'down' as const,
     trend_pct: Math.abs(Math.round(stats.avgScore * 100)),
-  } : SENTIMENT_OVERVIEW;
+  } : null;
 
-  const sentimentPie = [
+  const sentimentPie = overviewData ? [
     { name: 'Positivo', value: overviewData.positive_pct },
     { name: 'Negativo', value: overviewData.negative_pct },
     { name: 'Neutro', value: overviewData.neutral_pct },
-  ];
+  ] : [];
 
-  // Source breakdown from real mention counts or mock
-  const sourceData = sourceBreakdown?.length
-    ? sourceBreakdown
-    : Object.entries(SENTIMENT_OVERVIEW.sources).map(([name, value]) => ({ name, value }));
+  const sourceData = sourceBreakdown?.length ? sourceBreakdown : [];
 
-  // Timeline from snapshots or mock
   const timelineData = hasRealData && snapshots?.length
     ? snapshots.map(s => ({
         date: s.snapshot_date,
@@ -62,7 +62,7 @@ const Overview = () => {
         negative: s.negative_count,
         neutral: s.neutral_count,
       }))
-    : SENTIMENT_TIMELINE;
+    : [];
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -70,8 +70,7 @@ const Overview = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Visão Geral — Opinião Pública</h1>
           <div className="text-gray-500 mt-1 flex items-center gap-2">
-            <span>{principalEntity ? `Monitorando: ${principalEntity.nome}` : 'Dados demonstrativos'}</span>
-            {!hasRealData && <Badge variant="outline">Demo</Badge>}
+            <span>{principalEntity ? `Monitorando: ${principalEntity.nome}` : 'Nenhuma entidade configurada'}</span>
             {hasRealData && (
               <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -126,7 +125,7 @@ const Overview = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Menções Totais</p>
-                <p className="text-3xl font-bold">{overviewData.total_mentions.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{overviewData?.total_mentions.toLocaleString() ?? '0'}</p>
               </div>
               <MessageSquare className="h-8 w-8 text-primary" />
             </div>
@@ -137,11 +136,15 @@ const Overview = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Score de Sentimento</p>
-                <p className="text-3xl font-bold">{overviewData.sentiment_score}/10</p>
-                <div className="flex items-center gap-1 mt-1">
-                  {overviewData.trend === 'up' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
-                  <span className="text-sm text-green-600">+{overviewData.trend_pct}%</span>
-                </div>
+                <p className="text-3xl font-bold">{overviewData ? `${overviewData.sentiment_score}/10` : '—'}</p>
+                {overviewData && (
+                  <div className="flex items-center gap-1 mt-1">
+                    {overviewData.trend === 'up' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+                    <span className={`text-sm ${overviewData.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                      {overviewData.trend === 'up' ? '+' : '-'}{overviewData.trend_pct}%
+                    </span>
+                  </div>
+                )}
               </div>
               <ThumbsUp className="h-8 w-8 text-green-500" />
             </div>
@@ -152,7 +155,7 @@ const Overview = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Alcance Estimado</p>
-                <p className="text-3xl font-bold">{hasRealData ? `${(stats.total * 150 / 1000).toFixed(1)}K` : `${(SENTIMENT_OVERVIEW.reach_estimate / 1000000).toFixed(1)}M`}</p>
+                <p className="text-3xl font-bold">{hasRealData ? `${(stats.total * 150 / 1000).toFixed(1)}K` : '0'}</p>
               </div>
               <Eye className="h-8 w-8 text-blue-500" />
             </div>
@@ -163,7 +166,7 @@ const Overview = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Engajamento</p>
-                <p className="text-3xl font-bold">{hasRealData ? `${Math.round(stats.positive / stats.total * 100)}%` : `${SENTIMENT_OVERVIEW.engagement_rate}%`}</p>
+                <p className="text-3xl font-bold">{hasRealData ? `${Math.round(stats.positive / stats.total * 100)}%` : '0%'}</p>
               </div>
               <Users className="h-8 w-8 text-purple-500" />
             </div>
@@ -176,36 +179,44 @@ const Overview = () => {
         <Card>
           <CardHeader><CardTitle>Distribuição de Sentimento</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={sentimentPie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}%`}>
-                    {sentimentPie.map((_, i) => <Cell key={i} fill={sentimentColors[i]} />)}
-                  </Pie>
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {sentimentPie.length > 0 ? (
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={sentimentPie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}%`}>
+                      {sentimentPie.map((_, i) => <Cell key={i} fill={sentimentColors[i]} />)}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState message="Colete menções para visualizar a distribuição de sentimento" />
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle>Menções por Fonte</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sourceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))">
-                    {sourceData.map((entry, i) => (
-                      <Cell key={i} fill={sourceColors[entry.name] || '#6B7280'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {sourceData.length > 0 ? (
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sourceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="hsl(var(--primary))">
+                      {sourceData.map((entry, i) => (
+                        <Cell key={i} fill={sourceColors[entry.name] || '#6B7280'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState message="Colete menções para visualizar as fontes" />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -214,20 +225,24 @@ const Overview = () => {
       <Card>
         <CardHeader><CardTitle>Evolução do Sentimento</CardTitle></CardHeader>
         <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="positive" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.6} name="Positivo" />
-                <Area type="monotone" dataKey="neutral" stackId="1" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.4} name="Neutro" />
-                <Area type="monotone" dataKey="negative" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} name="Negativo" />
-                <Legend />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {timelineData.length > 0 ? (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={timelineData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="positive" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.6} name="Positivo" />
+                  <Area type="monotone" dataKey="neutral" stackId="1" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.4} name="Neutro" />
+                  <Area type="monotone" dataKey="negative" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} name="Negativo" />
+                  <Legend />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Colete menções para visualizar a evolução do sentimento ao longo do tempo" />
+          )}
         </CardContent>
       </Card>
 
@@ -241,25 +256,6 @@ const Overview = () => {
                 <div key={t.name} className="flex items-center gap-2 border rounded-lg px-4 py-2">
                   <span className="font-semibold text-primary capitalize">{t.name}</span>
                   <Badge variant="secondary">{t.count} menções</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Fallback hashtags for demo */}
-      {!hasRealData && (
-        <Card>
-          <CardHeader><CardTitle>Hashtags em Destaque</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {SENTIMENT_OVERVIEW.top_hashtags.map((h) => (
-                <div key={h.tag} className="flex items-center gap-2 border rounded-lg px-4 py-2">
-                  <span className="font-semibold text-primary">{h.tag}</span>
-                  <Badge variant={h.sentiment > 0.5 ? 'default' : h.sentiment < 0 ? 'destructive' : 'secondary'}>
-                    {h.count.toLocaleString()} menções
-                  </Badge>
                 </div>
               ))}
             </div>
