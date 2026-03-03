@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { COMPETITOR_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -172,9 +172,10 @@ const Comparison = () => {
   const [analysis, setAnalysis] = useState<any>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Load last saved analysis
-  const { data: lastSavedAnalysis } = useQuery({
+  const { data: lastSavedAnalysis, isLoading: isLoadingSavedAnalysis } = useQuery({
     queryKey: ["po_strategic_analysis_last"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -206,10 +207,11 @@ const Comparison = () => {
     },
     onSuccess: async (data) => {
       setAnalysis(data);
-      toast.success("Análise estratégica gerada com sucesso!");
 
-      // Persist to database
       if (user?.id) {
+        // Delete all previous analyses before inserting the new one
+        await supabase.from("po_strategic_analyses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
         const { error } = await supabase
           .from("po_strategic_analyses")
           .insert({
@@ -219,9 +221,15 @@ const Comparison = () => {
           });
         if (error) {
           console.error("Erro ao salvar análise:", error);
+          toast.error("Análise gerada mas não foi possível salvar.");
         } else {
-          setSavedAt(new Date().toISOString());
+          const now = new Date().toISOString();
+          setSavedAt(now);
+          queryClient.invalidateQueries({ queryKey: ["po_strategic_analysis_last"] });
+          toast.success("Análise estratégica gerada e salva com sucesso!");
         }
+      } else {
+        toast.success("Análise estratégica gerada com sucesso!");
       }
     },
     onError: (err: any) => {
