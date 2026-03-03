@@ -46,7 +46,7 @@ INSTRUÇÕES:
 3. Identifique fraquezas do principal (aspectos onde perde para adversários).
 4. Identifique forças do principal (aspectos onde supera adversários).
 5. Gere oportunidades estratégicas baseadas nos gaps.
-6. Crie um plano de cobertura de 14 dias com mensagens recomendadas e mensagens a evitar.
+6. Crie um plano de cobertura com EXATAMENTE 14 entradas no cronograma_14_dias, uma para cada dia (dia 1 a dia 14, sem pular nenhum). Inclua também mensagens recomendadas e mensagens a evitar.
 
 Seja realista e baseie-se nos dados fornecidos. Se os dados são limitados, indique baixa confiança.`;
 
