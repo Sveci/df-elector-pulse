@@ -280,31 +280,89 @@ export function generateComparisonPdf(comparisonData: ComparisonEntity[], analys
     if (analysis.plano_cobertura.cronograma_14_dias?.length) {
       y = check(doc, y, 12);
       doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...BLUE);
-      doc.text("Cronograma Diário", 14, y);
-      doc.setTextColor(0, 0, 0); y += 6;
+      doc.text("Cronograma Diário — 14 dias", 14, y);
+      doc.setTextColor(0, 0, 0); y += 8;
 
-      const tCols = [14, 30, 55, 155];
-      doc.setFillColor(...BLUE);
-      doc.rect(14, y - 4, pw - 28, 7, "F");
-      doc.setTextColor(255, 255, 255); doc.setFontSize(7); doc.setFont("helvetica", "bold");
-      doc.text("Dia", tCols[0] + 2, y);
-      doc.text("Canal", tCols[1] + 2, y);
-      doc.text("Ação", tCols[2] + 2, y);
-      doc.text("Foco", tCols[3] + 2, y);
-      doc.setTextColor(0, 0, 0); y += 5;
+      const cardW = (pw - 28 - 6) / 2; // two columns with 6pt gap
 
       analysis.plano_cobertura.cronograma_14_dias.forEach((d: any, i: number) => {
-        y = check(doc, y, 7);
-        if (i % 2 === 0) { doc.setFillColor(235, 245, 255); doc.rect(14, y - 4, pw - 28, 6, "F"); }
-        doc.setFontSize(7); doc.setFont("helvetica", "bold");
-        doc.text(String(d.dia), tCols[0] + 2, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(d.canal || "—", tCols[1] + 2, y);
-        const acao = (d.acao || "").length > 65 ? d.acao.substring(0, 62) + "…" : (d.acao || "");
-        doc.text(acao, tCols[2] + 2, y);
-        const foco = (d.aspecto_foco || "").length > 20 ? d.aspecto_foco.substring(0, 17) + "…" : (d.aspecto_foco || "—");
-        doc.text(foco, tCols[3] + 2, y);
-        y += 6;
+        const col = i % 2;
+        const cardX = 14 + col * (cardW + 6);
+
+        // Estimate card height: header(6) + canal(5) + acao lines + foco(5) + padding
+        const acaoText = d.acao || "—";
+        const acaoLines = doc.splitTextToSize(acaoText, cardW - 10) as string[];
+        const cardH = 8 + 5 + acaoLines.length * 4 + (d.aspecto_foco ? 5 : 0) + 4;
+
+        // On first column, check if we need a new page (check full row height)
+        if (col === 0) {
+          // Peek at next item to get max height for the row
+          const nextD = analysis.plano_cobertura.cronograma_14_dias[i + 1];
+          let nextH = 0;
+          if (nextD) {
+            const nLines = doc.splitTextToSize(nextD.acao || "—", cardW - 10) as string[];
+            nextH = 8 + 5 + nLines.length * 4 + (nextD.aspecto_foco ? 5 : 0) + 4;
+          }
+          const rowH = Math.max(cardH, nextH);
+          y = check(doc, y, rowH + 4);
+        }
+
+        const startY = col === 0 ? y : y; // same baseline for paired cards
+        const isWeek2 = d.dia > 7;
+        const accent: readonly [number, number, number] = isWeek2 ? BLUE : PRIMARY;
+
+        // Card background
+        doc.setFillColor(250, 250, 255);
+        doc.roundedRect(cardX, startY - 3, cardW, cardH, 2, 2, "F");
+
+        // Left accent bar
+        doc.setFillColor(...accent);
+        doc.rect(cardX, startY - 3, 2.5, cardH, "F");
+
+        // Day badge
+        let cy = startY;
+        doc.setFillColor(...accent);
+        doc.roundedRect(cardX + 6, cy - 3, 18, 6, 1.5, 1.5, "F");
+        doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(255, 255, 255);
+        doc.text(`Dia ${d.dia}`, cardX + 15, cy, { align: "center" });
+
+        // Canal badge
+        if (d.canal) {
+          doc.setFillColor(230, 230, 240);
+          const canalText = d.canal;
+          const canalW = doc.getTextWidth(canalText) + 6;
+          doc.roundedRect(cardX + 28, cy - 3, canalW, 6, 1.5, 1.5, "F");
+          doc.setTextColor(80, 80, 100); doc.setFontSize(7); doc.setFont("helvetica", "normal");
+          doc.text(canalText, cardX + 31, cy);
+        }
+        cy += 8;
+
+        // Ação (multi-line)
+        doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(30, 30, 30);
+        acaoLines.forEach((line: string) => {
+          doc.text(line, cardX + 6, cy);
+          cy += 4;
+        });
+
+        // Foco
+        if (d.aspecto_foco) {
+          cy += 1;
+          doc.setFontSize(7); doc.setFont("helvetica", "italic"); doc.setTextColor(...GRAY);
+          doc.text(`▸ ${d.aspecto_foco}`, cardX + 6, cy);
+        }
+
+        // After second column (or last item), advance y
+        if (col === 1 || i === analysis.plano_cobertura.cronograma_14_dias.length - 1) {
+          // Calculate actual max height of this row pair
+          if (col === 1) {
+            const prevD = analysis.plano_cobertura.cronograma_14_dias[i - 1];
+            const prevLines = doc.splitTextToSize(prevD?.acao || "—", cardW - 10) as string[];
+            const prevH = 8 + 5 + prevLines.length * 4 + (prevD?.aspecto_foco ? 5 : 0) + 4;
+            y += Math.max(cardH, prevH) + 4;
+          } else {
+            y += cardH + 4;
+          }
+        }
       });
     }
   }
