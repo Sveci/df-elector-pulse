@@ -25,15 +25,81 @@ function isRelevantAnalysis(a: any): boolean {
   return true;
 }
 
-function useEntityStats(entityId?: string) {
+function useEntityStats(entityId?: string, isPrincipal?: boolean) {
   return useQuery({
-    queryKey: ["po_comparison_stats", entityId],
+    queryKey: ["po_comparison_stats", entityId, isPrincipal],
     enabled: !!entityId,
     queryFn: async () => {
       const since = new Date();
       since.setDate(since.getDate() - 30);
 
-      // Fetch ALL mentions (paginate past 1000 limit)
+      // For adversary entities, their mentions live under the principal entity
+      // but analyses are linked via adversary_entity_id
+      const isAdversary = !isPrincipal;
+
+      if (isAdversary) {
+        // Fetch analyses where this entity is the adversary
+        let allAnalyses: any[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        while (true) {
+          const { data } = await supabase
+            .from("po_sentiment_analyses")
+            .select("sentiment, sentiment_score, topics, category, ai_summary, mention_id")
+            .eq("adversary_entity_id", entityId!)
+            .gte("analyzed_at", since.toISOString())
+            .range(from, from + pageSize - 1);
+          if (!data || data.length === 0) break;
+          allAnalyses = allAnalyses.concat(data);
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+
+        const analyses = allAnalyses.filter(isRelevantAnalysis);
+        const total = analyses.length;
+        const positive = analyses.filter(a => a.sentiment === "positivo").length;
+        const negative = analyses.filter(a => a.sentiment === "negativo").length;
+        const neutral = analyses.filter(a => a.sentiment === "neutro").length;
+        const rawAvg = total > 0
+          ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total
+          : 0;
+        const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+
+        const topicCounts: Record<string, number> = {};
+        analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
+        const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+
+        // Fetch engagement from the linked mentions
+        const mentionIds = [...new Set(analyses.map((a: any) => a.mention_id))];
+        let totalEngagement = 0;
+        for (let i = 0; i < mentionIds.length; i += pageSize) {
+          const batch = mentionIds.slice(i, i + pageSize);
+          const { data: mentions } = await supabase
+            .from("po_mentions")
+            .select("id, engagement")
+            .in("id", batch);
+          (mentions || []).forEach(m => {
+            const eng = m.engagement as Record<string, unknown> | null;
+            if (eng) {
+              totalEngagement += (Number(eng.likes) || 0) + (Number(eng.comments) || 0) + (Number(eng.shares) || 0) + (Number(eng.views) || 0);
+            }
+          });
+        }
+        const engRate = mentionIds.length > 0 ? Math.round((totalEngagement / mentionIds.length) * 10) / 10 : 0;
+
+        return {
+          mentions: total,
+          positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0,
+          negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0,
+          neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0,
+          sentiment_score: sentimentScore,
+          engagement_total: totalEngagement,
+          engagement_rate: engRate,
+          top_topics: topTopics,
+        };
+      }
+
+      // Principal entity - original logic
       let allMentions: any[] = [];
       let from = 0;
       const pageSize = 1000;
@@ -50,7 +116,6 @@ function useEntityStats(entityId?: string) {
         from += pageSize;
       }
 
-      // Fetch ALL analyses (paginate past 1000 limit)
       let allAnalyses: any[] = [];
       from = 0;
       while (true) {
@@ -66,26 +131,21 @@ function useEntityStats(entityId?: string) {
         from += pageSize;
       }
 
-      // Apply same relevance filter as Overview
       const analyses = allAnalyses.filter(isRelevantAnalysis);
-
       const mentions = allMentions;
       const total = analyses.length;
       const positive = analyses.filter(a => a.sentiment === "positivo").length;
       const negative = analyses.filter(a => a.sentiment === "negativo").length;
       const neutral = analyses.filter(a => a.sentiment === "neutro").length;
-      // avg sentiment_score is -1 to 1; normalize to 0-10 scale
       const rawAvg = total > 0
         ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total
         : 0;
-      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10; // -1→0, 0→5, 1→10
+      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
 
-      // Top topics
       const topicCounts: Record<string, number> = {};
       analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
       const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
 
-      // Total engagement — only from mentions that have a relevant analysis
       const relevantMentionIds = new Set(analyses.map((a: any) => a.mention_id));
       let totalEngagement = 0;
       mentions.filter(m => relevantMentionIds.has(m.id)).forEach(m => {
@@ -95,12 +155,11 @@ function useEntityStats(entityId?: string) {
         }
       });
 
-      // Engagement rate = avg engagement per relevant mention
       const relevantMentionCount = mentions.filter(m => relevantMentionIds.has(m.id)).length;
       const engRate = relevantMentionCount > 0 ? Math.round((totalEngagement / relevantMentionCount) * 10) / 10 : 0;
 
       return {
-        mentions: total, // Use analyses count (same as Overview) instead of raw mentions count
+        mentions: total,
         positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0,
         negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0,
         neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0,
@@ -118,11 +177,11 @@ const Comparison = () => {
   const hasRealEntities = entities && entities.length >= 1;
 
   // Fetch stats for up to 5 entities
-  const e0 = useEntityStats(entities?.[0]?.id);
-  const e1 = useEntityStats(entities?.[1]?.id);
-  const e2 = useEntityStats(entities?.[2]?.id);
-  const e3 = useEntityStats(entities?.[3]?.id);
-  const e4 = useEntityStats(entities?.[4]?.id);
+  const e0 = useEntityStats(entities?.[0]?.id, entities?.[0]?.is_principal);
+  const e1 = useEntityStats(entities?.[1]?.id, entities?.[1]?.is_principal);
+  const e2 = useEntityStats(entities?.[2]?.id, entities?.[2]?.is_principal);
+  const e3 = useEntityStats(entities?.[3]?.id, entities?.[3]?.is_principal);
+  const e4 = useEntityStats(entities?.[4]?.id, entities?.[4]?.is_principal);
   const statsArr = [e0, e1, e2, e3, e4];
 
   const comparisonData = hasRealEntities
