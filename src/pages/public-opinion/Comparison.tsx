@@ -195,6 +195,18 @@ const Comparison = () => {
   const oportunidadesCount = analysis?.oportunidades?.length || 0;
   const acoesCount = analysis?.plano_cobertura?.cronograma_14_dias?.length || 0;
 
+  // Helper to find principal in radar_scores by fuzzy match
+  const findPrincipalRadar = (radarScores: any[]) => {
+    if (!principal?.nome || !radarScores) return null;
+    const exactMatch = radarScores.find((rs: any) => rs.entity_name === principal.nome);
+    if (exactMatch) return exactMatch;
+    const lowerName = principal.nome.toLowerCase();
+    return radarScores.find((rs: any) => 
+      rs.entity_name?.toLowerCase().includes(lowerName) || 
+      lowerName.includes(rs.entity_name?.toLowerCase())
+    ) || radarScores[0];
+  };
+
   // Build radar data from AI analysis
   const radarData = analysis?.radar_scores
     ? ASPECTS.map((aspect, i) => {
@@ -206,12 +218,13 @@ const Comparison = () => {
       })
     : null;
 
-  // Heatmap data
+  // Heatmap data - use fuzzy match for principal
+  const principalRadar = findPrincipalRadar(analysis?.radar_scores);
   const heatmapData = analysis?.radar_scores
     ? ASPECTS.map((aspect, i) => {
-        const principalScore = analysis.radar_scores.find((rs: any) => rs.entity_name === principal?.nome)?.scores[ASPECT_KEYS[i]] || 0;
+        const principalScore = principalRadar?.scores[ASPECT_KEYS[i]] || 0;
         const gaps = analysis.radar_scores
-          .filter((rs: any) => rs.entity_name !== principal?.nome)
+          .filter((rs: any) => rs !== principalRadar)
           .map((rs: any) => ({
             adversary: rs.entity_name,
             score: rs.scores[ASPECT_KEYS[i]] || 0,
