@@ -2360,6 +2360,30 @@ export type Database = {
           },
         ]
       }
+      po_strategic_analyses: {
+        Row: {
+          analysis: Json
+          comparison_data: Json
+          created_at: string
+          created_by: string
+          id: string
+        }
+        Insert: {
+          analysis: Json
+          comparison_data: Json
+          created_at?: string
+          created_by: string
+          id?: string
+        }
+        Update: {
+          analysis?: Json
+          comparison_data?: Json
+          created_at?: string
+          created_by?: string
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
