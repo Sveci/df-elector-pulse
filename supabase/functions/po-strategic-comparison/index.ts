@@ -19,7 +19,7 @@ serve(async (req) => {
 
     const aspects = [
       "Conexão Popular e Carisma",
-      "Posicionamento em Causas Específicas (Proteção Animal)",
+      "Posicionamento em Segurança Pública",
       "Associação Política (Centrão)",
       "Entrega de Resultados (Saúde/Infraestrutura)",
       "Reconhecimento de Atuação Federal",
