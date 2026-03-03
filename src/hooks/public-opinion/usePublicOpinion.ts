@@ -339,9 +339,11 @@ function isRelevantAnalysis(a: SentimentAnalysis): boolean {
 
 // ── Stats helpers ──
 export function usePoOverviewStats(entityId?: string) {
-  const { data: analyses } = useSentimentAnalyses(entityId, 30);
-  const { data: snapshots } = useDailySnapshots(entityId, 30);
-  const { data: mentions } = useMentions(entityId, undefined, 1000);
+  const { data: analyses, isLoading: isLoadingAnalyses } = useSentimentAnalyses(entityId, 30);
+  const { data: snapshots, isLoading: isLoadingSnapshots } = useDailySnapshots(entityId, 30);
+  const { data: mentions, isLoading: isLoadingMentions } = useMentions(entityId, undefined, 1000);
+
+  const isLoading = isLoadingAnalyses || isLoadingSnapshots || isLoadingMentions;
 
   // Filter out irrelevant analyses
   const relevantAnalyses = analyses?.filter(isRelevantAnalysis);
@@ -373,7 +375,7 @@ export function usePoOverviewStats(entityId?: string) {
     topCategories: getTopItems(relevantAnalyses.map(a => a.category).filter(Boolean) as string[], 5),
   } : null;
 
-  return { stats, snapshots, analyses: relevantAnalyses, sourceBreakdown };
+  return { stats, snapshots, analyses: relevantAnalyses, sourceBreakdown, isLoading };
 }
 
 function getTopItems(items: string[], limit: number) {
