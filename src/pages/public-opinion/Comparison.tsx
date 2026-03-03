@@ -574,27 +574,33 @@ const Comparison = () => {
                     <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" /> Plano de Cobertura — 14 dias</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-16">Dia</TableHead>
-                            <TableHead>Ação</TableHead>
-                            <TableHead>Canal</TableHead>
-                            <TableHead>Aspecto Foco</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {analysis.plano_cobertura.cronograma_14_dias?.map((d: any, i: number) => (
-                            <TableRow key={i}>
-                              <TableCell className="font-bold text-primary">Dia {d.dia}</TableCell>
-                              <TableCell className="text-sm">{d.acao}</TableCell>
-                              <TableCell><Badge variant="outline" className="text-xs">{d.canal}</Badge></TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{d.aspecto_foco}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {analysis.plano_cobertura.cronograma_14_dias?.map((d: any, i: number) => {
+                        const weekNum = Math.ceil(d.dia / 7);
+                        const weekColors = weekNum === 1
+                          ? "border-l-primary bg-primary-100/30"
+                          : "border-l-info-500 bg-blue-50/30";
+                        return (
+                          <div
+                            key={i}
+                            className={`rounded-lg border border-border ${weekColors} border-l-4 p-4 flex flex-col gap-2 transition-shadow hover:shadow-md`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="inline-flex items-center justify-center rounded-md bg-primary/10 text-primary font-bold text-sm px-2.5 py-1">
+                                Dia {d.dia}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs font-medium">{d.canal}</Badge>
+                              </div>
+                            </div>
+                            <p className="text-sm font-medium text-foreground leading-snug">{d.acao}</p>
+                            <div className="flex items-center gap-1.5 mt-auto">
+                              <span className="inline-block h-2 w-2 rounded-full bg-accent" />
+                              <span className="text-xs text-muted-foreground">{d.aspecto_foco}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
