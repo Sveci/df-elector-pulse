@@ -463,8 +463,55 @@ export default function StrategicMap() {
   if (isLoading && !isDemoMode) {
     return (
       <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-[600px] w-full rounded-lg" />
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <MapIcon className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <Skeleton className="h-7 w-48 mb-1" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                  <div className="flex-1">
+                    <Skeleton className="h-3 w-20 mb-2" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Controls skeleton */}
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap gap-6">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Map skeleton */}
+        <div className="relative">
+          <Skeleton className="h-[600px] w-full rounded-lg" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground font-medium">Carregando mapa estratégico...</p>
+          </div>
+        </div>
       </div>
     );
   }
