@@ -14,10 +14,11 @@ import {
 } from "recharts";
 import {
   Shield, Swords, Lightbulb, CalendarDays, Brain, Loader2,
-  AlertTriangle, TrendingUp, Target, MessageSquare, ThumbsUp, Users, Ban, Check, ChevronRight,
+  AlertTriangle, TrendingUp, Target, MessageSquare, ThumbsUp, Users, Ban, Check, ChevronRight, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { generateComparisonPdf } from "@/utils/generateComparisonReportPdf";
 
 const entityColors = ['#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#22c55e'];
 
@@ -263,14 +264,26 @@ const Comparison = () => {
             {isDemo && <Badge variant="outline" className="ml-2">Demo</Badge>}
           </p>
         </div>
-        <Button
-          onClick={() => analysisMutation.mutate()}
-          disabled={analysisMutation.isPending}
-          className="gap-2"
-        >
-          {analysisMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-          {analysisMutation.isPending ? "Analisando..." : analysis ? "Atualizar Análise IA" : "Gerar Análise IA"}
-        </Button>
+        <div className="flex gap-2">
+          {analysis && (
+            <Button
+              variant="outline"
+              onClick={() => generateComparisonPdf(comparisonData, analysis)}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          )}
+          <Button
+            onClick={() => analysisMutation.mutate()}
+            disabled={analysisMutation.isPending}
+            className="gap-2"
+          >
+            {analysisMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+            {analysisMutation.isPending ? "Analisando..." : analysis ? "Atualizar Análise IA" : "Gerar Análise IA"}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Blocks */}
