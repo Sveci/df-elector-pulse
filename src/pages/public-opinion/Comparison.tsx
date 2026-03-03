@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,6 +170,30 @@ const Comparison = () => {
     : COMPETITOR_DATA.map(c => ({ ...c, is_principal: c.id === '1', engagement_total: c.followers_total }));
 
   const [analysis, setAnalysis] = useState<any>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  // Load last saved analysis
+  const { data: lastSavedAnalysis } = useQuery({
+    queryKey: ["po_strategic_analysis_last"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("po_strategic_analyses")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (lastSavedAnalysis && !analysis) {
+      setAnalysis(lastSavedAnalysis.analysis);
+      setSavedAt(lastSavedAnalysis.created_at);
+    }
+  }, [lastSavedAnalysis]);
 
   const analysisMutation = useMutation({
     mutationFn: async () => {
@@ -179,9 +204,25 @@ const Comparison = () => {
       if (data?.error) throw new Error(data.error);
       return data.analysis;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setAnalysis(data);
       toast.success("Análise estratégica gerada com sucesso!");
+
+      // Persist to database
+      if (user?.id) {
+        const { error } = await supabase
+          .from("po_strategic_analyses")
+          .insert({
+            analysis: data,
+            comparison_data: comparisonData,
+            created_by: user.id,
+          });
+        if (error) {
+          console.error("Erro ao salvar análise:", error);
+        } else {
+          setSavedAt(new Date().toISOString());
+        }
+      }
     },
     onError: (err: any) => {
       toast.error(`Erro ao gerar análise: ${err.message}`);
@@ -284,6 +325,11 @@ const Comparison = () => {
             {analysisMutation.isPending ? "Analisando..." : analysis ? "Atualizar Análise IA" : "Gerar Análise IA"}
           </Button>
         </div>
+        {savedAt && (
+          <p className="text-xs text-muted-foreground">
+            Última análise salva em {new Date(savedAt).toLocaleDateString("pt-BR")} às {new Date(savedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
       </div>
 
       {/* Summary Blocks */}
