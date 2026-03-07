@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { MessageSquare, Bot, Brain, Eye, EyeOff, ExternalLink, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { MessageSquare, Bot, Brain, ExternalLink, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface ApiConfig {
   key: string;
@@ -19,7 +19,7 @@ interface ApiConfig {
   howToGet: string;
   link: string;
   secretName: string;
-  fields: { key: string; label: string; placeholder: string; dbColumn?: string }[];
+  fields: { key: string; label: string; placeholder: string; dbColumn: string }[];
   category: string;
   optional?: boolean;
 }
@@ -75,91 +75,90 @@ const categoryColors: Record<string, string> = {
   "IA": "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
 };
 
-function ApiCard({ api }: { api: ApiConfig }) {
+function MetaCloudFields() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showToken, setShowToken] = useState(false);
-  const [tokenValue, setTokenValue] = useState("");
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  const [editingToken, setEditingToken] = useState(false);
 
-  // Load DB fields for Meta Cloud
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading } = useQuery({
     queryKey: ["integrations_settings_admin"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("integrations_settings")
-        .select("*")
+        .select("meta_cloud_phone_number_id, meta_cloud_waba_id, meta_cloud_phone, meta_cloud_api_version, id")
         .limit(1)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: api.fields.length > 0,
   });
 
-  // Initialize field values from DB
-  const getFieldValue = (field: typeof api.fields[0]) => {
+  const fields = apis[0].fields;
+
+  const getFieldValue = (field: typeof fields[0]) => {
     if (fieldValues[field.key] !== undefined) return fieldValues[field.key];
-    if (settings && field.dbColumn) return (settings as any)[field.dbColumn] || "";
+    if (settings) return (settings as any)[field.dbColumn] || "";
     return "";
   };
 
-  const saveDbFields = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async () => {
       const updates: Record<string, any> = {};
-      api.fields.forEach((field) => {
-        if (field.dbColumn && fieldValues[field.key] !== undefined) {
+      fields.forEach((field) => {
+        if (fieldValues[field.key] !== undefined) {
           updates[field.dbColumn] = fieldValues[field.key] || null;
         }
       });
-
-      if (Object.keys(updates).length === 0) return;
-
-      const { data: existing } = await supabase
-        .from("integrations_settings")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (!existing) throw new Error("Configurações não encontradas");
+      if (Object.keys(updates).length === 0) throw new Error("Nenhuma alteração detectada.");
 
       const { error } = await supabase
         .from("integrations_settings")
         .update(updates)
-        .eq("id", existing.id);
-
+        .eq("id", settings!.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["integrations_settings_admin"] });
       queryClient.invalidateQueries({ queryKey: ["integrations_settings"] });
-      toast({ title: "Campos salvos", description: "As configurações foram atualizadas." });
+      toast({ title: "Configurações salvas", description: "Campos da Meta Cloud API atualizados." });
+      setFieldValues({});
     },
     onError: (err: Error) => {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
     },
   });
 
-  const saveSecret = async () => {
-    if (!tokenValue.trim()) {
-      toast({ title: "Token vazio", description: "Informe o valor do token/chave.", variant: "destructive" });
-      return;
-    }
+  if (isLoading) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
-    try {
-      const { error } = await supabase.functions.invoke("update-secret", {
-        body: { name: api.secretName, value: tokenValue },
-      });
-      if (error) throw error;
-      toast({ title: "Token salvo", description: `${api.secretName} atualizado com sucesso.` });
-      setTokenValue("");
-      setEditingToken(false);
-    } catch (err: any) {
-      toast({ title: "Erro ao salvar token", description: err.message, variant: "destructive" });
-    }
-  };
+  return (
+    <div className="border-t pt-4 space-y-3">
+      <p className="text-sm font-medium text-foreground">Configurações adicionais:</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {fields.map((field) => (
+          <div key={field.key}>
+            <Label className="text-xs text-muted-foreground mb-1 block">{field.label}</Label>
+            <Input
+              placeholder={field.placeholder}
+              value={getFieldValue(field)}
+              onChange={(e) => setFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      <Button
+        size="sm"
+        onClick={() => saveMutation.mutate()}
+        disabled={saveMutation.isPending || Object.keys(fieldValues).length === 0}
+        className="gap-1"
+      >
+        {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+        Salvar configurações
+      </Button>
+    </div>
+  );
+}
 
+function ApiCard({ api }: { api: ApiConfig }) {
   const Icon = api.icon;
 
   return (
@@ -196,14 +195,13 @@ function ApiCard({ api }: { api: ApiConfig }) {
           <p className="text-sm text-muted-foreground">{api.howToGet}</p>
         </div>
 
-        {/* Secret / Token field */}
-        <div className="border-t pt-4 space-y-3">
+        <div className="border-t pt-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.secretName}</code>
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Configurado</span>
-            </Label>
+              <span className="text-xs text-muted-foreground">Configurado no Lovable Cloud</span>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -214,67 +212,9 @@ function ApiCard({ api }: { api: ApiConfig }) {
               Obter chave
             </Button>
           </div>
-
-          {!editingToken ? (
-            <Button variant="outline" size="sm" onClick={() => setEditingToken(true)}>
-              Alterar token
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type={showToken ? "text" : "password"}
-                  placeholder={`Cole o novo ${api.secretName} aqui...`}
-                  value={tokenValue}
-                  onChange={(e) => setTokenValue(e.target.value)}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowToken(!showToken)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <Button size="sm" onClick={saveSecret} className="gap-1">
-                <Save className="h-3.5 w-3.5" />
-                Salvar
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => { setEditingToken(false); setTokenValue(""); }}>
-                Cancelar
-              </Button>
-            </div>
-          )}
         </div>
 
-        {/* Additional DB fields (e.g. Meta Cloud) */}
-        {api.fields.length > 0 && (
-          <div className="border-t pt-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Configurações adicionais:</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {api.fields.map((field) => (
-                <div key={field.key}>
-                  <Label className="text-xs text-muted-foreground mb-1 block">{field.label}</Label>
-                  <Input
-                    placeholder={field.placeholder}
-                    value={getFieldValue(field)}
-                    onChange={(e) => setFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                </div>
-              ))}
-            </div>
-            <Button
-              size="sm"
-              onClick={() => saveDbFields.mutate()}
-              disabled={saveDbFields.isPending}
-              className="gap-1"
-            >
-              {saveDbFields.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              Salvar configurações
-            </Button>
-          </div>
-        )}
+        {api.key === "meta_cloud" && <MetaCloudFields />}
       </CardContent>
     </Card>
   );
@@ -287,7 +227,7 @@ const AdminApis = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">APIs Externas</h1>
           <p className="text-muted-foreground text-sm">
-            Gerencie as chaves de API e credenciais dos serviços externos utilizados na plataforma
+            Gerencie as credenciais dos serviços externos utilizados na plataforma
           </p>
         </div>
 
@@ -296,8 +236,9 @@ const AdminApis = () => {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-900 dark:text-amber-200">
-                As chaves configuradas aqui são usadas globalmente por todos os tenants da plataforma.
-                Alterações afetam o sistema como um todo. Os tokens são armazenados de forma segura e criptografada.
+                As chaves de API são usadas globalmente por todos os tenants da plataforma.
+                Os tokens são armazenados de forma segura e criptografada no Lovable Cloud.
+                Para alterar os valores dos tokens, utilize o painel de Secrets do projeto.
               </p>
             </div>
           </CardContent>
