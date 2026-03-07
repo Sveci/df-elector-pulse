@@ -1,14 +1,8 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { MessageSquare, Bot, Brain, ExternalLink, Save, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface ApiConfig {
   key: string;
