@@ -6,6 +6,8 @@ import { NotificationBell } from "./NotificationBell";
 import { SessionLogoutWarning } from "./SessionLogoutWarning";
 import { InactivityWarning } from "./InactivityWarning";
 import { WhatsAppDisconnectedAlert } from "./WhatsAppDisconnectedAlert";
+import { useTenantContext } from "@/contexts/TenantContext";
+import { Building2 } from "lucide-react";
 import { Menu } from "lucide-react";
 
 interface DashboardLayoutProps {
