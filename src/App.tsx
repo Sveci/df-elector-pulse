@@ -42,6 +42,8 @@ import Privacy from "./pages/settings/Privacy";
 import Integrations from "./pages/settings/Integrations";
 import Support from "./pages/settings/Support";
 import AdminTickets from "./pages/settings/AdminTickets";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminTenants from "./pages/admin/AdminTenants";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
