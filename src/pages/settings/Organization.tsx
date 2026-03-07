@@ -240,7 +240,7 @@ const Organization = () => {
           </Card>
 
           {/* Card de Redes Sociais */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Globe className="h-5 w-5" />
