@@ -2,39 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Plataforma 360 Eleitor/DF - Design System Rafael Prudente */
+/* Eleitor 360.ai - Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* Cores Primárias (Rafael Prudente) */
-    --color-primary-600: 15 77% 44%; /* #C0401C */
-    --color-primary-500: 15 89% 54%; /* #F05023 */
-    --color-primary-400: 15 85% 63%; /* #F3734F */
-    --color-primary-100: 15 100% 96%; /* #FDF1EC */
-    --color-primary-700: 15 77% 40%; /* #B0361A */
-    --on-primary: 0 0% 100%; /* #FFFFFF */
+    /* Cores Primárias — Amarelo Vibrante Eleitor 360 */
+    --color-primary-600: 54 100% 42%; /* amarelo mais escuro hover */
+    --color-primary-500: 54 100% 50%; /* #F0E500 amarelo vibrante */
+    --color-primary-400: 54 100% 62%; /* amarelo claro */
+    --color-primary-100: 54 100% 94%; /* fundo amarelo sutil */
+    --color-primary-700: 54 100% 35%; /* pressed */
+    --on-primary: 220 39% 11%; /* texto escuro sobre amarelo */
     
-    /* Neutros */
-    --gray-50: 210 20% 98%; /* #F9FAFB */
-    --gray-100: 220 14% 96%; /* #F3F4F6 */
-    --gray-200: 220 13% 91%; /* #E5E7EB */
-    --gray-600: 220 9% 46%; /* #4B5563 */
-    --gray-800: 220 26% 14%; /* #1F2937 */
-    --gray-900: 220 39% 11%; /* #111827 */
+    /* Neutros — Base Escura */
+    --gray-50: 220 15% 95%;  /* #F0F1F3 */
+    --gray-100: 220 14% 90%; /* #E2E4E8 */
+    --gray-200: 220 13% 80%; /* #C5C8D0 */
+    --gray-600: 220 9% 46%;  /* #6B7280 */
+    --gray-800: 225 20% 18%; /* #252D3A */
+    --gray-900: 225 25% 12%; /* #1A1F2E */
     
     /* Semânticas */
-    --success-500: 158 64% 52%; /* #10B981 */
-    --warning-500: 43 96% 56%; /* #F59E0B */
-    --danger-500: 0 84% 60%; /* #EF4444 */
-    --info-500: 221 83% 53%; /* #3B82F6 */
+    --success-500: 158 64% 52%;
+    --warning-500: 43 96% 56%;
+    --danger-500: 0 84% 60%;
+    --info-500: 221 83% 53%;
     
     /* Apoio */
-    --focus: 15 89% 54% / 0.45; /* rgba(240,80,35,0.45) */
-    --shadow-soft: 220 39% 11% / 0.08; /* rgba(17,24,39,0.08) */
-    --shadow-hard: 220 39% 11% / 0.15; /* rgba(17,24,39,0.15) */
+    --focus: 54 100% 50% / 0.45;
+    --shadow-soft: 225 25% 12% / 0.08;
+    --shadow-hard: 225 25% 12% / 0.15;
     
-    /* Sistema padrão (adaptado) */
+    /* Sistema padrão — Modo claro */
     --background: 0 0% 100%;
     --foreground: var(--gray-900);
     --card: 0 0% 100%;
@@ -50,20 +50,20 @@
     --accent: var(--gray-100);
     --accent-foreground: var(--gray-900);
     --destructive: var(--danger-500);
-    --destructive-foreground: var(--on-primary);
+    --destructive-foreground: 0 0% 100%;
     --border: var(--gray-200);
     --input: var(--gray-200);
     --ring: var(--color-primary-500);
     --radius: 0.75rem;
 
-    /* Sidebar tokens */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 9% 46%;
+    /* Sidebar tokens — Fundo escuro */
+    --sidebar-background: 225 25% 12%;
+    --sidebar-foreground: 220 15% 75%;
     --sidebar-primary: var(--color-primary-500);
     --sidebar-primary-foreground: var(--on-primary);
-    --sidebar-accent: 15 100% 96%;
-    --sidebar-accent-foreground: 15 77% 44%;
-    --sidebar-border: var(--gray-200);
+    --sidebar-accent: 54 100% 50% / 0.1;
+    --sidebar-accent-foreground: 54 100% 50%;
+    --sidebar-border: 225 20% 20%;
     --sidebar-ring: var(--color-primary-500);
   }
 
@@ -74,8 +74,8 @@
     --card-foreground: var(--gray-50);
     --popover: var(--gray-800);
     --popover-foreground: var(--gray-50);
-    --primary: var(--color-primary-400);
-    --primary-foreground: var(--gray-900);
+    --primary: var(--color-primary-500);
+    --primary-foreground: var(--on-primary);
     --secondary: var(--gray-800);
     --secondary-foreground: var(--gray-50);
     --muted: var(--gray-800);
@@ -84,9 +84,9 @@
     --accent-foreground: var(--gray-50);
     --destructive: var(--danger-500);
     --destructive-foreground: var(--gray-50);
-    --border: var(--gray-800);
+    --border: 225 20% 20%;
     --input: var(--gray-800);
-    --ring: var(--color-primary-400);
+    --ring: var(--color-primary-500);
   }
 }
 
@@ -141,7 +141,7 @@
   
   /* Badge variants */
   .badge-brand {
-    background: hsl(15 100% 96%); /* #FDF1EC */
+    background: hsl(54 100% 94%);
     color: hsl(var(--color-primary-600));
     @apply text-sm font-medium px-2.5 py-1 rounded-md;
   }
