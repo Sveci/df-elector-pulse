@@ -162,20 +162,6 @@ const Organization = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nomePlataforma">Nome da Plataforma</Label>
-                <Input
-                  id="nomePlataforma"
-                  value={isDemoMode ? m.platformName(nomePlataforma) : nomePlataforma}
-                  onChange={(e) => setNomePlataforma(e.target.value)}
-                  placeholder="Ex: Plataforma 360.ai"
-                  disabled={isDemoMode}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Este nome aparece no topo da barra lateral
-                </p>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome Completo</Label>
