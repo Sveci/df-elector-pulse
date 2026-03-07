@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { z } from "zod";
-import logo from "@/assets/logo-eleitor360.png";
+import logo from "@/assets/logo-eleitor360-login.png";
 import { lovable } from "@/integrations/lovable";
 
 const loginSchema = z.object({
