@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { z } from "zod";
 import logo from "@/assets/logo-eleitor360.png";
+import { lovable } from "@/integrations/lovable";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
