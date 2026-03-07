@@ -31,7 +31,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Ao carregar, verificar se super_admin precisa escolher tenant
+  // Ao carregar, restaurar tenant salvo (sem forçar modal)
   useEffect(() => {
     if (!user || isLoading) return;
 
@@ -41,11 +41,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         const savedTenant = userTenants.find((ut) => ut.tenant_id === savedTenantId);
         if (savedTenant) {
           setActiveTenantState(savedTenant.tenant);
-          return;
         }
       }
-      // Super admin sem tenant salvo: sempre mostrar modal
-      setShowTenantSelector(true);
+      // Não força modal aqui — só mostra quando o usuário pedir ou ao navegar do /admin
     } else if (!isSuperAdmin && userTenants && userTenants.length > 0) {
       // Usuário normal: pegar o default ou primeiro
       const defaultTenant = userTenants.find((ut) => ut.is_default) || userTenants[0];
