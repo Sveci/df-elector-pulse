@@ -351,7 +351,7 @@ const AdminTickets = () => {
           isAdmin={true}
         />
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 };
 
