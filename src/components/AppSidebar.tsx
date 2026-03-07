@@ -195,17 +195,17 @@ export function AppSidebar() {
     <Sidebar className={isCollapsed ? "w-20" : "w-64"} collapsible="icon">
       <SidebarContent className="bg-gray-900 border-r border-gray-800">
         {/* Logo/Header */}
-        <div className={`${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-b border-gray-800' : ''} relative overflow-hidden`}>
-          <div className="relative flex items-center justify-center">
+        <div className={`${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-b border-gray-800' : ''}`}>
+          <div className="relative flex items-center justify-center w-full overflow-visible">
             <img
               src={logo}
               alt="Eleitor 360.ai"
-              className={`h-8 object-contain transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-75 absolute' : 'opacity-100 scale-100'}`}
+              className={`h-8 object-contain transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-75 w-0' : 'opacity-100 scale-100 w-full'}`}
             />
             <img
               src={logoIcon}
               alt="Eleitor 360.ai"
-              className={`w-8 h-8 object-contain transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 absolute'}`}
+              className={`w-8 h-8 object-contain transition-all duration-300 ease-in-out absolute ${isCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}
             />
           </div>
         </div>
