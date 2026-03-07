@@ -151,7 +151,7 @@ const Organization = () => {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Card de Dados do Político */}
-          <Card className="lg:col-span-2">
+           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
