@@ -197,7 +197,7 @@ export function AppSidebar() {
         {/* Logo/Header */}
         <div className={`${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-b border-gray-800' : ''}`}>
           {!isCollapsed ? (
-            <img src={logo} alt="Eleitor 360.ai" className="h-10 object-contain" />
+            <img src={logo} alt="Eleitor 360.ai" className="h-8 object-contain" />
           ) : (
             <div className="flex items-center justify-center w-full">
               <img src={logoIcon} alt="Eleitor 360.ai" className="w-8 h-8 object-contain" />
