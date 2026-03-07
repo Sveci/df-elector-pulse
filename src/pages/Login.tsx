@@ -48,7 +48,23 @@ const Login = () => {
     }
   };
 
-  if (authLoading) {
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setError("");
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        setError("Erro ao entrar com Google. Tente novamente.");
+      }
+    } catch {
+      setError("Erro ao entrar com Google. Tente novamente.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#2A2D35' }}>
         <div className="text-center">
