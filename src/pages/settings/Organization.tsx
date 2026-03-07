@@ -221,7 +221,7 @@ const Organization = () => {
           </Card>
 
           {/* Card de Biografia */}
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-lg">Biografia</CardTitle>
               <CardDescription>
