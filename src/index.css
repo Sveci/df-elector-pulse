@@ -171,6 +171,40 @@
   }
 }
 
+/* Sidebar custom scrollbar */
+[data-sidebar] [data-radix-scroll-area-viewport],
+[data-sidebar] .sidebar-content,
+[data-sidebar] {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(225 20% 28%) transparent;
+}
+
+[data-sidebar] ::-webkit-scrollbar {
+  width: 4px;
+}
+
+[data-sidebar] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-sidebar] ::-webkit-scrollbar-thumb {
+  background: hsl(225 20% 28%);
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+
+[data-sidebar] ::-webkit-scrollbar-thumb:hover {
+  background: hsl(54 100% 50% / 0.4);
+}
+
+[data-sidebar]:hover ::-webkit-scrollbar-thumb {
+  background: hsl(225 20% 35%);
+}
+
+[data-sidebar]:hover ::-webkit-scrollbar-thumb:hover {
+  background: hsl(54 100% 50% / 0.5);
+}
+
 /* Grayscale filter for map tiles */
 .grayscale .leaflet-tile-pane {
   filter: grayscale(100%) contrast(1.1);
