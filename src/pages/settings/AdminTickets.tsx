@@ -73,8 +73,10 @@ const AdminTickets = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  // Redirect if not super admin
-  if (!isCheckingAdmin && !isSuperAdmin) {
+  // Redirect if not super admin (check both platform_admins and profile role)
+  const { user } = useAuth();
+  const isProfileSuperAdmin = user?.role === 'super_admin';
+  if (!isCheckingAdmin && !isSuperAdmin && !isProfileSuperAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
