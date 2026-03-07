@@ -318,6 +318,13 @@ const App = () => (
                 </DashboardLayout>
               </RoleProtectedRoute>
             } />
+            <Route path="/settings/external-secrets" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <DashboardLayout>
+                  <ExternalSecrets />
+                </DashboardLayout>
+              </RoleProtectedRoute>
+            } />
             <Route path="/settings/tracking" element={
               <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
                 <DashboardLayout>
