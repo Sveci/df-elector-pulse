@@ -42,6 +42,8 @@ import Privacy from "./pages/settings/Privacy";
 import Integrations from "./pages/settings/Integrations";
 import Support from "./pages/settings/Support";
 import AdminTickets from "./pages/settings/AdminTickets";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminTenants from "./pages/admin/AdminTenants";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
@@ -413,10 +415,25 @@ const App = () => (
               </RoleProtectedRoute>
             } />
             
-            {/* Admin Tickets - apenas super_admin */}
+            {/* Admin Tickets - redirect antigo para nova rota */}
             <Route path="/settings/admin-tickets" element={
+              <Navigate to="/admin/tickets" replace />
+            } />
+            
+            {/* Admin Panel - apenas super_admin */}
+            <Route path="/admin" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminDashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/tickets" element={
               <RoleProtectedRoute allowedRoles={['super_admin']}>
                 <AdminTickets />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/tenants" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminTenants />
               </RoleProtectedRoute>
             } />
             

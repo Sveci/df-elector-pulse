@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,16 +120,16 @@ const AdminTickets = () => {
 
   if (isCheckingAdmin) {
     return (
-      <DashboardLayout>
+      <AdminLayout>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </DashboardLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <TutorialOverlay page="admin-tickets" />
       <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         <div data-tutorial="admin-tickets-header" className="mb-6 flex items-center justify-between">
@@ -351,7 +351,7 @@ const AdminTickets = () => {
           isAdmin={true}
         />
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 };
 

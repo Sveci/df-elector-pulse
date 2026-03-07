@@ -80,7 +80,7 @@ const settingsItems: MenuItem[] = [
 ];
 
 const adminSettingsItems: MenuItem[] = [
-  { title: "Administrar Tickets", url: "/settings/admin-tickets", icon: Ticket, roles: ['super_admin'] },
+  { title: "Painel Admin", url: "/admin", icon: Shield, roles: ['super_admin'] },
 ];
 
 export function AppSidebar() {
