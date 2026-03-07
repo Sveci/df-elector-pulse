@@ -44,6 +44,7 @@ import Support from "./pages/settings/Support";
 import AdminTickets from "./pages/settings/AdminTickets";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminTenants from "./pages/admin/AdminTenants";
+import AdminApis from "./pages/admin/AdminApis";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
@@ -438,6 +439,11 @@ const App = () => (
             <Route path="/admin/tenants" element={
               <RoleProtectedRoute allowedRoles={['super_admin']}>
                 <AdminTenants />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/apis" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminApis />
               </RoleProtectedRoute>
             } />
             
