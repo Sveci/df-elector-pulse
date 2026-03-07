@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import logoIcon from "@/assets/logo-eleitor360-icon.png";
+import logoIcon from "@/assets/logo-collapsed.png";
 import logo from "@/assets/logo-eleitor360.png";
 
 
