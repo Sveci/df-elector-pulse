@@ -441,6 +441,11 @@ const App = () => (
                 <AdminTenants />
               </RoleProtectedRoute>
             } />
+            <Route path="/admin/apis" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminApis />
+              </RoleProtectedRoute>
+            } />
             
             {/* Strategic Map - admin, super_admin e atendente */}
             <Route path="/strategic-map" element={
