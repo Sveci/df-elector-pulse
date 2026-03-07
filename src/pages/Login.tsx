@@ -65,6 +65,7 @@ const Login = () => {
     }
   };
 
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#2A2D35' }}>
         <div className="text-center">
