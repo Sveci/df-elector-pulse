@@ -3065,6 +3065,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tenants: {
+        Row: {
+          created_at: string
+          data_expiracao: string | null
+          email_contato: string | null
+          id: string
+          logo_url: string | null
+          max_contatos: number | null
+          max_lideres: number | null
+          max_usuarios: number | null
+          nome: string
+          observacoes: string | null
+          plano: string
+          slug: string
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_expiracao?: string | null
+          email_contato?: string | null
+          id?: string
+          logo_url?: string | null
+          max_contatos?: number | null
+          max_lideres?: number | null
+          max_usuarios?: number | null
+          nome: string
+          observacoes?: string | null
+          plano?: string
+          slug: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_expiracao?: string | null
+          email_contato?: string | null
+          id?: string
+          logo_url?: string | null
+          max_contatos?: number | null
+          max_lideres?: number | null
+          max_usuarios?: number | null
+          nome?: string
+          observacoes?: string | null
+          plano?: string
+          slug?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_notification_reads: {
         Row: {
           id: string
@@ -3124,6 +3178,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_tenants: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          role: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          role?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          role?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tenants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {

@@ -102,6 +102,8 @@ import PublicOpinionInsights from "./pages/public-opinion/Insights";
 import PublicOpinionEvents from "./pages/public-opinion/AnalyzedEvents";
 import PublicOpinionReports from "./pages/public-opinion/Reports";
 import PublicOpinionSettings from "./pages/public-opinion/Settings";
+import { TenantProvider } from "./contexts/TenantContext";
+import { TenantSelectorModal } from "./components/TenantSelectorModal";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +137,8 @@ const App = () => (
           <TrackingProvider>
           <AuthProvider>
           <DemoModeProvider>
+          <TenantProvider>
+          <TenantSelectorModal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -582,6 +586,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+        </TenantProvider>
         </DemoModeProvider>
         </AuthProvider>
         </TrackingProvider>
