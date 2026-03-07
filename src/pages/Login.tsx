@@ -59,21 +59,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ background: '#2A2D35' }}>
-      {/* Signal wave — top right */}
-      <svg className="absolute -top-8 -right-8 w-[280px] h-[280px] md:w-[360px] md:h-[360px]" viewBox="0 0 300 300" fill="none">
-        <path d="M260 190 A110 110 0 0 0 150 80" stroke="#F0E500" strokeWidth="18" fill="none" strokeLinecap="round"/>
-        <path d="M240 190 A90 90 0 0 0 150 100" stroke="#F0E500" strokeWidth="16" fill="none" strokeLinecap="round"/>
-        <path d="M220 190 A70 70 0 0 0 150 120" stroke="#F0E500" strokeWidth="14" fill="none" strokeLinecap="round"/>
-        <circle cx="150" cy="190" r="10" fill="#F0E500"/>
-      </svg>
-
-      {/* Signal wave — bottom left */}
-      <svg className="absolute -bottom-8 -left-8 w-[240px] h-[240px] md:w-[320px] md:h-[320px] rotate-180" viewBox="0 0 300 300" fill="none">
-        <path d="M260 190 A110 110 0 0 0 150 80" stroke="#F0E500" strokeWidth="18" fill="none" strokeLinecap="round"/>
-        <path d="M240 190 A90 90 0 0 0 150 100" stroke="#F0E500" strokeWidth="16" fill="none" strokeLinecap="round"/>
-        <path d="M220 190 A70 70 0 0 0 150 120" stroke="#F0E500" strokeWidth="14" fill="none" strokeLinecap="round"/>
-        <circle cx="150" cy="190" r="10" fill="#F0E500"/>
-      </svg>
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
