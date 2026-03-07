@@ -199,8 +199,8 @@ export function AppSidebar() {
           {!isCollapsed ? (
             <img src={logo} alt="Eleitor 360.ai" className="h-10 object-contain" />
           ) : (
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto overflow-hidden">
-              <img src={logoIcon} alt="Eleitor 360.ai" className="w-10 h-10 object-contain" />
+            <div className="flex items-center justify-center w-full">
+              <img src={logoIcon} alt="Eleitor 360.ai" className="w-8 h-8 object-contain" />
             </div>
           )}
         </div>
