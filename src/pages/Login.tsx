@@ -4,12 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
-import logo from "@/assets/logo-rafael-prudente.png";
+import logo from "@/assets/logo-eleitor360.png";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -36,7 +35,6 @@ const Login = () => {
   const location = useLocation();
   const { login, signup, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Redirect if already authenticated - using useEffect
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       const from = (location.state as any)?.from || "/dashboard";
@@ -76,7 +74,6 @@ const Login = () => {
       const success = await signup(signupData.email, signupData.password, signupData.name);
       
       if (success) {
-        // Auto-login after successful signup
         setTimeout(async () => {
           await login(signupData.email, signupData.password);
         }, 500);
@@ -92,209 +89,208 @@ const Login = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando...</p>
+          <p className="text-gray-200">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Container com borda neon */}
-        <div className="border-2 border-primary-400 rounded-2xl p-8 shadow-[0_0_20px_rgba(251,146,60,0.3)] bg-white/95 backdrop-blur-sm">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <img 
-              src={logo} 
-              alt="Rafael Prudente - Deputado Federal" 
-              className="w-[400px] h-[150px] mx-auto object-cover object-center"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative signal waves */}
+      <div className="absolute top-0 right-0 w-64 h-64 opacity-20">
+        <svg viewBox="0 0 200 200" className="w-full h-full text-primary">
+          <path d="M160 100 A60 60 0 0 0 100 40" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <path d="M145 100 A45 45 0 0 0 100 55" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <path d="M130 100 A30 30 0 0 0 100 70" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <circle cx="100" cy="100" r="6" fill="currentColor"/>
+        </svg>
+      </div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 opacity-15 rotate-180">
+        <svg viewBox="0 0 200 200" className="w-full h-full text-primary">
+          <path d="M160 100 A60 60 0 0 0 100 40" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <path d="M145 100 A45 45 0 0 0 100 55" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <path d="M130 100 A30 30 0 0 0 100 70" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round"/>
+        </svg>
+      </div>
 
-          {/* Login/Signup Form */}
-          <Card className="card-default border-0 shadow-none bg-transparent">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl text-center">Bem-vindo</CardTitle>
-              <CardDescription className="text-center">
-                Entre com suas credenciais ou crie uma conta
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-        {/* Cadastro desativado - usuários serão aprovados por administradores no futuro */}
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 mb-6">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-          </TabsList>
-                
-                <TabsContent value="login">
-                  <form onSubmit={handleLoginSubmit} className="space-y-4">
-                    {error && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">E-mail</Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={loginData.email}
-                        onChange={(e) => {
-                          setLoginData(prev => ({ ...prev, email: e.target.value }));
-                          setError("");
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        className="focus-ring"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Senha</Label>
-                      <div className="relative">
-                        <Input
-                          id="login-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={loginData.password}
-                          onChange={(e) => {
-                            setLoginData(prev => ({ ...prev, password: e.target.value }));
-                            setError("");
-                          }}
-                          disabled={isSubmitting}
-                          required
-                          className="pr-10 focus-ring"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          disabled={isSubmitting}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end">
-                      <Link 
-                        to="/forgot-password" 
-                        className="text-sm text-primary-500 hover:text-primary-600"
-                      >
-                        Esqueceu a senha?
-                      </Link>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary-500 hover:bg-primary-600"
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <img 
+            src={logo} 
+            alt="Eleitor 360.ai" 
+            className="h-20 mx-auto object-contain"
+          />
+        </div>
+
+        {/* Login Form Card */}
+        <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-1 mb-6 bg-gray-700/50">
+              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-gray-900">Entrar</TabsTrigger>
+            </TabsList>
+              
+            <TabsContent value="login">
+              <form onSubmit={handleLoginSubmit} className="space-y-5">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="text-gray-300 text-sm">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={loginData.email}
+                      onChange={(e) => {
+                        setLoginData(prev => ({ ...prev, email: e.target.value }));
+                        setError("");
+                      }}
+                      disabled={isSubmitting}
+                      required
+                      className="pl-10 bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500 focus:border-primary focus:ring-primary"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password" className="text-gray-300 text-sm">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={loginData.password}
+                      onChange={(e) => {
+                        setLoginData(prev => ({ ...prev, password: e.target.value }));
+                        setError("");
+                      }}
+                      disabled={isSubmitting}
+                      required
+                      className="pl-10 pr-10 bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500 focus:border-primary focus:ring-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "Entrando..." : "Entrar"}
-                    </Button>
-                  </form>
-                </TabsContent>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm text-primary hover:text-primary-400"
+                  >
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary-600 text-gray-900 font-semibold h-11"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Entrando..." : "Login"}
+                </Button>
+              </form>
+            </TabsContent>
 
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignupSubmit} className="space-y-4">
-                    {error && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Nome</Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        value={signupData.name}
-                        onChange={(e) => {
-                          setSignupData(prev => ({ ...prev, name: e.target.value }));
-                          setError("");
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        className="focus-ring"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">E-mail</Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={signupData.email}
-                        onChange={(e) => {
-                          setSignupData(prev => ({ ...prev, email: e.target.value }));
-                          setError("");
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        className="focus-ring"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Senha</Label>
-                      <div className="relative">
-                        <Input
-                          id="signup-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={signupData.password}
-                          onChange={(e) => {
-                            setSignupData(prev => ({ ...prev, password: e.target.value }));
-                            setError("");
-                          }}
-                          disabled={isSubmitting}
-                          required
-                          className="pr-10 focus-ring"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          disabled={isSubmitting}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
-                      <Input
-                        id="signup-confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={signupData.confirmPassword}
-                        onChange={(e) => {
-                          setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }));
-                          setError("");
-                        }}
-                        disabled={isSubmitting}
-                        required
-                        className="focus-ring"
-                      />
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary-500 hover:bg-primary-600"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Cadastrando..." : "Cadastrar"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignupSubmit} className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name" className="text-gray-300 text-sm">Nome</Label>
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={signupData.name}
+                    onChange={(e) => {
+                      setSignupData(prev => ({ ...prev, name: e.target.value }));
+                      setError("");
+                    }}
+                    disabled={isSubmitting}
+                    required
+                    className="bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-gray-300 text-sm">E-mail</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={signupData.email}
+                    onChange={(e) => {
+                      setSignupData(prev => ({ ...prev, email: e.target.value }));
+                      setError("");
+                    }}
+                    disabled={isSubmitting}
+                    required
+                    className="bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password" className="text-gray-300 text-sm">Senha</Label>
+                  <Input
+                    id="signup-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={signupData.password}
+                    onChange={(e) => {
+                      setSignupData(prev => ({ ...prev, password: e.target.value }));
+                      setError("");
+                    }}
+                    disabled={isSubmitting}
+                    required
+                    className="bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password" className="text-gray-300 text-sm">Confirmar Senha</Label>
+                  <Input
+                    id="signup-confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={signupData.confirmPassword}
+                    onChange={(e) => {
+                      setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                      setError("");
+                    }}
+                    disabled={isSubmitting}
+                    required
+                    className="bg-gray-900/50 border-gray-600 text-gray-100 placeholder:text-gray-500"
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary-600 text-gray-900 font-semibold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Cadastrando..." : "Cadastrar"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-600 mt-6">
-          © 2025 Rafael Prudente - Deputado Federal
+        <p className="text-center text-sm text-gray-500 mt-6">
+          © 2026 Eleitor 360.ai — Plataforma criada por João Mendes Miranda
         </p>
       </div>
     </div>

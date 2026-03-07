@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import logoIcon from "@/assets/logo-eleitor360-icon.png";
+import logo from "@/assets/logo-eleitor360.png";
 
 
 type AppRole = 'super_admin' | 'admin' | 'atendente' | 'checkin_operator';
@@ -92,7 +94,7 @@ export function AppSidebar() {
   const { data: organization } = useOrganization();
   const { m } = useDemoMask();
 
-  const platformName = m.platformName(organization?.nome_plataforma || "Minha Plataforma");
+  const platformName = m.platformName(organization?.nome_plataforma || "Eleitor 360.ai");
   const platformInitial = platformName.charAt(0).toUpperCase();
   const isCollapsed = state === "collapsed";
 
@@ -102,12 +104,10 @@ export function AppSidebar() {
   const poMenuRef = useRef<HTMLDivElement>(null);
   const [poMenuPos, setPoMenuPos] = useState({ top: 0, left: 0 });
 
-  // Close submenu on route change
   useEffect(() => {
     setPoOpen(false);
   }, [currentPath]);
 
-  // Update floating menu position when opened
   useEffect(() => {
     if (poOpen && poButtonRef.current) {
       const rect = poButtonRef.current.getBoundingClientRect();
@@ -115,7 +115,6 @@ export function AppSidebar() {
     }
   }, [poOpen]);
 
-  // Close on click outside
   useEffect(() => {
     if (!poOpen) return;
     const handler = (e: MouseEvent) => {
@@ -194,14 +193,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={isCollapsed ? "w-20" : "w-64"} collapsible="icon">
-      <SidebarContent className="bg-white border-r border-gray-200">
+      <SidebarContent className="bg-gray-900 border-r border-gray-800">
         {/* Logo/Header */}
-        <div className={`${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-b border-gray-200' : ''}`}>
+        <div className={`${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-b border-gray-800' : ''}`}>
           {!isCollapsed ? (
-            <h2 className="text-lg font-bold text-primary-600">{platformName}</h2>
+            <img src={logo} alt="Eleitor 360.ai" className="h-10 object-contain" />
           ) : (
-            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center mx-auto">
-              <span className="text-white font-bold text-base">{platformInitial}</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto overflow-hidden">
+              <img src={logoIcon} alt="Eleitor 360.ai" className="w-10 h-10 object-contain" />
             </div>
           )}
         </div>
@@ -217,7 +216,7 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Public Opinion Collapsible - before Agente IA */}
+                {/* Public Opinion Collapsible */}
                 {showPublicOpinion && (
                   <SidebarMenuItem>
                     <div className="relative group/po">
@@ -252,7 +251,7 @@ export function AppSidebar() {
                       {poOpen && !isCollapsed && createPortal(
                         <div
                           ref={poMenuRef}
-                          className="fixed z-[9999] w-52 bg-white border border-border rounded-lg shadow-lg py-2"
+                          className="fixed z-[9999] w-52 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-2"
                           style={{ top: poMenuPos.top, left: poMenuPos.left }}
                         >
                           {publicOpinionSubItems.map((sub) => (
@@ -262,7 +261,7 @@ export function AppSidebar() {
                               end
                               onClick={() => setPoOpen(false)}
                               className={({ isActive }) => `
-                                ${isActive ? "bg-primary-100 text-primary-700 font-medium" : "text-gray-700 hover:bg-primary-100 hover:text-primary-700"}
+                                ${isActive ? "bg-primary/10 text-primary font-medium" : "text-gray-300 hover:bg-primary/10 hover:text-primary"}
                                 flex items-center gap-2 px-3 py-2 text-sm transition-colors rounded-md
                               `}
                             >
@@ -306,13 +305,13 @@ export function AppSidebar() {
         )}
 
         {/* Logout */}
-        <div className={`mt-auto ${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-t border-gray-200' : ''}`}>
+        <div className={`mt-auto ${isCollapsed ? 'py-6 px-2.5' : 'p-4'} ${!isCollapsed ? 'border-t border-gray-800' : ''}`}>
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
                   onClick={() => logout()}
-                  className="text-red-600 hover:bg-red-50 w-full flex items-center justify-center py-3 rounded-lg text-sm font-medium transition-colors"
+                  className="text-red-400 hover:bg-red-500/10 w-full flex items-center justify-center py-3 rounded-lg text-sm font-medium transition-colors"
                 >
                   <LogOut className="h-6 w-6" />
                 </button>
@@ -322,7 +321,7 @@ export function AppSidebar() {
           ) : (
             <button 
               onClick={() => logout()}
-              className="text-red-600 hover:bg-red-50 w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="text-red-400 hover:bg-red-500/10 w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <LogOut className="h-5 w-5" />
               <span className="ml-3">Sair</span>
