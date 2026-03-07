@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Trash2, Loader2, Image, ExternalLink, ImageIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import defaultLogo from "@/assets/logo-rafael-prudente.png";
+
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
