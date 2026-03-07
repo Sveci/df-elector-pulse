@@ -120,7 +120,7 @@ function ApiCard({ api }: { api: ApiConfig }) {
           </div>
         </div>
 
-        {api.key === "meta_cloud" && <MetaCloudFields />}
+        
       </CardContent>
     </Card>
   );
