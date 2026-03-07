@@ -22,12 +22,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [activeTenant, setActiveTenantState] = useState<Tenant | null>(null);
   const [showTenantSelector, setShowTenantSelector] = useState(false);
 
-  const setActiveTenant = (tenant: Tenant | null) => {
+  const setActiveTenant = (tenant: Tenant | null, persistChoice = true) => {
     setActiveTenantState(tenant);
-    if (tenant) {
-      localStorage.setItem("active_tenant_id", tenant.id);
-    } else {
-      localStorage.removeItem("active_tenant_id");
+    if (persistChoice) {
+      if (tenant) {
+        localStorage.setItem("active_tenant_id", tenant.id);
+      } else {
+        localStorage.removeItem("active_tenant_id");
+      }
     }
   };
 

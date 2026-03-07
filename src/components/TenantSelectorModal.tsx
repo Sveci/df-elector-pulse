@@ -20,6 +20,7 @@ export function TenantSelectorModal() {
   };
 
   const handleAdminPanel = () => {
+    // Não limpa o tenant salvo — ao voltar do admin, restaura automaticamente
     setActiveTenant(null);
     setShowTenantSelector(false);
     navigate("/admin");
