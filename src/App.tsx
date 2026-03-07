@@ -137,6 +137,8 @@ const App = () => (
           <TrackingProvider>
           <AuthProvider>
           <DemoModeProvider>
+          <TenantProvider>
+          <TenantSelectorModal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
