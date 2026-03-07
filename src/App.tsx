@@ -415,10 +415,25 @@ const App = () => (
               </RoleProtectedRoute>
             } />
             
-            {/* Admin Tickets - apenas super_admin */}
+            {/* Admin Tickets - redirect antigo para nova rota */}
             <Route path="/settings/admin-tickets" element={
+              <Navigate to="/admin/tickets" replace />
+            } />
+            
+            {/* Admin Panel - apenas super_admin */}
+            <Route path="/admin" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminDashboard />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/tickets" element={
               <RoleProtectedRoute allowedRoles={['super_admin']}>
                 <AdminTickets />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/tenants" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminTenants />
               </RoleProtectedRoute>
             } />
             
