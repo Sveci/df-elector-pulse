@@ -213,12 +213,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             if (profile) {
               setUser(profile);
             }
+            setIsLoading(false);
           }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
