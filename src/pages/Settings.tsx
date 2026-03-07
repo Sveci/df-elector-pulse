@@ -183,14 +183,6 @@ const Settings = () => {
       available: true,
       roles: ['super_admin', 'admin'],
     },
-    {
-      title: "Chaves de API Externas",
-      description: "Referência e configuração de todas as credenciais de serviços externos",
-      icon: Shield,
-      href: "/settings/external-secrets",
-      available: true,
-      roles: ['super_admin'],
-    },
   ];
 
   // Filtrar seções baseado no role do usuário
