@@ -33,7 +33,7 @@ import SMSMarketing from "./pages/SMSMarketing";
 import ScheduledMessages from "./pages/ScheduledMessages";
 import Settings from "./pages/Settings";
 import AIProviders from "./pages/settings/AIProviders";
-import ExternalSecrets from "./pages/settings/ExternalSecrets";
+
 import TrackingSettings from "./pages/settings/TrackingSettings";
 import AffiliateFormSettings from "./pages/settings/AffiliateFormSettings";
 import Profile from "./pages/settings/Profile";
@@ -322,13 +322,6 @@ const App = () => (
               <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
                 <DashboardLayout>
                   <AIProviders />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/external-secrets" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout>
-                  <ExternalSecrets />
                 </DashboardLayout>
               </RoleProtectedRoute>
             } />
