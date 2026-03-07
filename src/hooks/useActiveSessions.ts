@@ -257,6 +257,24 @@ export const useActiveSessions = () => {
             }
           }
           
+          // Se uma sessão foi deletada (a outra aba saiu), verificar se devemos limpar o warning
+          if (payload.eventType === 'DELETE') {
+            const deletedSession = payload.old as ActiveSession;
+            // Se a sessão deletada NÃO é a atual, significa que a outra sessão saiu
+            // Podemos limpar o force_logout da sessão atual já que não há mais conflito
+            if (deletedSession.session_id !== sessionId) {
+              // Limpar o force_logout no banco e no state
+              supabase
+                .from('active_sessions')
+                .update({ force_logout_at: null, force_logout_reason: null })
+                .eq('session_id', sessionId)
+                .then(() => {
+                  setForceLogoutAt(null);
+                  setForceLogoutReason(null);
+                });
+            }
+          }
+          
           // Atualizar lista de sessões
           fetchSessions();
         }
