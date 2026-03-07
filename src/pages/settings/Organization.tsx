@@ -150,57 +150,6 @@ const Organization = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Card do Logo */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-lg">Logo / Foto</CardTitle>
-              <CardDescription>
-                Imagem principal da organização
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <Avatar className="h-32 w-32 cursor-pointer" onClick={() => !isDemoMode && fileInputRef.current?.click()}>
-                  {isDemoMode ? (
-                    <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                      {initials || <Building2 className="h-12 w-12" />}
-                    </AvatarFallback>
-                  ) : (
-                    <>
-                      <AvatarImage src={logoUrl || undefined} alt={nome} />
-                      <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                        {initials || <Building2 className="h-12 w-12" />}
-                      </AvatarFallback>
-                    </>
-                  )}
-                </Avatar>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="absolute bottom-0 right-0 rounded-full h-10 w-10"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground text-center">
-                JPG, PNG ou GIF. Máximo 2MB.
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Card de Dados do Político */}
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -213,20 +162,6 @@ const Organization = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nomePlataforma">Nome da Plataforma</Label>
-                <Input
-                  id="nomePlataforma"
-                  value={isDemoMode ? m.platformName(nomePlataforma) : nomePlataforma}
-                  onChange={(e) => setNomePlataforma(e.target.value)}
-                  placeholder="Ex: Plataforma 360.ai"
-                  disabled={isDemoMode}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Este nome aparece no topo da barra lateral
-                </p>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome Completo</Label>
