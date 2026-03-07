@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, Trash2, Loader2, Image, ExternalLink, ImageIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import defaultLogo from "@/assets/logo-rafael-prudente.png";
+
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
@@ -286,11 +286,15 @@ export default function AffiliateFormSettings() {
             <div className="flex items-center gap-6">
               {/* Preview */}
               <div className="w-32 h-32 bg-muted rounded-lg border flex items-center justify-center p-4">
-                <img 
-                  src={settings?.affiliate_form_logo_url || defaultLogo} 
-                  alt="Logo do formulário"
-                  className="max-w-full max-h-full object-contain"
-                />
+                {settings?.affiliate_form_logo_url ? (
+                  <img 
+                    src={settings.affiliate_form_logo_url} 
+                    alt="Logo do formulário"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : (
+                  <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                )}
               </div>
               
               <div className="flex-1 space-y-3">
@@ -300,7 +304,7 @@ export default function AffiliateFormSettings() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Usando logo padrão do sistema</span>
+                    <span>Nenhuma logo configurada</span>
                   </div>
                 )}
 
