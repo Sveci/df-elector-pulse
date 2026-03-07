@@ -44,6 +44,7 @@ import Support from "./pages/settings/Support";
 import AdminTickets from "./pages/settings/AdminTickets";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminTenants from "./pages/admin/AdminTenants";
+import AdminApis from "./pages/admin/AdminApis";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
