@@ -23,6 +23,7 @@ const adminItems: MenuItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Tenants", url: "/admin/tenants", icon: Building2 },
   { title: "Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "APIs Externas", url: "/admin/apis", icon: Key },
 ];
 
 export function AdminSidebar() {
