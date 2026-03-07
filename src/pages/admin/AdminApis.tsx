@@ -30,16 +30,11 @@ const apis: ApiConfig[] = [
     name: "Meta WhatsApp Cloud API",
     icon: MessageSquare,
     description: "API oficial da Meta para envio de mensagens via WhatsApp Business Cloud.",
-    purpose: "Permite enviar mensagens de WhatsApp em massa, notificações automáticas e templates de mensagens aprovados pela Meta.",
+    purpose: "Token global usado por todos os tenants. Cada tenant configura seu próprio Phone Number ID, WABA ID e demais campos nas configurações do workspace.",
     howToGet: "Acesse developers.facebook.com → crie um App do tipo 'Business' → adicione o produto 'WhatsApp' → vá em WhatsApp > API Setup → copie o 'Temporary access token' ou gere um token permanente via System User.",
     link: "https://developers.facebook.com/apps/",
     secretName: "META_WA_ACCESS_TOKEN",
-    fields: [
-      { key: "phone_number_id", label: "Phone Number ID", placeholder: "Ex: 123456789012345", dbColumn: "meta_cloud_phone_number_id" },
-      { key: "waba_id", label: "WABA ID", placeholder: "Ex: 123456789012345", dbColumn: "meta_cloud_waba_id" },
-      { key: "phone", label: "Número do WhatsApp", placeholder: "Ex: 5561999999999", dbColumn: "meta_cloud_phone" },
-      { key: "api_version", label: "Versão da API", placeholder: "Ex: v20.0", dbColumn: "meta_cloud_api_version" },
-    ],
+    fields: [],
     category: "Comunicação",
   },
   {
