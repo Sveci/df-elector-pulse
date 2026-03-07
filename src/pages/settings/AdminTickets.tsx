@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,8 +74,10 @@ const AdminTickets = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  // Redirect if not super admin
-  if (!isCheckingAdmin && !isSuperAdmin) {
+  // Redirect if not super admin (check both platform_admins and profile role)
+  const { user } = useAuth();
+  const isProfileSuperAdmin = user?.role === 'super_admin';
+  if (!isCheckingAdmin && !isSuperAdmin && !isProfileSuperAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
