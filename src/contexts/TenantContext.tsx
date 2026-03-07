@@ -35,16 +35,17 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || isLoading) return;
 
-    if (isSuperAdmin && userTenants && userTenants.length > 0) {
+    if (isSuperAdmin) {
       const savedTenantId = localStorage.getItem("active_tenant_id");
-      const savedTenant = userTenants.find((ut) => ut.tenant_id === savedTenantId);
-
-      if (savedTenant) {
-        setActiveTenantState(savedTenant.tenant);
-      } else {
-        // Se não tem tenant salvo, mostrar modal para escolher
-        setShowTenantSelector(true);
+      if (savedTenantId && userTenants) {
+        const savedTenant = userTenants.find((ut) => ut.tenant_id === savedTenantId);
+        if (savedTenant) {
+          setActiveTenantState(savedTenant.tenant);
+          return;
+        }
       }
+      // Super admin sem tenant salvo: sempre mostrar modal
+      setShowTenantSelector(true);
     } else if (!isSuperAdmin && userTenants && userTenants.length > 0) {
       // Usuário normal: pegar o default ou primeiro
       const defaultTenant = userTenants.find((ut) => ut.is_default) || userTenants[0];
