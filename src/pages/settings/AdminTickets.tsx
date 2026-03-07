@@ -129,7 +129,7 @@ const AdminTickets = () => {
   }
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <TutorialOverlay page="admin-tickets" />
       <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         <div data-tutorial="admin-tickets-header" className="mb-6 flex items-center justify-between">
