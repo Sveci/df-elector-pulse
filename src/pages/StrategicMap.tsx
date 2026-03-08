@@ -422,11 +422,9 @@ export default function StrategicMap() {
   // Get map center and selected region info
   const selectedCity = useMemo(() => {
     if (selectedRegion === "all") return null;
-    if (mapTenantConfig.useOfficeCities) {
-      return cities.find(c => c.id === selectedRegion) || null;
-    }
-    return null;
-  }, [selectedRegion, cities, mapTenantConfig.useOfficeCities]);
+    // Works for both RA mode and localidade mode (virtual cities)
+    return cities.find(c => c.id === selectedRegion) || null;
+  }, [selectedRegion, cities]);
 
   // For localidade-based filtering, extract unique localidades
   const uniqueLocalidades = useMemo(() => {
@@ -449,6 +447,11 @@ export default function StrategicMap() {
       if (selectedCity.latitude && selectedCity.longitude) {
         return [selectedCity.latitude, selectedCity.longitude];
       }
+    }
+    
+    // Localidade mode: use virtual city coordinates
+    if (!mapTenantConfig.useOfficeCities && selectedCity) {
+      return [selectedCity.latitude, selectedCity.longitude];
     }
     
     return mapTenantConfig.center;
