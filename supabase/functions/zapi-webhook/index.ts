@@ -1052,7 +1052,8 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
   message = message.replace(/{{nome}}/g, nome);
   message = message.replace(/{{deputado_nome}}/g, org?.nome || "Deputado");
   if (affiliateToken) {
-    message = message.replace(/{{link_afiliado}}/g, `https://app.rafaelprudente.com/i/${affiliateToken}`);
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+    message = message.replace(/{{link_afiliado}}/g, `${appBaseUrl}/i/${affiliateToken}`);
   }
   
   // Send via Z-API
