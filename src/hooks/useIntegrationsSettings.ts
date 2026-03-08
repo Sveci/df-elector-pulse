@@ -151,11 +151,22 @@ export function useIntegrationsSettings() {
         .from("integrations_settings")
         .select("*")
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) {
+        // Auto-create default row if none exists
+        const { data: newRow, error: insertError } = await supabase
+          .from("integrations_settings")
+          .insert({})
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        return newRow as IntegrationsSettings;
+      }
       return data as IntegrationsSettings;
-    }
+    },
+    retry: 2,
   });
 }
 
@@ -169,10 +180,17 @@ export function useUpdateIntegrationsSettings() {
         .from("integrations_settings")
         .select("id")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!existing) {
-        throw new Error("Configurações não encontradas");
+        // Auto-create if missing
+        const { data: newRow, error: insertErr } = await supabase
+          .from("integrations_settings")
+          .insert(updates)
+          .select()
+          .single();
+        if (insertErr) throw insertErr;
+        return newRow;
       }
 
       const { data, error } = await supabase

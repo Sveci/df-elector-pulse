@@ -283,7 +283,7 @@ function ActiveSmsProviderCard() {
         .from("integrations_settings")
         .select("sms_active_provider")
         .limit(1)
-        .single();
+        .maybeSingle();
       if (data?.sms_active_provider) {
         setActiveProvider(data.sms_active_provider);
       }
