@@ -138,6 +138,7 @@ const apis: ApiConfig[] = [
     category: "Carteira Digital",
     hasRegionSelector: true,
     enabledField: "passkit_enabled",
+    dbField: "passkit_api_token",
     hasTestConnection: true,
   },
 ];
