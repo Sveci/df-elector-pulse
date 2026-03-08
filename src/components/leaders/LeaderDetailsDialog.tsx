@@ -154,7 +154,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
           <div className="w-full overflow-x-auto scrollbar-thin">
             <TabsList className="inline-flex w-max items-center gap-1 h-auto p-1">
               <TabsTrigger value="info" className="text-xs whitespace-nowrap">Info</TabsTrigger>
-              <TabsTrigger value="verificacao" className="text-xs whitespace-nowrap">Verificação</TabsTrigger>
+              
               <TabsTrigger value="indicacoes" className="text-xs whitespace-nowrap">Indicações</TabsTrigger>
               <TabsTrigger value="eventos" className="text-xs whitespace-nowrap">Eventos</TabsTrigger>
               <TabsTrigger value="pesquisas" className="text-xs whitespace-nowrap">Pesquisas</TabsTrigger>
