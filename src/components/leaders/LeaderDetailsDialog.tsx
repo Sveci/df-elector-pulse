@@ -154,7 +154,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
           <div className="w-full overflow-x-auto scrollbar-thin">
             <TabsList className="inline-flex w-max items-center gap-1 h-auto p-1">
               <TabsTrigger value="info" className="text-xs whitespace-nowrap">Info</TabsTrigger>
-              <TabsTrigger value="verificacao" className="text-xs whitespace-nowrap">Verificação</TabsTrigger>
+              
               <TabsTrigger value="indicacoes" className="text-xs whitespace-nowrap">Indicações</TabsTrigger>
               <TabsTrigger value="eventos" className="text-xs whitespace-nowrap">Eventos</TabsTrigger>
               <TabsTrigger value="pesquisas" className="text-xs whitespace-nowrap">Pesquisas</TabsTrigger>
@@ -331,119 +331,108 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   </p>
                 </div>
               )}
-            </TabsContent>
-
-            {/* ABA VERIFICAÇÃO */}
-            <TabsContent value="verificacao" className="mt-0 space-y-4 pr-4">
-              {leader.is_verified ? (
-                <div className="p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
-                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-medium">
-                    <ShieldCheck className="h-5 w-5" />
-                    Líder Verificado
-                  </div>
-                  <p className="text-sm text-green-600 dark:text-green-500 mt-2">
-                    Este líder confirmou seu cadastro e já possui acesso ao link de indicação.
-                  </p>
-                  
-                  {/* Método de verificação */}
-                  <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
-                    {leader.verification_method === 'manual' ? (
-                      <>
-                        <UserCheck className="h-4 w-4" />
-                        <span>Verificado manualmente por um administrador</span>
-                      </>
-                    ) : leader.verification_method === 'whatsapp' || leader.verification_method === 'whatsapp_consent' ? (
-                      <>
-                        <MessageSquare className="h-4 w-4" />
-                        <span>Verificado automaticamente via WhatsApp</span>
-                      </>
-                    ) : leader.verification_method === 'link' || leader.verification_method === 'sms' ? (
-                      <>
-                        <Link className="h-4 w-4" />
-                        <span>Verificado automaticamente via link (SMS)</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Verificado automaticamente</span>
-                      </>
-                    )}
-                  </div>
-                  
-                  {leader.verified_at && (
-                    <p className="text-xs text-green-500 dark:text-green-600 mt-2">
-                      Verificado em: {formatDateTime(leader.verified_at)}
+              {/* Seção Verificação */}
+              <div className="pt-4 border-t">
+                <h4 className="font-medium flex items-center gap-2 mb-3">
+                  <ShieldCheck className="h-4 w-4" />
+                  Verificação
+                </h4>
+                {leader.is_verified ? (
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-medium">
+                      <ShieldCheck className="h-5 w-5" />
+                      Líder Verificado
+                    </div>
+                    <p className="text-sm text-green-600 dark:text-green-500 mt-2">
+                      Este líder confirmou seu cadastro e já possui acesso ao link de indicação.
                     </p>
-                  )}
-                </div>
-              ) : (
-                <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 space-y-4">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
-                    <ShieldAlert className="h-5 w-5" />
-                    Verificação Pendente
-                  </div>
-                  <p className="text-sm text-amber-600 dark:text-amber-500">
-                    Este líder precisa confirmar seu cadastro antes de receber o link de indicação.
-                  </p>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="text-xs text-amber-600 dark:text-amber-500">
-                      {leader.verification_sent_at ? (
-                        <span>SMS enviado em: {formatDateTime(leader.verification_sent_at)}</span>
+                    
+                    <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                      {leader.verification_method === 'manual' ? (
+                        <>
+                          <UserCheck className="h-4 w-4" />
+                          <span>Verificado manualmente por um administrador</span>
+                        </>
+                      ) : leader.verification_method === 'whatsapp' || leader.verification_method === 'whatsapp_consent' ? (
+                        <>
+                          <MessageSquare className="h-4 w-4" />
+                          <span>Verificado automaticamente via WhatsApp</span>
+                        </>
+                      ) : leader.verification_method === 'link' || leader.verification_method === 'sms' ? (
+                        <>
+                          <Link className="h-4 w-4" />
+                          <span>Verificado automaticamente via link (SMS)</span>
+                        </>
                       ) : (
-                        <span>Nenhum SMS de verificação enviado</span>
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Verificado automaticamente</span>
+                        </>
                       )}
                     </div>
-                    {leader.verification_code && (
-                      <div className="font-mono bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded text-xs">
-                        Código: {leader.verification_code}
-                      </div>
+                    
+                    {leader.verified_at && (
+                      <p className="text-xs text-green-500 dark:text-green-600 mt-2">
+                        Verificado em: {formatDateTime(leader.verified_at)}
+                      </p>
                     )}
                   </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      disabled={resendVerificationMutation.isPending || !leader.telefone}
-                      onClick={() => resendVerificationMutation.mutate(leader.id)}
-                    >
-                      {resendVerificationMutation.isPending ? (
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <MessageSquare className="h-4 w-4 mr-2" />
+                ) : (
+                  <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 space-y-4">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+                      <ShieldAlert className="h-5 w-5" />
+                      Verificação Pendente
+                    </div>
+                    <p className="text-sm text-amber-600 dark:text-amber-500">
+                      Este líder precisa confirmar seu cadastro antes de receber o link de indicação.
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="text-xs text-amber-600 dark:text-amber-500">
+                        {leader.verification_sent_at ? (
+                          <span>SMS enviado em: {formatDateTime(leader.verification_sent_at)}</span>
+                        ) : (
+                          <span>Nenhum SMS de verificação enviado</span>
+                        )}
+                      </div>
+                      {leader.verification_code && (
+                        <div className="font-mono bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded text-xs">
+                          Código: {leader.verification_code}
+                        </div>
                       )}
-                      Reenviar SMS de Verificação
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="default"
-                      disabled={markVerifiedMutation.isPending}
-                      onClick={() => markVerifiedMutation.mutate(leader.id)}
-                    >
-                      {markVerifiedMutation.isPending ? (
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <ShieldCheck className="h-4 w-4 mr-2" />
-                      )}
-                      Verificar Manualmente
-                    </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={resendVerificationMutation.isPending || !leader.telefone}
+                        onClick={() => resendVerificationMutation.mutate(leader.id)}
+                      >
+                        {resendVerificationMutation.isPending ? (
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                        )}
+                        Reenviar SMS de Verificação
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        disabled={markVerifiedMutation.isPending}
+                        onClick={() => markVerifiedMutation.mutate(leader.id)}
+                      >
+                        {markVerifiedMutation.isPending ? (
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="h-4 w-4 mr-2" />
+                        )}
+                        Verificar Manualmente
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Info sobre o fluxo */}
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium mb-2">Fluxo de Verificação</h4>
-                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                    <li>Líder se cadastra e recebe SMS com link de verificação</li>
-                    <li>Líder clica no link e confirma seu telefone</li>
-                    <li>Sistema envia automaticamente SMS/WhatsApp com link de indicação</li>
-                    <li>Líder pode então começar a cadastrar apoiadores</li>
-                  </ol>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             </TabsContent>
 
             {/* ABA INDICAÇÕES */}
