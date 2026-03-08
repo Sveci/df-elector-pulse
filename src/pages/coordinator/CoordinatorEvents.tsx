@@ -25,6 +25,7 @@ import { CoordinatorEventDetailsDialog } from "@/components/coordinator/Coordina
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import logo from "@/assets/logo-rafael-prudente.png";
 
 export default function CoordinatorEvents() {
