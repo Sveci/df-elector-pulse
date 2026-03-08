@@ -1,11 +1,11 @@
-import { PRODUCTION_URL } from "./urlHelper";
+import { getBaseUrl } from "./urlHelper";
 
 /**
  * Gera a URL pública de cadastro do evento
- * SEMPRE usa URL de produção (enviado externamente via QR Code)
+ * Usa a URL base dinâmica do sistema
  */
 export function generateEventUrl(slug: string): string {
-  return `${PRODUCTION_URL}/eventos/${slug}`;
+  return `${getBaseUrl()}/eventos/${slug}`;
 }
 
 /**
