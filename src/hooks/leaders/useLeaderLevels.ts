@@ -156,8 +156,9 @@ export function useGamificationSettings() {
 }
 
 // Helper functions that work with dynamic levels
-export function getLeaderLevel(points: number, levels: LeaderLevel[]): LeaderLevel {
-  return levels.find(l => points >= l.min && points <= l.max) || levels[0];
+export function getLeaderLevel(points: number, levels?: LeaderLevel[]): LeaderLevel {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  return safeLevels.find(l => points >= l.min && points <= l.max) || safeLevels[0];
 }
 
 export function getNextLevel(points: number, levels: LeaderLevel[]): LeaderLevel | null {
