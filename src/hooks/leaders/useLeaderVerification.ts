@@ -164,15 +164,17 @@ export function useSendLeaderAffiliateLink() {
       leaderPhone,
       leaderEmail,
       affiliateToken,
+      customDomain,
     }: {
       leaderId: string;
       leaderName: string;
       leaderPhone: string;
       leaderEmail?: string | null;
       affiliateToken: string;
+      customDomain?: string | null;
     }) => {
-      // SEMPRE usa URL de produção (via função dedicada)
-      const affiliateLink = generateLeaderReferralUrl(affiliateToken);
+      // Usa domínio customizado do tenant quando disponível
+      const affiliateLink = generateLeaderReferralUrl(affiliateToken, customDomain);
 
       // Gerar QR Code
       const QRCode = (await import("qrcode")).default;
