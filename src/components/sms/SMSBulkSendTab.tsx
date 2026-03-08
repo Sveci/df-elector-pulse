@@ -536,7 +536,7 @@ export function SMSBulkSendTab() {
 
           // Add leader affiliate link if applicable (SEMPRE usa URL de produção)
           if ((recipientType === "leaders" || recipientType === "single_leader") && recipient.affiliate_token) {
-            variables.link_indicacao = generateLeaderReferralUrl(recipient.affiliate_token);
+            variables.link_indicacao = generateLeaderReferralUrl(recipient.affiliate_token, tenantDomain);
           }
 
           // Add event variables if applicable
