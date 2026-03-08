@@ -297,7 +297,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       onChange={(e) => setPortalPassword(e.target.value)}
                       className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                     />
-                    <Button
+                    <Button className="shrink-0"
                       size="sm"
                       disabled={settingPassword || !portalPassword || portalPassword.length < 4}
                       onClick={async () => {
