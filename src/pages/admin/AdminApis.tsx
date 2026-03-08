@@ -27,6 +27,8 @@ interface ApiConfig {
   enabledField?: string;
   /** Whether this API has a test connection function */
   hasTestConnection?: boolean;
+  /** Field name in integrations_settings to store the key/token directly (not Vault) */
+  dbField?: string;
 }
 
 const apis: ApiConfig[] = [
