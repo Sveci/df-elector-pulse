@@ -51,6 +51,7 @@ function getRandomDelay(): number {
 }
 
 export function SMSBulkSendTab() {
+  const tenantDomain = useTenantDomain();
   const { data: templates } = useSMSTemplates();
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
