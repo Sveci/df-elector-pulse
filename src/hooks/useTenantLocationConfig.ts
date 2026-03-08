@@ -1,4 +1,5 @@
 import { useOrganization } from "@/hooks/useOrganization";
+import { useTenantContext } from "@/contexts/TenantContext";
 import { getCargoConfig, getLocationFieldType, type LocationFieldType } from "@/constants/brazilPolitics";
 
 export interface TenantLocationConfig {
@@ -21,7 +22,17 @@ export interface TenantLocationConfig {
  * This determines what location field (RA, bairro, cidade, estado+cidade) to show in forms.
  */
 export function useTenantLocationConfig(): TenantLocationConfig {
-  const { data: organization, isLoading } = useOrganization();
+  const { data: organization, isLoading: orgLoading } = useOrganization();
+
+  let tenantLoading = false;
+  try {
+    const ctx = useTenantContext();
+    tenantLoading = ctx.isLoading || (!ctx.activeTenant && ctx.tenants.length === 0 && ctx.isLoading);
+  } catch {
+    // Outside TenantProvider
+  }
+
+  const isLoading = orgLoading || tenantLoading;
 
   const cargo = organization?.cargo || null;
   const fieldType = getLocationFieldType(cargo);
