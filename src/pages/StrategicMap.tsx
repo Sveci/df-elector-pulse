@@ -344,6 +344,7 @@ function ConnectionsLayer({
 
 export default function StrategicMap() {
   const { isDemoMode, m } = useDemoMask();
+  const mapTenantConfig = useMapTenantConfig();
   const { leaders: dbLeaders, contacts: dbContacts, cities: dbCities, stats: dbStats, isLoading, error } = useStrategicMapData();
 
   // Demo mode overrides
