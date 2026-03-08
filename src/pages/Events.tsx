@@ -400,7 +400,7 @@ const Events = () => {
   };
 
   const copyEventLink = (slug: string) => {
-    const url = generateEventUrl(slug);
+    const url = generateEventUrl(slug, tenantDomain);
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copiado!",
