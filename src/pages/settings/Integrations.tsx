@@ -11,7 +11,7 @@ import { Loader2, MessageSquare, Mail, Link2, Eye, EyeOff, CheckCircle2, XCircle
 import { useNavigate } from "react-router-dom";
 import { useIntegrationsSettings, useUpdateIntegrationsSettings, useTestZapiConnection, useTestSmsdevConnection, useTestSmsdevWebhook, useTestSmsbaratoConnection, useTestDisparoproConnection } from "@/hooks/useIntegrationsSettings";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useTestResendConnection } from "@/hooks/useEmailTemplates";
+
 import { toast } from "sonner";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
