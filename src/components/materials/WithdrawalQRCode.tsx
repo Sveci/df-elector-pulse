@@ -27,9 +27,6 @@ export function WithdrawalQRCode({ confirmationCode, materialName, open, onOpenC
     if (provider === "meta_cloud" && settings.meta_cloud_phone) {
       return settings.meta_cloud_phone.replace(/\D/g, "");
     }
-    if (provider === "dialog360" && settings.dialog360_phone) {
-      return settings.dialog360_phone.replace(/\D/g, "");
-    }
     if (settings.verification_wa_zapi_phone) {
       return settings.verification_wa_zapi_phone.replace(/\D/g, "");
     }

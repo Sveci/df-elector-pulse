@@ -30,7 +30,7 @@ interface SendWhatsAppRequest {
   visitId?: string;
   contactId?: string;
   imageUrl?: string;
-  providerOverride?: 'zapi' | 'meta_cloud' | 'dialog360'; // Admin override
+  providerOverride?: 'zapi' | 'meta_cloud'; // Admin override
   clientMessageId?: string; // For idempotency
   metaTemplate?: MetaTemplatePayload; // For direct template sending via Meta Cloud API
   bypassAutoCheck?: boolean; // Bypass automatic message category check (e.g., for WhatsApp verification flow)
@@ -198,19 +198,13 @@ interface IntegrationSettings {
   zapi_client_token: string | null;
   zapi_enabled: boolean | null;
   // Meta Cloud API
-  whatsapp_provider_active: 'zapi' | 'meta_cloud' | 'dialog360' | null;
+  whatsapp_provider_active: 'zapi' | 'meta_cloud' | null;
   meta_cloud_enabled: boolean | null;
   meta_cloud_test_mode: boolean | null;
   meta_cloud_whitelist: string[] | null;
   meta_cloud_phone_number_id: string | null;
   meta_cloud_api_version: string | null;
   meta_cloud_fallback_enabled: boolean | null;
-  // 360dialog
-  dialog360_enabled: boolean | null;
-  dialog360_phone_number_id: string | null;
-  dialog360_test_mode: boolean | null;
-  dialog360_whitelist: string[] | null;
-  dialog360_fallback_enabled: boolean | null;
   // Auto message settings
   wa_auto_verificacao_enabled: boolean | null;
   wa_auto_captacao_enabled: boolean | null;
@@ -229,7 +223,7 @@ interface SendResult {
   success: boolean;
   messageId?: string;
   error?: string;
-  providerUsed: 'zapi' | 'meta_cloud' | 'dialog360';
+  providerUsed: 'zapi' | 'meta_cloud';
 }
 
 async function sendViaZapi(
@@ -373,89 +367,6 @@ function isPhoneInWhitelist(phone: string, whitelist: string[] | null): boolean 
   });
 }
 
-// ============ 360DIALOG PROVIDER ============
-
-async function sendVia360Dialog(
-  settings: IntegrationSettings,
-  phone: string,
-  message: string,
-  metaTemplate?: MetaTemplatePayload
-): Promise<SendResult> {
-  const apiKey = Deno.env.get("DIALOG360_API_KEY");
-  
-  if (!apiKey) {
-    return { 
-      success: false, 
-      error: "DIALOG360_API_KEY não está configurado nos secrets",
-      providerUsed: 'dialog360'
-    };
-  }
-
-  if (!settings.dialog360_phone_number_id) {
-    return { 
-      success: false, 
-      error: "Phone Number ID da 360dialog não configurado",
-      providerUsed: 'dialog360'
-    };
-  }
-
-  const graphUrl = `https://waba-v2.360dialog.io/${settings.dialog360_phone_number_id}/messages`;
-
-  // Format phone for Graph API (needs country code without +)
-  let formattedPhone = phone.replace(/\D/g, "");
-  if (!formattedPhone.startsWith("55") && formattedPhone.length <= 11) {
-    formattedPhone = "55" + formattedPhone;
-  }
-
-  let body: object;
-
-  if (metaTemplate) {
-    body = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: formattedPhone,
-      type: "template",
-      template: metaTemplate,
-    };
-    console.log(`[send-whatsapp] Sending 360dialog template: ${metaTemplate.name}`);
-  } else {
-    body = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: formattedPhone,
-      type: "text",
-      text: { body: message },
-    };
-  }
-
-  console.log("[send-whatsapp] 360dialog request body:", JSON.stringify(body));
-
-  const response = await fetch(graphUrl, {
-    method: "POST",
-    headers: {
-      "D360-API-KEY": apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await response.json();
-  console.log("[send-whatsapp] 360dialog response:", JSON.stringify(data));
-
-  if (!response.ok) {
-    return { 
-      success: false, 
-      error: data.error?.message || data.meta?.developer_message || "Erro ao enviar via 360dialog",
-      providerUsed: 'dialog360'
-    };
-  }
-
-  return { 
-    success: true, 
-    messageId: data.messages?.[0]?.id,
-    providerUsed: 'dialog360'
-  };
-}
 
 // ============ END PROVIDER ABSTRACTION ============
 
@@ -522,8 +433,6 @@ Deno.serve(async (req) => {
         whatsapp_provider_active, meta_cloud_enabled, meta_cloud_test_mode,
         meta_cloud_whitelist, meta_cloud_phone_number_id, meta_cloud_api_version,
         meta_cloud_fallback_enabled,
-        dialog360_enabled, dialog360_phone_number_id, dialog360_test_mode,
-        dialog360_whitelist, dialog360_fallback_enabled,
         wa_auto_verificacao_enabled, wa_auto_captacao_enabled, wa_auto_pesquisa_enabled,
         wa_auto_evento_enabled, wa_auto_lideranca_enabled, wa_auto_membro_enabled,
         wa_auto_visita_enabled, wa_auto_optout_enabled, wa_auto_sms_fallback_enabled
@@ -542,14 +451,11 @@ Deno.serve(async (req) => {
     const typedSettings = settings as IntegrationSettings;
 
     // ============ DETERMINE PROVIDER ============
-    let activeProvider: 'zapi' | 'meta_cloud' | 'dialog360' = providerOverride || typedSettings.whatsapp_provider_active || 'zapi';
+    let activeProvider: 'zapi' | 'meta_cloud' = (providerOverride || typedSettings.whatsapp_provider_active || 'zapi') as 'zapi' | 'meta_cloud';
     
-    // Validate provider availability
-    if (activeProvider === 'dialog360') {
-      if (!typedSettings.dialog360_enabled) {
-        console.log("[send-whatsapp] 360dialog disabled, falling back to Z-API");
-        activeProvider = 'zapi';
-      }
+    // If legacy dialog360 value, fall back to zapi
+    if ((activeProvider as string) === 'dialog360') {
+      activeProvider = 'zapi';
     }
     
     if (activeProvider === 'meta_cloud') {
@@ -590,25 +496,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ============ TEST MODE CHECK FOR 360DIALOG ============
-    if (activeProvider === 'dialog360' && typedSettings.dialog360_test_mode) {
-      const cleanPhone = phone.replace(/\D/g, "");
-      const isWhitelisted = isPhoneInWhitelist(cleanPhone, typedSettings.dialog360_whitelist);
-      
-      if (!isWhitelisted) {
-        console.log(`[send-whatsapp] Phone ${cleanPhone.substring(0, 6)}... not in 360dialog whitelist, test mode active`);
-        
-        if (typedSettings.dialog360_fallback_enabled && typedSettings.zapi_enabled) {
-          console.log("[send-whatsapp] Using Z-API as fallback (360dialog test mode restriction)");
-          activeProvider = 'zapi';
-        } else {
-          return new Response(
-            JSON.stringify({ success: false, error: "Número não está na whitelist do modo teste (360dialog)", testMode: true }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
 
     // ============ CHECK AUTO MESSAGE CATEGORY ============
     // Templates de verificação NUNCA devem ser bloqueados quando o método de verificação é whatsapp_consent
@@ -727,15 +614,7 @@ Deno.serve(async (req) => {
     // ============ SEND MESSAGE ============
     let result: SendResult;
     
-    if (activeProvider === 'dialog360') {
-      result = await sendVia360Dialog(typedSettings, cleanPhone, finalMessage, metaTemplate);
-      
-      // Fallback to Z-API if 360dialog fails and fallback is enabled
-      if (!result.success && typedSettings.dialog360_fallback_enabled && typedSettings.zapi_enabled) {
-        console.log(`[send-whatsapp] 360dialog failed: ${result.error}, trying Z-API fallback`);
-        result = await sendViaZapi(typedSettings, cleanPhone, finalMessage);
-      }
-    } else if (activeProvider === 'meta_cloud') {
+    if (activeProvider === 'meta_cloud') {
       result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate);
       
       // Fallback to Z-API if Meta Cloud fails and fallback is enabled
