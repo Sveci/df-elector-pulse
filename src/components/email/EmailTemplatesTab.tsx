@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Plus, Edit, Send, Trash2, CheckCircle2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Edit, Send, Trash2, CheckCircle2, Upload, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail } from "lucide-react";
-import { useEmailTemplates } from "@/hooks/useEmailTemplates";
+import { useEmailTemplates, useSeedEmailTemplates, useResetTenantTemplate } from "@/hooks/useEmailTemplates";
 import { EmailTemplateEditorDialog } from "./EmailTemplateEditorDialog";
 import { EmailTestSendDialog } from "./EmailTestSendDialog";
 import { EmailTemplateCreateDialog } from "./EmailTemplateCreateDialog";
@@ -21,6 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteEmailTemplate } from "@/hooks/useEmailTemplates";
+import { useTenantContext } from "@/contexts/TenantContext";
+import { toast } from "sonner";
 
 const categoryLabels: Record<string, string> = {
   sistema: "Sistema",
@@ -29,6 +31,9 @@ const categoryLabels: Record<string, string> = {
   captacao: "Captação",
   lider: "Link de Líder",
   lideranca: "Liderança",
+  apoiadores: "Apoiadores",
+  equipe: "Equipe",
+  pesquisa: "Pesquisa",
 };
 
 const categoryColors: Record<string, string> = {
