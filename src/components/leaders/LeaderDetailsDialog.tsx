@@ -384,7 +384,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     Este líder precisa confirmar seu cadastro antes de receber o link de indicação.
                   </p>
                   
-                  <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="text-xs text-amber-600 dark:text-amber-500">
                       {leader.verification_sent_at ? (
                         <span>SMS enviado em: {formatDateTime(leader.verification_sent_at)}</span>
