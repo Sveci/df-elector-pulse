@@ -355,7 +355,7 @@ const Integrations = () => {
   const isSmsdevConfigured = !!smsdevApiKey;
   const isSmsbaratoConfigured = !!smsbaratoApiKey;
   const isDisparoproConfigured = !!disparoproToken;
-  const isPasskitConfigured = !!passkitApiToken && !!passkitProgramId && !!passkitTierId;
+  const isPasskitConfigured = !!passkitProgramId && !!passkitTierId;
 
   // Z-API connection status check
   const { data: zapiStatus, isLoading: isCheckingZapi, refetch: refetchZapiStatus } = 
