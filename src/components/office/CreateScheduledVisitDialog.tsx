@@ -180,11 +180,14 @@ export function CreateScheduledVisitDialog({ open, onOpenChange, initialDate }: 
           </div>
 
           <div className="space-y-2">
-            <Label>Cidade/RA *</Label>
-            <RegionSelect
+            <Label>{locationConfig.label} *</Label>
+            <LocationSelect
               value={cidadeId}
-              onValueChange={setCidadeId}
-              placeholder="Selecione a cidade/RA"
+              localidadeValue={localidade}
+              onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                setCidadeId(cid || "");
+                setLocalidade(loc || "");
+              }}
             />
           </div>
 

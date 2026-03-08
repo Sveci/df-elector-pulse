@@ -310,12 +310,15 @@ export default function NewVisit() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade/RA *</Label>
-              <RegionSelect
+              <Label htmlFor="cidade">{locationConfig.label} *</Label>
+              <LocationSelect
                 value={cidadeId}
-                onValueChange={setCidadeId}
+                localidadeValue={localidade}
+                onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                  setCidadeId(cid || "");
+                  setLocalidade(loc || "");
+                }}
                 disabled={createVisit.isPending}
-                placeholder="Selecione a cidade/RA"
               />
             </div>
             
