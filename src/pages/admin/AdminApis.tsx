@@ -21,6 +21,7 @@ interface ApiConfig {
   secretName: string;
   category: string;
   optional?: boolean;
+  hasRegionSelector?: boolean;
 }
 
 const apis: ApiConfig[] = [
