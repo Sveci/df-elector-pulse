@@ -101,6 +101,7 @@ const normalizeString = (str: string): string => {
 };
 
 const Campaigns = () => {
+  const tenantDomain = useTenantDomain();
   const [newCampaign, setNewCampaign] = useState({
     targetType: "event" as "event" | "funnel",
     eventId: "",

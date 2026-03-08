@@ -104,6 +104,7 @@ const eventsTutorialSteps: Step[] = [
 ];
 
 const Events = () => {
+  const tenantDomain = useTenantDomain();
   const { isDemoMode, m } = useDemoMask();
   const { data: events = [], isLoading } = useEvents();
   const { data: cities = [] } = useOfficeCities();

@@ -192,6 +192,7 @@ const getBirthdayBadge = (leader: OfficeLeader) => {
 const ITEMS_PER_PAGE = 10;
 
 const Leaders = () => {
+  const tenantDomain = useTenantDomain();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");

@@ -23,6 +23,7 @@ interface EventAffiliateDialogProps {
 }
 
 export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffiliateDialogProps) {
+  const tenantDomain = useTenantDomain();
   const [selectedLeaderId, setSelectedLeaderId] = useState("");
   const [affiliateUrl, setAffiliateUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
