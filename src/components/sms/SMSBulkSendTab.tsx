@@ -498,6 +498,7 @@ export function SMSBulkSendTab() {
     setIsSending(true);
     setWaitingForConfirmation(false);
     setSentCount(0);
+    let actualSentCount = 0;
     
     // Encurtar link do material uma vez (reutilizado para todos os destinatários)
     let shortenedMaterialUrl = "";
@@ -613,6 +614,7 @@ export function SMSBulkSendTab() {
           });
 
           if (error) throw error;
+          actualSentCount++;
           setSentCount((prev) => prev + 1);
         } catch (error) {
           console.error("Error sending SMS:", error);
@@ -638,7 +640,7 @@ export function SMSBulkSendTab() {
     }
 
     // All done
-    toast.success(`Envio concluído! ${sentCount} mensagens enviadas.`);
+    toast.success(`Envio concluído! ${actualSentCount} mensagens enviadas.`);
     resetState();
   };
 
