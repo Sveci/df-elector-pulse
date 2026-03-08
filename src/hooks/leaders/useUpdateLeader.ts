@@ -13,6 +13,7 @@ export function useUpdateLeader() {
         email: data.email || null,
         telefone: data.telefone || null,
         cidade_id: data.cidade_id || null,
+        localidade: data.localidade || null,
         data_nascimento: data.data_nascimento || null,
         observacao: data.observacao || null,
         instagram_username: data.instagram_username || null,

@@ -615,7 +615,7 @@ const Leaders = () => {
                       {/* Região */}
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                         <MapPin className="h-3.5 w-3.5" />
-                        {m.city(leader.cidade?.nome || "Sem região")}
+                        {m.city(leader.cidade?.nome || leader.localidade || "Sem região")}
                       </p>
 
                       {/* Badges de Métricas + Status + Verificação + Cartão */}

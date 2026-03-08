@@ -99,7 +99,10 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
     updateLeader(
       { 
         id: leader.id, 
-        data: data as UpdateLeaderDTO 
+        data: {
+          ...data,
+          localidade: localidade || undefined,
+        } as UpdateLeaderDTO 
       },
       {
         onSuccess: () => {
