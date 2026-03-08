@@ -613,6 +613,7 @@ export function SMSBulkSendTab() {
           });
 
           if (error) throw error;
+          actualSentCount++;
           setSentCount((prev) => prev + 1);
         } catch (error) {
           console.error("Error sending SMS:", error);
