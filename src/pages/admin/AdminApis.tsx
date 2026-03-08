@@ -289,6 +289,8 @@ const AdminApis = () => {
           </CardContent>
         </Card>
 
+        <ActiveSmsProviderCard />
+
         <div className="space-y-4">
           {apis.map((api) => (
             <ApiCard key={api.key} api={api} />
