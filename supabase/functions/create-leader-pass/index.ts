@@ -309,7 +309,7 @@ serve(async (req) => {
     };
 
     // Gerar URL do link de afiliado - usando URL base principal do sistema
-    const siteBaseUrl = "https://app.rafaelprudente.com";
+    const siteBaseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
     const affiliateUrl = leader.affiliate_token 
       ? `${siteBaseUrl}/affiliate/${leader.affiliate_token}`
       : "";

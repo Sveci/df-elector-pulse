@@ -185,7 +185,8 @@ serve(async (req) => {
         .single();
       
       if (contactData?.unsubscribe_token) {
-        const unsubscribeUrl = `https://app.rafaelprudente.com/descadastro?token=${contactData.unsubscribe_token}`;
+        const emailBaseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+        const unsubscribeUrl = `${emailBaseUrl}/descadastro?token=${contactData.unsubscribe_token}`;
         // Replace unsubscribe placeholder in HTML
         finalHtml = finalHtml.replace(/{{link_descadastro}}/g, unsubscribeUrl);
         finalHtml = finalHtml.replace(/href="#"([^>]*>Se não deseja mais receber)/g, `href="${unsubscribeUrl}"$1`);

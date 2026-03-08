@@ -150,7 +150,7 @@ serve(async (req) => {
       email: email,
       senha: password,
       nivel: roleLabels[role] || role,
-      link_plataforma: 'https://app.rafaelprudente.com'
+      link_plataforma: Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app"
     };
 
     // Enviar Email de boas-vindas
