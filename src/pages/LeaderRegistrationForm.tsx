@@ -66,6 +66,8 @@ type FormData = z.infer<typeof formSchema>;
 export default function LeaderRegistrationForm() {
   const { leaderToken } = useParams<{ leaderToken: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isNewLeader, setIsNewLeader] = useState(false);
   const [isAlreadyLeader, setIsAlreadyLeader] = useState(false);
