@@ -171,11 +171,12 @@ export function getNextLevel(points: number, levels?: LeaderLevel[]): LeaderLeve
   return null;
 }
 
-export function getProgressToNextLevel(points: number, levels: LeaderLevel[]): number {
-  const currentLevel = getLeaderLevel(points, levels);
-  const nextLevel = getNextLevel(points, levels);
+export function getProgressToNextLevel(points: number, levels?: LeaderLevel[]): number {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const currentLevel = getLeaderLevel(points, safeLevels);
+  const nextLevel = getNextLevel(points, safeLevels);
   
-  if (!nextLevel) return 100; // Já está no nível máximo
+  if (!nextLevel) return 100;
   
   const progressInLevel = points - currentLevel.min;
   const levelRange = currentLevel.max - currentLevel.min + 1;
@@ -183,13 +184,14 @@ export function getProgressToNextLevel(points: number, levels: LeaderLevel[]): n
   return Math.min(100, Math.round((progressInLevel / levelRange) * 100));
 }
 
-export function getPointsToNextLevel(points: number, levels: LeaderLevel[]): number {
-  const nextLevel = getNextLevel(points, levels);
+export function getPointsToNextLevel(points: number, levels?: LeaderLevel[]): number {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const nextLevel = getNextLevel(points, safeLevels);
   if (!nextLevel) return 0;
   return nextLevel.min - points;
 }
 
-export function getLeaderCardColorClass(points: number, levels: LeaderLevel[]): string {
+export function getLeaderCardColorClass(points: number, levels?: LeaderLevel[]): string {
   const level = getLeaderLevel(points, levels);
   return `border-l-4 ${level.borderClass} ${level.bgClass.replace('100', '50')}/50`;
 }
