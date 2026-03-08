@@ -732,12 +732,14 @@ export default function StrategicMap() {
                 url={currentStyle.url}
               />
 
-              {/* Region Boundary Layer */}
-              <RegionBoundaryLayer
-                selectedRegionCode={selectedCity?.codigo_ra || null}
-                selectedRegionName={selectedCity?.nome || null}
-                enabled={selectedRegion !== "all"}
-              />
+              {/* Region Boundary Layer (only for RA/DF mode) */}
+              {mapTenantConfig.showRABoundaries && (
+                <RegionBoundaryLayer
+                  selectedRegionCode={selectedCity?.codigo_ra || null}
+                  selectedRegionName={selectedCity?.nome || null}
+                  enabled={selectedRegion !== "all"}
+                />
+              )}
 
               {/* Heatmap Layer */}
               <HeatmapLayer contacts={contacts} enabled={showHeatmap} />
