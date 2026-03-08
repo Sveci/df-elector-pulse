@@ -179,7 +179,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   <p className="text-sm text-muted-foreground">Região</p>
                   <p className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    {leader.cidade?.nome || "Não informada"}
+                    {leader.cidade?.nome || leader.localidade || "Não informada"}
                   </p>
                 </div>
                 <div className="space-y-1">
