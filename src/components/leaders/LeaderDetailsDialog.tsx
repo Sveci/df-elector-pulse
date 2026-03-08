@@ -289,7 +289,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3">
                     <input
                       type="password"
                       placeholder="Nova senha"
