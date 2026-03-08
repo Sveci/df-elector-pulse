@@ -1,13 +1,26 @@
 import { useState } from "react";
+import { Plus, Edit, Send, Trash2, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Edit, Send, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { useEmailTemplates } from "@/hooks/useEmailTemplates";
 import { EmailTemplateEditorDialog } from "./EmailTemplateEditorDialog";
 import { EmailTestSendDialog } from "./EmailTestSendDialog";
+import { EmailTemplateCreateDialog } from "./EmailTemplateCreateDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteEmailTemplate } from "@/hooks/useEmailTemplates";
 
 const categoryLabels: Record<string, string> = {
   sistema: "Sistema",
@@ -34,8 +47,12 @@ interface EmailTemplatesTabProps {
 export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
   const { isDemoMode, m } = useDemoMask();
   const { data: templates, isLoading } = useEmailTemplates();
+  const deleteTemplate = useDeleteEmailTemplate();
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [testingTemplate, setTestingTemplate] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   const filteredTemplates = templates?.filter(
     (t) =>
@@ -52,6 +69,19 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
     return acc;
   }, {} as Record<string, typeof templates>);
 
+  const handleDelete = (id: string) => {
+    setTemplateToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (templateToDelete) {
+      await deleteTemplate.mutateAsync(templateToDelete);
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -62,6 +92,13 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Template
+        </Button>
+      </div>
+
       {/* Templates by Category */}
       <TooltipProvider>
         {groupedTemplates && Object.entries(groupedTemplates).map(([category, categoryTemplates]) => (
@@ -128,6 +165,19 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
                           </TooltipTrigger>
                           <TooltipContent>Testar</TooltipContent>
                         </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleDelete(template.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Excluir</TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   </CardContent>
@@ -138,6 +188,13 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
         ))}
       </TooltipProvider>
 
+      {(!groupedTemplates || Object.keys(groupedTemplates).length === 0) && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Nenhum template encontrado</p>
+        </div>
+      )}
+
       {/* Edit Dialog */}
       {editingTemplate && (
         <EmailTemplateEditorDialog
@@ -147,6 +204,12 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
         />
       )}
 
+      {/* Create Dialog */}
+      <EmailTemplateCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
+
       {/* Test Send Dialog */}
       {testingTemplate && (
         <EmailTestSendDialog
@@ -155,6 +218,23 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
           onClose={() => setTestingTemplate(null)}
         />
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
