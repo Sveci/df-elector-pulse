@@ -161,11 +161,12 @@ export function getLeaderLevel(points: number, levels?: LeaderLevel[]): LeaderLe
   return safeLevels.find(l => points >= l.min && points <= l.max) || safeLevels[0];
 }
 
-export function getNextLevel(points: number, levels: LeaderLevel[]): LeaderLevel | null {
-  const currentLevel = getLeaderLevel(points, levels);
-  const currentIndex = levels.findIndex(l => l.name === currentLevel.name);
-  if (currentIndex < levels.length - 1) {
-    return levels[currentIndex + 1];
+export function getNextLevel(points: number, levels?: LeaderLevel[]): LeaderLevel | null {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const currentLevel = getLeaderLevel(points, safeLevels);
+  const currentIndex = safeLevels.findIndex(l => l.name === currentLevel.name);
+  if (currentIndex < safeLevels.length - 1) {
+    return safeLevels[currentIndex + 1];
   }
   return null;
 }
