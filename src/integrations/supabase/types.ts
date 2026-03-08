@@ -672,6 +672,7 @@ export type Database = {
           event_id: string
           id: string
           leader_id: string | null
+          localidade: string | null
           nome: string
           qr_code: string | null
           utm_campaign: string | null
@@ -692,6 +693,7 @@ export type Database = {
           event_id: string
           id?: string
           leader_id?: string | null
+          localidade?: string | null
           nome: string
           qr_code?: string | null
           utm_campaign?: string | null
@@ -712,6 +714,7 @@ export type Database = {
           event_id?: string
           id?: string
           leader_id?: string | null
+          localidade?: string | null
           nome?: string
           qr_code?: string | null
           utm_campaign?: string | null
@@ -1120,6 +1123,7 @@ export type Database = {
           is_verified: boolean | null
           join_date: string | null
           last_activity: string | null
+          localidade: string | null
           nome_completo: string
           observacao: string | null
           parent_leader_id: string | null
@@ -1153,6 +1157,7 @@ export type Database = {
           is_verified?: boolean | null
           join_date?: string | null
           last_activity?: string | null
+          localidade?: string | null
           nome_completo: string
           observacao?: string | null
           parent_leader_id?: string | null
@@ -1186,6 +1191,7 @@ export type Database = {
           is_verified?: boolean | null
           join_date?: string | null
           last_activity?: string | null
+          localidade?: string | null
           nome_completo?: string
           observacao?: string | null
           parent_leader_id?: string | null
@@ -1439,7 +1445,7 @@ export type Database = {
       }
       office_contacts: {
         Row: {
-          cidade_id: string
+          cidade_id: string | null
           created_at: string
           data_nascimento: string | null
           email: string | null
@@ -1450,6 +1456,7 @@ export type Database = {
           instagram: string | null
           is_active: boolean | null
           is_verified: boolean | null
+          localidade: string | null
           nome: string
           observacao: string | null
           opt_out_channel: string | null
@@ -1470,7 +1477,7 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
-          cidade_id: string
+          cidade_id?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
@@ -1481,6 +1488,7 @@ export type Database = {
           instagram?: string | null
           is_active?: boolean | null
           is_verified?: boolean | null
+          localidade?: string | null
           nome: string
           observacao?: string | null
           opt_out_channel?: string | null
@@ -1501,7 +1509,7 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
-          cidade_id?: string
+          cidade_id?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string | null
@@ -1512,6 +1520,7 @@ export type Database = {
           instagram?: string | null
           is_active?: boolean | null
           is_verified?: boolean | null
+          localidade?: string | null
           nome?: string
           observacao?: string | null
           opt_out_channel?: string | null

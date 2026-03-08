@@ -23,7 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
@@ -65,6 +66,8 @@ type FormData = z.infer<typeof formSchema>;
 export default function LeaderRegistrationForm() {
   const { leaderToken } = useParams<{ leaderToken: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isNewLeader, setIsNewLeader] = useState(false);
   const [isAlreadyLeader, setIsAlreadyLeader] = useState(false);
@@ -623,12 +626,15 @@ export default function LeaderRegistrationForm() {
                   name="cidade_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cidade/RA *</FormLabel>
+                      <FormLabel>{locationConfig.label} *</FormLabel>
                       <FormControl>
-                        <RegionSelect
+                        <LocationSelect
                           value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="Selecione a cidade/RA"
+                          localidadeValue={localidade}
+                          onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                            field.onChange(cid || "");
+                            setLocalidade(loc || "");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

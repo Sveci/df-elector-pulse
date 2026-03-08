@@ -7,7 +7,8 @@ import { Loader2, Download, CheckCircle, Shield, ExternalLink, Share2 } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import {
   Form,
   FormControl,
@@ -29,6 +30,8 @@ export default function LeadCaptureLanding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   
   const { data: funnel, isLoading, error } = useLeadFunnelBySlug(slug);
   
@@ -594,12 +597,15 @@ export default function LeadCaptureLanding() {
                 name="cidade_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cidade/RA</FormLabel>
+                    <FormLabel>{locationConfig.label}</FormLabel>
                     <FormControl>
-                      <RegionSelect
+                      <LocationSelect
                         value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Selecione a cidade/RA"
+                        localidadeValue={localidade}
+                        onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                          field.onChange(cid || "");
+                          setLocalidade(loc || "");
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

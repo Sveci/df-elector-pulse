@@ -25,7 +25,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Users, Loader2, CalendarIcon } from "lucide-react";
 import { useCreateLeader } from "@/hooks/office/useCreateLeader";
 import { format } from "date-fns";
@@ -53,7 +54,9 @@ interface AddLeaderDialogProps {
 
 export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
   const [open, setOpen] = useState(false);
+  const [localidade, setLocalidade] = useState("");
   const { mutate: createLeader, isPending } = useCreateLeader();
+  const locationConfig = useTenantLocationConfig();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -151,12 +154,15 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="cidade_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cidade/RA (Opcional)</FormLabel>
+                  <FormLabel>{locationConfig.label} (Opcional)</FormLabel>
                   <FormControl>
-                    <RegionSelect
+                    <LocationSelect
                       value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Selecione a cidade/RA"
+                      localidadeValue={localidade}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        field.onChange(cid || "");
+                        setLocalidade(loc || "");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

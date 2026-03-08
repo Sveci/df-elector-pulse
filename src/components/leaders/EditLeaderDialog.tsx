@@ -23,7 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Pencil, Loader2 } from "lucide-react";
 import { useUpdateLeader } from "@/hooks/leaders/useUpdateLeader";
 import { 
@@ -57,6 +58,8 @@ interface EditLeaderDialogProps {
 
 export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
   const [open, setOpen] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [dataNascimentoDisplay, setDataNascimentoDisplay] = useState("");
   const { mutate: updateLeader, isPending } = useUpdateLeader();
 
@@ -178,12 +181,15 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
               name="cidade_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cidade/RA</FormLabel>
+                  <FormLabel>{locationConfig.label}</FormLabel>
                   <FormControl>
-                    <RegionSelect
+                    <LocationSelect
                       value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Selecione a cidade/RA"
+                      localidadeValue={localidade}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        field.onChange(cid || "");
+                        setLocalidade(loc || "");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

@@ -20,7 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
 import { MaskedDateInput, parseDateBR, isValidDateBR, isNotFutureDate } from "@/components/ui/masked-date-input";
 import { generateLeaderVerificationUrl } from "@/lib/urlHelper";
@@ -63,6 +64,8 @@ export default function PublicLeaderRegistration() {
   const [alreadyRegistered, setAlreadyRegistered] = useState<AlreadyRegisteredState | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const { data: cities } = useOfficeCitiesByType();
   const { data: settings } = usePublicFormSettings();
   const { data: integrationSettings } = useIntegrationsSettings();
@@ -572,12 +575,15 @@ export default function PublicLeaderRegistration() {
                   name="cidade_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cidade/RA *</FormLabel>
+                      <FormLabel>{locationConfig.label} *</FormLabel>
                       <FormControl>
-                        <RegionSelect
+                        <LocationSelect
                           value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="Selecione a cidade/RA"
+                          localidadeValue={localidade}
+                          onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                            field.onChange(cid || "");
+                            setLocalidade(loc || "");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

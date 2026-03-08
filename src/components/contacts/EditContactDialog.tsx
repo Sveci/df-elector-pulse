@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { LeaderAutocomplete } from "@/components/office/LeaderAutocomplete";
 import { useUpdateContact } from "@/hooks/contacts/useUpdateContact";
 import { usePromoteToLeader } from "@/hooks/contacts/usePromoteToLeader";
@@ -40,6 +41,7 @@ interface EditContactDialogProps {
 
 export function EditContactDialog({ contact, open, onOpenChange }: EditContactDialogProps) {
   const [cidadeId, setCidadeId] = useState(contact.cidade_id);
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState(contact.source_id || "");
   const [genero, setGenero] = useState(contact.genero || "Não identificado");
   const [dataNascimento, setDataNascimento] = useState(contact.data_nascimento || "");
@@ -47,6 +49,7 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
     contact.data_nascimento ? formatDateBR(contact.data_nascimento) : ""
   );
   const [promoteToLeader, setPromoteToLeader] = useState(false);
+  const locationConfig = useTenantLocationConfig();
   
   const updateContact = useUpdateContact();
   const promoteToLeaderMutation = usePromoteToLeader();
@@ -187,11 +190,14 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
 
           {/* Cidade/RA */}
           <div>
-            <Label>Cidade/RA</Label>
-            <RegionSelect
+            <Label>{locationConfig.label}</Label>
+            <LocationSelect
               value={cidadeId}
-              onValueChange={setCidadeId}
-              placeholder="Selecione a cidade/RA"
+              localidadeValue={localidade}
+              onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                setCidadeId(cid || "");
+                setLocalidade(loc || "");
+              }}
             />
           </div>
 

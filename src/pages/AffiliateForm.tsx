@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Users, CheckCircle2, ShieldCheck } from "lucide-react";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import type { OfficeLeader } from "@/types/office";
 import { trackLead, pushToDataLayer } from "@/lib/trackingUtils";
 import { useTemas } from "@/hooks/useTemas";
@@ -17,6 +18,7 @@ import { sendVerificationMessage, addPendingMessage } from "@/hooks/contacts/use
 
 export default function AffiliateForm() {
   const { leaderToken } = useParams();
+  const locationConfig = useTenantLocationConfig();
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -30,6 +32,7 @@ export default function AffiliateForm() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [endereco, setEndereco] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [instagram, setInstagram] = useState("");
@@ -428,11 +431,14 @@ export default function AffiliateForm() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade/RA *</Label>
-                    <RegionSelect
+                    <Label htmlFor="cidade">{locationConfig.label} *</Label>
+                    <LocationSelect
                       value={cidadeId}
-                      onValueChange={setCidadeId}
-                      placeholder="Selecione a cidade/RA"
+                      localidadeValue={localidade}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        setCidadeId(cid || "");
+                        setLocalidade(loc || "");
+                      }}
                     />
                   </div>
                   <div className="space-y-2">

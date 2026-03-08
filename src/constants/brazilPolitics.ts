@@ -5,25 +5,36 @@ export interface CargoPolitico {
   requiresEstado: boolean;
   requiresCidade: boolean;
   requiresRA: boolean; // Região Administrativa (só DF)
+  /** Tipo de localidade que o form de cadastro de contato/líder deve pedir */
+  locationFieldType: LocationFieldType;
 }
 
+/**
+ * Determina qual campo de localização mostrar nos formulários
+ * - 'ra': Região Administrativa (office_cities do DF) - default atual
+ * - 'bairro': Bairro (texto livre, para vereadores/prefeitos/cargos municipais)
+ * - 'cidade': Cidade via IBGE (para cargos estaduais - governador, deputados, senador)
+ * - 'estado_cidade': Estado + Cidade via IBGE (para cargos nacionais - presidente)
+ */
+export type LocationFieldType = 'ra' | 'bairro' | 'cidade' | 'estado_cidade';
+
 export const CARGOS_POLITICOS: CargoPolitico[] = [
-  { value: "presidente", label: "Presidente da República", requiresEstado: false, requiresCidade: false, requiresRA: false },
-  { value: "vice_presidente", label: "Vice-Presidente da República", requiresEstado: false, requiresCidade: false, requiresRA: false },
-  { value: "senador", label: "Senador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "governador", label: "Governador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "vice_governador", label: "Vice-Governador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "deputado_federal", label: "Deputado(a) Federal", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "deputado_estadual", label: "Deputado(a) Estadual", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "deputado_distrital", label: "Deputado(a) Distrital", requiresEstado: true, requiresCidade: false, requiresRA: true },
-  { value: "prefeito", label: "Prefeito(a)", requiresEstado: true, requiresCidade: true, requiresRA: false },
-  { value: "vice_prefeito", label: "Vice-Prefeito(a)", requiresEstado: true, requiresCidade: true, requiresRA: false },
-  { value: "vereador", label: "Vereador(a)", requiresEstado: true, requiresCidade: true, requiresRA: false },
-  { value: "secretario_estadual", label: "Secretário(a) Estadual", requiresEstado: true, requiresCidade: false, requiresRA: false },
-  { value: "secretario_municipal", label: "Secretário(a) Municipal", requiresEstado: true, requiresCidade: true, requiresRA: false },
-  { value: "administrador_regional", label: "Administrador(a) Regional", requiresEstado: true, requiresCidade: false, requiresRA: true },
-  { value: "conselheiro_tutelar", label: "Conselheiro(a) Tutelar", requiresEstado: true, requiresCidade: true, requiresRA: false },
-  { value: "outro", label: "Outro", requiresEstado: true, requiresCidade: false, requiresRA: false },
+  { value: "presidente", label: "Presidente da República", requiresEstado: false, requiresCidade: false, requiresRA: false, locationFieldType: 'estado_cidade' },
+  { value: "vice_presidente", label: "Vice-Presidente da República", requiresEstado: false, requiresCidade: false, requiresRA: false, locationFieldType: 'estado_cidade' },
+  { value: "senador", label: "Senador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "governador", label: "Governador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "vice_governador", label: "Vice-Governador(a)", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "deputado_federal", label: "Deputado(a) Federal", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "deputado_estadual", label: "Deputado(a) Estadual", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "deputado_distrital", label: "Deputado(a) Distrital", requiresEstado: true, requiresCidade: false, requiresRA: true, locationFieldType: 'ra' },
+  { value: "prefeito", label: "Prefeito(a)", requiresEstado: true, requiresCidade: true, requiresRA: false, locationFieldType: 'bairro' },
+  { value: "vice_prefeito", label: "Vice-Prefeito(a)", requiresEstado: true, requiresCidade: true, requiresRA: false, locationFieldType: 'bairro' },
+  { value: "vereador", label: "Vereador(a)", requiresEstado: true, requiresCidade: true, requiresRA: false, locationFieldType: 'bairro' },
+  { value: "secretario_estadual", label: "Secretário(a) Estadual", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
+  { value: "secretario_municipal", label: "Secretário(a) Municipal", requiresEstado: true, requiresCidade: true, requiresRA: false, locationFieldType: 'bairro' },
+  { value: "administrador_regional", label: "Administrador(a) Regional", requiresEstado: true, requiresCidade: false, requiresRA: true, locationFieldType: 'ra' },
+  { value: "conselheiro_tutelar", label: "Conselheiro(a) Tutelar", requiresEstado: true, requiresCidade: true, requiresRA: false, locationFieldType: 'bairro' },
+  { value: "outro", label: "Outro", requiresEstado: true, requiresCidade: false, requiresRA: false, locationFieldType: 'cidade' },
 ];
 
 export interface EstadoBR {
@@ -71,4 +82,14 @@ export function getCargoLabel(cargoValue: string): string {
 
 export function getEstadoNome(uf: string): string {
   return ESTADOS_BR.find(e => e.uf === uf)?.nome || uf;
+}
+
+/**
+ * Returns the location field type based on the organization's cargo.
+ * Defaults to 'ra' (current DF behavior) if no cargo is set.
+ */
+export function getLocationFieldType(cargo: string | null | undefined): LocationFieldType {
+  if (!cargo) return 'ra';
+  const config = getCargoConfig(cargo);
+  return config?.locationFieldType || 'ra';
 }

@@ -17,7 +17,8 @@ import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { CitySelect } from "@/components/office/CitySelect";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { ContactPhoneAutocomplete } from "@/components/office/ContactPhoneAutocomplete";
 import { LeaderAutocomplete } from "@/components/office/LeaderAutocomplete";
 import { ProtocolBadge } from "@/components/office/ProtocolBadge";
@@ -77,7 +78,9 @@ export default function NewVisit() {
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState("");
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -116,7 +119,8 @@ export default function NewVisit() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!nome || !whatsapp || !cidadeId || !leaderId || !scheduledDate || !scheduledTime) {
+    const hasLocation = locationConfig.fieldType === 'ra' ? !!cidadeId : !!localidade;
+    if (!nome || !whatsapp || !hasLocation || !leaderId || !scheduledDate || !scheduledTime) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -306,12 +310,15 @@ export default function NewVisit() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade/RA *</Label>
-              <RegionSelect
+              <Label htmlFor="cidade">{locationConfig.label} *</Label>
+              <LocationSelect
                 value={cidadeId}
-                onValueChange={setCidadeId}
+                localidadeValue={localidade}
+                onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                  setCidadeId(cid || "");
+                  setLocalidade(loc || "");
+                }}
                 disabled={createVisit.isPending}
-                placeholder="Selecione a cidade/RA"
               />
             </div>
             

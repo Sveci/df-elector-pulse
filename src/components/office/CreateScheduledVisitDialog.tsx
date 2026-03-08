@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { useCreateScheduledVisit } from "@/hooks/office/useScheduledVisits";
 import { ContactPhoneAutocomplete } from "@/components/office/ContactPhoneAutocomplete";
 import { LeaderAutocomplete } from "@/components/office/LeaderAutocomplete";
@@ -43,7 +44,9 @@ export function CreateScheduledVisitDialog({ open, onOpenChange, initialDate }: 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState<string>("");
+  const locationConfig = useTenantLocationConfig();
   const [date, setDate] = useState<Date | undefined>(initialDate || addDays(new Date(), 1));
   const [time, setTime] = useState<string>("");
   const [sendingSms, setSendingSms] = useState(false);
@@ -177,11 +180,14 @@ export function CreateScheduledVisitDialog({ open, onOpenChange, initialDate }: 
           </div>
 
           <div className="space-y-2">
-            <Label>Cidade/RA *</Label>
-            <RegionSelect
+            <Label>{locationConfig.label} *</Label>
+            <LocationSelect
               value={cidadeId}
-              onValueChange={setCidadeId}
-              placeholder="Selecione a cidade/RA"
+              localidadeValue={localidade}
+              onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                setCidadeId(cid || "");
+                setLocalidade(loc || "");
+              }}
             />
           </div>
 
