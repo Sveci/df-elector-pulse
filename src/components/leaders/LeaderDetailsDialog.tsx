@@ -230,7 +230,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       Gere um cartão digital para Apple Wallet ou Google Pay
                     </p>
                   </div>
-                  <Button
+                  <Button className="shrink-0 w-full sm:w-auto"
                     size="sm"
                     variant="outline"
                     disabled={generatingPass || !leader.affiliate_token}
