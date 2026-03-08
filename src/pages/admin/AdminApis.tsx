@@ -211,6 +211,46 @@ function ApiCard({ api }: { api: ApiConfig }) {
           <p className="text-sm text-muted-foreground">{api.howToGet}</p>
         </div>
 
+        {/* Region selector for PassKit */}
+        {api.hasRegionSelector && (
+          <div className="border-t pt-4 space-y-2">
+            <Label htmlFor={`region-${api.key}`} className="text-sm font-medium">Região da API</Label>
+            {isLoadingRegion ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <select
+                  id={`region-${api.key}`}
+                  value={regionUrl}
+                  onChange={async (e) => {
+                    const newUrl = e.target.value;
+                    setRegionUrl(newUrl);
+                    const { error } = await supabase
+                      .from("integrations_settings")
+                      .update({ passkit_api_base_url: newUrl })
+                      .not("id", "is", null);
+                    if (error) {
+                      toast.error("Erro ao salvar região");
+                    } else {
+                      toast.success(`Região alterada para ${newUrl.includes("pub1") ? "Região 1 (pub1)" : "Região 2 (pub2)"}`);
+                    }
+                  }}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="https://api.pub1.passkit.io">Região 1 (pub1) - Padrão</option>
+                  <option value="https://api.pub2.passkit.io">Região 2 (pub2)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione a região correspondente à sua conta PassKit
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Token input section */}
         <div className="border-t pt-4 space-y-3">
           <div className="flex items-center justify-between">
