@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { WhatsAppTemplatesTab } from "@/components/whatsapp/WhatsAppTemplatesTab";
 import { WhatsAppBulkSendTab } from "@/components/whatsapp/WhatsAppBulkSendTab";
 import { WhatsAppHistoryTab } from "@/components/whatsapp/WhatsAppHistoryTab";
-import { WhatsAppOfficialApiTab } from "@/components/whatsapp/WhatsAppOfficialApiTab";
+
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
@@ -75,9 +75,8 @@ export default function WhatsAppMarketing() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-4 mb-6" data-tutorial="whatsapp-tabs">
+            <TabsList className="w-full grid grid-cols-3 mb-6" data-tutorial="whatsapp-tabs">
               <TabsTrigger value="bulk">Envio em Massa</TabsTrigger>
-              <TabsTrigger value="official">API Oficial</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="history">Histórico</TabsTrigger>
             </TabsList>
@@ -85,10 +84,6 @@ export default function WhatsAppMarketing() {
             <div data-tutorial="whatsapp-content">
               <TabsContent value="bulk">
                 <WhatsAppBulkSendTab />
-              </TabsContent>
-
-              <TabsContent value="official">
-                <WhatsAppOfficialApiTab />
               </TabsContent>
 
               <TabsContent value="templates">
