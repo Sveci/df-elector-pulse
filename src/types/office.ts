@@ -165,6 +165,7 @@ export interface UpdateLeaderDTO {
   email?: string;
   telefone?: string;
   cidade_id?: string;
+  localidade?: string;
   is_active?: boolean;
   data_nascimento?: string; // YYYY-MM-DD
   observacao?: string;

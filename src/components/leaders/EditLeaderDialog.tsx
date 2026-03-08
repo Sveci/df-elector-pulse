@@ -58,7 +58,7 @@ interface EditLeaderDialogProps {
 
 export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
   const [open, setOpen] = useState(false);
-  const [localidade, setLocalidade] = useState("");
+  const [localidade, setLocalidade] = useState(leader.localidade || "");
   const locationConfig = useTenantLocationConfig();
   const [dataNascimentoDisplay, setDataNascimentoDisplay] = useState("");
   const { mutate: updateLeader, isPending } = useUpdateLeader();
@@ -90,15 +90,19 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
           instagram_username: (leader as any).instagram_username || "",
           is_active: leader.is_active,
         });
-      setDataNascimentoDisplay(leader.data_nascimento ? formatDateBR(leader.data_nascimento) : "");
-    }
-  }, [leader, open, form]);
+        setLocalidade(leader.localidade || "");
+        setDataNascimentoDisplay(leader.data_nascimento ? formatDateBR(leader.data_nascimento) : "");
+      }
+    }, [leader, open, form]);
 
   const onSubmit = (data: FormData) => {
     updateLeader(
       { 
         id: leader.id, 
-        data: data as UpdateLeaderDTO 
+        data: {
+          ...data,
+          localidade: localidade || undefined,
+        } as UpdateLeaderDTO 
       },
       {
         onSuccess: () => {
