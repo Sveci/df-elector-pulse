@@ -676,119 +676,56 @@ const Integrations = () => {
         <MetaCloudConfigCard settings={settings as any} />
 
 
-        {/* Resend Email */}
+        {/* Resend - Configurações do Remetente */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Mail className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Resend - Email Marketing</CardTitle>
-                  <CardDescription>
-                    Envie emails automatizados e em massa
-                  </CardDescription>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Mail className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="flex items-center gap-3">
-                {isResendConfigured ? (
-                  resendEnabled ? (
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Ativo
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      Configurado
-                    </Badge>
-                  )
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Não configurado
-                  </Badge>
-                )}
-                <Switch
-                  checked={resendEnabled}
-                  onCheckedChange={setResendEnabled}
-                  disabled={!isResendConfigured}
-                />
+              <div>
+                <CardTitle className="text-lg">Email - Remetente</CardTitle>
+                <CardDescription>
+                  Configure o email e nome que aparecerão como remetente nos envios
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="resend-key">API Key</Label>
-                <div className="relative">
-                  <Input
-                    id="resend-key"
-                    type={showResendKey ? "text" : "password"}
-                    placeholder="re_xxxxxxxxxx"
-                    value={resendApiKey}
-                    onChange={(e) => setResendApiKey(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowResendKey(!showResendKey)}
-                  >
-                    {showResendKey ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
+                <Label htmlFor="resend-email">Email Remetente</Label>
+                <Input
+                  id="resend-email"
+                  type="email"
+                  placeholder="naoresponda@seudominio.com"
+                  value={resendFromEmail}
+                  onChange={(e) => setResendFromEmail(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Obtenha em <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">resend.com/api-keys</a>
+                  Domínio deve estar verificado no provedor de email
                 </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="resend-email">Email Remetente</Label>
-                  <Input
-                    id="resend-email"
-                    type="email"
-                    placeholder="naoresponda@seudominio.com"
-                    value={resendFromEmail}
-                    onChange={(e) => setResendFromEmail(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Domínio deve estar verificado no Resend
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="resend-name">Nome do Remetente</Label>
-                  <Input
-                    id="resend-name"
-                    placeholder="Ex: Gabinete Rafael Prudente"
-                    value={resendFromName}
-                    onChange={(e) => setResendFromName(e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="resend-name">Nome do Remetente</Label>
+                <Input
+                  id="resend-name"
+                  placeholder="Ex: Gabinete Rafael Prudente"
+                  value={resendFromName}
+                  onChange={(e) => setResendFromName(e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex justify-end pt-4">
               <Button
-                variant="outline"
-                onClick={handleTestResend}
-                disabled={!resendApiKey || testResendConnection.isPending}
-              >
-                {testResendConnection.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Testar Conexão
-              </Button>
-              <Button
-                onClick={handleSaveResend}
+                onClick={() => {
+                  updateSettings.mutate({
+                    resend_from_email: resendFromEmail || null,
+                    resend_from_name: resendFromName || null,
+                  });
+                }}
                 disabled={updateSettings.isPending}
               >
                 {updateSettings.isPending ? (
