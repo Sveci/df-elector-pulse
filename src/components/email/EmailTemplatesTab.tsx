@@ -236,6 +236,21 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
                           </TooltipTrigger>
                           <TooltipContent>Testar</TooltipContent>
                         </Tooltip>
+                        {(template as any)._is_tenant_override && activeTenant && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleResetTemplate(template.slug)}
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Restaurar padrão</TooltipContent>
+                          </Tooltip>
+                        )}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
