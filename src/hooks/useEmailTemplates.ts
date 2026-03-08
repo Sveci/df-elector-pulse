@@ -95,6 +95,11 @@ export function useEmailTemplate(id: string) {
 
 export function useUpdateEmailTemplate() {
   const queryClient = useQueryClient();
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {}
 
   return useMutation({
     mutationFn: async ({
@@ -104,15 +109,66 @@ export function useUpdateEmailTemplate() {
       id: string;
       updates: Partial<EmailTemplate>;
     }) => {
-      const { data, error } = await supabase
-        .from("email_templates")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      if (tenantId) {
+        // Get the global template to know the slug
+        const { data: globalTemplate } = await supabase
+          .from("email_templates")
+          .select("slug, nome, assunto, conteudo_html, categoria, variaveis")
+          .eq("id", id)
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (!globalTemplate) throw new Error("Template global não encontrado");
+
+        // Upsert into tenant_email_templates
+        const tenantData = {
+          tenant_id: tenantId,
+          slug: globalTemplate.slug,
+          nome: updates.nome ?? globalTemplate.nome,
+          assunto: updates.assunto ?? globalTemplate.assunto,
+          conteudo_html: updates.conteudo_html ?? globalTemplate.conteudo_html,
+          categoria: updates.categoria ?? globalTemplate.categoria,
+          variaveis: updates.variaveis ?? globalTemplate.variaveis,
+          is_active: updates.is_active ?? true,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Check if override already exists
+        const { data: existing } = await supabase
+          .from("tenant_email_templates")
+          .select("id")
+          .eq("tenant_id", tenantId)
+          .eq("slug", globalTemplate.slug)
+          .single();
+
+        if (existing) {
+          const { data, error } = await supabase
+            .from("tenant_email_templates")
+            .update(tenantData)
+            .eq("id", existing.id)
+            .select()
+            .single();
+          if (error) throw error;
+          return data;
+        } else {
+          const { data, error } = await supabase
+            .from("tenant_email_templates")
+            .insert(tenantData)
+            .select()
+            .single();
+          if (error) throw error;
+          return data;
+        }
+      } else {
+        // No tenant = edit global (super_admin)
+        const { data, error } = await supabase
+          .from("email_templates")
+          .update(updates)
+          .eq("id", id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email_templates"] });
