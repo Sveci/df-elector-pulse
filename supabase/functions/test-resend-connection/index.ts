@@ -54,7 +54,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       // Check if it's a permission error (key is valid but restricted)
-      if (response.status === 403 || (data.message && data.message.includes('restricted'))) {
+      if (response.status === 401 || response.status === 403 || (data.message && data.message.includes('restricted'))) {
         console.log('Resend API key is valid but restricted - connection successful');
         return new Response(
           JSON.stringify({ 
