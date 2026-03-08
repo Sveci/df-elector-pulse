@@ -163,6 +163,7 @@ export function useStrategicMapData() {
             nome,
             source_type,
             source_id,
+            localidade,
             cidade:office_cities(id, nome, latitude, longitude)
           `)
           .eq("is_active", true)
