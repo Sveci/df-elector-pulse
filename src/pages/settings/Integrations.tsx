@@ -191,12 +191,9 @@ const Integrations = () => {
   const [waAutoOptout, setWaAutoOptout] = useState(true);
   const [waAutoSmsFallback, setWaAutoSmsFallback] = useState(false);
 
-  // Resend state
-  const [resendApiKey, setResendApiKey] = useState("");
+  // Resend state (apenas remetente - API Key e habilitação são configurados pelo super admin)
   const [resendFromEmail, setResendFromEmail] = useState("");
   const [resendFromName, setResendFromName] = useState("");
-  const [resendEnabled, setResendEnabled] = useState(false);
-  const [showResendKey, setShowResendKey] = useState(false);
 
   // SMSDEV state
   const [smsdevApiKey, setSmsdevApiKey] = useState("");
