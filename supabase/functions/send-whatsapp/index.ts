@@ -30,7 +30,7 @@ interface SendWhatsAppRequest {
   visitId?: string;
   contactId?: string;
   imageUrl?: string;
-  providerOverride?: 'zapi' | 'meta_cloud' | 'dialog360'; // Admin override
+  providerOverride?: 'zapi' | 'meta_cloud'; // Admin override
   clientMessageId?: string; // For idempotency
   metaTemplate?: MetaTemplatePayload; // For direct template sending via Meta Cloud API
   bypassAutoCheck?: boolean; // Bypass automatic message category check (e.g., for WhatsApp verification flow)

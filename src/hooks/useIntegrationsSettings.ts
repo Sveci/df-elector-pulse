@@ -389,30 +389,6 @@ export function useTestMetaCloudConnection() {
   });
 }
 
-export function useTest360DialogConnection() {
-  const { toast: toastHook } = useToast();
-
-  return useMutation({
-    mutationFn: async (phoneNumberId: string) => {
-      const { data, error } = await supabase.functions.invoke('test-360dialog-connection', {
-        body: { phoneNumberId }
-      });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
-      
-      return data.data;
-    },
-    onSuccess: (data) => {
-      toastHook({
-        title: "Conexão bem-sucedida",
-        description: `Número verificado: ${data.displayPhoneNumber || data.verifiedName || 'Conectado'}`,
-      });
-    },
-    onError: (error: Error) => {
-      toastHook({
-        title: "Erro na conexão",
-        description: error.message || "Verifique o Phone Number ID e a API Key.",
         variant: "destructive",
       });
     }
