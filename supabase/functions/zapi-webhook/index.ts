@@ -1052,7 +1052,7 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
   message = message.replace(/{{nome}}/g, nome);
   message = message.replace(/{{deputado_nome}}/g, org?.nome || "Deputado");
   if (affiliateToken) {
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
     message = message.replace(/{{link_afiliado}}/g, `${appBaseUrl}/i/${affiliateToken}`);
   }
   

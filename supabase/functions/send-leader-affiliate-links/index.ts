@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
     console.log(`[send-leader-affiliate-links] Mode: ${leaderId ? 'single leader: ' + leaderId : leaderIds ? 'batch: ' + leaderIds.length + ' leaders' : 'batch processing (disabled)'}`);
 
-    const baseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+    const baseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
 
     // If specific leader_id provided, process just that leader
     if (leaderId) {
