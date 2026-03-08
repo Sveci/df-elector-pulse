@@ -11,7 +11,7 @@ import { Loader2, MessageSquare, Mail, Link2, Eye, EyeOff, CheckCircle2, XCircle
 import { useNavigate } from "react-router-dom";
 import { useIntegrationsSettings, useUpdateIntegrationsSettings, useTestZapiConnection, useTestSmsdevConnection, useTestSmsdevWebhook, useTestSmsbaratoConnection, useTestDisparoproConnection } from "@/hooks/useIntegrationsSettings";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useTestResendConnection } from "@/hooks/useEmailTemplates";
+
 import { toast } from "sonner";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -28,7 +28,7 @@ import type { Step } from "react-joyride";
 const integrationsTutorialSteps: Step[] = [
   { target: '[data-tutorial="int-header"]', title: 'Integrações', content: 'Conecte serviços externos para ampliar as funcionalidades.' },
   { target: '[data-tutorial="int-zapi"]', title: 'Z-API WhatsApp', content: 'Configure o envio automático de mensagens via WhatsApp.' },
-  { target: '[data-tutorial="int-resend"]', title: 'Resend Email', content: 'Configure o envio de emails transacionais.' },
+  { target: '[data-tutorial="int-resend"]', title: 'Email Remetente', content: 'Configure o email e nome do remetente para envios.' },
   { target: '[data-tutorial="int-smsdev"]', title: 'SMSDEV', content: 'Configure o envio de SMS.' },
   { target: '[data-tutorial="int-passkit"]', title: 'PassKit', content: 'Configure cartões de liderança para Apple/Google Wallet.' },
   { target: '[data-tutorial="int-greatpages"]', title: 'GreatPages Webhook', content: 'Receba leads automaticamente das landing pages.' },
@@ -164,7 +164,7 @@ const Integrations = () => {
   const { data: settings, isLoading } = useIntegrationsSettings();
   const updateSettings = useUpdateIntegrationsSettings();
   const testZapiConnection = useTestZapiConnection();
-  const testResendConnection = useTestResendConnection();
+  
   const testSmsdevConnection = useTestSmsdevConnection();
   const testSmsbaratoConnection = useTestSmsbaratoConnection();
   const testDisparoproConnection = useTestDisparoproConnection();
@@ -191,12 +191,9 @@ const Integrations = () => {
   const [waAutoOptout, setWaAutoOptout] = useState(true);
   const [waAutoSmsFallback, setWaAutoSmsFallback] = useState(false);
 
-  // Resend state
-  const [resendApiKey, setResendApiKey] = useState("");
+  // Resend state (apenas remetente - API Key e habilitação são configurados pelo super admin)
   const [resendFromEmail, setResendFromEmail] = useState("");
   const [resendFromName, setResendFromName] = useState("");
-  const [resendEnabled, setResendEnabled] = useState(false);
-  const [showResendKey, setShowResendKey] = useState(false);
 
   // SMSDEV state
   const [smsdevApiKey, setSmsdevApiKey] = useState("");
@@ -245,10 +242,8 @@ const Integrations = () => {
       setZapiToken(settings.zapi_token || "");
       setZapiClientToken(settings.zapi_client_token || "");
       setZapiEnabled(settings.zapi_enabled || false);
-      setResendApiKey(settings.resend_api_key || "");
       setResendFromEmail(settings.resend_from_email || "");
       setResendFromName(settings.resend_from_name || "");
-      setResendEnabled(settings.resend_enabled || false);
       setSmsdevApiKey(settings.smsdev_api_key || "");
       setSmsdevEnabled(settings.smsdev_enabled || false);
       // SMSBarato
@@ -295,14 +290,6 @@ const Integrations = () => {
     });
   };
 
-  const handleSaveResend = () => {
-    updateSettings.mutate({
-      resend_api_key: resendApiKey || null,
-      resend_from_email: resendFromEmail || null,
-      resend_from_name: resendFromName || null,
-      resend_enabled: resendEnabled,
-    });
-  };
 
   const handleSaveSmsdev = () => {
     updateSettings.mutate({
@@ -354,10 +341,6 @@ const Integrations = () => {
     });
   };
 
-  const handleTestResend = () => {
-    if (!resendApiKey) return;
-    testResendConnection.mutate(resendApiKey);
-  };
 
   const handleTestSmsdev = () => {
     if (!smsdevApiKey) return;
@@ -375,7 +358,7 @@ const Integrations = () => {
   };
 
   const isZapiConfigured = zapiInstanceId && zapiToken;
-  const isResendConfigured = resendApiKey && resendFromEmail;
+  
   const isSmsdevConfigured = !!smsdevApiKey;
   const isSmsbaratoConfigured = !!smsbaratoApiKey;
   const isDisparoproConfigured = !!disparoproToken;
@@ -676,119 +659,56 @@ const Integrations = () => {
         <MetaCloudConfigCard settings={settings as any} />
 
 
-        {/* Resend Email */}
+        {/* Resend - Configurações do Remetente */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Mail className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Resend - Email Marketing</CardTitle>
-                  <CardDescription>
-                    Envie emails automatizados e em massa
-                  </CardDescription>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Mail className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="flex items-center gap-3">
-                {isResendConfigured ? (
-                  resendEnabled ? (
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Ativo
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      Configurado
-                    </Badge>
-                  )
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Não configurado
-                  </Badge>
-                )}
-                <Switch
-                  checked={resendEnabled}
-                  onCheckedChange={setResendEnabled}
-                  disabled={!isResendConfigured}
-                />
+              <div>
+                <CardTitle className="text-lg">Email - Remetente</CardTitle>
+                <CardDescription>
+                  Configure o email e nome que aparecerão como remetente nos envios
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="resend-key">API Key</Label>
-                <div className="relative">
-                  <Input
-                    id="resend-key"
-                    type={showResendKey ? "text" : "password"}
-                    placeholder="re_xxxxxxxxxx"
-                    value={resendApiKey}
-                    onChange={(e) => setResendApiKey(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowResendKey(!showResendKey)}
-                  >
-                    {showResendKey ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
+                <Label htmlFor="resend-email">Email Remetente</Label>
+                <Input
+                  id="resend-email"
+                  type="email"
+                  placeholder="naoresponda@seudominio.com"
+                  value={resendFromEmail}
+                  onChange={(e) => setResendFromEmail(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Obtenha em <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">resend.com/api-keys</a>
+                  Domínio deve estar verificado no provedor de email
                 </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="resend-email">Email Remetente</Label>
-                  <Input
-                    id="resend-email"
-                    type="email"
-                    placeholder="naoresponda@seudominio.com"
-                    value={resendFromEmail}
-                    onChange={(e) => setResendFromEmail(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Domínio deve estar verificado no Resend
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="resend-name">Nome do Remetente</Label>
-                  <Input
-                    id="resend-name"
-                    placeholder="Ex: Gabinete Rafael Prudente"
-                    value={resendFromName}
-                    onChange={(e) => setResendFromName(e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="resend-name">Nome do Remetente</Label>
+                <Input
+                  id="resend-name"
+                  placeholder="Ex: Gabinete Rafael Prudente"
+                  value={resendFromName}
+                  onChange={(e) => setResendFromName(e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex justify-end pt-4">
               <Button
-                variant="outline"
-                onClick={handleTestResend}
-                disabled={!resendApiKey || testResendConnection.isPending}
-              >
-                {testResendConnection.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Testar Conexão
-              </Button>
-              <Button
-                onClick={handleSaveResend}
+                onClick={() => {
+                  updateSettings.mutate({
+                    resend_from_email: resendFromEmail || null,
+                    resend_from_name: resendFromName || null,
+                  });
+                }}
                 disabled={updateSettings.isPending}
               >
                 {updateSettings.isPending ? (
