@@ -30,6 +30,8 @@ export default function LeadCaptureLanding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   
   const { data: funnel, isLoading, error } = useLeadFunnelBySlug(slug);
   
