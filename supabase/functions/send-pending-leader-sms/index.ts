@@ -76,7 +76,7 @@ serve(async (req) => {
     console.log(`Found ${pendingLeaders.length} leaders without SMS`);
 
     const results: { nome: string; phone: string; success: boolean; error?: string }[] = [];
-    const baseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+    const baseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
 
     // Enviar SMS para cada líder pendente
     for (const leader of pendingLeaders) {

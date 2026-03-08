@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PRODUCTION_URL = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+const PRODUCTION_URL = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
 
 interface ShortenUrlRequest {
   url: string;

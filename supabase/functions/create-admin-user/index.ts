@@ -150,7 +150,7 @@ serve(async (req) => {
       email: email,
       senha: password,
       nivel: roleLabels[role] || role,
-      link_plataforma: Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app"
+      link_plataforma: Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai"
     };
 
     // Enviar Email de boas-vindas

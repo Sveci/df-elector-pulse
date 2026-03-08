@@ -185,7 +185,7 @@ serve(async (req) => {
         .single();
       
       if (contactData?.unsubscribe_token) {
-        const emailBaseUrl = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
+        const emailBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
         const unsubscribeUrl = `${emailBaseUrl}/descadastro?token=${contactData.unsubscribe_token}`;
         // Replace unsubscribe placeholder in HTML
         finalHtml = finalHtml.replace(/{{link_descadastro}}/g, unsubscribeUrl);
