@@ -117,6 +117,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
         estado: form.estado || null,
         cidade: form.cidade || null,
         regiao_administrativa_id: form.regiao_administrativa_id || null,
+        custom_domain: form.custom_domain?.trim() || null,
       });
 
       toast({ title: "Tenant atualizado!", description: `${form.nome} foi salvo com sucesso.` });
