@@ -109,6 +109,7 @@ const apis: ApiConfig[] = [
     secretName: "DISPAROPRO_TOKEN",
     category: "SMS",
     enabledField: "disparopro_enabled",
+    dbField: "disparopro_token",
     hasTestConnection: true,
   },
   {
