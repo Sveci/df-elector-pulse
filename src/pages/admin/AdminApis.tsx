@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -265,6 +266,112 @@ function ApiCard({ api }: { api: ApiConfig }) {
   );
 }
 
+const smsProviders = [
+  { value: "smsdev", label: "SMSDEV", description: "Provedor principal — API rápida e confiável" },
+  { value: "smsbarato", label: "SMSBarato", description: "Cobertura nacional com custo reduzido" },
+  { value: "disparopro", label: "DisparoPro", description: "Plataforma profissional com relatórios detalhados" },
+];
+
+function ActiveSmsProviderCard() {
+  const [activeProvider, setActiveProvider] = useState<string>("smsdev");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProvider = async () => {
+      const { data } = await supabase
+        .from("integrations_settings")
+        .select("sms_active_provider")
+        .limit(1)
+        .single();
+      if (data?.sms_active_provider) {
+        setActiveProvider(data.sms_active_provider);
+      }
+      setIsLoading(false);
+    };
+    fetchProvider();
+  }, []);
+
+  const handleSave = async (newProvider: string) => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("integrations_settings")
+        .update({ sms_active_provider: newProvider })
+        .not("id", "is", null);
+
+      if (error) throw error;
+
+      setActiveProvider(newProvider);
+      const providerLabel = smsProviders.find(p => p.value === newProvider)?.label || newProvider;
+      toast.success(`Provedor SMS ativo alterado para ${providerLabel}`);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar: ${err.message || "Tente novamente"}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Card className="border-primary/30">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Radio className="h-5 w-5 text-primary" />
+          </div>
+          Provedor SMS Ativo
+        </CardTitle>
+        <CardDescription>
+          Selecione qual provedor será usado para envio de SMS em toda a plataforma
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Carregando configuração...</span>
+          </div>
+        ) : (
+          <RadioGroup
+            value={activeProvider}
+            onValueChange={handleSave}
+            disabled={isSaving}
+            className="space-y-3"
+          >
+            {smsProviders.map((provider) => (
+              <label
+                key={provider.value}
+                className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors ${
+                  activeProvider === provider.value
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-muted-foreground/30"
+                } ${isSaving ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <RadioGroupItem value={provider.value} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{provider.label}</span>
+                    {activeProvider === provider.value && (
+                      <Badge variant="default" className="text-xs">Ativo</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">{provider.description}</p>
+                </div>
+                {isSaving && activeProvider !== provider.value && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </label>
+            ))}
+          </RadioGroup>
+        )}
+        <p className="text-xs text-muted-foreground mt-4">
+          Certifique-se de que o token do provedor selecionado esteja configurado abaixo antes de ativá-lo.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 const AdminApis = () => {
   return (
     <AdminLayout>
@@ -287,6 +394,8 @@ const AdminApis = () => {
             </div>
           </CardContent>
         </Card>
+
+        <ActiveSmsProviderCard />
 
         <div className="space-y-4">
           {apis.map((api) => (
