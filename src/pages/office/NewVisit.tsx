@@ -119,7 +119,8 @@ export default function NewVisit() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!nome || !whatsapp || !cidadeId || !leaderId || !scheduledDate || !scheduledTime) {
+    const hasLocation = locationConfig.fieldType === 'ra' ? !!cidadeId : !!localidade;
+    if (!nome || !whatsapp || !hasLocation || !leaderId || !scheduledDate || !scheduledTime) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
