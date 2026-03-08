@@ -247,7 +247,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         setTestResult({
           success: false,
           message: isNotConfigured
-            ? "⚠️ Credencial não configurada. Preencha a chave na tela de Integrações primeiro."
+            ? "⚠️ Credencial não configurada. Clique em \"Configurar Token\" acima para preencher."
             : errorMsg,
         });
         if (!isNotConfigured) {
