@@ -31,7 +31,7 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
   const testConnection = useTestMetaCloudConnection();
 
   // State
-  const [whatsappProvider, setWhatsappProvider] = useState<'zapi' | 'meta_cloud' | 'dialog360'>('zapi');
+  const [whatsappProvider, setWhatsappProvider] = useState<'zapi' | 'meta_cloud'>('zapi');
   const [metaCloudEnabled, setMetaCloudEnabled] = useState(false);
   const [testMode, setTestMode] = useState(true);
   const [whitelist, setWhitelist] = useState<string[]>([]);
