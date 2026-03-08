@@ -402,7 +402,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       )}
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <Button 
                         size="sm" 
                         variant="outline"
