@@ -4062,6 +4062,7 @@ export type Database = {
         Args: { _leader_id: string }
         Returns: undefined
       }
+      insert_secret: { Args: { name: string; secret: string }; Returns: string }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       lookup_leader_for_verification: {
@@ -4145,6 +4146,14 @@ export type Database = {
         Args: { p_leader_id: string }
         Returns: string
       }
+      read_secret: {
+        Args: { secret_name: string }
+        Returns: {
+          id: string
+          name: string
+          secret: string
+        }[]
+      }
       register_leader_from_affiliate: {
         Args: {
           p_cidade_id: string
@@ -4196,6 +4205,10 @@ export type Database = {
       update_leader_verification_sent: {
         Args: { _leader_id: string }
         Returns: boolean
+      }
+      update_secret: {
+        Args: { new_secret: string; secret_name: string }
+        Returns: undefined
       }
       update_visit_status_form_opened: {
         Args: { _visit_id: string }
