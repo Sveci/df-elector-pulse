@@ -75,9 +75,8 @@ export default function WhatsAppMarketing() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-4 mb-6" data-tutorial="whatsapp-tabs">
+            <TabsList className="w-full grid grid-cols-3 mb-6" data-tutorial="whatsapp-tabs">
               <TabsTrigger value="bulk">Envio em Massa</TabsTrigger>
-              <TabsTrigger value="official">API Oficial</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="history">Histórico</TabsTrigger>
             </TabsList>
