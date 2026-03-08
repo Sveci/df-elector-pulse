@@ -250,9 +250,7 @@ const Integrations = () => {
       setDisparoproToken(settings.disparopro_token || "");
       setDisparoproEnabled(settings.disparopro_enabled || false);
       setSmsActiveProvider((settings.sms_active_provider as 'smsdev' | 'smsbarato' | 'disparopro') || 'smsdev');
-      // PassKit
-      setPasskitApiToken(settings.passkit_api_token || "");
-      setPasskitApiBaseUrl(settings.passkit_api_base_url || "https://api.pub1.passkit.io");
+      // PassKit (tenant-level only)
       setPasskitProgramId(settings.passkit_program_id || "");
       setPasskitTierId(settings.passkit_tier_id || "");
       setPasskitEnabled(settings.passkit_enabled || false);
