@@ -20,7 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
 import { MaskedDateInput, parseDateBR, isValidDateBR, isNotFutureDate } from "@/components/ui/masked-date-input";
 import { generateLeaderVerificationUrl } from "@/lib/urlHelper";

@@ -7,7 +7,8 @@ import { Loader2, Download, CheckCircle, Shield, ExternalLink, Share2 } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import {
   Form,
   FormControl,

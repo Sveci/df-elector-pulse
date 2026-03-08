@@ -23,7 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { RegionSelect } from "@/components/office/RegionSelect";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Pencil, Loader2 } from "lucide-react";
 import { useUpdateLeader } from "@/hooks/leaders/useUpdateLeader";
 import { 
