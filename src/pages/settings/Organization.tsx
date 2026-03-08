@@ -207,13 +207,16 @@ const Organization = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado</Label>
-                  <Input
-                    id="estado"
-                    value={isDemoMode ? "DF" : estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                    placeholder="Ex: DF"
-                    disabled={isDemoMode}
-                  />
+                  <Select value={estado} onValueChange={setEstado} disabled={isDemoMode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map((e) => (
+                        <SelectItem key={e.uf} value={e.uf}>{e.nome} ({e.uf})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
