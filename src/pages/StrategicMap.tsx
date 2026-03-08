@@ -15,6 +15,7 @@ import { MapController } from "@/components/maps/MapController";
 import { MapAnalysisPanel } from "@/components/maps/MapAnalysisPanel";
 import { RegionBoundaryLayer } from "@/components/maps/RegionBoundaryLayer";
 import { getRACenter, getRAZoomLevel } from "@/data/maps/df-ra-boundaries";
+import { useMapTenantConfig } from "@/hooks/maps/useMapTenantConfig";
 import "leaflet/dist/leaflet.css";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -25,7 +26,7 @@ const mapTutorialSteps: Step[] = [
   {
     target: '[data-tutorial="map-header"]',
     title: "Mapa Estratégico",
-    content: "Visualize a distribuição geográfica de líderes e contatos no Distrito Federal.",
+    content: "Visualize a distribuição geográfica de líderes e contatos na sua área de atuação.",
     placement: "bottom",
     disableBeacon: true,
   },
@@ -49,9 +50,7 @@ const mapTutorialSteps: Step[] = [
   },
 ];
 
-// Distrito Federal center coordinates
-const DF_CENTER: [number, number] = [-15.7801, -47.9292];
-const DF_ZOOM = 10;
+// Fallback constants (used only for RA mode)
 const CITY_ZOOM = 13;
 
 // Map tile styles
@@ -345,6 +344,7 @@ function ConnectionsLayer({
 
 export default function StrategicMap() {
   const { isDemoMode, m } = useDemoMask();
+  const mapTenantConfig = useMapTenantConfig();
   const { leaders: dbLeaders, contacts: dbContacts, cities: dbCities, stats: dbStats, isLoading, error } = useStrategicMapData();
 
   // Demo mode overrides
@@ -422,36 +422,47 @@ export default function StrategicMap() {
   // Get map center and selected region info
   const selectedCity = useMemo(() => {
     if (selectedRegion === "all") return null;
-    return cities.find(c => c.id === selectedRegion) || null;
-  }, [selectedRegion, cities]);
+    if (mapTenantConfig.useOfficeCities) {
+      return cities.find(c => c.id === selectedRegion) || null;
+    }
+    return null;
+  }, [selectedRegion, cities, mapTenantConfig.useOfficeCities]);
+
+  // For localidade-based filtering, extract unique localidades
+  const uniqueLocalidades = useMemo(() => {
+    if (mapTenantConfig.useOfficeCities) return [];
+    const locs = new Set<string>();
+    leaders.forEach(l => { if (l.localidade) locs.add(l.localidade); });
+    contacts.forEach(c => { if (c.localidade) locs.add(c.localidade); });
+    return Array.from(locs).sort();
+  }, [leaders, contacts, mapTenantConfig.useOfficeCities]);
 
   const mapCenter = useMemo<[number, number]>(() => {
-    if (selectedRegion === "all") return DF_CENTER;
+    if (selectedRegion === "all") return mapTenantConfig.center;
     
-    // Priority: use boundary coordinates (source of truth for polygons)
-    if (selectedCity?.codigo_ra) {
-      const boundaryCenter = getRACenter(selectedCity.codigo_ra);
-      if (boundaryCenter) return boundaryCenter;
+    // RA mode: use boundary or city coordinates
+    if (mapTenantConfig.useOfficeCities && selectedCity) {
+      if (selectedCity.codigo_ra) {
+        const boundaryCenter = getRACenter(selectedCity.codigo_ra);
+        if (boundaryCenter) return boundaryCenter;
+      }
+      if (selectedCity.latitude && selectedCity.longitude) {
+        return [selectedCity.latitude, selectedCity.longitude];
+      }
     }
     
-    // Fallback: use database coordinates
-    if (selectedCity?.latitude && selectedCity?.longitude) {
-      return [selectedCity.latitude, selectedCity.longitude];
-    }
-    
-    return DF_CENTER;
-  }, [selectedRegion, selectedCity]);
+    return mapTenantConfig.center;
+  }, [selectedRegion, selectedCity, mapTenantConfig]);
 
   const mapZoom = useMemo(() => {
-    if (selectedRegion === "all") return DF_ZOOM;
+    if (selectedRegion === "all") return mapTenantConfig.zoom;
     
-    // Use dynamic zoom based on RA size
-    if (selectedCity?.codigo_ra) {
+    if (mapTenantConfig.useOfficeCities && selectedCity?.codigo_ra) {
       return getRAZoomLevel(selectedCity.codigo_ra);
     }
     
     return CITY_ZOOM;
-  }, [selectedRegion, selectedCity]);
+  }, [selectedRegion, selectedCity, mapTenantConfig]);
 
   // Sort cities for dropdown
   const sortedCities = useMemo(() => {
@@ -541,7 +552,7 @@ export default function StrategicMap() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Mapa Estratégico</h1>
-            <p className="text-muted-foreground text-sm">Visualização da atuação política no Distrito Federal</p>
+            <p className="text-muted-foreground text-sm">{mapTenantConfig.subtitle}</p>
           </div>
         </div>
 
@@ -588,20 +599,27 @@ export default function StrategicMap() {
               </Select>
             </div>
 
-            {/* Region Selector */}
+            {/* Region/Location Selector */}
             <div className="flex items-center gap-2">
               <Navigation className="h-4 w-4 text-muted-foreground" />
               <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="Região" />
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder={mapTenantConfig.regionLabel} />
                 </SelectTrigger>
                 <SelectContent className="z-[9999] max-h-[300px]">
-                  <SelectItem value="all">Todas as Regiões</SelectItem>
-                  {sortedCities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.nome}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Todas</SelectItem>
+                  {mapTenantConfig.useOfficeCities
+                    ? sortedCities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>
+                          {city.nome}
+                        </SelectItem>
+                      ))
+                    : uniqueLocalidades.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                          {loc}
+                        </SelectItem>
+                      ))
+                  }
                 </SelectContent>
               </Select>
             </div>
@@ -714,12 +732,14 @@ export default function StrategicMap() {
                 url={currentStyle.url}
               />
 
-              {/* Region Boundary Layer */}
-              <RegionBoundaryLayer
-                selectedRegionCode={selectedCity?.codigo_ra || null}
-                selectedRegionName={selectedCity?.nome || null}
-                enabled={selectedRegion !== "all"}
-              />
+              {/* Region Boundary Layer (only for RA/DF mode) */}
+              {mapTenantConfig.showRABoundaries && (
+                <RegionBoundaryLayer
+                  selectedRegionCode={selectedCity?.codigo_ra || null}
+                  selectedRegionName={selectedCity?.nome || null}
+                  enabled={selectedRegion !== "all"}
+                />
+              )}
 
               {/* Heatmap Layer */}
               <HeatmapLayer contacts={contacts} enabled={showHeatmap} />
@@ -766,7 +786,7 @@ export default function StrategicMap() {
                               </p>
                             </div>
                           </div>
-                          <p className="text-muted-foreground mb-2">📍 {m.city(leader.cidade_nome)}</p>
+                          <p className="text-muted-foreground mb-2">📍 {m.city(leader.localidade || leader.cidade_nome)}</p>
                           <div className="space-y-1 text-xs border-t pt-2">
                             <p>📊 {m.number(leader.cadastros, leader.id + "_cad")} cadastros</p>
                             <p>🏆 {m.number(leader.pontuacao_total, leader.id + "_pts")} pontos</p>
@@ -806,7 +826,7 @@ export default function StrategicMap() {
                       <Popup>
                         <div className="text-sm">
                           <p className="font-semibold">{m.name(contact.nome)}</p>
-                          <p className="text-muted-foreground">{m.city(contact.cidade_nome)}</p>
+                          <p className="text-muted-foreground">{m.city(contact.localidade || contact.cidade_nome)}</p>
                           {contact.source_type && (
                             <p className="text-xs mt-1">Origem: {contact.source_type}</p>
                           )}
@@ -854,10 +874,12 @@ export default function StrategicMap() {
               <div className="w-6 h-3 rounded bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 opacity-50" />
               <span>Mapa de calor</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-3 border-2 border-dashed border-primary bg-primary/10 rounded" />
-              <span>Limite da RA</span>
-            </div>
+            {mapTenantConfig.showRABoundaries && (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-3 border-2 border-dashed border-primary bg-primary/10 rounded" />
+                <span>Limite da RA</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

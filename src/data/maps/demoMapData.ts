@@ -61,6 +61,7 @@ function generateDemoLeaders(): LeaderMapData[] {
       latitude: region.lat,
       longitude: region.lng,
       cidade_nome: region.nome,
+      localidade: null,
       is_coordinator: true,
       hierarchy_level: 0,
       parent_leader_id: null,
@@ -88,6 +89,7 @@ function generateDemoLeaders(): LeaderMapData[] {
         latitude: region.lat,
         longitude: region.lng,
         cidade_nome: region.nome,
+        localidade: null,
         is_coordinator: false,
         hierarchy_level: 1,
         parent_leader_id: `demo-coord-${coordIdx}`,
@@ -128,6 +130,7 @@ function generateDemoContacts(leaders: LeaderMapData[]): ContactMapData[] {
         latitude: region.lat,
         longitude: region.lng,
         cidade_nome: region.nome,
+        localidade: null,
       });
       contactIdx++;
     }

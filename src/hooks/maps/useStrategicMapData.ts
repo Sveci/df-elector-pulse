@@ -10,6 +10,7 @@ export interface LeaderMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  localidade: string | null;
   is_coordinator: boolean;
   hierarchy_level: number | null;
   parent_leader_id: string | null;
@@ -25,6 +26,7 @@ export interface ContactMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  localidade: string | null;
 }
 
 export interface CityMapData {
@@ -110,6 +112,7 @@ export function useStrategicMapData() {
           parent_leader_id,
           email,
           telefone,
+          localidade,
           cidade:office_cities(id, nome, latitude, longitude)
         `)
         .eq("is_active", true);
@@ -126,6 +129,7 @@ export function useStrategicMapData() {
           latitude: l.cidade.latitude,
           longitude: l.cidade.longitude,
           cidade_nome: l.cidade.nome,
+          localidade: l.localidade || null,
           is_coordinator: l.is_coordinator || false,
           hierarchy_level: l.hierarchy_level,
           parent_leader_id: l.parent_leader_id,
@@ -159,6 +163,7 @@ export function useStrategicMapData() {
             nome,
             source_type,
             source_id,
+            localidade,
             cidade:office_cities(id, nome, latitude, longitude)
           `)
           .eq("is_active", true)
@@ -187,6 +192,7 @@ export function useStrategicMapData() {
           latitude: c.cidade.latitude,
           longitude: c.cidade.longitude,
           cidade_nome: c.cidade.nome,
+          localidade: c.localidade || null,
         }));
 
       console.log("Strategic Map - Contacts with valid coordinates:", filtered.length);
