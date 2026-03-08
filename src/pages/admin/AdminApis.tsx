@@ -169,23 +169,18 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
     const fetchSettings = async () => {
       if (api.hasRegionSelector || api.dbField) {
         setIsLoadingRegion(true);
-        const selectFields = [
-          api.hasRegionSelector ? "passkit_api_base_url" : null,
-          api.dbField || null,
-        ].filter(Boolean).join(", ");
-
         const { data } = await supabase
           .from("integrations_settings")
-          .select(selectFields)
+          .select("*")
           .limit(1)
           .maybeSingle();
 
         if (data) {
-          if (api.hasRegionSelector && data.passkit_api_base_url) {
-            setRegionUrl(data.passkit_api_base_url);
+          if (api.hasRegionSelector && (data as any).passkit_api_base_url) {
+            setRegionUrl((data as any).passkit_api_base_url);
           }
           if (api.dbField) {
-            const val = (data as Record<string, unknown>)[api.dbField];
+            const val = (data as any)[api.dbField];
             setHasStoredKey(!!val && typeof val === "string" && val.length > 0);
           }
         }
