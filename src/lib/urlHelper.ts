@@ -21,6 +21,18 @@ export function getBaseUrl(): string {
 }
 
 /**
+ * Retorna a URL base para o tenant, usando custom_domain se disponível.
+ * Se o tenant tiver domínio customizado, usa esse. Senão, fallback para URL dinâmica.
+ */
+export function getTenantBaseUrl(customDomain?: string | null): string {
+  if (customDomain) {
+    // Garantir que não tenha barra no final
+    return customDomain.replace(/\/+$/, "");
+  }
+  return getAppBaseUrl();
+}
+
+/**
  * Retorna a URL de produção para comunicações externas (SMS, Email, WhatsApp).
  * No frontend, usa o domínio atual.
  * Em edge functions, deve-se usar Deno.env.get("APP_BASE_URL").
@@ -42,82 +54,82 @@ export function validateExternalUrl(url: string): string {
 }
 
 // =====================================================
-// GERADORES DE LINKS — todos usam getAppBaseUrl()
+// GERADORES DE LINKS — todos aceitam customDomain opcional
 // =====================================================
 
 /** Link do formulário de visita */
-export function generateVisitFormUrl(visitId: string): string {
-  return `${getAppBaseUrl()}/visita-gabinete/${visitId}`;
+export function generateVisitFormUrl(visitId: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/visita-gabinete/${visitId}`;
 }
 
 /** Link de check-in da visita */
-export function generateVisitCheckinUrl(qrCode: string): string {
-  return `${getAppBaseUrl()}/office/checkin/${qrCode}`;
+export function generateVisitCheckinUrl(qrCode: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/office/checkin/${qrCode}`;
 }
 
 /** Link de campanha UTM */
-export function generateCampaignUrl(utmSource: string, utmMedium: string, utmCampaign: string): string {
+export function generateCampaignUrl(utmSource: string, utmMedium: string, utmCampaign: string, customDomain?: string | null): string {
   const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
-  return `${getAppBaseUrl()}/lider/cadastro?${params.toString()}`;
+  return `${getTenantBaseUrl(customDomain)}/lider/cadastro?${params.toString()}`;
 }
 
 /** Link de evento com UTMs de campanha */
-export function generateEventCampaignUrl(eventSlug: string, utmSource: string, utmMedium: string, utmCampaign: string): string {
+export function generateEventCampaignUrl(eventSlug: string, utmSource: string, utmMedium: string, utmCampaign: string, customDomain?: string | null): string {
   const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
-  return `${getAppBaseUrl()}/eventos/${eventSlug}?${params.toString()}`;
+  return `${getTenantBaseUrl(customDomain)}/eventos/${eventSlug}?${params.toString()}`;
 }
 
 /** Link de indicação de líder */
-export function generateLeaderReferralUrl(affiliateToken: string): string {
-  return `${getAppBaseUrl()}/cadastro/${affiliateToken}`;
+export function generateLeaderReferralUrl(affiliateToken: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/cadastro/${affiliateToken}`;
 }
 
 /** Link de afiliado */
-export function generateAffiliateUrl(affiliateToken: string): string {
-  return `${getAppBaseUrl()}/affiliate/${affiliateToken}`;
+export function generateAffiliateUrl(affiliateToken: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/affiliate/${affiliateToken}`;
 }
 
 /** Link de verificação de líder */
-export function generateLeaderVerificationUrl(verificationCode: string): string {
-  return `${getAppBaseUrl()}/verificar-lider/${verificationCode}`;
+export function generateLeaderVerificationUrl(verificationCode: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/verificar-lider/${verificationCode}`;
 }
 
 /** Link de cadastro para evento com tracking */
-export function generateEventRegistrationUrl(eventSlug: string, eventId: string, trackingCode: string): string {
+export function generateEventRegistrationUrl(eventSlug: string, eventId: string, trackingCode: string, customDomain?: string | null): string {
   const params = new URLSearchParams({
     utm_source: 'qr', utm_medium: 'offline',
     utm_campaign: `evento_${eventId.substring(0, 8)}`, utm_content: trackingCode
   });
-  return `${getAppBaseUrl()}/eventos/${eventSlug}?${params.toString()}`;
+  return `${getTenantBaseUrl(customDomain)}/eventos/${eventSlug}?${params.toString()}`;
 }
 
 /** Link de afiliado para evento */
-export function generateEventAffiliateUrl(eventSlug: string, affiliateToken: string): string {
-  return `${getAppBaseUrl()}/eventos/${eventSlug}?ref=${affiliateToken}`;
+export function generateEventAffiliateUrl(eventSlug: string, affiliateToken: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/eventos/${eventSlug}?ref=${affiliateToken}`;
 }
 
 /** Link do formulário público de cadastro de líderes */
-export function generateLeaderRegistrationUrl(): string {
-  return `${getAppBaseUrl()}/lider/cadastro`;
+export function generateLeaderRegistrationUrl(customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/lider/cadastro`;
 }
 
 /** Link de funil de captação com UTMs */
-export function generateFunnelCampaignUrl(funnelSlug: string, utmSource: string, utmMedium: string, utmCampaign: string): string {
+export function generateFunnelCampaignUrl(funnelSlug: string, utmSource: string, utmMedium: string, utmCampaign: string, customDomain?: string | null): string {
   const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
-  return `${getAppBaseUrl()}/captacao/${funnelSlug}?${params.toString()}`;
+  return `${getTenantBaseUrl(customDomain)}/captacao/${funnelSlug}?${params.toString()}`;
 }
 
 /** Link de descadastro */
-export function generateUnsubscribeUrl(token: string): string {
-  return `${getAppBaseUrl()}/descadastro?token=${token}`;
+export function generateUnsubscribeUrl(token: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/descadastro?token=${token}`;
 }
 
 /** Link de pesquisa com afiliado */
-export function generateSurveyAffiliateUrl(surveySlug: string, affiliateToken: string): string {
-  return `${getAppBaseUrl()}/pesquisa/${surveySlug}?ref=${affiliateToken}`;
+export function generateSurveyAffiliateUrl(surveySlug: string, affiliateToken: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/pesquisa/${surveySlug}?ref=${affiliateToken}`;
 }
 
 /** Link curto de verificação de contato */
-export function generateVerificationUrl(verificationCode: string): string {
-  return `${getAppBaseUrl()}/v/${verificationCode}`;
+export function generateVerificationUrl(verificationCode: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/v/${verificationCode}`;
 }

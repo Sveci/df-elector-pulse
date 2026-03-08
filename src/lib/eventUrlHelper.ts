@@ -1,11 +1,11 @@
-import { getBaseUrl } from "./urlHelper";
+import { getTenantBaseUrl } from "./urlHelper";
 
 /**
  * Gera a URL pública de cadastro do evento
- * Usa a URL base dinâmica do sistema
+ * Usa o domínio customizado do tenant quando disponível
  */
-export function generateEventUrl(slug: string): string {
-  return `${getBaseUrl()}/eventos/${slug}`;
+export function generateEventUrl(slug: string, customDomain?: string | null): string {
+  return `${getTenantBaseUrl(customDomain)}/eventos/${slug}`;
 }
 
 /**
@@ -13,7 +13,8 @@ export function generateEventUrl(slug: string): string {
  */
 export function generateEventUrlWithTracking(
   slug: string,
-  trackingCode: string
+  trackingCode: string,
+  customDomain?: string | null
 ): string {
   const params = new URLSearchParams({
     utm_source: 'qr',
@@ -21,5 +22,5 @@ export function generateEventUrlWithTracking(
     utm_campaign: `evento_${slug}`,
     utm_content: trackingCode
   });
-  return `${generateEventUrl(slug)}?${params.toString()}`;
+  return `${generateEventUrl(slug, customDomain)}?${params.toString()}`;
 }
