@@ -73,10 +73,16 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
   });
 
   const onSubmit = (data: FormData) => {
-    createLeader(data as CreateLeaderDTO, {
+    const leaderData: CreateLeaderDTO = {
+      ...data,
+      cidade_id: data.cidade_id || undefined,
+      localidade: localidade || undefined,
+    };
+    createLeader(leaderData, {
       onSuccess: () => {
         setOpen(false);
         form.reset();
+        setLocalidade("");
       },
     });
   };
