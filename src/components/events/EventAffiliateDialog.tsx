@@ -160,7 +160,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       // Processar cada líder
       for (let i = 0; i < leaders.length; i++) {
         const leader = leaders[i];
-        const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token!);
+        const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token!, tenantDomain);
         
         // Verificar se precisa de nova página
         if (yPosition > pageHeight - 80) {
