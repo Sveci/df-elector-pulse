@@ -227,7 +227,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="instagram_username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instagram (Opcional)</FormLabel>
+                  <FormLabel>Instagram</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="@usuario" 
