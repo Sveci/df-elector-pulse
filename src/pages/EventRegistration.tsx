@@ -15,7 +15,7 @@ import { isEventDeadlinePassed } from "@/lib/eventUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import QRCodeComponent from "qrcode";
-import { PRODUCTION_URL } from "@/lib/urlHelper";
+import { getBaseUrl } from "@/lib/urlHelper";
 import { trackLead, pushToDataLayer } from "@/lib/trackingUtils";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
