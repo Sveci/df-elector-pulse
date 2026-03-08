@@ -35,6 +35,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
     estado: "",
     cidade: "",
     regiao_administrativa_id: "",
+    custom_domain: "",
   });
 
   useEffect(() => {
