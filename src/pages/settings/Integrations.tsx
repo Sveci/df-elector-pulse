@@ -341,10 +341,6 @@ const Integrations = () => {
     });
   };
 
-  const handleTestResend = () => {
-    if (!resendApiKey) return;
-    testResendConnection.mutate(resendApiKey);
-  };
 
   const handleTestSmsdev = () => {
     if (!smsdevApiKey) return;
