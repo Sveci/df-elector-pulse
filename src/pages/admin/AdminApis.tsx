@@ -216,11 +216,19 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         });
         toast.success(`${api.name} — conexão OK!`);
       } else {
+        const errorMsg = data?.error || "Falha na conexão";
+        const isNotConfigured = errorMsg.toLowerCase().includes("não configurad");
         setTestResult({
           success: false,
-          message: data?.error || "Falha na conexão",
+          message: isNotConfigured
+            ? "⚠️ Credencial não configurada. Preencha a chave na tela de Integrações primeiro."
+            : errorMsg,
         });
-        toast.error(`${api.name} — ${data?.error || "falha na conexão"}`);
+        if (!isNotConfigured) {
+          toast.error(`${api.name} — ${errorMsg}`);
+        } else {
+          toast.warning(`${api.name} — credencial não configurada`);
+        }
       }
     } catch (err: any) {
       const message = err.message || "Erro ao testar";
