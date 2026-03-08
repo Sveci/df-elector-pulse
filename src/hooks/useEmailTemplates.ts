@@ -79,6 +79,47 @@ export function useUpdateEmailTemplate() {
   });
 }
 
+export function useCreateEmailTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      data: Pick<EmailTemplate, "slug" | "nome" | "assunto" | "conteudo_html" | "categoria" | "variaveis">
+    ) => {
+      const { error } = await supabase.from("email_templates").insert(data);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email_templates"] });
+      toast.success("Template criado com sucesso!");
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao criar template: " + error.message);
+    },
+  });
+}
+
+export function useDeleteEmailTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("email_templates")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email_templates"] });
+      toast.success("Template excluído com sucesso!");
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao excluir template: " + error.message);
+    },
+  });
+}
+
 export function useTestResendConnection() {
   return useMutation({
     mutationFn: async (apiKey: string) => {
