@@ -102,6 +102,29 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
     }
   };
 
+  const handleImportJson = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const templates = JSON.parse(text);
+      if (!Array.isArray(templates)) {
+        toast.error("O arquivo deve conter um array de templates");
+        return;
+      }
+      await seedTemplates.mutateAsync(templates);
+    } catch (err: any) {
+      toast.error("Erro ao ler arquivo: " + err.message);
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleResetTemplate = async (slug: string) => {
+    await resetTenantTemplate.mutateAsync(slug);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -112,7 +135,30 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {isSuperAdmin && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportJson}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={seedTemplates.isPending}
+            >
+              {seedTemplates.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Importar JSON
+            </Button>
+          </>
+        )}
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Template
