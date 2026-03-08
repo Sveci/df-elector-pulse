@@ -219,6 +219,13 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
               </div>
             )}
 
+            {/* Domínio Customizado */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="edit-custom-domain">Domínio Customizado</Label>
+              <Input id="edit-custom-domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
+              <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
+            </div>
+
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email de Contato</Label>

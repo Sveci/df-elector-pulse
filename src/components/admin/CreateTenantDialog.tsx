@@ -186,6 +186,13 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </div>
             )}
 
+            {/* Domínio Customizado */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="custom_domain">Domínio Customizado</Label>
+              <Input id="custom_domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
+              <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email de Contato</Label>
               <Input id="email" type="email" value={form.email_contato} onChange={(e) => setForm(p => ({ ...p, email_contato: e.target.value }))} placeholder="contato@org.com" />
