@@ -166,22 +166,34 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
   const isEnabled = api.enabledField ? (enabledStates[api.enabledField] ?? false) : undefined;
 
   useEffect(() => {
-    if (api.hasRegionSelector) {
-      const fetchRegion = async () => {
+    const fetchSettings = async () => {
+      if (api.hasRegionSelector || api.dbField) {
         setIsLoadingRegion(true);
+        const selectFields = [
+          api.hasRegionSelector ? "passkit_api_base_url" : null,
+          api.dbField || null,
+        ].filter(Boolean).join(", ");
+
         const { data } = await supabase
           .from("integrations_settings")
-          .select("passkit_api_base_url")
+          .select(selectFields)
           .limit(1)
           .maybeSingle();
-        if (data?.passkit_api_base_url) {
-          setRegionUrl(data.passkit_api_base_url);
+
+        if (data) {
+          if (api.hasRegionSelector && data.passkit_api_base_url) {
+            setRegionUrl(data.passkit_api_base_url);
+          }
+          if (api.dbField) {
+            const val = (data as Record<string, unknown>)[api.dbField];
+            setHasStoredKey(!!val && typeof val === "string" && val.length > 0);
+          }
         }
         setIsLoadingRegion(false);
-      };
-      fetchRegion();
-    }
-  }, [api.hasRegionSelector]);
+      }
+    };
+    fetchSettings();
+  }, [api.hasRegionSelector, api.dbField]);
 
   const handleSave = async () => {
     if (!tokenValue.trim()) {
@@ -191,15 +203,26 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.functions.invoke("update-secret", {
-        body: { secretName: api.secretName, secretValue: tokenValue.trim() },
-      });
-
-      if (error) throw error;
+      if (api.dbField) {
+        // Save directly to integrations_settings table
+        const { error } = await supabase
+          .from("integrations_settings")
+          .update({ [api.dbField]: tokenValue.trim() })
+          .not("id", "is", null);
+        if (error) throw error;
+        setHasStoredKey(true);
+      } else {
+        // Save to Vault via edge function
+        const { error } = await supabase.functions.invoke("update-secret", {
+          body: { secretName: api.secretName, secretValue: tokenValue.trim() },
+        });
+        if (error) throw error;
+      }
 
       toast.success(`${api.name} — token salvo com sucesso!`);
       setTokenValue("");
       setIsEditing(false);
+      setTestResult(null);
     } catch (err: any) {
       toast.error(`Erro ao salvar: ${err.message || "Tente novamente"}`);
     } finally {
