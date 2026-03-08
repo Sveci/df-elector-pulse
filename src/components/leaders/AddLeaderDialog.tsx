@@ -73,10 +73,21 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
   });
 
   const onSubmit = (data: FormData) => {
-    createLeader(data as CreateLeaderDTO, {
+    createLeader({
+      nome_completo: data.nome_completo,
+      email: data.email || undefined,
+      telefone: data.telefone || undefined,
+      cidade_id: data.cidade_id || undefined,
+      localidade: localidade || undefined,
+      data_nascimento: data.data_nascimento || undefined,
+      observacao: data.observacao || undefined,
+      instagram_username: data.instagram_username || undefined,
+      is_active: data.is_active,
+    }, {
       onSuccess: () => {
         setOpen(false);
         form.reset();
+        setLocalidade("");
       },
     });
   };
