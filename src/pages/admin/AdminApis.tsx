@@ -215,11 +215,11 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
       if (result.success) {
         setTestResult({
           success: true,
-          message: data.data?.description || "Conexão bem-sucedida!",
+          message: result.data?.description || "Conexão bem-sucedida!",
         });
         toast.success(`${api.name} — conexão OK!`);
       } else {
-        const errorMsg = data?.error || "Falha na conexão";
+        const errorMsg = result?.error || "Falha na conexão";
         const isNotConfigured = errorMsg.toLowerCase().includes("não configurad");
         setTestResult({
           success: false,
