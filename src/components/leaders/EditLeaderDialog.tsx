@@ -58,6 +58,8 @@ interface EditLeaderDialogProps {
 
 export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
   const [open, setOpen] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [dataNascimentoDisplay, setDataNascimentoDisplay] = useState("");
   const { mutate: updateLeader, isPending } = useUpdateLeader();
 
