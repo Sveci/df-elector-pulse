@@ -39,7 +39,7 @@ const formSchema = z.object({
     .regex(/^55\d{10,11}$/, "Formato inválido. Use: 5561XXXXXXXXX"),
   cidade_id: z.string().optional(),
   data_nascimento: z.string().min(1, "Data de nascimento é obrigatória"),
-  observacao: z.string().min(1, "Observação é obrigatória"),
+  observacao: z.string().optional(),
   instagram_username: z.string().min(1, "Instagram é obrigatório"),
   is_active: z.boolean().default(true),
 });
