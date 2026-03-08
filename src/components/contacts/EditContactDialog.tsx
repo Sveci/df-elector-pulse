@@ -41,6 +41,7 @@ interface EditContactDialogProps {
 
 export function EditContactDialog({ contact, open, onOpenChange }: EditContactDialogProps) {
   const [cidadeId, setCidadeId] = useState(contact.cidade_id);
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState(contact.source_id || "");
   const [genero, setGenero] = useState(contact.genero || "Não identificado");
   const [dataNascimento, setDataNascimento] = useState(contact.data_nascimento || "");
@@ -48,6 +49,7 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
     contact.data_nascimento ? formatDateBR(contact.data_nascimento) : ""
   );
   const [promoteToLeader, setPromoteToLeader] = useState(false);
+  const locationConfig = useTenantLocationConfig();
   
   const updateContact = useUpdateContact();
   const promoteToLeaderMutation = usePromoteToLeader();

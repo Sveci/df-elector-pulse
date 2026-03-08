@@ -18,6 +18,7 @@ import { sendVerificationMessage, addPendingMessage } from "@/hooks/contacts/use
 
 export default function AffiliateForm() {
   const { leaderToken } = useParams();
+  const locationConfig = useTenantLocationConfig();
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
