@@ -50,9 +50,7 @@ const mapTutorialSteps: Step[] = [
   },
 ];
 
-// Distrito Federal center coordinates
-const DF_CENTER: [number, number] = [-15.7801, -47.9292];
-const DF_ZOOM = 10;
+// Fallback constants (used only for RA mode)
 const CITY_ZOOM = 13;
 
 // Map tile styles
