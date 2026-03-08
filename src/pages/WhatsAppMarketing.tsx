@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { WhatsAppTemplatesTab } from "@/components/whatsapp/WhatsAppTemplatesTab";
 import { WhatsAppBulkSendTab } from "@/components/whatsapp/WhatsAppBulkSendTab";
 import { WhatsAppHistoryTab } from "@/components/whatsapp/WhatsAppHistoryTab";
-import { WhatsAppOfficialApiTab } from "@/components/whatsapp/WhatsAppOfficialApiTab";
+
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
