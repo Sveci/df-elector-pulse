@@ -27,6 +27,8 @@ interface ApiConfig {
   enabledField?: string;
   /** Whether this API has a test connection function */
   hasTestConnection?: boolean;
+  /** Field name in integrations_settings to store the key/token directly (not Vault) */
+  dbField?: string;
 }
 
 const apis: ApiConfig[] = [
@@ -79,6 +81,7 @@ const apis: ApiConfig[] = [
     secretName: "RESEND_API_KEY",
     category: "Comunicação",
     enabledField: "resend_enabled",
+    dbField: "resend_api_key",
     hasTestConnection: true,
   },
   {
@@ -92,6 +95,7 @@ const apis: ApiConfig[] = [
     secretName: "SMSBARATO_API_KEY",
     category: "SMS",
     enabledField: "smsbarato_enabled",
+    dbField: "smsbarato_api_key",
     hasTestConnection: true,
   },
   {
@@ -105,6 +109,7 @@ const apis: ApiConfig[] = [
     secretName: "DISPAROPRO_TOKEN",
     category: "SMS",
     enabledField: "disparopro_enabled",
+    dbField: "disparopro_token",
     hasTestConnection: true,
   },
   {
@@ -118,6 +123,7 @@ const apis: ApiConfig[] = [
     secretName: "SMSDEV_API_KEY",
     category: "SMS",
     enabledField: "smsdev_enabled",
+    dbField: "smsdev_api_key",
     hasTestConnection: true,
   },
   {
@@ -132,6 +138,7 @@ const apis: ApiConfig[] = [
     category: "Carteira Digital",
     hasRegionSelector: true,
     enabledField: "passkit_enabled",
+    dbField: "passkit_api_token",
     hasTestConnection: true,
   },
 ];
@@ -154,26 +161,34 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [regionUrl, setRegionUrl] = useState("https://api.pub1.passkit.io");
   const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+  const [hasStoredKey, setHasStoredKey] = useState<boolean | null>(null);
 
   const isEnabled = api.enabledField ? (enabledStates[api.enabledField] ?? false) : undefined;
 
   useEffect(() => {
-    if (api.hasRegionSelector) {
-      const fetchRegion = async () => {
+    const fetchSettings = async () => {
+      if (api.hasRegionSelector || api.dbField) {
         setIsLoadingRegion(true);
         const { data } = await supabase
           .from("integrations_settings")
-          .select("passkit_api_base_url")
+          .select("*")
           .limit(1)
           .maybeSingle();
-        if (data?.passkit_api_base_url) {
-          setRegionUrl(data.passkit_api_base_url);
+
+        if (data) {
+          if (api.hasRegionSelector && (data as any).passkit_api_base_url) {
+            setRegionUrl((data as any).passkit_api_base_url);
+          }
+          if (api.dbField) {
+            const val = (data as any)[api.dbField];
+            setHasStoredKey(!!val && typeof val === "string" && val.length > 0);
+          }
         }
         setIsLoadingRegion(false);
-      };
-      fetchRegion();
-    }
-  }, [api.hasRegionSelector]);
+      }
+    };
+    fetchSettings();
+  }, [api.hasRegionSelector, api.dbField]);
 
   const handleSave = async () => {
     if (!tokenValue.trim()) {
@@ -183,15 +198,26 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.functions.invoke("update-secret", {
-        body: { secretName: api.secretName, secretValue: tokenValue.trim() },
-      });
-
-      if (error) throw error;
+      if (api.dbField) {
+        // Save directly to integrations_settings table
+        const { error } = await supabase
+          .from("integrations_settings")
+          .update({ [api.dbField]: tokenValue.trim() })
+          .not("id", "is", null);
+        if (error) throw error;
+        setHasStoredKey(true);
+      } else {
+        // Save to Vault via edge function
+        const { error } = await supabase.functions.invoke("update-secret", {
+          body: { secretName: api.secretName, secretValue: tokenValue.trim() },
+        });
+        if (error) throw error;
+      }
 
       toast.success(`${api.name} — token salvo com sucesso!`);
       setTokenValue("");
       setIsEditing(false);
+      setTestResult(null);
     } catch (err: any) {
       toast.error(`Erro ao salvar: ${err.message || "Tente novamente"}`);
     } finally {
@@ -221,7 +247,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         setTestResult({
           success: false,
           message: isNotConfigured
-            ? "⚠️ Credencial não configurada. Preencha a chave na tela de Integrações primeiro."
+            ? "⚠️ Credencial não configurada. Clique em \"Configurar Token\" acima para preencher."
             : errorMsg,
         });
         if (!isNotConfigured) {
@@ -331,11 +357,27 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
 
         {/* Token input section */}
         <div className="border-t pt-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.secretName}</code>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Configurado</span>
+              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.dbField || api.secretName}</code>
+              {api.dbField ? (
+                hasStoredKey ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-muted-foreground">Configurado</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    <span className="text-xs text-amber-600 dark:text-amber-400">Não configurado</span>
+                  </>
+                )
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground">Vault</span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {api.hasTestConnection && (
@@ -369,7 +411,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
                   size="sm"
                   onClick={() => setIsEditing(true)}
                 >
-                  Atualizar Token
+                  {api.dbField && !hasStoredKey ? "Configurar Token" : "Atualizar Token"}
                 </Button>
               )}
             </div>
