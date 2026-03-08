@@ -90,6 +90,7 @@ export function getEstadoNome(uf: string): string {
  */
 export function getLocationFieldType(cargo: string | null | undefined): LocationFieldType {
   if (!cargo) return 'ra';
-  const config = getCargoConfig(cargo);
+  // Try matching by value first, then by label
+  const config = getCargoConfig(cargo) || CARGOS_POLITICOS.find(c => c.label.toLowerCase() === cargo.toLowerCase());
   return config?.locationFieldType || 'ra';
 }
