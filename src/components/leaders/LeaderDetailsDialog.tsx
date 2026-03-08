@@ -151,17 +151,19 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
         </DialogHeader>
 
         <Tabs defaultValue="info" className="flex flex-col flex-1 min-h-0">
-          <TabsList className="w-full flex flex-wrap items-center justify-start gap-1 h-auto p-1">
-            <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
-            <TabsTrigger value="verificacao" className="text-xs">Verificação</TabsTrigger>
-            <TabsTrigger value="indicacoes" className="text-xs">Indicações</TabsTrigger>
-            <TabsTrigger value="eventos" className="text-xs">Eventos</TabsTrigger>
-            <TabsTrigger value="pesquisas" className="text-xs">Pesquisas</TabsTrigger>
-            <TabsTrigger value="comunicacoes" className="text-xs">Comunicações</TabsTrigger>
-            <TabsTrigger value="pontuacao" className="text-xs">Pontuação</TabsTrigger>
-            <TabsTrigger value="arvore" className="text-xs">Árvore</TabsTrigger>
-            <TabsTrigger value="historico" className="text-xs">Histórico</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto scrollbar-thin">
+            <TabsList className="inline-flex w-max items-center gap-1 h-auto p-1">
+              <TabsTrigger value="info" className="text-xs whitespace-nowrap">Info</TabsTrigger>
+              <TabsTrigger value="verificacao" className="text-xs whitespace-nowrap">Verificação</TabsTrigger>
+              <TabsTrigger value="indicacoes" className="text-xs whitespace-nowrap">Indicações</TabsTrigger>
+              <TabsTrigger value="eventos" className="text-xs whitespace-nowrap">Eventos</TabsTrigger>
+              <TabsTrigger value="pesquisas" className="text-xs whitespace-nowrap">Pesquisas</TabsTrigger>
+              <TabsTrigger value="comunicacoes" className="text-xs whitespace-nowrap">Comunicações</TabsTrigger>
+              <TabsTrigger value="pontuacao" className="text-xs whitespace-nowrap">Pontuação</TabsTrigger>
+              <TabsTrigger value="arvore" className="text-xs whitespace-nowrap">Árvore</TabsTrigger>
+              <TabsTrigger value="historico" className="text-xs whitespace-nowrap">Histórico</TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="flex-1 min-h-0 mt-4 overflow-y-auto overflow-x-hidden">
             {/* ABA INFO */}
