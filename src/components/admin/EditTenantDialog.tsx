@@ -224,6 +224,42 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
               <Label htmlFor="edit-custom-domain">Domínio Customizado</Label>
               <Input id="edit-custom-domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
               <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
+              
+              {form.custom_domain && (
+                <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-xs space-y-2">
+                  <p className="font-semibold text-foreground">📋 Configuração DNS necessária:</p>
+                  <p className="text-muted-foreground">
+                    O tenant deve criar o seguinte registro no provedor de DNS do domínio:
+                  </p>
+                  <div className="bg-background rounded p-2 font-mono text-[11px] space-y-1">
+                    <div className="flex gap-2">
+                      <span className="text-primary font-semibold">Tipo:</span>
+                      <span>CNAME</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-primary font-semibold">Nome:</span>
+                      <span>{(() => {
+                        try {
+                          const url = form.custom_domain.startsWith("http") 
+                            ? form.custom_domain 
+                            : `https://${form.custom_domain}`;
+                          return new URL(url).hostname;
+                        } catch {
+                          return form.custom_domain.replace(/https?:\/\//, "").split("/")[0];
+                        }
+                      })()}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-primary font-semibold">Destino:</span>
+                      <span>df-elector-pulse.lovable.app</span>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground">
+                    ⚠️ Caso use Cloudflare, ative o proxy (nuvem laranja) e configure SSL como <strong>Full</strong>.
+                    Para outros provedores, o domínio também precisa ser adicionado em <strong>Settings → Domains</strong> do projeto Lovable.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Email */}
