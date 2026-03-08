@@ -289,10 +289,16 @@ export function useSendEmail() {
 
 export function useSendBulkEmail() {
   const queryClient = useQueryClient();
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {}
 
   return useMutation({
     mutationFn: async (params: {
       templateSlug: string;
+      tenantId?: string;
       recipients: Array<{
         to: string;
         toName?: string;
@@ -303,12 +309,14 @@ export function useSendBulkEmail() {
       }>;
     }) => {
       const results = [];
+      const effectiveTenantId = params.tenantId || tenantId;
       
       for (const recipient of params.recipients) {
         try {
           const { data, error } = await supabase.functions.invoke("send-email", {
             body: {
               templateSlug: params.templateSlug,
+              tenantId: effectiveTenantId,
               ...recipient,
             },
           });
