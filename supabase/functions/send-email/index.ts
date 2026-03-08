@@ -135,27 +135,49 @@ serve(async (req) => {
     let finalSubject = customSubject || '';
     let templateDbId: string | null = null;
 
-    // If using a template, fetch it
+    // If using a template, fetch it (tenant override first, then global default)
     if (templateSlug || templateId) {
-      const query = supabase
-        .from('email_templates')
-        .select('*')
-        .eq('is_active', true);
+      let template: any = null;
 
-      if (templateSlug) {
-        query.eq('slug', templateSlug);
-      } else if (templateId) {
-        query.eq('id', templateId);
+      // Try tenant override first
+      if (tenantId && templateSlug) {
+        const { data: tenantTemplate } = await supabase
+          .from('tenant_email_templates')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('slug', templateSlug)
+          .eq('is_active', true)
+          .single();
+        
+        if (tenantTemplate) {
+          template = tenantTemplate;
+          console.log(`[send-email] Using tenant template override for slug: ${templateSlug}, tenant: ${tenantId}`);
+        }
       }
 
-      const { data: template, error: templateError } = await query.single();
+      // Fallback to global default
+      if (!template) {
+        const query = supabase
+          .from('email_templates')
+          .select('*')
+          .eq('is_active', true);
 
-      if (templateError || !template) {
-        console.error('Template not found:', templateError);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Template de email não encontrado' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (templateSlug) {
+          query.eq('slug', templateSlug);
+        } else if (templateId) {
+          query.eq('id', templateId);
+        }
+
+        const { data: globalTemplate, error: templateError } = await query.single();
+
+        if (templateError || !globalTemplate) {
+          console.error('Template not found:', templateError);
+          return new Response(
+            JSON.stringify({ success: false, error: 'Template de email não encontrado' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        template = globalTemplate;
       }
 
       templateDbId = template.id;
