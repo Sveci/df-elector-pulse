@@ -15,6 +15,7 @@ import { MapController } from "@/components/maps/MapController";
 import { MapAnalysisPanel } from "@/components/maps/MapAnalysisPanel";
 import { RegionBoundaryLayer } from "@/components/maps/RegionBoundaryLayer";
 import { getRACenter, getRAZoomLevel } from "@/data/maps/df-ra-boundaries";
+import { useMapTenantConfig } from "@/hooks/maps/useMapTenantConfig";
 import "leaflet/dist/leaflet.css";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
