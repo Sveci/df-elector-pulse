@@ -31,6 +31,7 @@ const initialForm = {
   estado: "",
   cidade: "",
   regiao_administrativa_id: "",
+  custom_domain: "",
 };
 
 export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogProps) {
