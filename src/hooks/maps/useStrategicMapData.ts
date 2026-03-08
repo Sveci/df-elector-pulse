@@ -129,6 +129,7 @@ export function useStrategicMapData() {
           latitude: l.cidade.latitude,
           longitude: l.cidade.longitude,
           cidade_nome: l.cidade.nome,
+          localidade: l.localidade || null,
           is_coordinator: l.is_coordinator || false,
           hierarchy_level: l.hierarchy_level,
           parent_leader_id: l.parent_leader_id,
