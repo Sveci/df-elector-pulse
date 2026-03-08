@@ -28,6 +28,8 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import type { Step } from "react-joyride";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CARGOS_POLITICOS, ESTADOS_BR } from "@/constants/brazilPolitics";
 
 const organizationTutorialSteps: Step[] = [
   { target: '[data-tutorial="org-header"]', title: 'Organização', content: 'Configure os dados do político e da campanha.' },
