@@ -95,7 +95,7 @@ interface UpdateIntegrationsDTO {
   passkit_tier_id?: string | null;
   passkit_enabled?: boolean;
   // WhatsApp Cloud API (Meta)
-  whatsapp_provider_active?: 'zapi' | 'meta_cloud' | 'dialog360';
+  whatsapp_provider_active?: 'zapi' | 'meta_cloud';
   meta_cloud_enabled?: boolean;
   meta_cloud_test_mode?: boolean;
   meta_cloud_whitelist?: string[];
