@@ -111,7 +111,7 @@ export default function CoordinatorEvents() {
   };
 
   const copyEventLink = (slug: string) => {
-    const url = `${generateEventUrl(slug)}?ref=${session.affiliate_token}`;
+    const url = `${generateEventUrl(slug, tenantDomain)}?ref=${session.affiliate_token}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copiado!");
   };

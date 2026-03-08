@@ -19,9 +19,10 @@ interface LeaderRegistrationQRDialogProps {
 }
 
 export function LeaderRegistrationQRDialog({ children }: LeaderRegistrationQRDialogProps) {
+  const tenantDomain = useTenantDomain();
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const registrationUrl = generateLeaderRegistrationUrl();
+  const registrationUrl = generateLeaderRegistrationUrl(tenantDomain);
 
   useEffect(() => {
     generateQRCode();
