@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useOrganization, useUpdateOrganization, uploadOrganizationLogo } from "@/hooks/useOrganization";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -28,6 +28,8 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import type { Step } from "react-joyride";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CARGOS_POLITICOS, ESTADOS_BR } from "@/constants/brazilPolitics";
 
 const organizationTutorialSteps: Step[] = [
   { target: '[data-tutorial="org-header"]', title: 'Organização', content: 'Configure os dados do político e da campanha.' },
@@ -66,7 +68,11 @@ const Organization = () => {
     if (organization) {
       setNome(organization.nome || "");
       setNomePlataforma(organization.nome_plataforma || "");
-      setCargo(organization.cargo || "");
+      // Normalize cargo: if stored as label, convert to value
+      const rawCargo = organization.cargo || "";
+      const matchByValue = CARGOS_POLITICOS.find(c => c.value === rawCargo);
+      const matchByLabel = CARGOS_POLITICOS.find(c => c.label.toLowerCase() === rawCargo.toLowerCase());
+      setCargo(matchByValue?.value || matchByLabel?.value || rawCargo);
       setPartido(organization.partido || "");
       setEstado(organization.estado || "");
       setCidade(organization.cidade || "");
@@ -175,13 +181,16 @@ const Organization = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cargo">Cargo</Label>
-                  <Input
-                    id="cargo"
-                    value={isDemoMode ? "Cargo Político" : cargo}
-                    onChange={(e) => setCargo(e.target.value)}
-                    placeholder="Ex: Deputado Distrital"
-                    disabled={isDemoMode}
-                  />
+                  <Select value={cargo} onValueChange={setCargo} disabled={isDemoMode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARGOS_POLITICOS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -198,13 +207,16 @@ const Organization = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado</Label>
-                  <Input
-                    id="estado"
-                    value={isDemoMode ? "DF" : estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                    placeholder="Ex: DF"
-                    disabled={isDemoMode}
-                  />
+                  <Select value={estado} onValueChange={setEstado} disabled={isDemoMode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ESTADOS_BR.map((e) => (
+                        <SelectItem key={e.uf} value={e.uf}>{e.nome} ({e.uf})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
