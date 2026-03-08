@@ -4,7 +4,7 @@ import { useUserTenants, Tenant } from "@/hooks/useTenants";
 
 interface TenantContextType {
   activeTenant: Tenant | null;
-  setActiveTenant: (tenant: Tenant | null) => void;
+  setActiveTenant: (tenant: Tenant | null, persistChoice?: boolean) => void;
   tenants: Array<{ id: string; tenant: Tenant; role: string }>;
   isLoading: boolean;
   showTenantSelector: boolean;

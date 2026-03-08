@@ -21,7 +21,7 @@ export function TenantSelectorModal() {
 
   const handleAdminPanel = () => {
     // Limpa tenant ativo em memória, mas mantém no localStorage para restaurar ao voltar
-    (setActiveTenant as any)(null, false);
+    setActiveTenant(null, false);
     setShowTenantSelector(false);
     navigate("/admin");
   };
