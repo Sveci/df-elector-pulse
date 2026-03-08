@@ -161,6 +161,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [regionUrl, setRegionUrl] = useState("https://api.pub1.passkit.io");
   const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+  const [hasStoredKey, setHasStoredKey] = useState<boolean | null>(null);
 
   const isEnabled = api.enabledField ? (enabledStates[api.enabledField] ?? false) : undefined;
 
