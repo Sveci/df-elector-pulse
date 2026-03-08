@@ -95,6 +95,7 @@ const apis: ApiConfig[] = [
     secretName: "SMSBARATO_API_KEY",
     category: "SMS",
     enabledField: "smsbarato_enabled",
+    dbField: "smsbarato_api_key",
     hasTestConnection: true,
   },
   {
