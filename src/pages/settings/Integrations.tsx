@@ -28,7 +28,7 @@ import type { Step } from "react-joyride";
 const integrationsTutorialSteps: Step[] = [
   { target: '[data-tutorial="int-header"]', title: 'Integrações', content: 'Conecte serviços externos para ampliar as funcionalidades.' },
   { target: '[data-tutorial="int-zapi"]', title: 'Z-API WhatsApp', content: 'Configure o envio automático de mensagens via WhatsApp.' },
-  { target: '[data-tutorial="int-resend"]', title: 'Resend Email', content: 'Configure o envio de emails transacionais.' },
+  { target: '[data-tutorial="int-resend"]', title: 'Email Remetente', content: 'Configure o email e nome do remetente para envios.' },
   { target: '[data-tutorial="int-smsdev"]', title: 'SMSDEV', content: 'Configure o envio de SMS.' },
   { target: '[data-tutorial="int-passkit"]', title: 'PassKit', content: 'Configure cartões de liderança para Apple/Google Wallet.' },
   { target: '[data-tutorial="int-greatpages"]', title: 'GreatPages Webhook', content: 'Receba leads automaticamente das landing pages.' },
