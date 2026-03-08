@@ -205,12 +205,6 @@ interface IntegrationSettings {
   meta_cloud_phone_number_id: string | null;
   meta_cloud_api_version: string | null;
   meta_cloud_fallback_enabled: boolean | null;
-  // 360dialog
-  dialog360_enabled: boolean | null;
-  dialog360_phone_number_id: string | null;
-  dialog360_test_mode: boolean | null;
-  dialog360_whitelist: string[] | null;
-  dialog360_fallback_enabled: boolean | null;
   // Auto message settings
   wa_auto_verificacao_enabled: boolean | null;
   wa_auto_captacao_enabled: boolean | null;
