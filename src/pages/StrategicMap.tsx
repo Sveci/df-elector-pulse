@@ -786,7 +786,7 @@ export default function StrategicMap() {
                               </p>
                             </div>
                           </div>
-                          <p className="text-muted-foreground mb-2">📍 {m.city(leader.cidade_nome)}</p>
+                          <p className="text-muted-foreground mb-2">📍 {m.city(leader.localidade || leader.cidade_nome)}</p>
                           <div className="space-y-1 text-xs border-t pt-2">
                             <p>📊 {m.number(leader.cadastros, leader.id + "_cad")} cadastros</p>
                             <p>🏆 {m.number(leader.pontuacao_total, leader.id + "_pts")} pontos</p>
