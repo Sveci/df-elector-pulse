@@ -17,8 +17,14 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
   children
 }: DashboardLayoutProps) {
-  const { activeTenant, isSuperAdmin, setShowTenantSelector } = useTenantContext();
+  const { activeTenant, isSuperAdmin, setShowTenantSelector, isLoading } = useTenantContext();
 
+  // Super admin chegou no dashboard sem tenant ativo → mostrar seletor
+  useEffect(() => {
+    if (isSuperAdmin && !activeTenant && !isLoading) {
+      setShowTenantSelector(true);
+    }
+  }, [isSuperAdmin, activeTenant, isLoading, setShowTenantSelector]);
   return (
     <SidebarProvider>
       {/* Warning de logout forçado */}
