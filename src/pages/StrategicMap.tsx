@@ -422,36 +422,47 @@ export default function StrategicMap() {
   // Get map center and selected region info
   const selectedCity = useMemo(() => {
     if (selectedRegion === "all") return null;
-    return cities.find(c => c.id === selectedRegion) || null;
-  }, [selectedRegion, cities]);
+    if (mapTenantConfig.useOfficeCities) {
+      return cities.find(c => c.id === selectedRegion) || null;
+    }
+    return null;
+  }, [selectedRegion, cities, mapTenantConfig.useOfficeCities]);
+
+  // For localidade-based filtering, extract unique localidades
+  const uniqueLocalidades = useMemo(() => {
+    if (mapTenantConfig.useOfficeCities) return [];
+    const locs = new Set<string>();
+    leaders.forEach(l => { if (l.localidade) locs.add(l.localidade); });
+    contacts.forEach(c => { if (c.localidade) locs.add(c.localidade); });
+    return Array.from(locs).sort();
+  }, [leaders, contacts, mapTenantConfig.useOfficeCities]);
 
   const mapCenter = useMemo<[number, number]>(() => {
-    if (selectedRegion === "all") return DF_CENTER;
+    if (selectedRegion === "all") return mapTenantConfig.center;
     
-    // Priority: use boundary coordinates (source of truth for polygons)
-    if (selectedCity?.codigo_ra) {
-      const boundaryCenter = getRACenter(selectedCity.codigo_ra);
-      if (boundaryCenter) return boundaryCenter;
+    // RA mode: use boundary or city coordinates
+    if (mapTenantConfig.useOfficeCities && selectedCity) {
+      if (selectedCity.codigo_ra) {
+        const boundaryCenter = getRACenter(selectedCity.codigo_ra);
+        if (boundaryCenter) return boundaryCenter;
+      }
+      if (selectedCity.latitude && selectedCity.longitude) {
+        return [selectedCity.latitude, selectedCity.longitude];
+      }
     }
     
-    // Fallback: use database coordinates
-    if (selectedCity?.latitude && selectedCity?.longitude) {
-      return [selectedCity.latitude, selectedCity.longitude];
-    }
-    
-    return DF_CENTER;
-  }, [selectedRegion, selectedCity]);
+    return mapTenantConfig.center;
+  }, [selectedRegion, selectedCity, mapTenantConfig]);
 
   const mapZoom = useMemo(() => {
-    if (selectedRegion === "all") return DF_ZOOM;
+    if (selectedRegion === "all") return mapTenantConfig.zoom;
     
-    // Use dynamic zoom based on RA size
-    if (selectedCity?.codigo_ra) {
+    if (mapTenantConfig.useOfficeCities && selectedCity?.codigo_ra) {
       return getRAZoomLevel(selectedCity.codigo_ra);
     }
     
     return CITY_ZOOM;
-  }, [selectedRegion, selectedCity]);
+  }, [selectedRegion, selectedCity, mapTenantConfig]);
 
   // Sort cities for dropdown
   const sortedCities = useMemo(() => {
