@@ -56,7 +56,7 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
     }
   }, [settings]);
 
-  const handleProviderChange = (provider: 'zapi' | 'meta_cloud' | 'dialog360') => {
+  const handleProviderChange = (provider: 'zapi' | 'meta_cloud') => {
     setWhatsappProvider(provider);
     onProviderChange?.(provider);
   };
