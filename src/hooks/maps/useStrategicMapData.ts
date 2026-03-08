@@ -26,6 +26,7 @@ export interface ContactMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  localidade: string | null;
 }
 
 export interface CityMapData {
