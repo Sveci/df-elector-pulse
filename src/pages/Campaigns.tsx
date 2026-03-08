@@ -218,19 +218,22 @@ const Campaigns = () => {
                 campaign.funnel_slug,
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               )
             : campaign.event_slug 
             ? generateEventCampaignUrl(
                 campaign.event_slug,
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               )
             : generateCampaignUrl(
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               ),
           qrCode: `data:image/svg+xml;base64,${btoa(`<svg width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="black">${campaign.utm_campaign}</text></svg>`)}`,
           createdAt: new Date(campaign.created_at).toISOString().split('T')[0],
