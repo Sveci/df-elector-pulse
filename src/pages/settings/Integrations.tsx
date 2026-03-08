@@ -319,8 +319,6 @@ const Integrations = () => {
 
   const handleSavePasskit = () => {
     updateSettings.mutate({
-      passkit_api_token: passkitApiToken || null,
-      passkit_api_base_url: passkitApiBaseUrl || "https://api.pub1.passkit.io",
       passkit_program_id: passkitProgramId || null,
       passkit_tier_id: passkitTierId || null,
       passkit_enabled: passkitEnabled,
