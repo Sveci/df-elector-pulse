@@ -1107,7 +1107,7 @@ export function SMSBulkSendTab() {
             variables: {
               nome: r.nome || "",
               // SEMPRE usa URL de produção para links de afiliado
-              ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token) } : {}),
+              ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token, tenantDomain) } : {}),
             },
             scheduled_for: scheduledFor.toISOString(),
             contact_id: recipientType === "contacts" || recipientType === "event" ? r.id : undefined,
