@@ -54,6 +54,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
         estado: tenant.estado || "",
         cidade: tenant.cidade || "",
         regiao_administrativa_id: tenant.regiao_administrativa_id || "",
+        custom_domain: tenant.custom_domain || "",
       });
     }
   }, [tenant]);
