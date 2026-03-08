@@ -112,6 +112,7 @@ export function useStrategicMapData() {
           parent_leader_id,
           email,
           telefone,
+          localidade,
           cidade:office_cities(id, nome, latitude, longitude)
         `)
         .eq("is_active", true);
