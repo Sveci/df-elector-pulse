@@ -163,7 +163,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="cidade_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{locationConfig.label} (Opcional)</FormLabel>
+                  <FormLabel>{locationConfig.label}</FormLabel>
                   <FormControl>
                     <LocationSelect
                       value={field.value}
