@@ -38,7 +38,7 @@ interface IntegrationsSettings {
   meta_cloud_api_version: string;
   meta_cloud_fallback_enabled: boolean;
   meta_cloud_phone: string | null;
-  dialog360_phone: string | null;
+  
   // Controles de mensagens automáticas de WhatsApp
   wa_auto_verificacao_enabled: boolean;
   wa_auto_captacao_enabled: boolean;
