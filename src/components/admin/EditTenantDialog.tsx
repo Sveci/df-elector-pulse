@@ -1,46 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateTenant } from "@/hooks/useTenants";
+import { useUpdateTenant, Tenant } from "@/hooks/useTenants";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { CARGOS_POLITICOS, ESTADOS_BR, getCargoConfig } from "@/constants/brazilPolitics";
 import { useBrazilCities } from "@/hooks/useBrazilCities";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
 
-interface CreateTenantDialogProps {
+interface EditTenantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tenant: Tenant | null;
 }
 
-const initialForm = {
-  nome: "",
-  slug: "",
-  email_contato: "",
-  telefone: "",
-  plano: "basic",
-  max_usuarios: 5,
-  max_contatos: 10000,
-  max_lideres: 500,
-  observacoes: "",
-  cargo_politico: "",
-  estado: "",
-  cidade: "",
-  regiao_administrativa_id: "",
-};
+export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialogProps) {
+  const updateTenant = useUpdateTenant();
 
-export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogProps) {
-  const createTenant = useCreateTenant();
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState({
+    nome: "",
+    slug: "",
+    email_contato: "",
+    telefone: "",
+    plano: "basic",
+    max_usuarios: 5,
+    max_contatos: 10000,
+    max_lideres: 500,
+    observacoes: "",
+    cargo_politico: "",
+    estado: "",
+    cidade: "",
+    regiao_administrativa_id: "",
+  });
 
-  const generateSlug = (nome: string) =>
-    nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-  const handleNomeChange = (nome: string) => setForm(prev => ({ ...prev, nome, slug: generateSlug(nome) }));
+  useEffect(() => {
+    if (tenant) {
+      setForm({
+        nome: tenant.nome || "",
+        slug: tenant.slug || "",
+        email_contato: tenant.email_contato || "",
+        telefone: tenant.telefone || "",
+        plano: tenant.plano || "basic",
+        max_usuarios: tenant.max_usuarios || 5,
+        max_contatos: tenant.max_contatos || 10000,
+        max_lideres: tenant.max_lideres || 500,
+        observacoes: tenant.observacoes || "",
+        cargo_politico: tenant.cargo_politico || "",
+        estado: tenant.estado || "",
+        cidade: tenant.cidade || "",
+        regiao_administrativa_id: tenant.regiao_administrativa_id || "",
+      });
+    }
+  }, [tenant]);
 
   const cargoConfig = getCargoConfig(form.cargo_politico);
   const isDF = form.estado === "DF";
@@ -67,11 +82,17 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
   };
 
   const handleEstadoChange = (estado: string) => {
-    setForm(prev => ({ ...prev, estado, cidade: "", regiao_administrativa_id: "" }));
+    setForm(prev => ({
+      ...prev,
+      estado,
+      cidade: "",
+      regiao_administrativa_id: "",
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenant) return;
 
     if (!form.nome.trim() || !form.slug.trim()) {
       toast({ title: "Erro", description: "Nome e slug são obrigatórios.", variant: "destructive" });
@@ -79,31 +100,29 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
     }
 
     try {
-      await createTenant.mutateAsync({
+      await updateTenant.mutateAsync({
+        id: tenant.id,
         nome: form.nome.trim(),
         slug: form.slug.trim(),
-        email_contato: form.email_contato || undefined,
-        telefone: form.telefone || undefined,
+        email_contato: form.email_contato || null,
+        telefone: form.telefone || null,
         plano: form.plano,
         max_usuarios: form.max_usuarios,
         max_contatos: form.max_contatos,
         max_lideres: form.max_lideres,
-        observacoes: form.observacoes || undefined,
-        cargo_politico: form.cargo_politico || undefined,
-        estado: form.estado || undefined,
-        cidade: form.cidade || undefined,
-        regiao_administrativa_id: form.regiao_administrativa_id || undefined,
+        observacoes: form.observacoes || null,
+        cargo_politico: form.cargo_politico || null,
+        estado: form.estado || null,
+        cidade: form.cidade || null,
+        regiao_administrativa_id: form.regiao_administrativa_id || null,
       });
 
-      toast({ title: "Tenant criado!", description: `${form.nome} foi cadastrado com sucesso.` });
+      toast({ title: "Tenant atualizado!", description: `${form.nome} foi salvo com sucesso.` });
       onOpenChange(false);
-      setForm(initialForm);
     } catch (error: any) {
       toast({
-        title: "Erro ao criar tenant",
-        description: error.message?.includes("duplicate")
-          ? "Já existe um tenant com esse slug."
-          : error.message || "Tente novamente.",
+        title: "Erro ao atualizar tenant",
+        description: error.message || "Tente novamente.",
         variant: "destructive",
       });
     }
@@ -113,27 +132,31 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Tenant</DialogTitle>
-          <DialogDescription>Cadastre uma nova organização na plataforma</DialogDescription>
+          <DialogTitle>Editar Tenant</DialogTitle>
+          <DialogDescription>Atualize as informações da organização</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Nome */}
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="nome">Nome da Organização *</Label>
-              <Input id="nome" value={form.nome} onChange={(e) => handleNomeChange(e.target.value)} placeholder="Ex: Prefeitura de São Paulo" />
+              <Label htmlFor="edit-nome">Nome da Organização *</Label>
+              <Input id="edit-nome" value={form.nome} onChange={(e) => setForm(p => ({ ...p, nome: e.target.value }))} />
             </div>
 
+            {/* Slug */}
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="slug">Slug (identificador único) *</Label>
-              <Input id="slug" value={form.slug} onChange={(e) => setForm(p => ({ ...p, slug: e.target.value }))} placeholder="prefeitura-sp" />
+              <Label htmlFor="edit-slug">Slug *</Label>
+              <Input id="edit-slug" value={form.slug} onChange={(e) => setForm(p => ({ ...p, slug: e.target.value }))} />
             </div>
 
             {/* Cargo Político */}
             <div className="space-y-2 sm:col-span-2">
               <Label>Cargo Político</Label>
               <Select value={form.cargo_politico} onValueChange={handleCargoChange}>
-                <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cargo" />
+                </SelectTrigger>
                 <SelectContent>
                   {CARGOS_POLITICOS.map(c => (
                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
@@ -142,11 +165,14 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </Select>
             </div>
 
+            {/* Estado */}
             {showEstado && (
               <div className="space-y-2">
                 <Label>Estado</Label>
                 <Select value={form.estado} onValueChange={handleEstadoChange}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o estado" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
                   <SelectContent>
                     {ESTADOS_BR.map(e => (
                       <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>
@@ -156,11 +182,14 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </div>
             )}
 
+            {/* Cidade (IBGE) */}
             {showCidade && form.estado && !isDF && (
               <div className="space-y-2">
                 <Label>Cidade</Label>
                 <Select value={form.cidade} onValueChange={(v) => setForm(p => ({ ...p, cidade: v }))}>
-                  <SelectTrigger><SelectValue placeholder={loadingCities ? "Carregando..." : "Selecione a cidade"} /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingCities ? "Carregando..." : "Selecione a cidade"} />
+                  </SelectTrigger>
                   <SelectContent>
                     {ibgeCities?.map(c => (
                       <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
@@ -170,11 +199,14 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </div>
             )}
 
+            {/* Região Administrativa (DF) */}
             {showRA && isDF && (
               <div className="space-y-2">
                 <Label>Região Administrativa</Label>
                 <Select value={form.regiao_administrativa_id} onValueChange={(v) => setForm(p => ({ ...p, regiao_administrativa_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a RA" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a RA" />
+                  </SelectTrigger>
                   <SelectContent>
                     {raCities.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
@@ -184,16 +216,19 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </div>
             )}
 
+            {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email de Contato</Label>
-              <Input id="email" type="email" value={form.email_contato} onChange={(e) => setForm(p => ({ ...p, email_contato: e.target.value }))} placeholder="contato@org.com" />
+              <Label htmlFor="edit-email">Email de Contato</Label>
+              <Input id="edit-email" type="email" value={form.email_contato} onChange={(e) => setForm(p => ({ ...p, email_contato: e.target.value }))} />
             </div>
 
+            {/* Telefone */}
             <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input id="telefone" value={form.telefone} onChange={(e) => setForm(p => ({ ...p, telefone: e.target.value }))} placeholder="(11) 99999-9999" />
+              <Label htmlFor="edit-telefone">Telefone</Label>
+              <Input id="edit-telefone" value={form.telefone} onChange={(e) => setForm(p => ({ ...p, telefone: e.target.value }))} />
             </div>
 
+            {/* Plano */}
             <div className="space-y-2">
               <Label>Plano</Label>
               <Select value={form.plano} onValueChange={(v) => setForm(p => ({ ...p, plano: v }))}>
@@ -206,30 +241,32 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
               </Select>
             </div>
 
+            {/* Limites */}
             <div className="space-y-2">
-              <Label htmlFor="max_usuarios">Máx. Usuários</Label>
-              <Input id="max_usuarios" type="number" value={form.max_usuarios} onChange={(e) => setForm(p => ({ ...p, max_usuarios: Number(e.target.value) }))} />
+              <Label htmlFor="edit-max-usuarios">Máx. Usuários</Label>
+              <Input id="edit-max-usuarios" type="number" value={form.max_usuarios} onChange={(e) => setForm(p => ({ ...p, max_usuarios: Number(e.target.value) }))} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="max_contatos">Máx. Contatos</Label>
-              <Input id="max_contatos" type="number" value={form.max_contatos} onChange={(e) => setForm(p => ({ ...p, max_contatos: Number(e.target.value) }))} />
+              <Label htmlFor="edit-max-contatos">Máx. Contatos</Label>
+              <Input id="edit-max-contatos" type="number" value={form.max_contatos} onChange={(e) => setForm(p => ({ ...p, max_contatos: Number(e.target.value) }))} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="max_lideres">Máx. Lideranças</Label>
-              <Input id="max_lideres" type="number" value={form.max_lideres} onChange={(e) => setForm(p => ({ ...p, max_lideres: Number(e.target.value) }))} />
+              <Label htmlFor="edit-max-lideres">Máx. Lideranças</Label>
+              <Input id="edit-max-lideres" type="number" value={form.max_lideres} onChange={(e) => setForm(p => ({ ...p, max_lideres: Number(e.target.value) }))} />
             </div>
 
+            {/* Observações */}
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea id="observacoes" value={form.observacoes} onChange={(e) => setForm(p => ({ ...p, observacoes: e.target.value }))} placeholder="Notas internas sobre o tenant..." rows={3} />
+              <Label htmlFor="edit-observacoes">Observações</Label>
+              <Textarea id="edit-observacoes" value={form.observacoes} onChange={(e) => setForm(p => ({ ...p, observacoes: e.target.value }))} rows={3} />
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={createTenant.isPending}>
-              {createTenant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Criar Tenant
+            <Button type="submit" disabled={updateTenant.isPending}>
+              {updateTenant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar Alterações
             </Button>
           </div>
         </form>
