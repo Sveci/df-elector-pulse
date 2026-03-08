@@ -213,13 +213,10 @@ const Integrations = () => {
 
   const [smsActiveProvider, setSmsActiveProvider] = useState<'smsdev' | 'smsbarato' | 'disparopro'>('smsdev');
 
-  // PassKit state
-  const [passkitApiToken, setPasskitApiToken] = useState("");
-  const [passkitApiBaseUrl, setPasskitApiBaseUrl] = useState("https://api.pub1.passkit.io");
+  // PassKit state (tenant-level: Program ID, Tier ID, Enabled only)
   const [passkitProgramId, setPasskitProgramId] = useState("");
   const [passkitTierId, setPasskitTierId] = useState("");
   const [passkitEnabled, setPasskitEnabled] = useState(false);
-  const [showPasskitToken, setShowPasskitToken] = useState(false);
 
   const handleCopyWebhookUrl = async () => {
     try {
