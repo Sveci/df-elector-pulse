@@ -358,7 +358,7 @@ const Integrations = () => {
   };
 
   const isZapiConfigured = zapiInstanceId && zapiToken;
-  const isResendConfigured = resendApiKey && resendFromEmail;
+  
   const isSmsdevConfigured = !!smsdevApiKey;
   const isSmsbaratoConfigured = !!smsbaratoApiKey;
   const isDisparoproConfigured = !!disparoproToken;
