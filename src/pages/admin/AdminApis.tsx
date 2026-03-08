@@ -411,7 +411,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
                   size="sm"
                   onClick={() => setIsEditing(true)}
                 >
-                  Atualizar Token
+                  {api.dbField && !hasStoredKey ? "Configurar Token" : "Atualizar Token"}
                 </Button>
               )}
             </div>
