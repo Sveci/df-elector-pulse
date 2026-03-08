@@ -26,7 +26,7 @@ const mapTutorialSteps: Step[] = [
   {
     target: '[data-tutorial="map-header"]',
     title: "Mapa Estratégico",
-    content: "Visualize a distribuição geográfica de líderes e contatos no Distrito Federal.",
+    content: "Visualize a distribuição geográfica de líderes e contatos na sua área de atuação.",
     placement: "bottom",
     disableBeacon: true,
   },
