@@ -68,7 +68,11 @@ const Organization = () => {
     if (organization) {
       setNome(organization.nome || "");
       setNomePlataforma(organization.nome_plataforma || "");
-      setCargo(organization.cargo || "");
+      // Normalize cargo: if stored as label, convert to value
+      const rawCargo = organization.cargo || "";
+      const matchByValue = CARGOS_POLITICOS.find(c => c.value === rawCargo);
+      const matchByLabel = CARGOS_POLITICOS.find(c => c.label.toLowerCase() === rawCargo.toLowerCase());
+      setCargo(matchByValue?.value || matchByLabel?.value || rawCargo);
       setPartido(organization.partido || "");
       setEstado(organization.estado || "");
       setCidade(organization.cidade || "");
