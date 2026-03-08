@@ -57,6 +57,17 @@ const apis: ApiConfig[] = [
     category: "IA",
     optional: true,
   },
+  {
+    key: "resend",
+    name: "Resend — Email Marketing",
+    icon: MessageSquare,
+    description: "Envie emails automatizados e em massa com a plataforma Resend.",
+    purpose: "Token global para envio de emails. Cada tenant configura seu próprio email e nome de remetente nas configurações do workspace.",
+    howToGet: "Acesse resend.com → faça login → vá em API Keys → clique em 'Create API Key' → copie a chave gerada.",
+    link: "https://resend.com/api-keys",
+    secretName: "RESEND_API_KEY",
+    category: "Comunicação",
+  },
 ];
 
 const categoryColors: Record<string, string> = {
