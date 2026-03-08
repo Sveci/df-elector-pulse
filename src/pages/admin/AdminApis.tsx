@@ -81,6 +81,7 @@ const apis: ApiConfig[] = [
     secretName: "RESEND_API_KEY",
     category: "Comunicação",
     enabledField: "resend_enabled",
+    dbField: "resend_api_key",
     hasTestConnection: true,
   },
   {
