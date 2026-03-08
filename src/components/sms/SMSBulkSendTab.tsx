@@ -640,7 +640,7 @@ export function SMSBulkSendTab() {
     }
 
     // All done
-    toast.success(`Envio concluído! ${sentCount} mensagens enviadas.`);
+    toast.success(`Envio concluído! ${actualSentCount} mensagens enviadas.`);
     resetState();
   };
 
