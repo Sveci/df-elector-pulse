@@ -151,7 +151,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
         </DialogHeader>
 
         <Tabs defaultValue="info" className="flex flex-col flex-1 min-h-0">
-          <TabsList className="w-full flex flex-wrap items-center justify-start gap-1 h-auto">
+          <TabsList className="w-full flex flex-wrap items-center justify-start gap-1 h-auto p-1">
             <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
             <TabsTrigger value="verificacao" className="text-xs">Verificação</TabsTrigger>
             <TabsTrigger value="indicacoes" className="text-xs">Indicações</TabsTrigger>
