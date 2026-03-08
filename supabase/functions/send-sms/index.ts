@@ -351,6 +351,24 @@ Deno.serve(async (req) => {
       // Create a mutable copy of variables for fallback injection
       const finalVariables = { ...(variables || {}) };
 
+      // Auto-inject organization data (politico + cargo) into all messages
+      if (!finalVariables.politico || !finalVariables.cargo) {
+        const { data: org } = await supabase
+          .from("organization")
+          .select("nome, cargo")
+          .limit(1)
+          .single();
+
+        if (org) {
+          if (!finalVariables.politico && org.nome) {
+            finalVariables.politico = org.nome;
+          }
+          if (!finalVariables.cargo && org.cargo) {
+            finalVariables.cargo = org.cargo;
+          }
+        }
+      }
+
       // FALLBACK: If template is leader verification and link_verificacao is missing, generate it
       if (templateSlug === "verificacao-lider-sms" && !finalVariables.link_verificacao && leaderId) {
         console.log("[send-sms] Fallback: generating link_verificacao for leader", leaderId);
