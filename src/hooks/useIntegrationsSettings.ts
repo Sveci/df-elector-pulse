@@ -60,13 +60,6 @@ interface IntegrationsSettings {
   verification_wa_zapi_phone: string | null;
   // Fallback automático
   verification_fallback_active: boolean;
-  // 360dialog
-  dialog360_enabled: boolean;
-  dialog360_api_key: string | null;
-  dialog360_phone_number_id: string | null;
-  dialog360_test_mode: boolean;
-  dialog360_whitelist: string[];
-  dialog360_fallback_enabled: boolean;
   zapi_last_connected_at: string | null;
   zapi_disconnected_at: string | null;
   // Horário de Silêncio
