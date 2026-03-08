@@ -221,6 +221,67 @@ export function useDeleteEmailTemplate() {
   });
 }
 
+export function useSeedEmailTemplates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (templates: Array<{
+      slug: string;
+      nome: string;
+      assunto: string;
+      conteudo_html: string;
+      categoria: string;
+      variaveis: string[];
+      is_active: boolean;
+    }>) => {
+      const { data, error } = await supabase.functions.invoke("seed-email-templates", {
+        body: { templates },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["email_templates"] });
+      toast.success(`Templates importados! ${data.inserted} novos, ${data.updated} atualizados`);
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao importar templates: " + error.message);
+    },
+  });
+}
+
+export function useResetTenantTemplate() {
+  const queryClient = useQueryClient();
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {}
+
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      if (!tenantId) throw new Error("Nenhum tenant ativo");
+      
+      const { error } = await supabase
+        .from("tenant_email_templates")
+        .delete()
+        .eq("tenant_id", tenantId)
+        .eq("slug", slug);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email_templates"] });
+      toast.success("Template restaurado para o padrão!");
+    },
+    onError: (error: Error) => {
+      toast.error("Erro ao restaurar template: " + error.message);
+    },
+  });
+}
+
 export function useTestResendConnection() {
   return useMutation({
     mutationFn: async (apiKey: string) => {
