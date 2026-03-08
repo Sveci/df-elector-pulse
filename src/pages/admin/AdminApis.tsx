@@ -357,11 +357,27 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
 
         {/* Token input section */}
         <div className="border-t pt-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.secretName}</code>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Configurado</span>
+              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.dbField || api.secretName}</code>
+              {api.dbField ? (
+                hasStoredKey ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-muted-foreground">Configurado</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    <span className="text-xs text-amber-600 dark:text-amber-400">Não configurado</span>
+                  </>
+                )
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground">Vault</span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {api.hasTestConnection && (
