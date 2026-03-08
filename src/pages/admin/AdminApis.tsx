@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio } from "lucide-react";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,6 +23,10 @@ interface ApiConfig {
   category: string;
   optional?: boolean;
   hasRegionSelector?: boolean;
+  /** Field name in integrations_settings for the enabled toggle */
+  enabledField?: string;
+  /** Whether this API has a test connection function */
+  hasTestConnection?: boolean;
 }
 
 const apis: ApiConfig[] = [
@@ -35,6 +40,8 @@ const apis: ApiConfig[] = [
     link: "https://developers.facebook.com/apps/",
     secretName: "META_WA_ACCESS_TOKEN",
     category: "Comunicação",
+    enabledField: "meta_cloud_enabled",
+    hasTestConnection: true,
   },
   {
     key: "apify",
@@ -46,6 +53,7 @@ const apis: ApiConfig[] = [
     link: "https://console.apify.com/account/integrations",
     secretName: "APIFY_API_TOKEN",
     category: "Coleta de Dados",
+    hasTestConnection: true,
   },
   {
     key: "openai",
@@ -58,6 +66,7 @@ const apis: ApiConfig[] = [
     secretName: "OPENAI_API_KEY",
     category: "IA",
     optional: true,
+    hasTestConnection: true,
   },
   {
     key: "resend",
@@ -69,6 +78,8 @@ const apis: ApiConfig[] = [
     link: "https://resend.com/api-keys",
     secretName: "RESEND_API_KEY",
     category: "Comunicação",
+    enabledField: "resend_enabled",
+    hasTestConnection: true,
   },
   {
     key: "smsbarato",
@@ -80,6 +91,8 @@ const apis: ApiConfig[] = [
     link: "https://www.smsbarato.com.br/",
     secretName: "SMSBARATO_API_KEY",
     category: "SMS",
+    enabledField: "smsbarato_enabled",
+    hasTestConnection: true,
   },
   {
     key: "disparopro",
@@ -91,6 +104,8 @@ const apis: ApiConfig[] = [
     link: "https://www.disparopro.com.br/",
     secretName: "DISPAROPRO_TOKEN",
     category: "SMS",
+    enabledField: "disparopro_enabled",
+    hasTestConnection: true,
   },
   {
     key: "smsdev",
@@ -102,6 +117,8 @@ const apis: ApiConfig[] = [
     link: "https://www.smsdev.com.br/",
     secretName: "SMSDEV_API_KEY",
     category: "SMS",
+    enabledField: "smsdev_enabled",
+    hasTestConnection: true,
   },
   {
     key: "passkit",
@@ -114,6 +131,8 @@ const apis: ApiConfig[] = [
     secretName: "PASSKIT_API_TOKEN",
     category: "Carteira Digital",
     hasRegionSelector: true,
+    enabledField: "passkit_enabled",
+    hasTestConnection: true,
   },
 ];
 
@@ -125,14 +144,18 @@ const categoryColors: Record<string, string> = {
   "Carteira Digital": "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
 };
 
-function ApiCard({ api }: { api: ApiConfig }) {
+function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStates: Record<string, boolean>; onToggle: (field: string, value: boolean) => void }) {
   const Icon = api.icon;
   const [tokenValue, setTokenValue] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [regionUrl, setRegionUrl] = useState("https://api.pub1.passkit.io");
   const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+
+  const isEnabled = api.enabledField ? (enabledStates[api.enabledField] ?? false) : undefined;
 
   useEffect(() => {
     if (api.hasRegionSelector) {
@@ -160,7 +183,6 @@ function ApiCard({ api }: { api: ApiConfig }) {
 
     setIsSaving(true);
     try {
-      // Salvar via edge function que atualiza o secret
       const { error } = await supabase.functions.invoke("update-secret", {
         body: { secretName: api.secretName, secretValue: tokenValue.trim() },
       });
@@ -177,8 +199,45 @@ function ApiCard({ api }: { api: ApiConfig }) {
     }
   };
 
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-api-connection", {
+        body: { provider: api.key },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setTestResult({
+          success: true,
+          message: data.data?.description || "Conexão bem-sucedida!",
+        });
+        toast.success(`${api.name} — conexão OK!`);
+      } else {
+        setTestResult({
+          success: false,
+          message: data?.error || "Falha na conexão",
+        });
+        toast.error(`${api.name} — ${data?.error || "falha na conexão"}`);
+      }
+    } catch (err: any) {
+      const message = err.message || "Erro ao testar";
+      setTestResult({ success: false, message });
+      toast.error(`Erro ao testar ${api.name}: ${message}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleToggleEnabled = async (checked: boolean) => {
+    if (!api.enabledField) return;
+    onToggle(api.enabledField, checked);
+  };
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-shadow ${isEnabled === false ? "opacity-60" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="flex items-center gap-3 text-lg">
@@ -196,6 +255,17 @@ function ApiCard({ api }: { api: ApiConfig }) {
             <Badge variant="outline" className={categoryColors[api.category] || ""}>
               {api.category}
             </Badge>
+            {api.enabledField && (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-muted-foreground">
+                  {isEnabled ? "Ativo" : "Inativo"}
+                </span>
+                <Switch
+                  checked={isEnabled ?? false}
+                  onCheckedChange={handleToggleEnabled}
+                />
+              </div>
+            )}
           </div>
         </div>
         <CardDescription className="mt-1">{api.description}</CardDescription>
@@ -260,6 +330,22 @@ function ApiCard({ api }: { api: ApiConfig }) {
               <span className="text-xs text-muted-foreground">Configurado</span>
             </div>
             <div className="flex items-center gap-2">
+              {api.hasTestConnection && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  disabled={isTesting}
+                  className="gap-1.5"
+                >
+                  {isTesting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Zap className="h-3.5 w-3.5" />
+                  )}
+                  Testar Conexão
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -280,6 +366,22 @@ function ApiCard({ api }: { api: ApiConfig }) {
               )}
             </div>
           </div>
+
+          {/* Test result */}
+          {testResult && (
+            <div className={`flex items-center gap-2 p-3 rounded-lg border text-sm ${
+              testResult.success
+                ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950/30 dark:border-green-800 dark:text-green-300"
+                : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950/30 dark:border-red-800 dark:text-red-300"
+            }`}>
+              {testResult.success ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              ) : (
+                <XCircle className="h-4 w-4 shrink-0" />
+              )}
+              <span>{testResult.message}</span>
+            </div>
+          )}
 
           {isEditing && (
             <div className="space-y-2 p-4 rounded-lg border border-border bg-muted/30">
@@ -435,6 +537,52 @@ function ActiveSmsProviderCard() {
 }
 
 const AdminApis = () => {
+  const [enabledStates, setEnabledStates] = useState<Record<string, boolean>>({});
+  const [isLoadingStates, setIsLoadingStates] = useState(true);
+
+  useEffect(() => {
+    const fetchEnabledStates = async () => {
+      const { data } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_enabled, resend_enabled, smsbarato_enabled, disparopro_enabled, smsdev_enabled, passkit_enabled")
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setEnabledStates({
+          meta_cloud_enabled: data.meta_cloud_enabled ?? false,
+          resend_enabled: data.resend_enabled ?? false,
+          smsbarato_enabled: data.smsbarato_enabled ?? false,
+          disparopro_enabled: data.disparopro_enabled ?? false,
+          smsdev_enabled: data.smsdev_enabled ?? false,
+          passkit_enabled: data.passkit_enabled ?? false,
+        });
+      }
+      setIsLoadingStates(false);
+    };
+    fetchEnabledStates();
+  }, []);
+
+  const handleToggle = async (field: string, value: boolean) => {
+    const previousStates = { ...enabledStates };
+    setEnabledStates(prev => ({ ...prev, [field]: value }));
+
+    try {
+      const { error } = await supabase
+        .from("integrations_settings")
+        .update({ [field]: value })
+        .not("id", "is", null);
+
+      if (error) throw error;
+
+      const apiName = apis.find(a => a.enabledField === field)?.name || field;
+      toast.success(`${apiName} — ${value ? "ativado" : "desativado"}`);
+    } catch (err: any) {
+      setEnabledStates(previousStates);
+      toast.error(`Erro ao atualizar: ${err.message || "Tente novamente"}`);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
@@ -459,11 +607,22 @@ const AdminApis = () => {
 
         <ActiveSmsProviderCard />
 
-        <div className="space-y-4">
-          {apis.map((api) => (
-            <ApiCard key={api.key} api={api} />
-          ))}
-        </div>
+        {isLoadingStates ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {apis.map((api) => (
+              <ApiCard
+                key={api.key}
+                api={api}
+                enabledStates={enabledStates}
+                onToggle={handleToggle}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
