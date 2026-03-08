@@ -40,6 +40,7 @@ export interface OfficeLeader {
   email?: string;
   telefone?: string;
   cidade_id?: string;
+  localidade?: string;
   cidade?: OfficeCity; // populated join
   status: OfficeLeaderStatus;
   pontuacao_total: number;
