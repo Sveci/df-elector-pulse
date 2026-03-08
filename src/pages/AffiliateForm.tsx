@@ -429,11 +429,14 @@ export default function AffiliateForm() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade/RA *</Label>
-                    <RegionSelect
+                    <Label htmlFor="cidade">{locationConfig.label} *</Label>
+                    <LocationSelect
                       value={cidadeId}
-                      onValueChange={setCidadeId}
-                      placeholder="Selecione a cidade/RA"
+                      localidadeValue={localidade}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        setCidadeId(cid || "");
+                        setLocalidade(loc || "");
+                      }}
                     />
                   </div>
                   <div className="space-y-2">

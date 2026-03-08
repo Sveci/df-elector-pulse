@@ -152,12 +152,15 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="cidade_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cidade/RA (Opcional)</FormLabel>
+                  <FormLabel>{locationConfig.label} (Opcional)</FormLabel>
                   <FormControl>
-                    <RegionSelect
+                    <LocationSelect
                       value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Selecione a cidade/RA"
+                      localidadeValue={form.watch("localidade") || ""}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        field.onChange(cid || "");
+                        form.setValue("localidade", loc || "");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

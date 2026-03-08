@@ -188,11 +188,14 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
 
           {/* Cidade/RA */}
           <div>
-            <Label>Cidade/RA</Label>
-            <RegionSelect
+            <Label>{locationConfig.label}</Label>
+            <LocationSelect
               value={cidadeId}
-              onValueChange={setCidadeId}
-              placeholder="Selecione a cidade/RA"
+              localidadeValue={localidade}
+              onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                setCidadeId(cid || "");
+                setLocalidade(loc || "");
+              }}
             />
           </div>
 
