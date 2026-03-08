@@ -62,10 +62,17 @@ Deno.serve(async (req) => {
 
     console.log(`[test-api-connection] Testing provider: ${provider}`);
 
+    // Fetch integration settings from database (keys stored here, not in env)
+    const { data: settings } = await serviceClient
+      .from("integrations_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
     switch (provider) {
       case "smsbarato": {
-        const apiKey = Deno.env.get("SMSBARATO_API_KEY");
-        if (!apiKey) return jsonError("SMSBARATO_API_KEY não configurada");
+        const apiKey = settings?.smsbarato_api_key;
+        if (!apiKey) return jsonError("API Key do SMSBarato não configurada nas integrações");
         const endpoint = `https://sistema81.smsbarato.com.br/saldo?chave=${apiKey}`;
         const res = await fetch(endpoint);
         const text = await res.text();
@@ -79,8 +86,8 @@ Deno.serve(async (req) => {
       }
 
       case "smsdev": {
-        const apiKey = Deno.env.get("SMSDEV_API_KEY");
-        if (!apiKey) return jsonError("SMSDEV_API_KEY não configurada");
+        const apiKey = settings?.smsdev_api_key;
+        if (!apiKey) return jsonError("API Key do SMSDev não configurada nas integrações");
         const res = await fetch(`https://api.smsdev.com.br/v1/balance?key=${apiKey}`);
         const data = await res.json();
         if (data.situacao === "OK" || data.saldo_sms !== undefined) {
@@ -90,8 +97,8 @@ Deno.serve(async (req) => {
       }
 
       case "disparopro": {
-        const token = Deno.env.get("DISPAROPRO_TOKEN");
-        if (!token) return jsonError("DISPAROPRO_TOKEN não configurado");
+        const token = settings?.disparopro_token;
+        if (!token) return jsonError("Token do DisparoPro não configurado nas integrações");
         const res = await fetch("https://api.disparopro.com.br:8433/mt/v2/balance", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -103,8 +110,8 @@ Deno.serve(async (req) => {
       }
 
       case "resend": {
-        const apiKey = Deno.env.get("RESEND_API_KEY");
-        if (!apiKey) return jsonError("RESEND_API_KEY não configurada");
+        const apiKey = settings?.resend_api_key;
+        if (!apiKey) return jsonError("API Key do Resend não configurada nas integrações");
         const res = await fetch("https://api.resend.com/api-keys", {
           headers: { Authorization: `Bearer ${apiKey}` },
         });
@@ -118,13 +125,7 @@ Deno.serve(async (req) => {
 
       case "meta_cloud": {
         const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-        if (!accessToken) return jsonError("META_WA_ACCESS_TOKEN não configurado");
-        // Get settings for phoneNumberId
-        const { data: settings } = await serviceClient
-          .from("integrations_settings")
-          .select("meta_cloud_phone_number_id, meta_cloud_api_version")
-          .limit(1)
-          .maybeSingle();
+        if (!accessToken) return jsonError("META_WA_ACCESS_TOKEN não configurado nos secrets");
         const phoneNumberId = settings?.meta_cloud_phone_number_id;
         const apiVersion = settings?.meta_cloud_api_version || "v20.0";
         if (!phoneNumberId) return jsonError("Phone Number ID não configurado nas integrações");
@@ -140,21 +141,15 @@ Deno.serve(async (req) => {
       }
 
       case "passkit": {
-        const apiToken = Deno.env.get("PASSKIT_API_TOKEN");
-        if (!apiToken) return jsonError("PASSKIT_API_TOKEN não configurado");
-        const { data: settings } = await serviceClient
-          .from("integrations_settings")
-          .select("passkit_api_base_url")
-          .limit(1)
-          .maybeSingle();
+        const apiToken = settings?.passkit_api_token;
+        if (!apiToken) return jsonError("Token do PassKit não configurado nas integrações");
         const baseUrl = settings?.passkit_api_base_url || "https://api.pub1.passkit.io";
-        // Simple auth check
         return jsonSuccess({ description: `Token configurado — Região: ${baseUrl.includes("pub1") ? "pub1" : "pub2"}` });
       }
 
       case "apify": {
         const apiToken = Deno.env.get("APIFY_API_TOKEN");
-        if (!apiToken) return jsonError("APIFY_API_TOKEN não configurado");
+        if (!apiToken) return jsonError("APIFY_API_TOKEN não configurado nos secrets");
         const res = await fetch("https://api.apify.com/v2/users/me", {
           headers: { Authorization: `Bearer ${apiToken}` },
         });
@@ -168,7 +163,7 @@ Deno.serve(async (req) => {
 
       case "openai": {
         const apiKey = Deno.env.get("OPENAI_API_KEY");
-        if (!apiKey) return jsonError("OPENAI_API_KEY não configurada");
+        if (!apiKey) return jsonError("OPENAI_API_KEY não configurada nos secrets");
         const res = await fetch("https://api.openai.com/v1/models", {
           headers: { Authorization: `Bearer ${apiKey}` },
         });
@@ -195,13 +190,13 @@ Deno.serve(async (req) => {
 function jsonSuccess(data: Record<string, unknown>) {
   return new Response(
     JSON.stringify({ success: true, data: { connected: true, ...data } }),
-    { status: 200, headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" } }
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
 
 function jsonError(message: string) {
   return new Response(
     JSON.stringify({ success: false, error: message }),
-    { status: 400, headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" } }
+    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
