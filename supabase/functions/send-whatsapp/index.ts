@@ -614,15 +614,7 @@ Deno.serve(async (req) => {
     // ============ SEND MESSAGE ============
     let result: SendResult;
     
-    if (activeProvider === 'dialog360') {
-      result = await sendVia360Dialog(typedSettings, cleanPhone, finalMessage, metaTemplate);
-      
-      // Fallback to Z-API if 360dialog fails and fallback is enabled
-      if (!result.success && typedSettings.dialog360_fallback_enabled && typedSettings.zapi_enabled) {
-        console.log(`[send-whatsapp] 360dialog failed: ${result.error}, trying Z-API fallback`);
-        result = await sendViaZapi(typedSettings, cleanPhone, finalMessage);
-      }
-    } else if (activeProvider === 'meta_cloud') {
+    if (activeProvider === 'meta_cloud') {
       result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate);
       
       // Fallback to Z-API if Meta Cloud fails and fallback is enabled
