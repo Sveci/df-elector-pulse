@@ -196,7 +196,10 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "dd/MM/yyyy")
+                            (() => {
+                              const [y, m, d] = field.value.split("-").map(Number);
+                              return format(new Date(y, m - 1, d), "dd/MM/yyyy");
+                            })()
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -207,7 +210,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
+                        selected={field.value ? (() => { const [y,m,d] = field.value.split("-").map(Number); return new Date(y, m-1, d); })() : undefined}
                         onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
                         disabled={(date) =>
                           date > new Date() || date < new Date("1900-01-01")

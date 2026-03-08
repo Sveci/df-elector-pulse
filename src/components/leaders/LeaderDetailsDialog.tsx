@@ -58,6 +58,12 @@ const formatPhone = (phone: string) => {
 
 const formatDate = (date: string | null | undefined) => {
   if (!date) return "-";
+  // Parse date-only strings (YYYY-MM-DD) without timezone shift
+  const dateOnly = date.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (dateOnly) {
+    const [y, m, d] = date.split("-").map(Number);
+    return format(new Date(y, m - 1, d), "dd/MM/yyyy", { locale: ptBR });
+  }
   const parsed = new Date(date);
   if (isNaN(parsed.getTime())) return "-";
   return format(parsed, "dd/MM/yyyy", { locale: ptBR });
