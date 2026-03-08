@@ -192,6 +192,7 @@ export function useStrategicMapData() {
           latitude: c.cidade.latitude,
           longitude: c.cidade.longitude,
           cidade_nome: c.cidade.nome,
+          localidade: c.localidade || null,
         }));
 
       console.log("Strategic Map - Contacts with valid coordinates:", filtered.length);

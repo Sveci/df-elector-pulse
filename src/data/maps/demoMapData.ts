@@ -130,6 +130,7 @@ function generateDemoContacts(leaders: LeaderMapData[]): ContactMapData[] {
         latitude: region.lat,
         longitude: region.lng,
         cidade_nome: region.nome,
+        localidade: null,
       });
       contactIdx++;
     }
