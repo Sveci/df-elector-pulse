@@ -447,7 +447,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
             {/* ABA INDICAÇÕES */}
             <TabsContent value="indicacoes" className="mt-0 space-y-4 pr-4">
               {/* Header com total combinado */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h4 className="font-medium">Total de Indicações</h4>
                 <Badge variant="default" className="text-sm">
                   {(indicatedContacts?.length || 0) + (subordinates?.length || 0)} indicações
