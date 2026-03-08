@@ -156,24 +156,27 @@ export function useGamificationSettings() {
 }
 
 // Helper functions that work with dynamic levels
-export function getLeaderLevel(points: number, levels: LeaderLevel[]): LeaderLevel {
-  return levels.find(l => points >= l.min && points <= l.max) || levels[0];
+export function getLeaderLevel(points: number, levels?: LeaderLevel[]): LeaderLevel {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  return safeLevels.find(l => points >= l.min && points <= l.max) || safeLevels[0];
 }
 
-export function getNextLevel(points: number, levels: LeaderLevel[]): LeaderLevel | null {
-  const currentLevel = getLeaderLevel(points, levels);
-  const currentIndex = levels.findIndex(l => l.name === currentLevel.name);
-  if (currentIndex < levels.length - 1) {
-    return levels[currentIndex + 1];
+export function getNextLevel(points: number, levels?: LeaderLevel[]): LeaderLevel | null {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const currentLevel = getLeaderLevel(points, safeLevels);
+  const currentIndex = safeLevels.findIndex(l => l.name === currentLevel.name);
+  if (currentIndex < safeLevels.length - 1) {
+    return safeLevels[currentIndex + 1];
   }
   return null;
 }
 
-export function getProgressToNextLevel(points: number, levels: LeaderLevel[]): number {
-  const currentLevel = getLeaderLevel(points, levels);
-  const nextLevel = getNextLevel(points, levels);
+export function getProgressToNextLevel(points: number, levels?: LeaderLevel[]): number {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const currentLevel = getLeaderLevel(points, safeLevels);
+  const nextLevel = getNextLevel(points, safeLevels);
   
-  if (!nextLevel) return 100; // Já está no nível máximo
+  if (!nextLevel) return 100;
   
   const progressInLevel = points - currentLevel.min;
   const levelRange = currentLevel.max - currentLevel.min + 1;
@@ -181,13 +184,14 @@ export function getProgressToNextLevel(points: number, levels: LeaderLevel[]): n
   return Math.min(100, Math.round((progressInLevel / levelRange) * 100));
 }
 
-export function getPointsToNextLevel(points: number, levels: LeaderLevel[]): number {
-  const nextLevel = getNextLevel(points, levels);
+export function getPointsToNextLevel(points: number, levels?: LeaderLevel[]): number {
+  const safeLevels = levels && levels.length > 0 ? levels : DEFAULT_LEVELS;
+  const nextLevel = getNextLevel(points, safeLevels);
   if (!nextLevel) return 0;
   return nextLevel.min - points;
 }
 
-export function getLeaderCardColorClass(points: number, levels: LeaderLevel[]): string {
+export function getLeaderCardColorClass(points: number, levels?: LeaderLevel[]): string {
   const level = getLeaderLevel(points, levels);
   return `border-l-4 ${level.borderClass} ${level.bgClass.replace('100', '50')}/50`;
 }
