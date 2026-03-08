@@ -184,7 +184,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="data_nascimento"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento (Opcional)</FormLabel>
+                  <FormLabel>Data de Nascimento</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
