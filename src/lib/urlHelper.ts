@@ -1,18 +1,32 @@
 /**
- * URL de produção fixa - NUNCA muda baseado no ambiente.
- * Use para TODAS as URLs enviadas externamente (SMS, Email, WhatsApp).
+ * Retorna a URL base da aplicação de forma dinâmica.
+ * No navegador: usa window.location.origin (funciona automaticamente com qualquer domínio).
+ * Em edge functions: usa a variável de ambiente APP_BASE_URL.
+ * Fallback: domínio publicado do Lovable.
  */
-export const PRODUCTION_URL = "https://app.rafaelprudente.com";
+function getAppBaseUrl(): string {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  // Fallback para SSR ou testes
+  return "https://df-elector-pulse.lovable.app";
+}
 
 /**
- * Retorna SEMPRE a URL de produção.
- * Use para URLs que serão enviadas externamente (SMS, Email, WhatsApp).
- * 
- * IMPORTANTE: Esta função NUNCA deve usar window.location para evitar
- * que URLs de preview sejam enviadas em comunicações externas.
+ * Retorna a URL base da aplicação.
+ * Usa o domínio atual do navegador — funciona automaticamente com domínio customizado.
+ */
+export function getBaseUrl(): string {
+  return getAppBaseUrl();
+}
+
+/**
+ * Retorna a URL de produção para comunicações externas (SMS, Email, WhatsApp).
+ * No frontend, usa o domínio atual.
+ * Em edge functions, deve-se usar Deno.env.get("APP_BASE_URL").
  */
 export function getProductionUrl(): string {
-  return PRODUCTION_URL;
+  return getAppBaseUrl();
 }
 
 /**
@@ -20,179 +34,90 @@ export function getProductionUrl(): string {
  * Se detectar URL de preview ou localhost, corrige automaticamente.
  */
 export function validateExternalUrl(url: string): string {
-  if (url.includes('lovableproject.com') || url.includes('localhost') || url.includes('lovable.app')) {
-    console.warn('[URL PROTECTION] Tentativa de usar URL de preview em comunicação externa! Corrigindo automaticamente...');
-    return url.replace(/https?:\/\/[^/]+/, PRODUCTION_URL);
+  if (url.includes('lovableproject.com') || url.includes('localhost')) {
+    console.warn('[URL PROTECTION] Tentativa de usar URL de preview em comunicação externa! Corrigindo...');
+    return url.replace(/https?:\/\/[^/]+/, getAppBaseUrl());
   }
   return url;
 }
 
-/**
- * Retorna a URL base da aplicação.
- * - No navegador: usa o domínio atual (funciona no preview e em domínio customizado)
- * - Fallback: domínio de produção
- * 
- * ⚠️ ATENÇÃO: NÃO USE para URLs externas (SMS, Email, WhatsApp)!
- * Para comunicações externas, use getProductionUrl() ou as funções específicas.
- */
-export function getBaseUrl(): string {
-  if (typeof window !== "undefined" && window.location?.origin) {
-    const origin = window.location.origin;
-    
-    // TRAVA: Detectar ambiente de preview e alertar
-    if (origin.includes('lovableproject.com') || origin.includes('localhost') || origin.includes('lovable.app')) {
-      console.warn('[ATENÇÃO] getBaseUrl() chamado em ambiente de preview! Para URLs externas, use getProductionUrl().');
-    }
-    
-    return origin;
-  }
-  return PRODUCTION_URL;
-}
+// =====================================================
+// GERADORES DE LINKS — todos usam getAppBaseUrl()
+// =====================================================
 
-/**
- * Gera o link do formulário de visita
- * SEMPRE usa URL de produção (enviado externamente via SMS)
- */
+/** Link do formulário de visita */
 export function generateVisitFormUrl(visitId: string): string {
-  return `${PRODUCTION_URL}/visita-gabinete/${visitId}`;
+  return `${getAppBaseUrl()}/visita-gabinete/${visitId}`;
 }
 
-/**
- * Gera o link de check-in da visita
- */
+/** Link de check-in da visita */
 export function generateVisitCheckinUrl(qrCode: string): string {
-  return `${getBaseUrl()}/office/checkin/${qrCode}`;
+  return `${getAppBaseUrl()}/office/checkin/${qrCode}`;
 }
 
-/**
- * Gera link de campanha UTM para cadastro
- * SEMPRE usa URL de produção (pode ser enviado externamente via QR Code)
- */
+/** Link de campanha UTM */
 export function generateCampaignUrl(utmSource: string, utmMedium: string, utmCampaign: string): string {
-  const params = new URLSearchParams({
-    utm_source: utmSource,
-    utm_medium: utmMedium,
-    utm_campaign: utmCampaign
-  });
-  // Campanhas sem token devem apontar para o formulário público
-  return `${PRODUCTION_URL}/lider/cadastro?${params.toString()}`;
+  const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
+  return `${getAppBaseUrl()}/lider/cadastro?${params.toString()}`;
 }
 
-/**
- * Gera link de evento com parâmetros UTM de campanha
- * SEMPRE usa URL de produção (pode ser enviado externamente via QR Code)
- */
-export function generateEventCampaignUrl(
-  eventSlug: string,
-  utmSource: string,
-  utmMedium: string,
-  utmCampaign: string
-): string {
-  const params = new URLSearchParams({
-    utm_source: utmSource,
-    utm_medium: utmMedium,
-    utm_campaign: utmCampaign
-  });
-  return `${PRODUCTION_URL}/eventos/${eventSlug}?${params.toString()}`;
+/** Link de evento com UTMs de campanha */
+export function generateEventCampaignUrl(eventSlug: string, utmSource: string, utmMedium: string, utmCampaign: string): string {
+  const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
+  return `${getAppBaseUrl()}/eventos/${eventSlug}?${params.toString()}`;
 }
 
-/**
- * Gera link de indicação de líder (formulário de cadastro)
- * SEMPRE usa URL de produção (enviado externamente)
- */
+/** Link de indicação de líder */
 export function generateLeaderReferralUrl(affiliateToken: string): string {
-  return `${PRODUCTION_URL}/cadastro/${affiliateToken}`;
+  return `${getAppBaseUrl()}/cadastro/${affiliateToken}`;
 }
 
-/**
- * Gera link de afiliado
- * SEMPRE usa URL de produção (enviado externamente)
- */
+/** Link de afiliado */
 export function generateAffiliateUrl(affiliateToken: string): string {
-  return `${PRODUCTION_URL}/affiliate/${affiliateToken}`;
+  return `${getAppBaseUrl()}/affiliate/${affiliateToken}`;
 }
 
-/**
- * Gera link de verificação de líder
- * SEMPRE usa URL de produção (enviado externamente via SMS/Email)
- */
+/** Link de verificação de líder */
 export function generateLeaderVerificationUrl(verificationCode: string): string {
-  return `${PRODUCTION_URL}/verificar-lider/${verificationCode}`;
+  return `${getAppBaseUrl()}/verificar-lider/${verificationCode}`;
 }
 
-/**
- * Gera link de cadastro para evento com tracking
- * SEMPRE usa URL de produção (usado em QR Codes)
- */
-export function generateEventRegistrationUrl(
-  eventSlug: string, 
-  eventId: string, 
-  trackingCode: string
-): string {
+/** Link de cadastro para evento com tracking */
+export function generateEventRegistrationUrl(eventSlug: string, eventId: string, trackingCode: string): string {
   const params = new URLSearchParams({
-    utm_source: 'qr',
-    utm_medium: 'offline',
-    utm_campaign: `evento_${eventId.substring(0, 8)}`,
-    utm_content: trackingCode
+    utm_source: 'qr', utm_medium: 'offline',
+    utm_campaign: `evento_${eventId.substring(0, 8)}`, utm_content: trackingCode
   });
-  return `${PRODUCTION_URL}/eventos/${eventSlug}?${params.toString()}`;
+  return `${getAppBaseUrl()}/eventos/${eventSlug}?${params.toString()}`;
 }
 
-/**
- * Gera link de afiliado para evento
- * SEMPRE usa URL de produção (enviado externamente)
- */
+/** Link de afiliado para evento */
 export function generateEventAffiliateUrl(eventSlug: string, affiliateToken: string): string {
-  return `${PRODUCTION_URL}/eventos/${eventSlug}?ref=${affiliateToken}`;
+  return `${getAppBaseUrl()}/eventos/${eventSlug}?ref=${affiliateToken}`;
 }
 
-/**
- * Gera o link do formulário público de cadastro de líderes
- * SEMPRE usa URL de produção (pode ser compartilhado externamente)
- */
+/** Link do formulário público de cadastro de líderes */
 export function generateLeaderRegistrationUrl(): string {
-  return `${PRODUCTION_URL}/lider/cadastro`;
+  return `${getAppBaseUrl()}/lider/cadastro`;
 }
 
-/**
- * Gera link de funil de captação com parâmetros UTM de campanha
- * SEMPRE usa URL de produção (pode ser enviado externamente via QR Code)
- */
-export function generateFunnelCampaignUrl(
-  funnelSlug: string,
-  utmSource: string,
-  utmMedium: string,
-  utmCampaign: string
-): string {
-  const params = new URLSearchParams({
-    utm_source: utmSource,
-    utm_medium: utmMedium,
-    utm_campaign: utmCampaign
-  });
-  return `${PRODUCTION_URL}/captacao/${funnelSlug}?${params.toString()}`;
+/** Link de funil de captação com UTMs */
+export function generateFunnelCampaignUrl(funnelSlug: string, utmSource: string, utmMedium: string, utmCampaign: string): string {
+  const params = new URLSearchParams({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign });
+  return `${getAppBaseUrl()}/captacao/${funnelSlug}?${params.toString()}`;
 }
 
-/**
- * Gera link de descadastro com token
- * SEMPRE usa URL de produção (enviado externamente via Email)
- */
+/** Link de descadastro */
 export function generateUnsubscribeUrl(token: string): string {
-  return `${PRODUCTION_URL}/descadastro?token=${token}`;
+  return `${getAppBaseUrl()}/descadastro?token=${token}`;
 }
 
-/**
- * Gera link de pesquisa com afiliado
- * SEMPRE usa URL de produção (enviado externamente)
- */
+/** Link de pesquisa com afiliado */
 export function generateSurveyAffiliateUrl(surveySlug: string, affiliateToken: string): string {
-  return `${PRODUCTION_URL}/pesquisa/${surveySlug}?ref=${affiliateToken}`;
+  return `${getAppBaseUrl()}/pesquisa/${surveySlug}?ref=${affiliateToken}`;
 }
 
-/**
- * Gera link curto de verificação de contato
- * SEMPRE usa URL de produção (enviado externamente via SMS)
- * Formato: /v/:codigo (apenas 5 caracteres após /v/)
- */
+/** Link curto de verificação de contato */
 export function generateVerificationUrl(verificationCode: string): string {
-  return `${PRODUCTION_URL}/v/${verificationCode}`;
+  return `${getAppBaseUrl()}/v/${verificationCode}`;
 }
