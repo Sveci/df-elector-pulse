@@ -72,9 +72,10 @@ export function EmailTemplateCreateDialog({
 
   const detectedVariables = [
     ...new Set(
-      (conteudoHtml.match(/{{(\w+)}}/g) || [])
-        .concat(assunto.match(/{{(\w+)}}/g) || [])
-        .map((v) => v.replace(/{{|}}/g, ""))
+      [
+        ...(conteudoHtml.match(/{{(\w+)}}/g) || []),
+        ...(assunto.match(/{{(\w+)}}/g) || []),
+      ].map((v) => v.replace(/{{|}}/g, ""))
     ),
   ];
 
