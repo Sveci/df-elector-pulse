@@ -43,7 +43,7 @@ serve(async (req) => {
 
     // Parse body first to check if it's a public template
     const body: SendEmailRequest = await req.json();
-    const { templateSlug, templateId, to, toName, subject: customSubject, html: customHtml, variables = {}, contactId, leaderId, eventId } = body;
+    const { templateSlug, templateId, tenantId, to, toName, subject: customSubject, html: customHtml, variables = {}, contactId, leaderId, eventId } = body;
 
     const isPublicTemplate = templateSlug && PUBLIC_TEMPLATES.includes(templateSlug);
 
