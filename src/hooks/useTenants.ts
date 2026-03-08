@@ -15,6 +15,10 @@ export interface Tenant {
   max_lideres: number | null;
   data_expiracao: string | null;
   observacoes: string | null;
+  cargo_politico: string | null;
+  estado: string | null;
+  cidade: string | null;
+  regiao_administrativa_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +34,10 @@ export interface CreateTenantData {
   max_lideres?: number;
   data_expiracao?: string;
   observacoes?: string;
+  cargo_politico?: string;
+  estado?: string;
+  cidade?: string;
+  regiao_administrativa_id?: string;
 }
 
 export function useTenants() {
