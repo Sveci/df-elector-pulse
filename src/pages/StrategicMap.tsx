@@ -826,7 +826,7 @@ export default function StrategicMap() {
                       <Popup>
                         <div className="text-sm">
                           <p className="font-semibold">{m.name(contact.nome)}</p>
-                          <p className="text-muted-foreground">{m.city(contact.cidade_nome)}</p>
+                          <p className="text-muted-foreground">{m.city(contact.localidade || contact.cidade_nome)}</p>
                           {contact.source_type && (
                             <p className="text-xs mt-1">Origem: {contact.source_type}</p>
                           )}
