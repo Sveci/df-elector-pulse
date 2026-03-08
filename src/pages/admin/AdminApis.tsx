@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2 } from "lucide-react";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -68,12 +68,58 @@ const apis: ApiConfig[] = [
     secretName: "RESEND_API_KEY",
     category: "Comunicação",
   },
+  {
+    key: "smsbarato",
+    name: "SMSBarato — Envio de SMS",
+    icon: Phone,
+    description: "Plataforma de envio de SMS em massa com cobertura nacional.",
+    purpose: "Token global para envio de SMS via SMSBarato. Utilizado como provedor de SMS no sistema.",
+    howToGet: "Acesse smsbarato.com.br → faça login → vá em Configurações → API → copie sua chave de API.",
+    link: "https://www.smsbarato.com.br/",
+    secretName: "SMSBARATO_API_KEY",
+    category: "SMS",
+  },
+  {
+    key: "disparopro",
+    name: "DisparoPro — Envio de SMS",
+    icon: Phone,
+    description: "Plataforma profissional de disparo de SMS com relatórios detalhados.",
+    purpose: "Token global para envio de SMS via DisparoPro. Provedor alternativo de SMS.",
+    howToGet: "Acesse disparopro.com.br → faça login → vá em Integrações → API → copie o token de acesso.",
+    link: "https://www.disparopro.com.br/",
+    secretName: "DISPAROPRO_TOKEN",
+    category: "SMS",
+  },
+  {
+    key: "smsdev",
+    name: "SMSDEV — Envio de SMS",
+    icon: Phone,
+    description: "API de SMS para desenvolvedores com envio rápido e confiável.",
+    purpose: "Token global para envio de SMS via SMSDEV. Provedor principal de SMS do sistema.",
+    howToGet: "Acesse smsdev.com.br → faça login → vá em Minha Conta → API Key → copie a chave.",
+    link: "https://www.smsdev.com.br/",
+    secretName: "SMSDEV_API_KEY",
+    category: "SMS",
+  },
+  {
+    key: "passkit",
+    name: "PassKit — Carteira Digital",
+    icon: Wallet,
+    description: "Plataforma para criação e gestão de cartões digitais (Apple Wallet e Google Wallet).",
+    purpose: "Token global para integração com carteiras digitais. Cada tenant pode ter seu próprio Program ID e Tier ID.",
+    howToGet: "Acesse app.passkit.com → faça login → vá em Settings → API Keys → copie o 'API Token'.",
+    link: "https://app.passkit.com/",
+    secretName: "PASSKIT_API_TOKEN",
+    category: "Carteira Digital",
+  },
 ];
 
 const categoryColors: Record<string, string> = {
   "Comunicação": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
   "Coleta de Dados": "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
   "IA": "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
+  "SMS": "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+  "Carteira Digital": "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
 };
 
 function ApiCard({ api }: { api: ApiConfig }) {

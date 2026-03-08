@@ -54,7 +54,7 @@ serve(async (req) => {
     const { secretName, secretValue } = await req.json();
 
     // Validate allowed secret names
-    const allowedSecrets = ["META_WA_ACCESS_TOKEN", "APIFY_API_TOKEN", "OPENAI_API_KEY", "RESEND_API_KEY"];
+    const allowedSecrets = ["META_WA_ACCESS_TOKEN", "APIFY_API_TOKEN", "OPENAI_API_KEY", "RESEND_API_KEY", "SMSBARATO_API_KEY", "DISPAROPRO_TOKEN", "SMSDEV_API_KEY", "PASSKIT_API_TOKEN"];
     if (!allowedSecrets.includes(secretName)) {
       return new Response(JSON.stringify({ error: "Secret não permitido" }), {
         status: 400,
