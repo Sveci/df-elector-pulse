@@ -17,17 +17,61 @@ export interface EmailTemplate {
 }
 
 export function useEmailTemplates() {
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {
+    // Outside TenantProvider
+  }
+
   return useQuery({
-    queryKey: ["email_templates"],
+    queryKey: ["email_templates", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch global defaults
+      const { data: globals, error: globalError } = await supabase
         .from("email_templates")
         .select("*")
         .order("categoria", { ascending: true })
         .order("nome", { ascending: true });
 
-      if (error) throw error;
-      return data as EmailTemplate[];
+      if (globalError) throw globalError;
+
+      // Fetch tenant overrides if tenant is active
+      let tenantOverrides: Record<string, any> = {};
+      if (tenantId) {
+        const { data: overrides } = await supabase
+          .from("tenant_email_templates")
+          .select("*")
+          .eq("tenant_id", tenantId);
+
+        if (overrides) {
+          for (const o of overrides) {
+            tenantOverrides[o.slug] = o;
+          }
+        }
+      }
+
+      // Merge: tenant override takes precedence over global
+      const merged = (globals || []).map((g) => {
+        const override = tenantOverrides[g.slug];
+        if (override) {
+          return {
+            ...g,
+            nome: override.nome,
+            assunto: override.assunto,
+            conteudo_html: override.conteudo_html,
+            categoria: override.categoria,
+            variaveis: override.variaveis,
+            is_active: override.is_active,
+            _is_tenant_override: true,
+            _tenant_template_id: override.id,
+          } as EmailTemplate & { _is_tenant_override?: boolean; _tenant_template_id?: string };
+        }
+        return { ...g, _is_tenant_override: false } as EmailTemplate & { _is_tenant_override?: boolean };
+      });
+
+      return merged as EmailTemplate[];
     },
   });
 }
