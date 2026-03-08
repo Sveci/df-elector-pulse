@@ -164,7 +164,7 @@ const Integrations = () => {
   const { data: settings, isLoading } = useIntegrationsSettings();
   const updateSettings = useUpdateIntegrationsSettings();
   const testZapiConnection = useTestZapiConnection();
-  const testResendConnection = useTestResendConnection();
+  
   const testSmsdevConnection = useTestSmsdevConnection();
   const testSmsbaratoConnection = useTestSmsbaratoConnection();
   const testDisparoproConnection = useTestDisparoproConnection();
