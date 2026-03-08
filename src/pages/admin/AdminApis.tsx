@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ApiConfig {
   key: string;
@@ -13,7 +18,6 @@ interface ApiConfig {
   howToGet: string;
   link: string;
   secretName: string;
-  fields: { key: string; label: string; placeholder: string; dbColumn: string }[];
   category: string;
   optional?: boolean;
 }
@@ -28,7 +32,6 @@ const apis: ApiConfig[] = [
     howToGet: "Acesse developers.facebook.com → crie um App do tipo 'Business' → adicione o produto 'WhatsApp' → vá em WhatsApp > API Setup → copie o 'Temporary access token' ou gere um token permanente via System User.",
     link: "https://developers.facebook.com/apps/",
     secretName: "META_WA_ACCESS_TOKEN",
-    fields: [],
     category: "Comunicação",
   },
   {
@@ -40,7 +43,6 @@ const apis: ApiConfig[] = [
     howToGet: "Acesse console.apify.com → faça login → clique no seu perfil → Settings > Integrations → copie o 'Personal API Token'.",
     link: "https://console.apify.com/account/integrations",
     secretName: "APIFY_API_TOKEN",
-    fields: [],
     category: "Coleta de Dados",
   },
   {
@@ -52,7 +54,6 @@ const apis: ApiConfig[] = [
     howToGet: "Acesse platform.openai.com → faça login → vá em API Keys → clique em 'Create new secret key'.",
     link: "https://platform.openai.com/api-keys",
     secretName: "OPENAI_API_KEY",
-    fields: [],
     category: "IA",
     optional: true,
   },
@@ -66,6 +67,35 @@ const categoryColors: Record<string, string> = {
 
 function ApiCard({ api }: { api: ApiConfig }) {
   const Icon = api.icon;
+  const [tokenValue, setTokenValue] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleSave = async () => {
+    if (!tokenValue.trim()) {
+      toast.error("Informe o valor do token");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Salvar via edge function que atualiza o secret
+      const { error } = await supabase.functions.invoke("update-secret", {
+        body: { secretName: api.secretName, secretValue: tokenValue.trim() },
+      });
+
+      if (error) throw error;
+
+      toast.success(`${api.name} — token salvo com sucesso!`);
+      setTokenValue("");
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(`Erro ao salvar: ${err.message || "Tente novamente"}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -101,26 +131,78 @@ function ApiCard({ api }: { api: ApiConfig }) {
           <p className="text-sm text-muted-foreground">{api.howToGet}</p>
         </div>
 
-        <div className="border-t pt-4">
+        {/* Token input section */}
+        <div className="border-t pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{api.secretName}</code>
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Configurado no Lovable Cloud</span>
+              <span className="text-xs text-muted-foreground">Configurado</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(api.link, "_blank")}
-              className="gap-1"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Obter chave
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(api.link, "_blank")}
+                className="gap-1"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Obter chave
+              </Button>
+              {!isEditing && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Atualizar Token
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
-        
+          {isEditing && (
+            <div className="space-y-2 p-4 rounded-lg border border-border bg-muted/30">
+              <Label htmlFor={`token-${api.key}`} className="text-sm font-medium">
+                Novo valor para <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{api.secretName}</code>
+              </Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id={`token-${api.key}`}
+                    type={showToken ? "text" : "password"}
+                    placeholder={`Cole aqui o token da ${api.name}...`}
+                    value={tokenValue}
+                    onChange={(e) => setTokenValue(e.target.value)}
+                    className="pr-10 font-mono text-sm"
+                    disabled={isSaving}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowToken(!showToken)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button onClick={handleSave} disabled={isSaving || !tokenValue.trim()} className="gap-2">
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Salvar
+                </Button>
+                <Button variant="ghost" onClick={() => { setIsEditing(false); setTokenValue(""); }} disabled={isSaving}>
+                  Cancelar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O token será armazenado de forma segura e criptografada. Por segurança, o valor atual não é exibido.
+              </p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -143,8 +225,7 @@ const AdminApis = () => {
               <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-900 dark:text-amber-200">
                 As chaves de API são usadas globalmente por todos os tenants da plataforma.
-                Os tokens são armazenados de forma segura e criptografada no Lovable Cloud.
-                Para alterar os valores dos tokens, utilize o painel de Secrets do projeto.
+                Os tokens são armazenados de forma segura e criptografada.
               </p>
             </div>
           </CardContent>
