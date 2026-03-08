@@ -207,9 +207,12 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         body: { provider: api.key },
       });
 
-      if (error) throw error;
+      // Parse response even if invoke reports an error (400 returns valid JSON)
+      const result = data || (error ? (() => { try { return JSON.parse(error.message); } catch { return null; } })() : null);
 
-      if (data?.success) {
+      if (!result) throw error || new Error("Sem resposta da função");
+
+      if (result.success) {
         setTestResult({
           success: true,
           message: data.data?.description || "Conexão bem-sucedida!",
