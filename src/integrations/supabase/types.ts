@@ -3967,6 +3967,17 @@ export type Database = {
         }[]
       }
       get_subtree_max_depth: { Args: { _leader_id: string }; Returns: number }
+      get_tenant_by_domain: {
+        Args: { _domain: string }
+        Returns: {
+          custom_domain: string
+          id: string
+          logo_url: string
+          nome: string
+          slug: string
+          status: string
+        }[]
+      }
       get_top_city: {
         Args: never
         Returns: {
