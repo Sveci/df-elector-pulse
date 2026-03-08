@@ -242,10 +242,8 @@ const Integrations = () => {
       setZapiToken(settings.zapi_token || "");
       setZapiClientToken(settings.zapi_client_token || "");
       setZapiEnabled(settings.zapi_enabled || false);
-      setResendApiKey(settings.resend_api_key || "");
       setResendFromEmail(settings.resend_from_email || "");
       setResendFromName(settings.resend_from_name || "");
-      setResendEnabled(settings.resend_enabled || false);
       setSmsdevApiKey(settings.smsdev_api_key || "");
       setSmsdevEnabled(settings.smsdev_enabled || false);
       // SMSBarato
