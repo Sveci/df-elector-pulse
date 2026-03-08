@@ -152,8 +152,8 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
           <Label className="text-base font-medium">Provedor WhatsApp Ativo</Label>
           <RadioGroup
             value={whatsappProvider}
-            onValueChange={(value: 'zapi' | 'meta_cloud' | 'dialog360') => handleProviderChange(value)}
-            className="grid grid-cols-3 gap-4"
+            onValueChange={(value: 'zapi' | 'meta_cloud') => handleProviderChange(value)}
+            className="grid grid-cols-2 gap-4"
           >
             <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${whatsappProvider === 'zapi' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
               <RadioGroupItem value="zapi" id="wa-zapi" disabled={!settings?.zapi_enabled} />
@@ -177,18 +177,6 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
                   )}
                 </Label>
                 <p className="text-xs text-muted-foreground">Meta Oficial</p>
-              </div>
-            </div>
-            <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${whatsappProvider === 'dialog360' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
-              <RadioGroupItem value="dialog360" id="wa-360" />
-              <div className="flex-1">
-                <Label htmlFor="wa-360" className="cursor-pointer flex items-center gap-2">
-                  <span className="font-medium">360dialog</span>
-                  {whatsappProvider === 'dialog360' && (
-                    <Badge variant="default" className="bg-teal-500 text-xs">Em uso</Badge>
-                  )}
-                </Label>
-                <p className="text-xs text-muted-foreground">BSP Oficial</p>
               </div>
             </div>
           </RadioGroup>

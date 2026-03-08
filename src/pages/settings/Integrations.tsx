@@ -675,8 +675,6 @@ const Integrations = () => {
         {/* WhatsApp Cloud API (Meta) */}
         <MetaCloudConfigCard settings={settings as any} />
 
-        {/* 360dialog WhatsApp BSP */}
-        <Dialog360ConfigCard settings={settings as any} />
 
         {/* Resend Email */}
         <Card>

@@ -124,12 +124,6 @@ interface UpdateIntegrationsDTO {
   verification_wa_whitelist?: string[];
   verification_wa_keyword?: string;
   verification_wa_zapi_phone?: string | null;
-  // 360dialog
-  dialog360_enabled?: boolean;
-  dialog360_phone_number_id?: string | null;
-  dialog360_test_mode?: boolean;
-  dialog360_whitelist?: string[];
-  dialog360_fallback_enabled?: boolean;
   // Horário de Silêncio
   quiet_hours_enabled?: boolean;
   quiet_hours_start?: string;
