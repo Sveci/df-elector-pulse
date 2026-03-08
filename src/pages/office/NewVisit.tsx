@@ -78,7 +78,9 @@ export default function NewVisit() {
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState("");
   const [qrCode, setQrCode] = useState<string | null>(null);
