@@ -324,7 +324,7 @@ const Leaders = () => {
     }
 
     try {
-      const affiliateLink = generateAffiliateUrl(leader.affiliate_token);
+      const affiliateLink = generateAffiliateUrl(leader.affiliate_token, tenantDomain);
 
       const qrDataURL = await QRCode.toDataURL(affiliateLink, {
         width: 1024,

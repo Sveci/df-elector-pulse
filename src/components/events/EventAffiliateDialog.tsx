@@ -262,7 +262,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
 
       for (let i = 0; i < coordinators.length; i++) {
         const coordinator = coordinators[i];
-        const url = generateEventAffiliateUrl(event.slug, coordinator.affiliate_token!);
+        const url = generateEventAffiliateUrl(event.slug, coordinator.affiliate_token!, tenantDomain);
         
         if (yPosition > pageHeight - 80) {
           pdf.addPage();

@@ -511,7 +511,7 @@ const Events = () => {
                         placeholder="evento-exemplo"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        URL: {generateEventUrl(newEvent.slug || "slug")}
+                        URL: {generateEventUrl(newEvent.slug || "slug", tenantDomain)}
                       </p>
                     </div>
 

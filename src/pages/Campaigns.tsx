@@ -320,7 +320,7 @@ const Campaigns = () => {
         cityName: leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade 
           ? (leader.cidade as { nome: string }).nome 
           : null,
-        link: generateLeaderReferralUrl(leader.affiliate_token!),
+        link: generateLeaderReferralUrl(leader.affiliate_token!, tenantDomain),
         registrations: leader.cadastros,
         lastActivity: leader.last_activity
       }));
