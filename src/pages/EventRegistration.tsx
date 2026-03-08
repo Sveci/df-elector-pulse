@@ -15,7 +15,7 @@ import { isEventDeadlinePassed } from "@/lib/eventUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import QRCodeComponent from "qrcode";
-import { PRODUCTION_URL } from "@/lib/urlHelper";
+import { getBaseUrl } from "@/lib/urlHelper";
 import { trackLead, pushToDataLayer } from "@/lib/trackingUtils";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -111,7 +111,7 @@ export default function EventRegistration() {
       });
 
       // ========== STEP 2: Gerar QR Code (com fallback) ==========
-      const checkInUrl = `${PRODUCTION_URL}/checkin/${registration.qr_code}`;
+      const checkInUrl = `${getBaseUrl()}/checkin/${registration.qr_code}`;
       const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkInUrl)}`;
       
       // Tentar gerar QR localmente, fallback para URL externa
