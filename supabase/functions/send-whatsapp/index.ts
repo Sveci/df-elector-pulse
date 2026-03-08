@@ -223,7 +223,7 @@ interface SendResult {
   success: boolean;
   messageId?: string;
   error?: string;
-  providerUsed: 'zapi' | 'meta_cloud' | 'dialog360';
+  providerUsed: 'zapi' | 'meta_cloud';
 }
 
 async function sendViaZapi(
