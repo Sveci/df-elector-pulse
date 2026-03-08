@@ -552,7 +552,7 @@ export default function StrategicMap() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Mapa Estratégico</h1>
-            <p className="text-muted-foreground text-sm">Visualização da atuação política no Distrito Federal</p>
+            <p className="text-muted-foreground text-sm">{mapTenantConfig.subtitle}</p>
           </div>
         </div>
 
