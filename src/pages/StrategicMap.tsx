@@ -599,20 +599,27 @@ export default function StrategicMap() {
               </Select>
             </div>
 
-            {/* Region Selector */}
+            {/* Region/Location Selector */}
             <div className="flex items-center gap-2">
               <Navigation className="h-4 w-4 text-muted-foreground" />
               <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="Região" />
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder={mapTenantConfig.regionLabel} />
                 </SelectTrigger>
                 <SelectContent className="z-[9999] max-h-[300px]">
-                  <SelectItem value="all">Todas as Regiões</SelectItem>
-                  {sortedCities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.nome}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Todas</SelectItem>
+                  {mapTenantConfig.useOfficeCities
+                    ? sortedCities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>
+                          {city.nome}
+                        </SelectItem>
+                      ))
+                    : uniqueLocalidades.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                          {loc}
+                        </SelectItem>
+                      ))
+                  }
                 </SelectContent>
               </Select>
             </div>
