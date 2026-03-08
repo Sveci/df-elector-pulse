@@ -32,6 +32,7 @@ export default function AffiliateForm() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [endereco, setEndereco] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [instagram, setInstagram] = useState("");

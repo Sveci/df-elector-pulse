@@ -158,10 +158,10 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                   <FormControl>
                     <LocationSelect
                       value={field.value}
-                      localidadeValue={form.watch("localidade") || ""}
+                      localidadeValue={localidade}
                       onLocationChange={({ cidadeId: cid, localidade: loc }) => {
                         field.onChange(cid || "");
-                        form.setValue("localidade", loc || "");
+                        setLocalidade(loc || "");
                       }}
                     />
                   </FormControl>
