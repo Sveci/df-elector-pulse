@@ -3067,9 +3067,12 @@ export type Database = {
       }
       tenants: {
         Row: {
+          cargo_politico: string | null
+          cidade: string | null
           created_at: string
           data_expiracao: string | null
           email_contato: string | null
+          estado: string | null
           id: string
           logo_url: string | null
           max_contatos: number | null
@@ -3078,15 +3081,19 @@ export type Database = {
           nome: string
           observacoes: string | null
           plano: string
+          regiao_administrativa_id: string | null
           slug: string
           status: string
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          cargo_politico?: string | null
+          cidade?: string | null
           created_at?: string
           data_expiracao?: string | null
           email_contato?: string | null
+          estado?: string | null
           id?: string
           logo_url?: string | null
           max_contatos?: number | null
@@ -3095,15 +3102,19 @@ export type Database = {
           nome: string
           observacoes?: string | null
           plano?: string
+          regiao_administrativa_id?: string | null
           slug: string
           status?: string
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          cargo_politico?: string | null
+          cidade?: string | null
           created_at?: string
           data_expiracao?: string | null
           email_contato?: string | null
+          estado?: string | null
           id?: string
           logo_url?: string | null
           max_contatos?: number | null
@@ -3112,12 +3123,21 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           plano?: string
+          regiao_administrativa_id?: string | null
           slug?: string
           status?: string
           telefone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenants_regiao_administrativa_id_fkey"
+            columns: ["regiao_administrativa_id"]
+            isOneToOne: false
+            referencedRelation: "office_cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_notification_reads: {
         Row: {
