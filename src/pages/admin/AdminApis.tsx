@@ -131,6 +131,26 @@ function ApiCard({ api }: { api: ApiConfig }) {
   const [showToken, setShowToken] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [regionUrl, setRegionUrl] = useState("https://api.pub1.passkit.io");
+  const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+
+  useEffect(() => {
+    if (api.hasRegionSelector) {
+      const fetchRegion = async () => {
+        setIsLoadingRegion(true);
+        const { data } = await supabase
+          .from("integrations_settings")
+          .select("passkit_api_base_url")
+          .limit(1)
+          .maybeSingle();
+        if (data?.passkit_api_base_url) {
+          setRegionUrl(data.passkit_api_base_url);
+        }
+        setIsLoadingRegion(false);
+      };
+      fetchRegion();
+    }
+  }, [api.hasRegionSelector]);
 
   const handleSave = async () => {
     if (!tokenValue.trim()) {
