@@ -68,7 +68,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
         return;
       }
 
-    const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token);
+    const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token, tenantDomain);
     setAffiliateUrl(url);
 
     // Gerar QR Code
