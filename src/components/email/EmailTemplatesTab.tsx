@@ -180,12 +180,17 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {categoryTemplates?.map((template) => (
-                <Card key={template.id} className="hover:shadow-sm transition-shadow">
+                <Card key={template.id} className={`hover:shadow-sm transition-shadow ${(template as any)._is_tenant_override ? 'border-primary/40' : ''}`}>
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium truncate">{isDemoMode ? m.platformName(template.nome) : template.nome}</span>
+                          {(template as any)._is_tenant_override && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0 border-primary/50 text-primary">
+                              Personalizado
+                            </Badge>
+                          )}
                           {template.is_active ? (
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
                           ) : (
