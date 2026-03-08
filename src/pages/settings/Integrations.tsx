@@ -213,13 +213,10 @@ const Integrations = () => {
 
   const [smsActiveProvider, setSmsActiveProvider] = useState<'smsdev' | 'smsbarato' | 'disparopro'>('smsdev');
 
-  // PassKit state
-  const [passkitApiToken, setPasskitApiToken] = useState("");
-  const [passkitApiBaseUrl, setPasskitApiBaseUrl] = useState("https://api.pub1.passkit.io");
+  // PassKit state (tenant-level: Program ID, Tier ID, Enabled only)
   const [passkitProgramId, setPasskitProgramId] = useState("");
   const [passkitTierId, setPasskitTierId] = useState("");
   const [passkitEnabled, setPasskitEnabled] = useState(false);
-  const [showPasskitToken, setShowPasskitToken] = useState(false);
 
   const handleCopyWebhookUrl = async () => {
     try {
@@ -253,9 +250,7 @@ const Integrations = () => {
       setDisparoproToken(settings.disparopro_token || "");
       setDisparoproEnabled(settings.disparopro_enabled || false);
       setSmsActiveProvider((settings.sms_active_provider as 'smsdev' | 'smsbarato' | 'disparopro') || 'smsdev');
-      // PassKit
-      setPasskitApiToken(settings.passkit_api_token || "");
-      setPasskitApiBaseUrl(settings.passkit_api_base_url || "https://api.pub1.passkit.io");
+      // PassKit (tenant-level only)
       setPasskitProgramId(settings.passkit_program_id || "");
       setPasskitTierId(settings.passkit_tier_id || "");
       setPasskitEnabled(settings.passkit_enabled || false);
@@ -324,8 +319,6 @@ const Integrations = () => {
 
   const handleSavePasskit = () => {
     updateSettings.mutate({
-      passkit_api_token: passkitApiToken || null,
-      passkit_api_base_url: passkitApiBaseUrl || "https://api.pub1.passkit.io",
       passkit_program_id: passkitProgramId || null,
       passkit_tier_id: passkitTierId || null,
       passkit_enabled: passkitEnabled,
@@ -362,7 +355,7 @@ const Integrations = () => {
   const isSmsdevConfigured = !!smsdevApiKey;
   const isSmsbaratoConfigured = !!smsbaratoApiKey;
   const isDisparoproConfigured = !!disparoproToken;
-  const isPasskitConfigured = !!passkitApiToken && !!passkitProgramId && !!passkitTierId;
+  const isPasskitConfigured = !!passkitProgramId && !!passkitTierId;
 
   // Z-API connection status check
   const { data: zapiStatus, isLoading: isCheckingZapi, refetch: refetchZapiStatus } = 
@@ -765,52 +758,6 @@ const Integrations = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="passkit-base-url">Região da API</Label>
-                <select
-                  id="passkit-base-url"
-                  value={passkitApiBaseUrl}
-                  onChange={(e) => setPasskitApiBaseUrl(e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="https://api.pub1.passkit.io">Região 1 (pub1) - Padrão</option>
-                  <option value="https://api.pub2.passkit.io">Região 2 (pub2)</option>
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Selecione a região correspondente à sua conta PassKit
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="passkit-token">API Token (Long Lived Token)</Label>
-                <div className="relative">
-                  <Input
-                    id="passkit-token"
-                    type={showPasskitToken ? "text" : "password"}
-                    placeholder="Seu Long Lived Token do PassKit"
-                    value={passkitApiToken}
-                    onChange={(e) => setPasskitApiToken(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPasskitToken(!showPasskitToken)}
-                  >
-                    {showPasskitToken ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Obtenha em <a href="https://app.passkit.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">app.passkit.com</a> → Settings → API Keys → Long Lived Token
-                </p>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="passkit-program-id">Program ID</Label>
                 <Input

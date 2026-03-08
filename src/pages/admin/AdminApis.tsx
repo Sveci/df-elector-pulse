@@ -21,6 +21,7 @@ interface ApiConfig {
   secretName: string;
   category: string;
   optional?: boolean;
+  hasRegionSelector?: boolean;
 }
 
 const apis: ApiConfig[] = [
@@ -107,11 +108,12 @@ const apis: ApiConfig[] = [
     name: "PassKit — Carteira Digital",
     icon: Wallet,
     description: "Plataforma para criação e gestão de cartões digitais (Apple Wallet e Google Wallet).",
-    purpose: "Token global para integração com carteiras digitais. Cada tenant pode ter seu próprio Program ID e Tier ID.",
+    purpose: "Token global para integração com carteiras digitais. Cada tenant configura seu próprio Program ID e Tier ID. A região da API é definida aqui globalmente.",
     howToGet: "Acesse app.passkit.com → faça login → vá em Settings → API Keys → copie o 'API Token'.",
     link: "https://app.passkit.com/",
     secretName: "PASSKIT_API_TOKEN",
     category: "Carteira Digital",
+    hasRegionSelector: true,
   },
 ];
 
@@ -129,6 +131,26 @@ function ApiCard({ api }: { api: ApiConfig }) {
   const [showToken, setShowToken] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [regionUrl, setRegionUrl] = useState("https://api.pub1.passkit.io");
+  const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+
+  useEffect(() => {
+    if (api.hasRegionSelector) {
+      const fetchRegion = async () => {
+        setIsLoadingRegion(true);
+        const { data } = await supabase
+          .from("integrations_settings")
+          .select("passkit_api_base_url")
+          .limit(1)
+          .maybeSingle();
+        if (data?.passkit_api_base_url) {
+          setRegionUrl(data.passkit_api_base_url);
+        }
+        setIsLoadingRegion(false);
+      };
+      fetchRegion();
+    }
+  }, [api.hasRegionSelector]);
 
   const handleSave = async () => {
     if (!tokenValue.trim()) {
@@ -188,6 +210,46 @@ function ApiCard({ api }: { api: ApiConfig }) {
           <p className="text-sm font-medium text-foreground mb-1">Como obter:</p>
           <p className="text-sm text-muted-foreground">{api.howToGet}</p>
         </div>
+
+        {/* Region selector for PassKit */}
+        {api.hasRegionSelector && (
+          <div className="border-t pt-4 space-y-2">
+            <Label htmlFor={`region-${api.key}`} className="text-sm font-medium">Região da API</Label>
+            {isLoadingRegion ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Carregando...</span>
+              </div>
+            ) : (
+              <>
+                <select
+                  id={`region-${api.key}`}
+                  value={regionUrl}
+                  onChange={async (e) => {
+                    const newUrl = e.target.value;
+                    setRegionUrl(newUrl);
+                    const { error } = await supabase
+                      .from("integrations_settings")
+                      .update({ passkit_api_base_url: newUrl })
+                      .not("id", "is", null);
+                    if (error) {
+                      toast.error("Erro ao salvar região");
+                    } else {
+                      toast.success(`Região alterada para ${newUrl.includes("pub1") ? "Região 1 (pub1)" : "Região 2 (pub2)"}`);
+                    }
+                  }}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="https://api.pub1.passkit.io">Região 1 (pub1) - Padrão</option>
+                  <option value="https://api.pub2.passkit.io">Região 2 (pub2)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione a região correspondente à sua conta PassKit
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Token input section */}
         <div className="border-t pt-4 space-y-3">
