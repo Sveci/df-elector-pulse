@@ -310,7 +310,7 @@ const Leaders = () => {
       toast.error("Token de afiliado não disponível");
       return;
     }
-    const link = generateAffiliateUrl(leader.affiliate_token);
+    const link = generateAffiliateUrl(leader.affiliate_token, tenantDomain);
     navigator.clipboard.writeText(link);
     setCopiedId(leader.id);
     setTimeout(() => setCopiedId(null), 2000);
