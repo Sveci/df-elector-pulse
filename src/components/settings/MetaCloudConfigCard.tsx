@@ -23,7 +23,7 @@ interface MetaCloudConfigCardProps {
     meta_cloud_phone?: string | null;
     zapi_enabled?: boolean;
   } | null;
-  onProviderChange?: (provider: 'zapi' | 'meta_cloud' | 'dialog360') => void;
+  onProviderChange?: (provider: 'zapi' | 'meta_cloud') => void;
 }
 
 export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudConfigCardProps) => {
