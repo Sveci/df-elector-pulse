@@ -123,6 +123,7 @@ const apis: ApiConfig[] = [
     secretName: "SMSDEV_API_KEY",
     category: "SMS",
     enabledField: "smsdev_enabled",
+    dbField: "smsdev_api_key",
     hasTestConnection: true,
   },
   {
