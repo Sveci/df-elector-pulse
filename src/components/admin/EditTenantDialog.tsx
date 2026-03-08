@@ -251,7 +251,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                     </div>
                     <div className="flex gap-2">
                       <span className="text-primary font-semibold">Destino:</span>
-                      <span>df-elector-pulse.lovable.app</span>
+                      <span>app.eleitor360.ai</span>
                     </div>
                   </div>
                   <p className="text-muted-foreground">

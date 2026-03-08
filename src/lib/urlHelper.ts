@@ -9,7 +9,7 @@ function getAppBaseUrl(): string {
     return window.location.origin;
   }
   // Fallback para SSR ou testes
-  return "https://df-elector-pulse.lovable.app";
+  return "https://app.eleitor360.ai";
 }
 
 /**
