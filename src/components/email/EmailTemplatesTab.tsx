@@ -43,6 +43,9 @@ const categoryColors: Record<string, string> = {
   captacao: "bg-purple-100 text-purple-700",
   lider: "bg-cyan-100 text-cyan-700",
   lideranca: "bg-blue-100 text-blue-700",
+  apoiadores: "bg-emerald-100 text-emerald-700",
+  equipe: "bg-orange-100 text-orange-700",
+  pesquisa: "bg-indigo-100 text-indigo-700",
 };
 
 interface EmailTemplatesTabProps {
