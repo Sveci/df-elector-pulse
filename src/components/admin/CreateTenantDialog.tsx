@@ -31,6 +31,7 @@ const initialForm = {
   estado: "",
   cidade: "",
   regiao_administrativa_id: "",
+  custom_domain: "",
 };
 
 export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogProps) {
@@ -93,6 +94,7 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
         estado: form.estado || undefined,
         cidade: form.cidade || undefined,
         regiao_administrativa_id: form.regiao_administrativa_id || undefined,
+        custom_domain: form.custom_domain?.trim() || undefined,
       });
 
       toast({ title: "Tenant criado!", description: `${form.nome} foi cadastrado com sucesso.` });
@@ -183,6 +185,13 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
                 </Select>
               </div>
             )}
+
+            {/* Domínio Customizado */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="custom_domain">Domínio Customizado</Label>
+              <Input id="custom_domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
+              <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email de Contato</Label>

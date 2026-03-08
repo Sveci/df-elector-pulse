@@ -35,6 +35,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
     estado: "",
     cidade: "",
     regiao_administrativa_id: "",
+    custom_domain: "",
   });
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
         estado: tenant.estado || "",
         cidade: tenant.cidade || "",
         regiao_administrativa_id: tenant.regiao_administrativa_id || "",
+        custom_domain: tenant.custom_domain || "",
       });
     }
   }, [tenant]);
@@ -115,6 +117,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
         estado: form.estado || null,
         cidade: form.cidade || null,
         regiao_administrativa_id: form.regiao_administrativa_id || null,
+        custom_domain: form.custom_domain?.trim() || null,
       });
 
       toast({ title: "Tenant atualizado!", description: `${form.nome} foi salvo com sucesso.` });
@@ -215,6 +218,13 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                 </Select>
               </div>
             )}
+
+            {/* Domínio Customizado */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="edit-custom-domain">Domínio Customizado</Label>
+              <Input id="edit-custom-domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
+              <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
+            </div>
 
             {/* Email */}
             <div className="space-y-2">

@@ -19,6 +19,7 @@ export interface Tenant {
   estado: string | null;
   cidade: string | null;
   regiao_administrativa_id: string | null;
+  custom_domain: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,7 @@ export interface CreateTenantData {
   estado?: string;
   cidade?: string;
   regiao_administrativa_id?: string;
+  custom_domain?: string;
 }
 
 export function useTenants() {

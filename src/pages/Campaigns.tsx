@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { generateCampaignUrl, generateLeaderReferralUrl, generateEventCampaignUrl, generateFunnelCampaignUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useAttributionStats } from "@/hooks/campaigns/useAttributionStats";
 import { format } from "date-fns";
@@ -100,6 +101,7 @@ const normalizeString = (str: string): string => {
 };
 
 const Campaigns = () => {
+  const tenantDomain = useTenantDomain();
   const [newCampaign, setNewCampaign] = useState({
     targetType: "event" as "event" | "funnel",
     eventId: "",
@@ -216,19 +218,22 @@ const Campaigns = () => {
                 campaign.funnel_slug,
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               )
             : campaign.event_slug 
             ? generateEventCampaignUrl(
                 campaign.event_slug,
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               )
             : generateCampaignUrl(
                 campaign.utm_source,
                 campaign.utm_medium || 'direct',
-                campaign.utm_campaign
+                campaign.utm_campaign,
+                tenantDomain
               ),
           qrCode: `data:image/svg+xml;base64,${btoa(`<svg width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="black">${campaign.utm_campaign}</text></svg>`)}`,
           createdAt: new Date(campaign.created_at).toISOString().split('T')[0],
@@ -315,7 +320,7 @@ const Campaigns = () => {
         cityName: leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade 
           ? (leader.cidade as { nome: string }).nome 
           : null,
-        link: generateLeaderReferralUrl(leader.affiliate_token!),
+        link: generateLeaderReferralUrl(leader.affiliate_token!, tenantDomain),
         registrations: leader.cadastros,
         lastActivity: leader.last_activity
       }));

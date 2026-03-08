@@ -12,15 +12,17 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { generateLeaderRegistrationUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 interface LeaderRegistrationQRDialogProps {
   children: React.ReactNode;
 }
 
 export function LeaderRegistrationQRDialog({ children }: LeaderRegistrationQRDialogProps) {
+  const tenantDomain = useTenantDomain();
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const registrationUrl = generateLeaderRegistrationUrl();
+  const registrationUrl = generateLeaderRegistrationUrl(tenantDomain);
 
   useEffect(() => {
     generateQRCode();

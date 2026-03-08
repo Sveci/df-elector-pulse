@@ -3079,6 +3079,7 @@ export type Database = {
           cargo_politico: string | null
           cidade: string | null
           created_at: string
+          custom_domain: string | null
           data_expiracao: string | null
           email_contato: string | null
           estado: string | null
@@ -3100,6 +3101,7 @@ export type Database = {
           cargo_politico?: string | null
           cidade?: string | null
           created_at?: string
+          custom_domain?: string | null
           data_expiracao?: string | null
           email_contato?: string | null
           estado?: string | null
@@ -3121,6 +3123,7 @@ export type Database = {
           cargo_politico?: string | null
           cidade?: string | null
           created_at?: string
+          custom_domain?: string | null
           data_expiracao?: string | null
           email_contato?: string | null
           estado?: string | null

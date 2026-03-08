@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { LeaderAutocomplete } from "@/components/office/LeaderAutocomplete";
 import { Copy, Download, QrCode as QrCodeIcon, FileText, Crown } from "lucide-react";
 import { generateEventAffiliateUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useToast } from "@/hooks/use-toast";
 import QRCodeComponent from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,7 @@ interface EventAffiliateDialogProps {
 }
 
 export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffiliateDialogProps) {
+  const tenantDomain = useTenantDomain();
   const [selectedLeaderId, setSelectedLeaderId] = useState("");
   const [affiliateUrl, setAffiliateUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -66,7 +68,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
         return;
       }
 
-    const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token);
+    const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token, tenantDomain);
     setAffiliateUrl(url);
 
     // Gerar QR Code
@@ -158,7 +160,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       // Processar cada líder
       for (let i = 0; i < leaders.length; i++) {
         const leader = leaders[i];
-        const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token!);
+        const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token!, tenantDomain);
         
         // Verificar se precisa de nova página
         if (yPosition > pageHeight - 80) {
@@ -260,7 +262,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
 
       for (let i = 0; i < coordinators.length; i++) {
         const coordinator = coordinators[i];
-        const url = generateEventAffiliateUrl(event.slug, coordinator.affiliate_token!);
+        const url = generateEventAffiliateUrl(event.slug, coordinator.affiliate_token!, tenantDomain);
         
         if (yPosition > pageHeight - 80) {
           pdf.addPage();

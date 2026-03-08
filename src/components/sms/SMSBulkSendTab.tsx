@@ -24,6 +24,7 @@ import { useRegionMaterials } from "@/hooks/useRegionMaterials";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { generateVerificationUrl, generateLeaderReferralUrl, generateLeaderVerificationUrl, getProductionUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 type RecipientType = "contacts" | "leaders" | "event" | "single_contact" | "single_leader" | "sms_not_sent" | "waiting_verification" | "coordinator_tree";
 type BatchSize = "10" | "20" | "30" | "50" | "100" | "all";
@@ -50,6 +51,7 @@ function getRandomDelay(): number {
 }
 
 export function SMSBulkSendTab() {
+  const tenantDomain = useTenantDomain();
   const { data: templates } = useSMSTemplates();
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
@@ -534,7 +536,7 @@ export function SMSBulkSendTab() {
 
           // Add leader affiliate link if applicable (SEMPRE usa URL de produção)
           if ((recipientType === "leaders" || recipientType === "single_leader") && recipient.affiliate_token) {
-            variables.link_indicacao = generateLeaderReferralUrl(recipient.affiliate_token);
+            variables.link_indicacao = generateLeaderReferralUrl(recipient.affiliate_token, tenantDomain);
           }
 
           // Add event variables if applicable
@@ -1105,7 +1107,7 @@ export function SMSBulkSendTab() {
             variables: {
               nome: r.nome || "",
               // SEMPRE usa URL de produção para links de afiliado
-              ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token) } : {}),
+              ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token, tenantDomain) } : {}),
             },
             scheduled_for: scheduledFor.toISOString(),
             contact_id: recipientType === "contacts" || recipientType === "event" ? r.id : undefined,

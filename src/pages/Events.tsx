@@ -58,6 +58,7 @@ import { useCategoryStats } from "@/hooks/events/useCategoryStats";
 import { useEventCategories, getCategoryColor } from "@/hooks/events/useEventCategories";
 import { exportEventsToExcel, exportReportsToPdf } from "@/utils/eventReportsExport";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -103,6 +104,7 @@ const eventsTutorialSteps: Step[] = [
 ];
 
 const Events = () => {
+  const tenantDomain = useTenantDomain();
   const { isDemoMode, m } = useDemoMask();
   const { data: events = [], isLoading } = useEvents();
   const { data: cities = [] } = useOfficeCities();
@@ -398,7 +400,7 @@ const Events = () => {
   };
 
   const copyEventLink = (slug: string) => {
-    const url = generateEventUrl(slug);
+    const url = generateEventUrl(slug, tenantDomain);
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copiado!",
@@ -509,7 +511,7 @@ const Events = () => {
                         placeholder="evento-exemplo"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        URL: {generateEventUrl(newEvent.slug || "slug")}
+                        URL: {generateEventUrl(newEvent.slug || "slug", tenantDomain)}
                       </p>
                     </div>
 

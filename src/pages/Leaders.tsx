@@ -55,6 +55,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { OfficeLeader } from "@/types/office";
 import { generateAffiliateUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -191,6 +192,7 @@ const getBirthdayBadge = (leader: OfficeLeader) => {
 const ITEMS_PER_PAGE = 10;
 
 const Leaders = () => {
+  const tenantDomain = useTenantDomain();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -308,7 +310,7 @@ const Leaders = () => {
       toast.error("Token de afiliado não disponível");
       return;
     }
-    const link = generateAffiliateUrl(leader.affiliate_token);
+    const link = generateAffiliateUrl(leader.affiliate_token, tenantDomain);
     navigator.clipboard.writeText(link);
     setCopiedId(leader.id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -322,7 +324,7 @@ const Leaders = () => {
     }
 
     try {
-      const affiliateLink = generateAffiliateUrl(leader.affiliate_token);
+      const affiliateLink = generateAffiliateUrl(leader.affiliate_token, tenantDomain);
 
       const qrDataURL = await QRCode.toDataURL(affiliateLink, {
         width: 1024,

@@ -25,9 +25,11 @@ import { CoordinatorEventDetailsDialog } from "@/components/coordinator/Coordina
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import logo from "@/assets/logo-rafael-prudente.png";
 
 export default function CoordinatorEvents() {
+  const tenantDomain = useTenantDomain();
   const { session, isAuthenticated } = useCoordinatorAuth();
   const navigate = useNavigate();
   const { data: dashboard } = useCoordinatorDashboard(session?.leader_id);
@@ -109,7 +111,7 @@ export default function CoordinatorEvents() {
   };
 
   const copyEventLink = (slug: string) => {
-    const url = `${generateEventUrl(slug)}?ref=${session.affiliate_token}`;
+    const url = `${generateEventUrl(slug, tenantDomain)}?ref=${session.affiliate_token}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copiado!");
   };
