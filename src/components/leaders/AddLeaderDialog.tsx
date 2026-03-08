@@ -34,15 +34,13 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   nome_completo: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  email: z.string().email("Email inválido"),
   telefone: z.string()
-    .regex(/^55\d{10,11}$/, "Formato inválido. Use: 5561XXXXXXXXX")
-    .optional()
-    .or(z.literal("")),
+    .regex(/^55\d{10,11}$/, "Formato inválido. Use: 5561XXXXXXXXX"),
   cidade_id: z.string().optional(),
-  data_nascimento: z.string().optional(),
-  observacao: z.string().optional(),
-  instagram_username: z.string().optional(),
+  data_nascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+  observacao: z.string().min(1, "Observação é obrigatória"),
+  instagram_username: z.string().min(1, "Instagram é obrigatório"),
   is_active: z.boolean().default(true),
 });
 
@@ -165,7 +163,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="cidade_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{locationConfig.label} (Opcional)</FormLabel>
+                  <FormLabel>{locationConfig.label}</FormLabel>
                   <FormControl>
                     <LocationSelect
                       value={field.value}
@@ -186,7 +184,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="data_nascimento"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento (Opcional)</FormLabel>
+                  <FormLabel>Data de Nascimento</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -229,7 +227,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="instagram_username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instagram (Opcional)</FormLabel>
+                  <FormLabel>Instagram</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="@usuario" 
@@ -246,7 +244,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="observacao"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observação (Opcional)</FormLabel>
+                  <FormLabel>Observação</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Informações adicionais sobre o líder..."
