@@ -151,7 +151,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
         </DialogHeader>
 
         <Tabs defaultValue="info" className="flex flex-col flex-1 min-h-0">
-          <TabsList className="w-full flex flex-wrap items-center justify-start gap-1 h-auto">
+          <TabsList className="w-full flex flex-wrap items-center justify-start gap-1 h-auto p-1">
             <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
             <TabsTrigger value="verificacao" className="text-xs">Verificação</TabsTrigger>
             <TabsTrigger value="indicacoes" className="text-xs">Indicações</TabsTrigger>
@@ -220,7 +220,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
 
               {/* Seção Carteira Digital */}
               <div className="pt-4 border-t">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
                     <h4 className="font-medium flex items-center gap-2">
                       <Wallet className="h-4 w-4" />
@@ -230,7 +230,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       Gere um cartão digital para Apple Wallet ou Google Pay
                     </p>
                   </div>
-                  <Button
+                  <Button className="shrink-0 w-full sm:w-auto"
                     size="sm"
                     variant="outline"
                     disabled={generatingPass || !leader.affiliate_token}
@@ -289,7 +289,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3">
                     <input
                       type="password"
                       placeholder="Nova senha"
@@ -297,7 +297,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       onChange={(e) => setPortalPassword(e.target.value)}
                       className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                     />
-                    <Button
+                    <Button className="shrink-0"
                       size="sm"
                       disabled={settingPassword || !portalPassword || portalPassword.length < 4}
                       onClick={async () => {
@@ -384,7 +384,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     Este líder precisa confirmar seu cadastro antes de receber o link de indicação.
                   </p>
                   
-                  <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="text-xs text-amber-600 dark:text-amber-500">
                       {leader.verification_sent_at ? (
                         <span>SMS enviado em: {formatDateTime(leader.verification_sent_at)}</span>
@@ -447,7 +447,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
             {/* ABA INDICAÇÕES */}
             <TabsContent value="indicacoes" className="mt-0 space-y-4 pr-4">
               {/* Header com total combinado */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h4 className="font-medium">Total de Indicações</h4>
                 <Badge variant="default" className="text-sm">
                   {(indicatedContacts?.length || 0) + (subordinates?.length || 0)} indicações
