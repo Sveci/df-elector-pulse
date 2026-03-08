@@ -10,6 +10,7 @@ export interface LeaderMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  localidade: string | null;
   is_coordinator: boolean;
   hierarchy_level: number | null;
   parent_leader_id: string | null;
