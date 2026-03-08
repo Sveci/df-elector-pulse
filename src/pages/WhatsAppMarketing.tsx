@@ -86,10 +86,6 @@ export default function WhatsAppMarketing() {
                 <WhatsAppBulkSendTab />
               </TabsContent>
 
-              <TabsContent value="official">
-                <WhatsAppOfficialApiTab />
-              </TabsContent>
-
               <TabsContent value="templates">
                 <WhatsAppTemplatesTab />
               </TabsContent>
