@@ -44,7 +44,9 @@ export function CreateScheduledVisitDialog({ open, onOpenChange, initialDate }: 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [cidadeId, setCidadeId] = useState("");
+  const [localidade, setLocalidade] = useState("");
   const [leaderId, setLeaderId] = useState<string>("");
+  const locationConfig = useTenantLocationConfig();
   const [date, setDate] = useState<Date | undefined>(initialDate || addDays(new Date(), 1));
   const [time, setTime] = useState<string>("");
   const [sendingSms, setSendingSms] = useState(false);
