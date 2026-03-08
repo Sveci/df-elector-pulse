@@ -54,7 +54,9 @@ interface AddLeaderDialogProps {
 
 export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
   const [open, setOpen] = useState(false);
+  const [localidade, setLocalidade] = useState("");
   const { mutate: createLeader, isPending } = useCreateLeader();
+  const locationConfig = useTenantLocationConfig();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
