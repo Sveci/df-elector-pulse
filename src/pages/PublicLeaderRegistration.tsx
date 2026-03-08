@@ -64,6 +64,8 @@ export default function PublicLeaderRegistration() {
   const [alreadyRegistered, setAlreadyRegistered] = useState<AlreadyRegisteredState | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [localidade, setLocalidade] = useState("");
+  const locationConfig = useTenantLocationConfig();
   const { data: cities } = useOfficeCitiesByType();
   const { data: settings } = usePublicFormSettings();
   const { data: integrationSettings } = useIntegrationsSettings();
