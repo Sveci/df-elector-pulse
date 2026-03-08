@@ -3,8 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Hook para páginas públicas: resolve o tenant pelo hostname atual.
- * Usado quando não há contexto de autenticação (ex: formulários públicos, eventos).
- * Faz lookup via RPC get_tenant_by_domain usando window.location.hostname.
+ * Funciona com:
+ * 1. Domínio customizado direto (custom_domain no banco)
+ * 2. Proxy reverso via Cloudflare Worker (hostname real do tenant)
+ * 
+ * O Cloudflare Worker faz proxy transparente, então o hostname do browser
+ * já é o domínio do tenant — basta fazer lookup direto.
  */
 export function usePublicTenantByDomain() {
   const hostname = typeof window !== "undefined" ? window.location.hostname : "";
@@ -14,12 +18,17 @@ export function usePublicTenantByDomain() {
     queryFn: async () => {
       if (!hostname) return null;
 
-      // Skip lookup for known Lovable/preview domains
+      // Skip lookup for known Lovable/preview/localhost domains
       if (
         hostname.includes("lovable.app") ||
         hostname.includes("lovableproject.com") ||
         hostname === "localhost"
       ) {
+        return null;
+      }
+
+      // Also skip for the main app domain
+      if (hostname === "app.eleitor360.ai" || hostname === "eleitor360.ai") {
         return null;
       }
 
@@ -43,7 +52,7 @@ export function usePublicTenantByDomain() {
       };
     },
     enabled: !!hostname,
-    staleTime: 5 * 60 * 1000, // Cache 5 min
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 }
