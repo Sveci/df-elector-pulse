@@ -55,6 +55,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { OfficeLeader } from "@/types/office";
 import { generateAffiliateUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";

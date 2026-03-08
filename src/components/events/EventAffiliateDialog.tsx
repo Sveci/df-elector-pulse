@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { LeaderAutocomplete } from "@/components/office/LeaderAutocomplete";
 import { Copy, Download, QrCode as QrCodeIcon, FileText, Crown } from "lucide-react";
 import { generateEventAffiliateUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useToast } from "@/hooks/use-toast";
 import QRCodeComponent from "qrcode";
 import { supabase } from "@/integrations/supabase/client";

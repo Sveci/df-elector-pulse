@@ -58,6 +58,7 @@ import { useCategoryStats } from "@/hooks/events/useCategoryStats";
 import { useEventCategories, getCategoryColor } from "@/hooks/events/useEventCategories";
 import { exportEventsToExcel, exportReportsToPdf } from "@/utils/eventReportsExport";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";

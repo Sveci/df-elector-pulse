@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { generateCampaignUrl, generateLeaderReferralUrl, generateEventCampaignUrl, generateFunnelCampaignUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useAttributionStats } from "@/hooks/campaigns/useAttributionStats";
 import { format } from "date-fns";
