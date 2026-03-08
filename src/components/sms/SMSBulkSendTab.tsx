@@ -498,6 +498,7 @@ export function SMSBulkSendTab() {
     setIsSending(true);
     setWaitingForConfirmation(false);
     setSentCount(0);
+    let actualSentCount = 0;
     
     // Encurtar link do material uma vez (reutilizado para todos os destinatários)
     let shortenedMaterialUrl = "";
