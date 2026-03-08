@@ -107,11 +107,12 @@ const apis: ApiConfig[] = [
     name: "PassKit — Carteira Digital",
     icon: Wallet,
     description: "Plataforma para criação e gestão de cartões digitais (Apple Wallet e Google Wallet).",
-    purpose: "Token global para integração com carteiras digitais. Cada tenant pode ter seu próprio Program ID e Tier ID.",
+    purpose: "Token global para integração com carteiras digitais. Cada tenant configura seu próprio Program ID e Tier ID. A região da API é definida aqui globalmente.",
     howToGet: "Acesse app.passkit.com → faça login → vá em Settings → API Keys → copie o 'API Token'.",
     link: "https://app.passkit.com/",
     secretName: "PASSKIT_API_TOKEN",
     category: "Carteira Digital",
+    hasRegionSelector: true,
   },
 ];
 

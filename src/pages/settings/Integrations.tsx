@@ -766,52 +766,6 @@ const Integrations = () => {
           <CardContent className="space-y-4">
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label htmlFor="passkit-base-url">Região da API</Label>
-                <select
-                  id="passkit-base-url"
-                  value={passkitApiBaseUrl}
-                  onChange={(e) => setPasskitApiBaseUrl(e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="https://api.pub1.passkit.io">Região 1 (pub1) - Padrão</option>
-                  <option value="https://api.pub2.passkit.io">Região 2 (pub2)</option>
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Selecione a região correspondente à sua conta PassKit
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="passkit-token">API Token (Long Lived Token)</Label>
-                <div className="relative">
-                  <Input
-                    id="passkit-token"
-                    type={showPasskitToken ? "text" : "password"}
-                    placeholder="Seu Long Lived Token do PassKit"
-                    value={passkitApiToken}
-                    onChange={(e) => setPasskitApiToken(e.target.value)}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPasskitToken(!showPasskitToken)}
-                  >
-                    {showPasskitToken ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Obtenha em <a href="https://app.passkit.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">app.passkit.com</a> → Settings → API Keys → Long Lived Token
-                </p>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="passkit-program-id">Program ID</Label>
                 <Input
                   id="passkit-program-id"
