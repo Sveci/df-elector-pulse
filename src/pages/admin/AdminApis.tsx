@@ -207,19 +207,16 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         body: { provider: api.key },
       });
 
-      // Parse response even if invoke reports an error (400 returns valid JSON)
-      const result = data || (error ? (() => { try { return JSON.parse(error.message); } catch { return null; } })() : null);
+      if (error) throw error;
 
-      if (!result) throw error || new Error("Sem resposta da função");
-
-      if (result.success) {
+      if (data?.success) {
         setTestResult({
           success: true,
-          message: result.data?.description || "Conexão bem-sucedida!",
+          message: data.data?.description || "Conexão bem-sucedida!",
         });
         toast.success(`${api.name} — conexão OK!`);
       } else {
-        const errorMsg = result?.error || "Falha na conexão";
+        const errorMsg = data?.error || "Falha na conexão";
         const isNotConfigured = errorMsg.toLowerCase().includes("não configurad");
         setTestResult({
           success: false,

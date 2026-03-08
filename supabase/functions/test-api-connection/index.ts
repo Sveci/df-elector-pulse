@@ -197,6 +197,6 @@ function jsonSuccess(data: Record<string, unknown>) {
 function jsonError(message: string) {
   return new Response(
     JSON.stringify({ success: false, error: message }),
-    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
