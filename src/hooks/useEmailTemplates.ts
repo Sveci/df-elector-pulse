@@ -248,11 +248,17 @@ export function useTestResendConnection() {
 
 export function useSendEmail() {
   const queryClient = useQueryClient();
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {}
 
   return useMutation({
     mutationFn: async (params: {
       templateSlug?: string;
       templateId?: string;
+      tenantId?: string;
       to: string;
       toName?: string;
       subject?: string;
@@ -263,7 +269,7 @@ export function useSendEmail() {
       eventId?: string;
     }) => {
       const { data, error } = await supabase.functions.invoke("send-email", {
-        body: params,
+        body: { ...params, tenantId: params.tenantId || tenantId },
       });
 
       if (error) throw error;
