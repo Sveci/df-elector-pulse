@@ -198,7 +198,7 @@ interface IntegrationSettings {
   zapi_client_token: string | null;
   zapi_enabled: boolean | null;
   // Meta Cloud API
-  whatsapp_provider_active: 'zapi' | 'meta_cloud' | 'dialog360' | null;
+  whatsapp_provider_active: 'zapi' | 'meta_cloud' | null;
   meta_cloud_enabled: boolean | null;
   meta_cloud_test_mode: boolean | null;
   meta_cloud_whitelist: string[] | null;
