@@ -451,14 +451,11 @@ Deno.serve(async (req) => {
     const typedSettings = settings as IntegrationSettings;
 
     // ============ DETERMINE PROVIDER ============
-    let activeProvider: 'zapi' | 'meta_cloud' | 'dialog360' = providerOverride || typedSettings.whatsapp_provider_active || 'zapi';
+    let activeProvider: 'zapi' | 'meta_cloud' = (providerOverride || typedSettings.whatsapp_provider_active || 'zapi') as 'zapi' | 'meta_cloud';
     
-    // Validate provider availability
-    if (activeProvider === 'dialog360') {
-      if (!typedSettings.dialog360_enabled) {
-        console.log("[send-whatsapp] 360dialog disabled, falling back to Z-API");
-        activeProvider = 'zapi';
-      }
+    // If legacy dialog360 value, fall back to zapi
+    if ((activeProvider as string) === 'dialog360') {
+      activeProvider = 'zapi';
     }
     
     if (activeProvider === 'meta_cloud') {
