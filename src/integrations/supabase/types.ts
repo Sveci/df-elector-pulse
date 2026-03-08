@@ -3074,6 +3074,56 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_email_templates: {
+        Row: {
+          assunto: string
+          categoria: string
+          conteudo_html: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          nome: string
+          slug: string
+          tenant_id: string
+          updated_at: string
+          variaveis: Json | null
+        }
+        Insert: {
+          assunto: string
+          categoria: string
+          conteudo_html: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          nome: string
+          slug: string
+          tenant_id: string
+          updated_at?: string
+          variaveis?: Json | null
+        }
+        Update: {
+          assunto?: string
+          categoria?: string
+          conteudo_html?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          nome?: string
+          slug?: string
+          tenant_id?: string
+          updated_at?: string
+          variaveis?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_email_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           cargo_politico: string | null

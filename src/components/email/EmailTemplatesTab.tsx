@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Plus, Edit, Send, Trash2, CheckCircle2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Edit, Send, Trash2, CheckCircle2, Upload, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail } from "lucide-react";
-import { useEmailTemplates } from "@/hooks/useEmailTemplates";
+import { useEmailTemplates, useSeedEmailTemplates, useResetTenantTemplate } from "@/hooks/useEmailTemplates";
 import { EmailTemplateEditorDialog } from "./EmailTemplateEditorDialog";
 import { EmailTestSendDialog } from "./EmailTestSendDialog";
 import { EmailTemplateCreateDialog } from "./EmailTemplateCreateDialog";
@@ -21,6 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteEmailTemplate } from "@/hooks/useEmailTemplates";
+import { useTenantContext } from "@/contexts/TenantContext";
+import { toast } from "sonner";
 
 const categoryLabels: Record<string, string> = {
   sistema: "Sistema",
@@ -29,6 +31,9 @@ const categoryLabels: Record<string, string> = {
   captacao: "Captação",
   lider: "Link de Líder",
   lideranca: "Liderança",
+  apoiadores: "Apoiadores",
+  equipe: "Equipe",
+  pesquisa: "Pesquisa",
 };
 
 const categoryColors: Record<string, string> = {
@@ -38,6 +43,9 @@ const categoryColors: Record<string, string> = {
   captacao: "bg-purple-100 text-purple-700",
   lider: "bg-cyan-100 text-cyan-700",
   lideranca: "bg-blue-100 text-blue-700",
+  apoiadores: "bg-emerald-100 text-emerald-700",
+  equipe: "bg-orange-100 text-orange-700",
+  pesquisa: "bg-indigo-100 text-indigo-700",
 };
 
 interface EmailTemplatesTabProps {
@@ -48,6 +56,18 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
   const { isDemoMode, m } = useDemoMask();
   const { data: templates, isLoading } = useEmailTemplates();
   const deleteTemplate = useDeleteEmailTemplate();
+  const seedTemplates = useSeedEmailTemplates();
+  const resetTenantTemplate = useResetTenantTemplate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  let activeTenant: any = null;
+  let isSuperAdmin = false;
+  try {
+    const ctx = useTenantContext();
+    activeTenant = ctx.activeTenant;
+    isSuperAdmin = ctx.isSuperAdmin;
+  } catch {}
+
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [testingTemplate, setTestingTemplate] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -82,6 +102,29 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
     }
   };
 
+  const handleImportJson = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const templates = JSON.parse(text);
+      if (!Array.isArray(templates)) {
+        toast.error("O arquivo deve conter um array de templates");
+        return;
+      }
+      await seedTemplates.mutateAsync(templates);
+    } catch (err: any) {
+      toast.error("Erro ao ler arquivo: " + err.message);
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleResetTemplate = async (slug: string) => {
+    await resetTenantTemplate.mutateAsync(slug);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -92,7 +135,30 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {isSuperAdmin && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportJson}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={seedTemplates.isPending}
+            >
+              {seedTemplates.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Importar JSON
+            </Button>
+          </>
+        )}
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Template
@@ -114,12 +180,17 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {categoryTemplates?.map((template) => (
-                <Card key={template.id} className="hover:shadow-sm transition-shadow">
+                <Card key={template.id} className={`hover:shadow-sm transition-shadow ${(template as any)._is_tenant_override ? 'border-primary/40' : ''}`}>
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium truncate">{isDemoMode ? m.platformName(template.nome) : template.nome}</span>
+                          {(template as any)._is_tenant_override && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0 border-primary/50 text-primary">
+                              Personalizado
+                            </Badge>
+                          )}
                           {template.is_active ? (
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
                           ) : (
@@ -165,6 +236,21 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
                           </TooltipTrigger>
                           <TooltipContent>Testar</TooltipContent>
                         </Tooltip>
+                        {(template as any)._is_tenant_override && activeTenant && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleResetTemplate(template.slug)}
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Restaurar padrão</TooltipContent>
+                          </Tooltip>
+                        )}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
