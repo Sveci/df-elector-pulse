@@ -229,6 +229,7 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
         } else {
           toast.warning(`${api.name} — credencial não configurada`);
         }
+      }
     } catch (err: any) {
       const message = err.message || "Erro ao testar";
       setTestResult({ success: false, message });
