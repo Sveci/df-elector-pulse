@@ -433,8 +433,6 @@ Deno.serve(async (req) => {
         whatsapp_provider_active, meta_cloud_enabled, meta_cloud_test_mode,
         meta_cloud_whitelist, meta_cloud_phone_number_id, meta_cloud_api_version,
         meta_cloud_fallback_enabled,
-        dialog360_enabled, dialog360_phone_number_id, dialog360_test_mode,
-        dialog360_whitelist, dialog360_fallback_enabled,
         wa_auto_verificacao_enabled, wa_auto_captacao_enabled, wa_auto_pesquisa_enabled,
         wa_auto_evento_enabled, wa_auto_lideranca_enabled, wa_auto_membro_enabled,
         wa_auto_visita_enabled, wa_auto_optout_enabled, wa_auto_sms_fallback_enabled
