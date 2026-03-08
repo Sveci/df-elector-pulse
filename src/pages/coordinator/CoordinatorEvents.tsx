@@ -29,6 +29,7 @@ import { useTenantDomain } from "@/hooks/useTenantDomain";
 import logo from "@/assets/logo-rafael-prudente.png";
 
 export default function CoordinatorEvents() {
+  const tenantDomain = useTenantDomain();
   const { session, isAuthenticated } = useCoordinatorAuth();
   const navigate = useNavigate();
   const { data: dashboard } = useCoordinatorDashboard(session?.leader_id);
