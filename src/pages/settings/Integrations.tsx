@@ -290,14 +290,6 @@ const Integrations = () => {
     });
   };
 
-  const handleSaveResend = () => {
-    updateSettings.mutate({
-      resend_api_key: resendApiKey || null,
-      resend_from_email: resendFromEmail || null,
-      resend_from_name: resendFromName || null,
-      resend_enabled: resendEnabled,
-    });
-  };
 
   const handleSaveSmsdev = () => {
     updateSettings.mutate({
