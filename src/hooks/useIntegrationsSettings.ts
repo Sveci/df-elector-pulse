@@ -180,10 +180,17 @@ export function useUpdateIntegrationsSettings() {
         .from("integrations_settings")
         .select("id")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!existing) {
-        throw new Error("Configurações não encontradas");
+        // Auto-create if missing
+        const { data: newRow, error: insertErr } = await supabase
+          .from("integrations_settings")
+          .insert(updates)
+          .select()
+          .single();
+        if (insertErr) throw insertErr;
+        return newRow;
       }
 
       const { data, error } = await supabase
