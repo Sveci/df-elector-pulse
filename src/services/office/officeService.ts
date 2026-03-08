@@ -130,6 +130,8 @@ export async function createLeader(dto: CreateLeaderDTO): Promise<OfficeLeader> 
       cidade_id: dto.cidade_id || null,
       localidade: dto.localidade || null,
       instagram_username: dto.instagram_username || null,
+      data_nascimento: dto.data_nascimento || null,
+      observacao: dto.observacao || null,
       is_active: dto.is_active,
       status: 'active',
       cadastros: 0,
