@@ -14,16 +14,20 @@ import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { useBrazilCities, useBrazilDistricts } from "@/hooks/useBrazilCities";
 import { ESTADOS_BR } from "@/constants/brazilPolitics";
 
+export interface LocationValue {
+  /** UUID from office_cities (RA mode only) */
+  cidadeId?: string;
+  /** Text location: bairro name, city name, or "UF - Cidade" */
+  localidade?: string;
+}
+
 interface LocationSelectProps {
-  /** For RA mode: the office_cities UUID */
+  /** Current cidade_id value (for RA mode backward compat) */
   value?: string;
-  onValueChange: (value: string) => void;
-  /** For text-based modes (bairro/cidade/estado_cidade): the text value */
-  textValue?: string;
-  onTextValueChange?: (value: string) => void;
-  /** For estado_cidade mode: the selected estado */
-  estadoValue?: string;
-  onEstadoValueChange?: (value: string) => void;
+  /** Current localidade text value */
+  localidadeValue?: string;
+  /** Called when location changes - provides both cidade_id and localidade */
+  onLocationChange: (location: LocationValue) => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -33,11 +37,8 @@ interface LocationSelectProps {
 
 export function LocationSelect({
   value,
-  onValueChange,
-  textValue,
-  onTextValueChange,
-  estadoValue,
-  onEstadoValueChange,
+  localidadeValue,
+  onLocationChange,
   label: labelOverride,
   placeholder: placeholderOverride,
   required = false,
@@ -45,25 +46,35 @@ export function LocationSelect({
   showLabel = false,
 }: LocationSelectProps) {
   const config = useTenantLocationConfig();
-
-  // For estado_cidade mode, track local estado selection
-  const [localEstado, setLocalEstado] = useState(estadoValue || "");
+  const [selectedEstado, setSelectedEstado] = useState("");
+  const [selectedCidade, setSelectedCidade] = useState(localidadeValue || "");
 
   useEffect(() => {
-    if (estadoValue) setLocalEstado(estadoValue);
-  }, [estadoValue]);
+    if (localidadeValue !== undefined) {
+      // For estado_cidade mode, parse "UF - Cidade" format
+      if (config.fieldType === 'estado_cidade' && localidadeValue) {
+        const parts = localidadeValue.split(" - ");
+        if (parts.length >= 2) {
+          setSelectedEstado(parts[0]);
+          setSelectedCidade(parts.slice(1).join(" - "));
+        }
+      } else {
+        setSelectedCidade(localidadeValue || "");
+      }
+    }
+  }, [localidadeValue, config.fieldType]);
 
   const effectiveLabel = labelOverride || config.label;
   const effectivePlaceholder = placeholderOverride || config.placeholder;
 
   // For cidade mode: use tenant's fixed estado
-  const cidadeUf = config.fieldType === 'cidade' ? config.estado : 
-                   config.fieldType === 'estado_cidade' ? localEstado : undefined;
+  const cidadeUf = config.fieldType === 'cidade' ? config.estado :
+                   config.fieldType === 'estado_cidade' ? selectedEstado : undefined;
   const { data: cities, isLoading: citiesLoading } = useBrazilCities(
     (config.fieldType === 'cidade' || config.fieldType === 'estado_cidade') ? (cidadeUf || undefined) : undefined
   );
 
-  // For bairro mode: use tenant's fixed estado + cidade to get districts
+  // For bairro mode: get districts
   const { data: districts, isLoading: districtsLoading } = useBrazilDistricts(
     config.fieldType === 'bairro' ? (config.estado || undefined) : undefined,
     config.fieldType === 'bairro' ? (config.cidade || undefined) : undefined
@@ -80,12 +91,12 @@ export function LocationSelect({
     );
   }
 
-  // RA mode: use existing RegionSelect
+  // RA mode: delegate to existing RegionSelect
   if (config.fieldType === 'ra') {
     return (
       <RegionSelect
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(id) => onLocationChange({ cidadeId: id, localidade: undefined })}
         label={effectiveLabel}
         placeholder={effectivePlaceholder}
         required={required}
@@ -95,7 +106,7 @@ export function LocationSelect({
     );
   }
 
-  // Bairro mode: show districts or free text input
+  // Bairro mode
   if (config.fieldType === 'bairro') {
     const hasDistricts = districts && districts.length > 1;
 
@@ -115,8 +126,11 @@ export function LocationSelect({
         <div className="space-y-2">
           {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
           <Select
-            value={textValue || ""}
-            onValueChange={(v) => onTextValueChange?.(v)}
+            value={selectedCidade}
+            onValueChange={(v) => {
+              setSelectedCidade(v);
+              onLocationChange({ cidadeId: undefined, localidade: v });
+            }}
             disabled={disabled}
           >
             <SelectTrigger>
@@ -134,13 +148,15 @@ export function LocationSelect({
       );
     }
 
-    // Fallback: free text input for bairro
     return (
       <div className="space-y-2">
         {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
         <Input
-          value={textValue || ""}
-          onChange={(e) => onTextValueChange?.(e.target.value)}
+          value={selectedCidade}
+          onChange={(e) => {
+            setSelectedCidade(e.target.value);
+            onLocationChange({ cidadeId: undefined, localidade: e.target.value });
+          }}
           placeholder="Digite o bairro"
           disabled={disabled}
         />
@@ -148,7 +164,7 @@ export function LocationSelect({
     );
   }
 
-  // Cidade mode: show IBGE cities for the tenant's estado
+  // Cidade mode
   if (config.fieldType === 'cidade') {
     if (citiesLoading) {
       return (
@@ -165,8 +181,11 @@ export function LocationSelect({
       <div className="space-y-2">
         {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
         <Select
-          value={textValue || ""}
-          onValueChange={(v) => onTextValueChange?.(v)}
+          value={selectedCidade}
+          onValueChange={(v) => {
+            setSelectedCidade(v);
+            onLocationChange({ cidadeId: undefined, localidade: v });
+          }}
           disabled={disabled}
         >
           <SelectTrigger>
@@ -184,18 +203,17 @@ export function LocationSelect({
     );
   }
 
-  // Estado + Cidade mode: show estado select, then cidade select
+  // Estado + Cidade mode
   if (config.fieldType === 'estado_cidade') {
     return (
       <div className="space-y-3">
         {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
         <Select
-          value={localEstado}
+          value={selectedEstado}
           onValueChange={(v) => {
-            setLocalEstado(v);
-            onEstadoValueChange?.(v);
-            // Clear city when estado changes
-            onTextValueChange?.("");
+            setSelectedEstado(v);
+            setSelectedCidade("");
+            onLocationChange({ cidadeId: undefined, localidade: "" });
           }}
           disabled={disabled}
         >
@@ -211,7 +229,7 @@ export function LocationSelect({
           </SelectContent>
         </Select>
 
-        {localEstado && (
+        {selectedEstado && (
           <div className="space-y-2">
             {citiesLoading ? (
               <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
@@ -219,8 +237,11 @@ export function LocationSelect({
               </div>
             ) : (
               <Select
-                value={textValue || ""}
-                onValueChange={(v) => onTextValueChange?.(v)}
+                value={selectedCidade}
+                onValueChange={(v) => {
+                  setSelectedCidade(v);
+                  onLocationChange({ cidadeId: undefined, localidade: `${selectedEstado} - ${v}` });
+                }}
                 disabled={disabled}
               >
                 <SelectTrigger>
