@@ -56,6 +56,18 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
   const { isDemoMode, m } = useDemoMask();
   const { data: templates, isLoading } = useEmailTemplates();
   const deleteTemplate = useDeleteEmailTemplate();
+  const seedTemplates = useSeedEmailTemplates();
+  const resetTenantTemplate = useResetTenantTemplate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  let activeTenant: any = null;
+  let isSuperAdmin = false;
+  try {
+    const ctx = useTenantContext();
+    activeTenant = ctx.activeTenant;
+    isSuperAdmin = ctx.isSuperAdmin;
+  } catch {}
+
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [testingTemplate, setTestingTemplate] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
