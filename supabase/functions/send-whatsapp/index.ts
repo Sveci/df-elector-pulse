@@ -496,25 +496,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ============ TEST MODE CHECK FOR 360DIALOG ============
-    if (activeProvider === 'dialog360' && typedSettings.dialog360_test_mode) {
-      const cleanPhone = phone.replace(/\D/g, "");
-      const isWhitelisted = isPhoneInWhitelist(cleanPhone, typedSettings.dialog360_whitelist);
-      
-      if (!isWhitelisted) {
-        console.log(`[send-whatsapp] Phone ${cleanPhone.substring(0, 6)}... not in 360dialog whitelist, test mode active`);
-        
-        if (typedSettings.dialog360_fallback_enabled && typedSettings.zapi_enabled) {
-          console.log("[send-whatsapp] Using Z-API as fallback (360dialog test mode restriction)");
-          activeProvider = 'zapi';
-        } else {
-          return new Response(
-            JSON.stringify({ success: false, error: "Número não está na whitelist do modo teste (360dialog)", testMode: true }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-    }
 
     // ============ CHECK AUTO MESSAGE CATEGORY ============
     // Templates de verificação NUNCA devem ser bloqueados quando o método de verificação é whatsapp_consent
