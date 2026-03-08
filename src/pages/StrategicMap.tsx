@@ -874,10 +874,12 @@ export default function StrategicMap() {
               <div className="w-6 h-3 rounded bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 opacity-50" />
               <span>Mapa de calor</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-3 border-2 border-dashed border-primary bg-primary/10 rounded" />
-              <span>Limite da RA</span>
-            </div>
+            {mapTenantConfig.showRABoundaries && (
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-3 border-2 border-dashed border-primary bg-primary/10 rounded" />
+                <span>Limite da RA</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
