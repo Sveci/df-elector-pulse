@@ -244,7 +244,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
               name="observacao"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observação</FormLabel>
+                  <FormLabel>Observação (Opcional)</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Informações adicionais sobre o líder..."
