@@ -1460,7 +1460,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
     } else {
       console.log('Sem tool calls, fazendo streaming direto');
       try {
-        const streamResponse = await streamOpenAI(messages, OPENAI_API_KEY, systemPrompt, true);
+        const streamResponse = await streamOpenAI(messages, LOVABLE_API_KEY, systemPrompt, true);
         
         return new Response(streamResponse.body, {
           headers: {
