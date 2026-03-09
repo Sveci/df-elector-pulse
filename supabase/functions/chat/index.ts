@@ -1172,18 +1172,20 @@ Retorna: totais de contatos, líderes, eventos, visitas, leads capturados, progr
 ];
 
 // ═══════════════════════════════════════════════════════════
-// FUNÇÕES DE COMUNICAÇÃO COM OPENAI
+// FUNÇÕES DE COMUNICAÇÃO COM LOVABLE AI GATEWAY
 // ═══════════════════════════════════════════════════════════
 
+const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+
 async function callOpenAI(messages: any[], apiKey: string, systemPrompt: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(AI_GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'openai/gpt-5-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -1196,22 +1198,24 @@ async function callOpenAI(messages: any[], apiKey: string, systemPrompt: string)
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenAI API error:', { status: response.status, error: errorText });
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error('AI Gateway error:', { status: response.status, error: errorText });
+    if (response.status === 429) throw new Error('Rate limit exceeded. Tente novamente em alguns segundos.');
+    if (response.status === 402) throw new Error('Créditos insuficientes no Lovable AI.');
+    throw new Error(`AI Gateway error: ${response.status}`);
   }
 
   return await response.json();
 }
 
 async function streamOpenAI(messages: any[], apiKey: string, systemPrompt: string, useStreaming: boolean = true) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(AI_GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'openai/gpt-5-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -1223,8 +1227,10 @@ async function streamOpenAI(messages: any[], apiKey: string, systemPrompt: strin
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenAI API error:', { status: response.status, error: errorText });
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error('AI Gateway error:', { status: response.status, error: errorText });
+    if (response.status === 429) throw new Error('Rate limit exceeded. Tente novamente em alguns segundos.');
+    if (response.status === 402) throw new Error('Créditos insuficientes no Lovable AI.');
+    throw new Error(`AI Gateway error: ${response.status}`);
   }
 
   return response;
@@ -1242,9 +1248,9 @@ Deno.serve(async (req) => {
   try {
     const { messages, sessionId = 'default', userName = '' } = await req.json();
     
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY não está configurada');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY não está configurada');
     }
 
     const now = new Date();
@@ -1367,7 +1373,7 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}" de forma amigável.` : ''}`;
 
     // Primeira chamada para verificar tool calls
-    const initialResponse = await callOpenAI(messages, OPENAI_API_KEY, systemPrompt);
+    const initialResponse = await callOpenAI(messages, LOVABLE_API_KEY, systemPrompt);
     
     console.log('Initial response received');
 
@@ -1429,7 +1435,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
 
       console.log('Fazendo segunda chamada com resultados das funções');
       try {
-        const streamResponse = await streamOpenAI(updatedMessages, OPENAI_API_KEY, systemPrompt, true);
+        const streamResponse = await streamOpenAI(updatedMessages, LOVABLE_API_KEY, systemPrompt, true);
         
         return new Response(streamResponse.body, {
           headers: {
@@ -1442,7 +1448,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
       } catch (error: any) {
         if (error.message.includes('400')) {
           console.log('Erro com streaming, tentando sem streaming');
-          const nonStreamResponse = await streamOpenAI(updatedMessages, OPENAI_API_KEY, systemPrompt, false);
+          const nonStreamResponse = await streamOpenAI(updatedMessages, LOVABLE_API_KEY, systemPrompt, false);
           const data = await nonStreamResponse.json();
           
           return new Response(JSON.stringify(data), {
@@ -1454,7 +1460,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
     } else {
       console.log('Sem tool calls, fazendo streaming direto');
       try {
-        const streamResponse = await streamOpenAI(messages, OPENAI_API_KEY, systemPrompt, true);
+        const streamResponse = await streamOpenAI(messages, LOVABLE_API_KEY, systemPrompt, true);
         
         return new Response(streamResponse.body, {
           headers: {
@@ -1467,7 +1473,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
       } catch (error: any) {
         if (error.message.includes('400')) {
           console.log('Erro com streaming, tentando sem streaming');
-          const nonStreamResponse = await streamOpenAI(messages, OPENAI_API_KEY, systemPrompt, false);
+          const nonStreamResponse = await streamOpenAI(messages, LOVABLE_API_KEY, systemPrompt, false);
           const data = await nonStreamResponse.json();
           
           return new Response(JSON.stringify(data), {
