@@ -834,6 +834,60 @@ export type Database = {
           },
         ]
       }
+      ibge_cidades: {
+        Row: {
+          created_at: string
+          ibge_id: number
+          id: string
+          nome: string
+          uf: string
+        }
+        Insert: {
+          created_at?: string
+          ibge_id: number
+          id?: string
+          nome: string
+          uf: string
+        }
+        Update: {
+          created_at?: string
+          ibge_id?: number
+          id?: string
+          nome?: string
+          uf?: string
+        }
+        Relationships: []
+      }
+      ibge_distritos: {
+        Row: {
+          cidade_ibge_id: number
+          cidade_nome: string
+          created_at: string
+          ibge_id: number
+          id: string
+          nome: string
+          uf: string
+        }
+        Insert: {
+          cidade_ibge_id: number
+          cidade_nome: string
+          created_at?: string
+          ibge_id: number
+          id?: string
+          nome: string
+          uf: string
+        }
+        Update: {
+          cidade_ibge_id?: number
+          cidade_nome?: string
+          created_at?: string
+          ibge_id?: number
+          id?: string
+          nome?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       integrations_settings: {
         Row: {
           created_at: string
