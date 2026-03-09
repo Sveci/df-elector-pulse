@@ -1473,7 +1473,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
       } catch (error: any) {
         if (error.message.includes('400')) {
           console.log('Erro com streaming, tentando sem streaming');
-          const nonStreamResponse = await streamOpenAI(messages, OPENAI_API_KEY, systemPrompt, false);
+          const nonStreamResponse = await streamOpenAI(messages, LOVABLE_API_KEY, systemPrompt, false);
           const data = await nonStreamResponse.json();
           
           return new Response(JSON.stringify(data), {
