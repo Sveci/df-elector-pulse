@@ -86,7 +86,7 @@ export default function LeaderFormSettings() {
       leader_form_logo_url: logoUrl || null,
       leader_form_title: title,
       leader_form_subtitle: subtitle || null,
-    } as any);
+    });
   }
 
   if (isLoading) {
