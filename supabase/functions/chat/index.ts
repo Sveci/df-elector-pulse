@@ -1172,18 +1172,20 @@ Retorna: totais de contatos, líderes, eventos, visitas, leads capturados, progr
 ];
 
 // ═══════════════════════════════════════════════════════════
-// FUNÇÕES DE COMUNICAÇÃO COM OPENAI
+// FUNÇÕES DE COMUNICAÇÃO COM LOVABLE AI GATEWAY
 // ═══════════════════════════════════════════════════════════
 
+const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+
 async function callOpenAI(messages: any[], apiKey: string, systemPrompt: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(AI_GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'openai/gpt-5-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -1196,22 +1198,24 @@ async function callOpenAI(messages: any[], apiKey: string, systemPrompt: string)
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenAI API error:', { status: response.status, error: errorText });
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error('AI Gateway error:', { status: response.status, error: errorText });
+    if (response.status === 429) throw new Error('Rate limit exceeded. Tente novamente em alguns segundos.');
+    if (response.status === 402) throw new Error('Créditos insuficientes no Lovable AI.');
+    throw new Error(`AI Gateway error: ${response.status}`);
   }
 
   return await response.json();
 }
 
 async function streamOpenAI(messages: any[], apiKey: string, systemPrompt: string, useStreaming: boolean = true) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(AI_GATEWAY_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-5-mini-2025-08-07',
+      model: 'openai/gpt-5-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -1223,8 +1227,10 @@ async function streamOpenAI(messages: any[], apiKey: string, systemPrompt: strin
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenAI API error:', { status: response.status, error: errorText });
-    throw new Error(`OpenAI API error: ${response.status}`);
+    console.error('AI Gateway error:', { status: response.status, error: errorText });
+    if (response.status === 429) throw new Error('Rate limit exceeded. Tente novamente em alguns segundos.');
+    if (response.status === 402) throw new Error('Créditos insuficientes no Lovable AI.');
+    throw new Error(`AI Gateway error: ${response.status}`);
   }
 
   return response;
