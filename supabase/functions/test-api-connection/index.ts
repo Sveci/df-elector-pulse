@@ -133,19 +133,36 @@ Deno.serve(async (req) => {
 
       case "meta_cloud": {
         const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+        console.log(`[test-api-connection] META_WA_ACCESS_TOKEN present: ${!!accessToken}, length: ${accessToken?.length || 0}`);
         if (!accessToken) return jsonError("META_WA_ACCESS_TOKEN não configurado nos secrets");
         const phoneNumberId = settings?.meta_cloud_phone_number_id;
         const apiVersion = settings?.meta_cloud_api_version || "v20.0";
+        console.log(`[test-api-connection] phoneNumberId: ${phoneNumberId}, apiVersion: ${apiVersion}`);
         if (!phoneNumberId) return jsonError("Phone Number ID não configurado nas integrações");
-        const res = await fetch(
-          `https://graph.facebook.com/${apiVersion}/${phoneNumberId}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const data = await res.json();
-        if (res.ok && data.id) {
-          return jsonSuccess({ description: `Conectado — Phone: ${data.display_phone_number || data.id}` });
+        const graphUrl = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}`;
+        console.log(`[test-api-connection] Fetching: ${graphUrl}`);
+        try {
+          const res = await fetch(graphUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const resText = await res.text();
+          console.log(`[test-api-connection] Graph API response status: ${res.status}, body: ${resText.substring(0, 300)}`);
+          if (res.ok) {
+            const data = JSON.parse(resText);
+            if (data.id) {
+              return jsonSuccess({ description: `Conectado — Phone: ${data.display_phone_number || data.id}` });
+            }
+          }
+          try {
+            const errData = JSON.parse(resText);
+            return jsonError(errData.error?.message || `Erro ${res.status}: ${resText.substring(0, 200)}`);
+          } catch {
+            return jsonError(`Erro ${res.status}: ${resText.substring(0, 200)}`);
+          }
+        } catch (fetchErr) {
+          console.error(`[test-api-connection] Fetch error for meta_cloud:`, fetchErr);
+          return jsonError(`Erro de conexão: ${fetchErr instanceof Error ? fetchErr.message : String(fetchErr)}`);
         }
-        return jsonError(data.error?.message || "Falha na conexão");
       }
 
       case "passkit": {
