@@ -27,12 +27,16 @@ export function useTenantLocationConfig(): TenantLocationConfig {
   let tenantLoading = false;
   try {
     const ctx = useTenantContext();
-    tenantLoading = ctx.isLoading || (!ctx.activeTenant && ctx.tenants.length === 0 && ctx.isLoading);
+    // Only consider tenant loading if org data hasn't loaded yet
+    // This prevents eternal loading on public pages where tenant auth isn't available
+    if (orgLoading) {
+      tenantLoading = ctx.isLoading;
+    }
   } catch {
     // Outside TenantProvider
   }
 
-  const isLoading = orgLoading || tenantLoading;
+  const isLoading = orgLoading;
 
   const cargo = organization?.cargo || null;
   const fieldType = getLocationFieldType(cargo);
