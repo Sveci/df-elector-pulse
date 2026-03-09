@@ -8,6 +8,12 @@ export interface AppSettings {
   facebook_api_token: string | null;
   facebook_pixel_code: string | null;
   gtm_id: string | null;
+  affiliate_form_cover_url: string | null;
+  affiliate_form_logo_url: string | null;
+  leader_form_cover_url: string | null;
+  leader_form_logo_url: string | null;
+  leader_form_title: string | null;
+  leader_form_subtitle: string | null;
   created_at: string;
   updated_at: string;
 }

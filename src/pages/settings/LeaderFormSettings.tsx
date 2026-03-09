@@ -36,12 +36,12 @@ export default function LeaderFormSettings() {
 
   useEffect(() => {
     if (settings) {
-      setCoverUrl((settings as any).leader_form_cover_url || "");
-      setLogoUrl((settings as any).leader_form_logo_url || "");
-      setTitle((settings as any).leader_form_title || "Cadastro de Liderança");
-      setSubtitle((settings as any).leader_form_subtitle || "");
+      setCoverUrl(settings.leader_form_cover_url || "");
+      setLogoUrl(settings.leader_form_logo_url || "");
+      setTitle(settings.leader_form_title || "Cadastro de Liderança");
+      setSubtitle(settings.leader_form_subtitle || "");
     }
-  }, [settings]);
+  }, [settings?.leader_form_cover_url, settings?.leader_form_logo_url, settings?.leader_form_title, settings?.leader_form_subtitle]);
 
   async function uploadFile(file: File, folder: string): Promise<string | null> {
     const fileExt = file.name.split(".").pop();
