@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
-import logo from "@/assets/favicon-eleitor360.png";
+import logo from "@/assets/logo-horizontal-coordenador.png";
 
 export default function CoordinatorLogin() {
   const [phone, setPhone] = useState("");
