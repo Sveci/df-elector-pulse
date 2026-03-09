@@ -57,7 +57,7 @@ export function useUpdateAppSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["app_settings"] });
-      toast.success("Configurações de rastreamento atualizadas com sucesso!");
+      toast.success("Configurações salvas com sucesso!");
     },
     onError: (error: Error) => {
       toast.error("Erro ao atualizar configurações: " + error.message);
