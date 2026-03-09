@@ -77,17 +77,52 @@ export function useEmailTemplates() {
 }
 
 export function useEmailTemplate(id: string) {
+  let tenantId: string | null = null;
+  try {
+    const ctx = useTenantContext();
+    tenantId = ctx.activeTenant?.id || null;
+  } catch {
+    // Outside TenantProvider
+  }
+
   return useQuery({
-    queryKey: ["email_template", id],
+    queryKey: ["email_template", id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Always fetch the global template first
+      const { data: globalTemplate, error } = await supabase
         .from("email_templates")
         .select("*")
         .eq("id", id)
         .single();
 
       if (error) throw error;
-      return data as EmailTemplate;
+      if (!globalTemplate) throw new Error("Template não encontrado");
+
+      // If tenant is active, check for an override
+      if (tenantId) {
+        const { data: override } = await supabase
+          .from("tenant_email_templates")
+          .select("*")
+          .eq("tenant_id", tenantId)
+          .eq("slug", globalTemplate.slug)
+          .single();
+
+        if (override) {
+          return {
+            ...globalTemplate,
+            nome: override.nome,
+            assunto: override.assunto,
+            conteudo_html: override.conteudo_html,
+            categoria: override.categoria,
+            variaveis: override.variaveis,
+            is_active: override.is_active,
+            _is_tenant_override: true,
+            _tenant_template_id: override.id,
+          } as EmailTemplate;
+        }
+      }
+
+      return globalTemplate as EmailTemplate;
     },
     enabled: !!id,
   });
