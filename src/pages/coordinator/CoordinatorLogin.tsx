@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhoneToE164 } from "@/utils/phoneNormalizer";
-import logo from "@/assets/logo-horizontal-coordenador.png";
+import logo from "@/assets/logo-rafael-prudente.png";
 
 export default function CoordinatorLogin() {
   const [phone, setPhone] = useState("");
@@ -27,7 +27,7 @@ export default function CoordinatorLogin() {
       const normalizedPhone = normalizePhoneToE164(phone);
       const { data, error } = await (supabase.rpc as any)("coordinator_login", {
         p_phone: normalizedPhone,
-        p_password: password,
+        p_password: password
       });
 
       if (error) throw error;
@@ -47,7 +47,7 @@ export default function CoordinatorLogin() {
         hierarchy_level: null,
         is_verified: null,
         cidade_nome: null,
-        session_token: crypto.randomUUID(),
+        session_token: crypto.randomUUID()
       });
 
       toast.success("Login realizado com sucesso!");
@@ -62,7 +62,7 @@ export default function CoordinatorLogin() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <img src={logo} alt="Logo" className="h-10 mb-6" />
+      <img alt="Logo" className="h-16 mb-6" src="/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png" />
       <Card className="max-w-sm w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -81,8 +81,8 @@ export default function CoordinatorLogin() {
                 placeholder="(61) 99999-9999"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                required
-              />
+                required />
+              
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
@@ -92,8 +92,8 @@ export default function CoordinatorLogin() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+                required />
+              
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -102,6 +102,6 @@ export default function CoordinatorLogin() {
           </form>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
