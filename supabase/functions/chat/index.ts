@@ -1373,7 +1373,7 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}" de forma amigável.` : ''}`;
 
     // Primeira chamada para verificar tool calls
-    const initialResponse = await callOpenAI(messages, OPENAI_API_KEY, systemPrompt);
+    const initialResponse = await callOpenAI(messages, LOVABLE_API_KEY, systemPrompt);
     
     console.log('Initial response received');
 
