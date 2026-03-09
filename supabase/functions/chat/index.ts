@@ -1435,7 +1435,7 @@ ${firstName ? `\n👤 O usuário se chama ${userName}. Chame-o de "${firstName}"
 
       console.log('Fazendo segunda chamada com resultados das funções');
       try {
-        const streamResponse = await streamOpenAI(updatedMessages, OPENAI_API_KEY, systemPrompt, true);
+        const streamResponse = await streamOpenAI(updatedMessages, LOVABLE_API_KEY, systemPrompt, true);
         
         return new Response(streamResponse.body, {
           headers: {
