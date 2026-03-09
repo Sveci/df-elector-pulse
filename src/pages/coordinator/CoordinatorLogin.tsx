@@ -62,7 +62,7 @@ export default function CoordinatorLogin() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <img src={logo} alt="Logo" className="h-16 mb-6" />
+      <img src={logo} alt="Logo" className="h-12 mb-6" />
       <Card className="max-w-sm w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
