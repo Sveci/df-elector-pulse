@@ -41,7 +41,7 @@ export default function LeaderFormSettings() {
       setTitle(settings.leader_form_title || "Cadastro de Liderança");
       setSubtitle(settings.leader_form_subtitle || "");
     }
-  }, [settings?.leader_form_cover_url, settings?.leader_form_logo_url, settings?.leader_form_title, settings?.leader_form_subtitle]);
+  }, [settings]);
 
   async function uploadFile(file: File, folder: string): Promise<string | null> {
     const fileExt = file.name.split(".").pop();
