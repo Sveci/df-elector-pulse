@@ -598,16 +598,14 @@ export default function LeadCaptureLanding() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{locationConfig.label}</FormLabel>
-                    <FormControl>
-                      <LocationSelect
-                        value={field.value}
-                        localidadeValue={localidade}
-                        onLocationChange={({ cidadeId: cid, localidade: loc }) => {
-                          field.onChange(cid || "");
-                          setLocalidade(loc || "");
-                        }}
-                      />
-                    </FormControl>
+                    <LocationSelect
+                      value={field.value}
+                      localidadeValue={localidade}
+                      onLocationChange={({ cidadeId: cid, localidade: loc }) => {
+                        field.onChange(cid || "");
+                        setLocalidade(loc || "");
+                      }}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
