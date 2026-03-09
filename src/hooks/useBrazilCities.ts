@@ -28,6 +28,8 @@ export function useBrazilCities(uf: string | undefined) {
     },
     enabled: !!uf,
     staleTime: 1000 * 60 * 60, // 1h cache
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
 

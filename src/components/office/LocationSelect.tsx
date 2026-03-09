@@ -166,6 +166,8 @@ export function LocationSelect({
 
   // Cidade mode
   if (config.fieldType === 'cidade') {
+    const citiesFailed = !citiesLoading && (!cities || cities.length === 0) && !!cidadeUf;
+
     if (citiesLoading) {
       return (
         <div className="space-y-2">
@@ -173,6 +175,24 @@ export function LocationSelect({
           <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
+        </div>
+      );
+    }
+
+    // Fallback to text input if API failed
+    if (citiesFailed) {
+      return (
+        <div className="space-y-2">
+          {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
+          <Input
+            value={selectedCidade}
+            onChange={(e) => {
+              setSelectedCidade(e.target.value);
+              onLocationChange({ cidadeId: undefined, localidade: e.target.value });
+            }}
+            placeholder="Digite o nome da cidade"
+            disabled={disabled}
+          />
         </div>
       );
     }
