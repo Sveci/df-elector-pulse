@@ -31,7 +31,8 @@ export function useAppSettings() {
       if (error) throw error;
       return data as AppSettings;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
   });
 }
 
