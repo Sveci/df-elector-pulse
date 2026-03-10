@@ -1063,22 +1063,20 @@ const Events = () => {
                   </div>
 
                   <div className="col-span-2">
-                    <Label>Região *</Label>
-                    <Select 
-                      value={editingEvent.region} 
-                      onValueChange={(value) => setEditingEvent({ ...editingEvent, region: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.id} value={city.nome}>
-                            {city.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <LocationSelect
+                      value={undefined}
+                      localidadeValue={editingEvent.region}
+                      onLocationChange={({ cidadeId, localidade }) => {
+                        if (cidadeId) {
+                          const city = cities.find(c => c.id === cidadeId);
+                          setEditingEvent({ ...editingEvent, region: city?.nome || '' });
+                        } else {
+                          setEditingEvent({ ...editingEvent, region: localidade || '' });
+                        }
+                      }}
+                      required
+                      showLabel
+                    />
                   </div>
 
                   <div className="col-span-2">
