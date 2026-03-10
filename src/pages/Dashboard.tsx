@@ -437,10 +437,10 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">Cidades Alcançadas</span>
+                    <span className="text-sm font-medium text-gray-700">{locationLabel} Alcançadas</span>
                   </div>
                   <span className="text-lg font-bold text-blue-600">
-                    {m.number(effectiveStats?.citiesReached || 0, 'cities')} RAs
+                    {m.number(effectiveStats?.citiesReached || 0, 'cities')} {locationLabel}
                   </span>
                 </div>
 
