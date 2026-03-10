@@ -198,8 +198,8 @@ const Index = () => {
             <Button variant="ghost" onClick={() => navigate("/login")} className="text-gray-200 hover:text-white hover:bg-gray-800/60 hidden sm:inline-flex">
               Entrar
             </Button>
-            <Button onClick={() => navigate("/login")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold">
-              Acessar agora!
+            <Button onClick={() => navigate("/contato")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold">
+              Entrar em contato
             </Button>
           </div>
         </div>
