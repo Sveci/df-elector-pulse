@@ -100,6 +100,10 @@ const Dashboard = () => {
   const [periodTemas, setPeriodTemas] = useState("30d");
   const queryClient = useQueryClient();
   const { m } = useDemoMask();
+  const { data: organization } = useOrganization();
+  const locationFieldType = getLocationFieldType(organization?.cargo);
+  const locationLabel = locationFieldType === 'bairro' ? 'Bairros' : locationFieldType === 'ra' ? 'RAs' : 'Cidades';
+  const locationSingularLabel = locationFieldType === 'bairro' ? 'Bairro' : locationFieldType === 'ra' ? 'RA' : 'Cidade';
 
   // Tutorial hook
   const { restartTutorial } = useTutorial("dashboard", dashboardTutorialSteps);
