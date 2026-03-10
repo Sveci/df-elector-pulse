@@ -448,7 +448,7 @@ const Dashboard = () => {
                   <div className="p-3 bg-green-50 rounded-lg">
                     <div className="flex items-center mb-1">
                       <MapPin className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm font-medium text-gray-700">RA com mais cadastros</span>
+                      <span className="text-sm font-medium text-gray-700">{locationSingularLabel} com mais cadastros</span>
                     </div>
                     <span className="text-base font-semibold text-green-600">
                       {m.city(effectiveStats.topCity)} ({m.number(effectiveStats.topCityCount, 'top_city')})
