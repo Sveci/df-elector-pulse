@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
+import { useTenantContext } from "@/contexts/TenantContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
