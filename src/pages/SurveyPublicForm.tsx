@@ -34,6 +34,7 @@ interface RegistrationData {
   whatsapp: string;
   email: string;
   cidadeId: string;
+  localidade: string;
   lgpdConsent: boolean;
 }
 
