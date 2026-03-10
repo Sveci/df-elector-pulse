@@ -248,7 +248,7 @@ const Contato = () => {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white h-12 text-base gap-2"
+                  className="w-full bg-[#F0E500] hover:bg-[#d4c900] text-gray-900 font-semibold h-12 text-base gap-2"
                 >
                   {isSubmitting ? (
                     <>
