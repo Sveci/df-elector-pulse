@@ -50,6 +50,8 @@ import { useUpdateEvent } from "@/hooks/events/useUpdateEvent";
 import { useDeleteEvent } from "@/hooks/events/useDeleteEvent";
 import { useEventRegistrations, useUpdateCheckIn } from "@/hooks/events/useEventRegistrations";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { useEventStats } from "@/hooks/events/useEventStats";
 import { useLeadersEventRanking } from "@/hooks/events/useLeadersEventRanking";
 import { useCitiesEventStats } from "@/hooks/events/useCitiesEventStats";
@@ -600,19 +602,21 @@ const Events = () => {
                     </div>
 
                     <div className="col-span-2">
-                      <Label htmlFor="region">Região *</Label>
-                      <Select value={newEvent.region} onValueChange={(value) => setNewEvent({ ...newEvent, region: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a cidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cities.map((city) => (
-                            <SelectItem key={city.id} value={city.nome}>
-                              {city.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <LocationSelect
+                        value={undefined}
+                        localidadeValue={newEvent.region}
+                        onLocationChange={({ cidadeId, localidade }) => {
+                          // For events, region is stored as text name
+                          if (cidadeId) {
+                            const city = cities.find(c => c.id === cidadeId);
+                            setNewEvent({ ...newEvent, region: city?.nome || '' });
+                          } else {
+                            setNewEvent({ ...newEvent, region: localidade || '' });
+                          }
+                        }}
+                        required
+                        showLabel
+                      />
                     </div>
 
                     <div className="col-span-2">
@@ -654,16 +658,16 @@ const Events = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 hora antes do início</SelectItem>
-                          <SelectItem value="2">2 horas antes do início</SelectItem>
-                          <SelectItem value="4">4 horas antes do início (padrão)</SelectItem>
-                          <SelectItem value="8">8 horas antes do início</SelectItem>
-                          <SelectItem value="24">24 horas antes do início</SelectItem>
+                          <SelectItem value="1">1 hora após o início</SelectItem>
+                          <SelectItem value="2">2 horas após o início</SelectItem>
+                          <SelectItem value="4">4 horas após o início (padrão)</SelectItem>
+                          <SelectItem value="8">8 horas após o início</SelectItem>
+                          <SelectItem value="24">24 horas após o início</SelectItem>
                           <SelectItem value="null">Sem limite</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Define até quando as inscrições ficam abertas após o horário do evento
+                        Define até quando as inscrições ficam abertas após o horário de início do evento
                       </p>
                     </div>
                   </div>
@@ -1059,22 +1063,20 @@ const Events = () => {
                   </div>
 
                   <div className="col-span-2">
-                    <Label>Região *</Label>
-                    <Select 
-                      value={editingEvent.region} 
-                      onValueChange={(value) => setEditingEvent({ ...editingEvent, region: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.id} value={city.nome}>
-                            {city.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <LocationSelect
+                      value={undefined}
+                      localidadeValue={editingEvent.region}
+                      onLocationChange={({ cidadeId, localidade }) => {
+                        if (cidadeId) {
+                          const city = cities.find(c => c.id === cidadeId);
+                          setEditingEvent({ ...editingEvent, region: city?.nome || '' });
+                        } else {
+                          setEditingEvent({ ...editingEvent, region: localidade || '' });
+                        }
+                      }}
+                      required
+                      showLabel
+                    />
                   </div>
 
                   <div className="col-span-2">
@@ -1149,16 +1151,16 @@ const Events = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">1 hora antes do início</SelectItem>
-                        <SelectItem value="2">2 horas antes do início</SelectItem>
-                        <SelectItem value="4">4 horas antes do início (padrão)</SelectItem>
-                        <SelectItem value="8">8 horas antes do início</SelectItem>
-                        <SelectItem value="24">24 horas antes do início</SelectItem>
+                        <SelectItem value="1">1 hora após o início</SelectItem>
+                        <SelectItem value="2">2 horas após o início</SelectItem>
+                        <SelectItem value="4">4 horas após o início (padrão)</SelectItem>
+                        <SelectItem value="8">8 horas após o início</SelectItem>
+                        <SelectItem value="24">24 horas após o início</SelectItem>
                         <SelectItem value="null">Sem limite</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Define até quando as inscrições ficam abertas após o horário do evento
+                      Define até quando as inscrições ficam abertas após o horário de início do evento
                     </p>
                   </div>
                 </div>
