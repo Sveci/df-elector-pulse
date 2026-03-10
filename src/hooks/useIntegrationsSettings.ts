@@ -149,9 +149,26 @@ export function useIntegrationsSettings() {
       
       if (error) throw error;
       if (!data) {
-        // Auto-create default row if none exists
-        const insertData: any = {};
-        if (tenantId) insertData.tenant_id = tenantId;
+        // Auto-create default row - inherit global SMS config from existing tenant
+        const { data: globalRef } = await supabase
+          .from("integrations_settings")
+          .select("sms_active_provider, smsbarato_enabled, smsbarato_api_key, smsdev_enabled, smsdev_api_key, disparopro_enabled, disparopro_token")
+          .limit(1)
+          .maybeSingle();
+
+        const insertData: any = {
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+          // Inherit global SMS settings
+          ...(globalRef ? {
+            sms_active_provider: globalRef.sms_active_provider,
+            smsbarato_enabled: globalRef.smsbarato_enabled,
+            smsbarato_api_key: globalRef.smsbarato_api_key,
+            smsdev_enabled: globalRef.smsdev_enabled,
+            smsdev_api_key: globalRef.smsdev_api_key,
+            disparopro_enabled: globalRef.disparopro_enabled,
+            disparopro_token: globalRef.disparopro_token,
+          } : {}),
+        };
         
         const { data: newRow, error: insertError } = await supabase
           .from("integrations_settings")
