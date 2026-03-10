@@ -62,6 +62,7 @@ interface MetaTemplatePayload {
 }
 
 export function WhatsAppOfficialApiTab() {
+  const tenantId = useTenantId();
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('bemvindo1');
   const [recipientType, setRecipientType] = useState<RecipientType>('individual');
   const [searchTerm, setSearchTerm] = useState("");

@@ -30,6 +30,7 @@ export function WhatsAppTestSendDialog({
   open,
   onOpenChange,
 }: WhatsAppTestSendDialogProps) {
+  const tenantId = useTenantId();
   const [phone, setPhone] = useState("");
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
