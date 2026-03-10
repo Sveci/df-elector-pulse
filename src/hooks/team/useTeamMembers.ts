@@ -59,7 +59,7 @@ export function useTeamMembers() {
           last_login: user?.last_login || null,
           tenants: userTenants.map((t) => ({
             tenant_id: t.tenant_id,
-            tenant_name: (t.tenant as any)?.name || "—",
+            tenant_name: (t.tenant as any)?.nome || "—",
             role: t.role,
           })),
         };
