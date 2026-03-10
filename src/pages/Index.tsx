@@ -750,9 +750,15 @@ const Index = () => {
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-white tracking-wide uppercase">Empresa</h4>
               <ul className="space-y-3">
-                {["Sobre Nós", "Blog", "Carreiras", "Contato", "Parceiros"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{item}</a>
+              {[
+                  { label: "Sobre Nós", href: "/sobre" },
+                  { label: "Blog", href: "#" },
+                  { label: "Carreiras", href: "#" },
+                  { label: "Contato", href: "#" },
+                  { label: "Parceiros", href: "#" },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <a href={item.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{item.label}</a>
                   </li>
                 ))}
               </ul>
