@@ -732,6 +732,7 @@ export function WhatsAppBulkSendTab() {
                 phone,
                 message,
                 contactId,
+                tenantId,
               },
             });
 
