@@ -75,7 +75,7 @@ const chatbotTutorialSteps: Step[] = [
 ];
 
 const WhatsAppChatbot = () => {
-  const [activeTab, setActiveTab] = useState("config");
+  const [activeTab, setActiveTab] = useState("communities");
   const [keywordDialogOpen, setKeywordDialogOpen] = useState(false);
   const [editingKeyword, setEditingKeyword] = useState<ChatbotKeyword | null>(null);
   const { restartTutorial } = useTutorial("whatsapp-chatbot", chatbotTutorialSteps);
