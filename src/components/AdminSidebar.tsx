@@ -2,7 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  LayoutDashboard, Building2, Ticket, LogOut, ArrowLeft, Key
+  LayoutDashboard, Building2, Ticket, LogOut, ArrowLeft, Key, MessageSquare
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -24,6 +24,7 @@ const adminItems: MenuItem[] = [
   { title: "Tenants", url: "/admin/tenants", icon: Building2 },
   { title: "Tickets", url: "/admin/tickets", icon: Ticket },
   { title: "APIs Externas", url: "/admin/apis", icon: Key },
+  { title: "Contatos", url: "/admin/contatos", icon: MessageSquare },
 ];
 
 export function AdminSidebar() {

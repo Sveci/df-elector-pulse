@@ -16,6 +16,7 @@ import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import LgpdCookies from "./pages/LgpdCookies";
 import SobreNos from "./pages/SobreNos";
+import Contato from "./pages/Contato";
 import Login from "./pages/Login";
 import DemoLogin from "./pages/DemoLogin";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -49,6 +50,7 @@ import AdminTickets from "./pages/settings/AdminTickets";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminApis from "./pages/admin/AdminApis";
+import AdminContatos from "./pages/admin/AdminContatos";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
@@ -170,6 +172,7 @@ const App = () => (
             <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
             <Route path="/lgpd-cookies" element={<LgpdCookies />} />
             <Route path="/sobre" element={<SobreNos />} />
+            <Route path="/contato" element={<Contato />} />
             
             {/* Coordinator Portal (public, own auth) */}
             <Route path="/coordenador/login" element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>} />
@@ -445,6 +448,11 @@ const App = () => (
             <Route path="/admin/apis" element={
               <RoleProtectedRoute allowedRoles={['super_admin']}>
                 <AdminApis />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/contatos" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminContatos />
               </RoleProtectedRoute>
             } />
             
