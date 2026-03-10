@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface RetryHistoryEntry {
   attempt: number;
@@ -49,8 +50,10 @@ export interface SMSMetrics {
 }
 
 export function useSMSMessages(filters: SMSFilters = {}) {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["sms-messages", filters],
+    queryKey: ["sms-messages", filters, tenantId],
     queryFn: async () => {
       let query = supabase
         .from("sms_messages")
@@ -59,6 +62,11 @@ export function useSMSMessages(filters: SMSFilters = {}) {
           contact:office_contacts(id, nome)
         `)
         .order("created_at", { ascending: false });
+
+      // Filter by active tenant
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
 
       // Apply direction filter
       if (filters.direction && filters.direction !== "all") {
@@ -122,16 +130,23 @@ export function useSMSMessages(filters: SMSFilters = {}) {
 }
 
 export function useSMSMetrics() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["sms-metrics"],
+    queryKey: ["sms-metrics", tenantId],
     queryFn: async () => {
-      // Usar contagem exata do Supabase para evitar limite de 1000 linhas
+      const baseQuery = () => {
+        let q = supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing");
+        if (tenantId) q = q.eq("tenant_id", tenantId);
+        return q;
+      };
+
       const [totalResult, queuedResult, sentResult, deliveredResult, failedResult] = await Promise.all([
-        supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing"),
-        supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing").eq("status", "queued"),
-        supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing").eq("status", "sent"),
-        supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing").eq("status", "delivered"),
-        supabase.from("sms_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing").eq("status", "failed"),
+        baseQuery(),
+        baseQuery().eq("status", "queued"),
+        baseQuery().eq("status", "sent"),
+        baseQuery().eq("status", "delivered"),
+        baseQuery().eq("status", "failed"),
       ]);
 
       if (totalResult.error) throw totalResult.error;

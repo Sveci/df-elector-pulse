@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface WhatsAppMessage {
   id: string;
@@ -43,8 +44,10 @@ export interface WhatsAppMetrics {
 }
 
 export function useWhatsAppMessages(filters: WhatsAppFilters) {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["whatsapp-messages", filters],
+    queryKey: ["whatsapp-messages", filters, tenantId],
     queryFn: async () => {
       let startDate: string | null = null;
       if (filters.period !== "all") {
@@ -82,6 +85,11 @@ export function useWhatsAppMessages(filters: WhatsAppFilters) {
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
+        // Filter by active tenant
+        if (tenantId) {
+          query = query.eq("tenant_id", tenantId);
+        }
+
         if (filters.direction !== "all") {
           query = query.eq("direction", filters.direction);
         }
@@ -117,10 +125,16 @@ export function useWhatsAppMessages(filters: WhatsAppFilters) {
           const all: T[] = [];
 
           while (true) {
-            const { data: page, error: pageError } = await (supabase as any)
+            let q = (supabase as any)
               .from(table)
               .select(select)
               .range(from, from + pageSize - 1);
+
+            if (tenantId) {
+              q = q.eq("tenant_id", tenantId);
+            }
+
+            const { data: page, error: pageError } = await q;
 
             if (pageError) throw pageError;
             if (!page || page.length === 0) break;
@@ -195,35 +209,23 @@ export function useWhatsAppMessages(filters: WhatsAppFilters) {
 }
 
 export function useWhatsAppMetrics() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["whatsapp-metrics"],
+    queryKey: ["whatsapp-metrics", tenantId],
     queryFn: async () => {
-      // Usar count com head: true para contagem precisa sem limite de 1000
+      const baseQuery = () => {
+        let q = supabase.from("whatsapp_messages").select("*", { count: "exact", head: true }).eq("direction", "outgoing");
+        if (tenantId) q = q.eq("tenant_id", tenantId);
+        return q;
+      };
+
       const [totalResult, sentResult, deliveredResult, readResult, failedResult] = await Promise.all([
-        supabase
-          .from("whatsapp_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("direction", "outgoing"),
-        supabase
-          .from("whatsapp_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("direction", "outgoing")
-          .eq("status", "sent"),
-        supabase
-          .from("whatsapp_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("direction", "outgoing")
-          .eq("status", "delivered"),
-        supabase
-          .from("whatsapp_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("direction", "outgoing")
-          .eq("status", "read"),
-        supabase
-          .from("whatsapp_messages")
-          .select("*", { count: "exact", head: true })
-          .eq("direction", "outgoing")
-          .eq("status", "failed"),
+        baseQuery(),
+        baseQuery().eq("status", "sent"),
+        baseQuery().eq("status", "delivered"),
+        baseQuery().eq("status", "read"),
+        baseQuery().eq("status", "failed"),
       ]);
 
       const total = totalResult.count || 0;
