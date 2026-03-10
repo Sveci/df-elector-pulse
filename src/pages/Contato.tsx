@@ -240,7 +240,7 @@ const Contato = () => {
                     onChange={(e) => handleChange("mensagem", e.target.value)}
                     placeholder="Escreva sua mensagem aqui..."
                     rows={5}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500 resize-none"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500] resize-none"
                   />
                   {errors.mensagem && <p className="text-xs text-red-400">{errors.mensagem}</p>}
                 </div>
