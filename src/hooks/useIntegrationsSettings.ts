@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { useTenantId } from "@/hooks/useTenantId";
 
 interface IntegrationsSettings {
   id: string;
@@ -131,21 +132,30 @@ interface UpdateIntegrationsDTO {
 }
 
 export function useIntegrationsSettings() {
+  const tenantId = useTenantId();
+  
   return useQuery({
-    queryKey: ["integrations_settings"],
+    queryKey: ["integrations_settings", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+        .select("*");
+      
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+      
+      const { data, error } = await query.limit(1).maybeSingle();
       
       if (error) throw error;
       if (!data) {
         // Auto-create default row if none exists
+        const insertData: any = {};
+        if (tenantId) insertData.tenant_id = tenantId;
+        
         const { data: newRow, error: insertError } = await supabase
           .from("integrations_settings")
-          .insert({})
+          .insert(insertData)
           .select()
           .single();
         if (insertError) throw insertError;
@@ -153,6 +163,7 @@ export function useIntegrationsSettings() {
       }
       return data as IntegrationsSettings;
     },
+    enabled: !!tenantId,
     retry: 2,
   });
 }
@@ -160,20 +171,25 @@ export function useIntegrationsSettings() {
 export function useUpdateIntegrationsSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: async (updates: UpdateIntegrationsDTO) => {
-      const { data: existing } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
+        .select("id");
+      
+      if (tenantId) query = query.eq("tenant_id", tenantId);
+      
+      const { data: existing } = await query.limit(1).maybeSingle();
 
       if (!existing) {
-        // Auto-create if missing
+        const insertData: any = { ...updates };
+        if (tenantId) insertData.tenant_id = tenantId;
+        
         const { data: newRow, error: insertErr } = await supabase
           .from("integrations_settings")
-          .insert(updates)
+          .insert(insertData)
           .select()
           .single();
         if (insertErr) throw insertErr;
