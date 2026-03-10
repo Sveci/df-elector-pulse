@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTenantContext } from "@/contexts/TenantContext";
+import { useTenantId } from "@/hooks/useTenantId";
 
 interface Organization {
   id: string;
@@ -37,14 +38,20 @@ export function useOrganization() {
     // Outside TenantProvider, fallback to null
   }
 
+  const tenantId = activeTenant?.id || null;
+
   return useQuery({
-    queryKey: ["organization", activeTenant?.id],
+    queryKey: ["organization", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("organization")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+        .select("*");
+      
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
       
       if (error) throw error;
 
@@ -67,15 +74,21 @@ export function useOrganization() {
 
 export function useUpdateOrganization() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: async (updates: Partial<Organization>) => {
-      // First get the existing organization
-      const { data: existing } = await supabase
+      // First get the existing organization for this tenant
+      let findQuery = supabase
         .from("organization")
         .select("id")
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      
+      if (tenantId) {
+        findQuery = findQuery.eq("tenant_id", tenantId);
+      }
+
+      const { data: existing } = await findQuery.maybeSingle();
 
       if (existing) {
         const { data, error } = await supabase
@@ -88,9 +101,12 @@ export function useUpdateOrganization() {
         if (error) throw error;
         return data;
       } else {
+        const insertData = tenantId 
+          ? { ...updates, tenant_id: tenantId }
+          : updates;
         const { data, error } = await supabase
           .from("organization")
-          .insert(updates)
+          .insert(insertData)
           .select()
           .single();
         
