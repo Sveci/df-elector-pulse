@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,20 +28,8 @@ export default function AffiliateFormSettings() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const { restartTutorial } = useTutorial("affiliate-form-settings", affiliateFormTutorialSteps);
 
-  // Buscar configurações
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ["app_settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("id, affiliate_form_cover_url, affiliate_form_logo_url")
-        .limit(1)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  // Buscar configurações (filtrado por tenant via hook)
+  const { data: settings, isLoading } = useAppSettings();
 
   // Mutation para atualizar settings
   const updateSettings = useMutation({
