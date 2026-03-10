@@ -463,6 +463,39 @@ export type Database = {
           },
         ]
       }
+      contact_submissions: {
+        Row: {
+          assunto: string
+          created_at: string
+          email: string
+          id: string
+          lida: boolean
+          mensagem: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          assunto: string
+          created_at?: string
+          email: string
+          id?: string
+          lida?: boolean
+          mensagem: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          assunto?: string
+          created_at?: string
+          email?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
       contact_verifications: {
         Row: {
           consent_channel: string | null
