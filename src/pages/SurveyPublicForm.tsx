@@ -82,8 +82,8 @@ export default function SurveyPublicForm() {
 
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registration.cidadeId) {
-      toast.error("Por favor, selecione sua região");
+    if (!registration.cidadeId && !registration.localidade) {
+      toast.error("Por favor, selecione sua localidade");
       return;
     }
     if (!registration.lgpdConsent) {
