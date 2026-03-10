@@ -27,20 +27,8 @@ export default function AffiliateFormSettings() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const { restartTutorial } = useTutorial("affiliate-form-settings", affiliateFormTutorialSteps);
 
-  // Buscar configurações
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ["app_settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("id, affiliate_form_cover_url, affiliate_form_logo_url")
-        .limit(1)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-  });
+  // Buscar configurações (filtrado por tenant via hook)
+  const { data: settings, isLoading } = useAppSettings();
 
   // Mutation para atualizar settings
   const updateSettings = useMutation({
