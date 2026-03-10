@@ -217,7 +217,7 @@ const Contato = () => {
                       value={form.telefone}
                       onChange={(e) => handleChange("telefone", e.target.value)}
                       placeholder="(00) 00000-0000"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.telefone && <p className="text-xs text-red-400">{errors.telefone}</p>}
                   </div>
@@ -227,7 +227,7 @@ const Contato = () => {
                       value={form.assunto}
                       onChange={(e) => handleChange("assunto", e.target.value)}
                       placeholder="Assunto da mensagem"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.assunto && <p className="text-xs text-red-400">{errors.assunto}</p>}
                   </div>
