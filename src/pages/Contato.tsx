@@ -97,7 +97,7 @@ const Contato = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-[#F0E500] via-[#f5ed4e] to-[#d4c900] bg-clip-text text-transparent mb-4">
             Fale Conosco
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
