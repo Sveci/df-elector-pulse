@@ -17,6 +17,7 @@ interface ChatbotConfig {
   fallback_message: string | null;
   ai_system_prompt: string | null;
   max_messages_per_hour: number;
+  tenant_id: string;
 }
 
 interface ChatbotKeyword {
@@ -41,13 +42,15 @@ interface Leader {
   cidade_id: string | null;
   is_coordinator: boolean;
   hierarchy_level: number | null;
+  tenant_id: string;
 }
 
 interface ChatbotRequest {
   phone: string;
   message: string;
   messageId?: string;
-  provider?: 'zapi' | 'meta_cloud'; // Which provider to use for sending response
+  provider?: 'zapi' | 'meta_cloud';
+  tenantId?: string;
 }
 
 // Dynamic function implementations
@@ -55,19 +58,16 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
   
   // Mostra estatísticas da árvore do líder
   minha_arvore: async (supabase, leader) => {
-    // Buscar estatísticas da árvore
     const { data, error } = await supabase.rpc("get_leader_tree_stats", {
       _leader_id: leader.id
     });
     
-    // Buscar informações do líder atual incluindo parent_leader_id
     const { data: leaderInfo } = await supabase
       .from("lideres")
       .select("parent_leader_id")
       .eq("id", leader.id)
       .single();
     
-    // Buscar dados do líder superior se existir
     let parentLeader = null;
     if (leaderInfo?.parent_leader_id) {
       const { data: parentData } = await supabase
@@ -87,7 +87,6 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! 🌳\n\n`;
     response += `*Sua Rede de Lideranças*\n\n`;
     
-    // Adicionar líder superior se existir
     if (parentLeader) {
       response += `👆 *Seu Líder Superior:*\n`;
       response += `   ${parentLeader.nome_completo}\n`;
@@ -107,9 +106,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Mostra detalhes dos cadastros diretos
   meus_cadastros: async (supabase, leader) => {
-    // Buscar contatos indicados pelo líder
     const { data: contatos, error } = await supabase
       .from("office_contacts")
       .select("nome, created_at, is_verified, cidade:office_cities(nome)")
@@ -138,9 +135,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Mostra pontuação e nível
   minha_pontuacao: async (supabase, leader) => {
-    // Calcular nível baseado nos pontos
     const pontos = leader.pontuacao_total || 0;
     let nivel = "Bronze 🥉";
     let proximoNivel = "Prata";
@@ -175,7 +170,6 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Mostra posição no ranking
   minha_posicao: async (supabase, leader) => {
     const { data, error } = await supabase.rpc("get_leader_ranking_position", {
       _leader_id: leader.id
@@ -207,7 +201,6 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Lista subordinados diretos
   meus_subordinados: async (supabase, leader) => {
     const { data: subordinados, error } = await supabase
       .from("lideres")
@@ -233,16 +226,13 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Lista subordinados não verificados
   pendentes: async (supabase, leader) => {
-    // 1. Buscar TOTAL de subordinados diretos (todos)
     const { count: totalSubordinados } = await supabase
       .from("lideres")
       .select("id", { count: "exact", head: true })
       .eq("parent_leader_id", leader.id)
       .eq("is_active", true);
     
-    // 2. Buscar subordinados NÃO verificados
     const { data: subordinadosDiretos, error } = await supabase
       .from("lideres")
       .select("nome_completo, telefone, created_at")
@@ -255,17 +245,14 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! ⏳\n\n`;
     response += `*Líderes Pendentes de Verificação*\n\n`;
     
-    // Cenário 1: Não tem nenhum subordinado
     if (!totalSubordinados || totalSubordinados === 0) {
       response += `📭 Você ainda não tem subordinados na sua rede.\n`;
       response += `\n💡 Comece a indicar líderes para expandir sua árvore! 🌱`;
     }
-    // Cenário 2: Tem subordinados, mas todos verificados
     else if (error || !subordinadosDiretos || subordinadosDiretos.length === 0) {
       response += `✅ Parabéns! Todos os seus ${totalSubordinados} subordinado(s) direto(s) já estão verificados.\n`;
       response += `\nContinue expandindo sua rede! 🚀`;
     }
-    // Cenário 3: Tem subordinados pendentes
     else {
       response += `📋 Encontrei ${subordinadosDiretos.length} de ${totalSubordinados} líder(es) aguardando verificação:\n\n`;
       subordinadosDiretos.forEach((s: any, i: number) => {
@@ -279,7 +266,6 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     return response;
   },
 
-  // Mostra lista de comandos
   ajuda: async (supabase, leader) => {
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! 🤖\n\n`;
     response += `*Comandos Disponíveis:*\n\n`;
@@ -311,16 +297,50 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: ChatbotRequest = await req.json();
-    const { phone, message, messageId, provider } = body;
+    const { phone, message, messageId, provider, tenantId: requestTenantId } = body;
 
-    console.log(`[whatsapp-chatbot] Received: phone=${phone}, message=${message.substring(0, 50)}..., provider=${provider || 'auto'}`);
+    console.log(`[whatsapp-chatbot] Received: phone=${phone}, message=${message.substring(0, 50)}..., provider=${provider || 'auto'}, tenantId=${requestTenantId || 'auto'}`);
 
-    // Check chatbot configuration
-    const { data: config } = await supabase
-      .from("whatsapp_chatbot_config")
-      .select("*")
+    // Normalize phone for lookup
+    const normalizedPhone = normalizePhone(phone);
+    const phoneWithoutPlus = normalizedPhone.replace(/^\+/, "");
+
+    // Find leader by phone (try with +, without +, and original)
+    const { data: leader, error: leaderError } = await supabase
+      .from("lideres")
+      .select("id, nome_completo, telefone, email, cadastros, pontuacao_total, cidade_id, is_coordinator, hierarchy_level, tenant_id")
+      .or(`telefone.eq.${normalizedPhone},telefone.eq.${phoneWithoutPlus},telefone.eq.${phone}`)
+      .eq("is_active", true)
       .limit(1)
       .single();
+
+    if (leaderError || !leader) {
+      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}`);
+      await supabase.from("whatsapp_chatbot_logs").insert({
+        phone: normalizedPhone,
+        message_in: message,
+        message_out: null,
+        error_message: "Líder não encontrado",
+        processing_time_ms: Date.now() - startTime,
+        ...(requestTenantId ? { tenant_id: requestTenantId } : {}),
+      });
+      return new Response(
+        JSON.stringify({ success: false, reason: "not_a_leader" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use leader's tenant_id as the resolved tenant
+    const tenantId = requestTenantId || leader.tenant_id;
+    console.log(`[whatsapp-chatbot] Found leader: ${leader.nome_completo} (${leader.id}), tenant: ${tenantId}`);
+
+    // Check chatbot configuration - filtered by tenant
+    let configQuery = supabase
+      .from("whatsapp_chatbot_config")
+      .select("*");
+    if (tenantId) configQuery = configQuery.eq("tenant_id", tenantId);
+    
+    const { data: config } = await configQuery.limit(1).single();
 
     const chatbotConfig = config as ChatbotConfig | null;
 
@@ -331,37 +351,6 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Normalize phone for lookup
-    const normalizedPhone = normalizePhone(phone);
-    const phoneWithoutPlus = normalizedPhone.replace(/^\+/, "");
-
-    // Find leader by phone (try with +, without +, and original)
-    const { data: leader, error: leaderError } = await supabase
-      .from("lideres")
-      .select("id, nome_completo, telefone, email, cadastros, pontuacao_total, cidade_id, is_coordinator, hierarchy_level")
-      .or(`telefone.eq.${normalizedPhone},telefone.eq.${phoneWithoutPlus},telefone.eq.${phone}`)
-      .eq("is_active", true)
-      .limit(1)
-      .single();
-
-    if (leaderError || !leader) {
-      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}`);
-      // Log the attempt
-      await supabase.from("whatsapp_chatbot_logs").insert({
-        phone: normalizedPhone,
-        message_in: message,
-        message_out: null,
-        error_message: "Líder não encontrado",
-        processing_time_ms: Date.now() - startTime
-      });
-      return new Response(
-        JSON.stringify({ success: false, reason: "not_a_leader" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`[whatsapp-chatbot] Found leader: ${leader.nome_completo} (${leader.id})`);
 
     // Check rate limit
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -379,12 +368,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get all active keywords
-    const { data: keywords } = await supabase
+    // Get all active keywords - filtered by tenant
+    let keywordsQuery = supabase
       .from("whatsapp_chatbot_keywords")
       .select("*")
       .eq("is_active", true)
       .order("priority", { ascending: false });
+    if (tenantId) keywordsQuery = keywordsQuery.eq("tenant_id", tenantId);
+
+    const { data: keywords } = await keywordsQuery;
 
     const activeKeywords = (keywords as ChatbotKeyword[]) || [];
 
@@ -392,7 +384,6 @@ Deno.serve(async (req) => {
     const normalizedMessage = message.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     // === INTERCEPT VERIFICATION CODES ===
-    // Check if the message looks like a verification attempt (CONFIRMAR CODE or bare code)
     const confirmMatchChatbot = normalizedMessage.match(/^CONFIRMAR\s+([A-Z0-9]{5,6})$/);
     const bareCodeMatch = normalizedMessage.match(/^[A-Z0-9]{5,6}$/);
 
@@ -400,7 +391,6 @@ Deno.serve(async (req) => {
       const code = confirmMatchChatbot ? confirmMatchChatbot[1] : bareCodeMatch![0];
       console.log(`[whatsapp-chatbot] Detected verification code: ${code} from leader ${leader.id}`);
 
-      // Check if this leader is already verified
       const { data: leaderVerificationStatus } = await supabase
         .from("lideres")
         .select("is_verified, verification_code")
@@ -408,15 +398,13 @@ Deno.serve(async (req) => {
         .single();
 
       if (leaderVerificationStatus?.is_verified) {
-        // Leader is already verified
         const responseAlready = `Olá ${leader.nome_completo.split(" ")[0]}! ✅\n\nSeu cadastro já foi verificado anteriormente. Você já pode usar todos os comandos disponíveis.\n\nDigite *AJUDA* para ver a lista de comandos.`;
         
-        // Send and log
-        const { data: intSettings } = await supabase
+        let intSettingsQuery = supabase
           .from("integrations_settings")
-          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active")
-          .limit(1)
-          .single();
+          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+        if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
+        const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
         const useMetaCloudForVerif = provider === 'meta_cloud' || 
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
@@ -431,22 +419,22 @@ Deno.serve(async (req) => {
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: leader.id, phone: normalizedPhone, message_in: message,
           message_out: responseAlready, keyword_matched: "CONFIRMAR", response_type: "verification_already",
-          processing_time_ms: Date.now() - startTime
+          processing_time_ms: Date.now() - startTime,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
         return new Response(JSON.stringify({ success: true, responseType: "verification_already" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Leader is NOT verified - check if the code belongs to THIS leader
       if (leaderVerificationStatus?.verification_code && leaderVerificationStatus.verification_code !== code) {
         const responseWrongCode = `Olá ${leader.nome_completo.split(" ")[0]}! ⚠️\n\nEsse código não pertence ao seu número de telefone. Por favor, utilize o código que foi enviado para você.`;
 
-        const { data: intSettings } = await supabase
+        let intSettingsQuery = supabase
           .from("integrations_settings")
-          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active")
-          .limit(1)
-          .single();
+          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+        if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
+        const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
         const useMetaCloudForVerif = provider === 'meta_cloud' || 
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
@@ -461,14 +449,14 @@ Deno.serve(async (req) => {
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: leader.id, phone: normalizedPhone, message_in: message,
           message_out: responseWrongCode, keyword_matched: "CONFIRMAR", response_type: "verification_wrong_code",
-          processing_time_ms: Date.now() - startTime
+          processing_time_ms: Date.now() - startTime,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
         return new Response(JSON.stringify({ success: true, responseType: "verification_wrong_code" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Code matches this leader - let the normal verification flow handle it (don't respond from chatbot)
       console.log(`[whatsapp-chatbot] Code matches leader, deferring to verification flow`);
       return new Response(JSON.stringify({ success: false, reason: "deferred_to_verification" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -509,7 +497,6 @@ Deno.serve(async (req) => {
           responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
         }
       } else if (matchedKeyword.response_type === "ai") {
-        // Use AI to generate response based on keyword context
         if (lovableApiKey && chatbotConfig.use_ai_for_unknown) {
           responseMessage = await generateAIResponse(
             lovableApiKey,
@@ -523,7 +510,6 @@ Deno.serve(async (req) => {
         }
       }
     } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
-      // No keyword matched, use AI
       console.log("[whatsapp-chatbot] No keyword match, using AI");
       responseType = "ai";
       responseMessage = await generateAIResponse(
@@ -534,27 +520,24 @@ Deno.serve(async (req) => {
         chatbotConfig.ai_system_prompt || ""
       );
     } else {
-      // Fallback message
       responseType = "fallback";
       responseMessage = chatbotConfig.fallback_message || 
         `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
     }
 
-    // Send response - decide provider
-    const { data: integrationSettings } = await supabase
+    // Send response - decide provider (filtered by tenant)
+    let intSettingsQuery = supabase
       .from("integrations_settings")
-      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active")
-      .limit(1)
-      .single();
+      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+    if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
+    const { data: integrationSettings } = await intSettingsQuery.limit(1).single();
 
-    // Determine which provider to use: explicit provider param > active provider setting > fallback
     const useMetaCloud = provider === 'meta_cloud' || 
       (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
 
     let messageSent = false;
 
     if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
-      // Send via Meta Cloud API
       const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
       if (metaAccessToken) {
         messageSent = await sendWhatsAppMessageMetaCloud(
@@ -570,7 +553,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fallback to Z-API if Meta Cloud failed or not configured
     if (!messageSent && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
       await sendWhatsAppMessage(
         integrationSettings.zapi_instance_id,
@@ -594,7 +576,8 @@ Deno.serve(async (req) => {
       message_out: responseMessage,
       keyword_matched: matchedKeyword?.keyword || null,
       response_type: responseType,
-      processing_time_ms: Date.now() - startTime
+      processing_time_ms: Date.now() - startTime,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     });
 
     console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
@@ -644,12 +627,10 @@ async function sendWhatsAppMessage(
   const cleanPhone = phone.replace(/[^0-9]/g, "");
   const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
   
-  // Build headers dynamically
   const headers: Record<string, string> = { 
     "Content-Type": "application/json" 
   };
   
-  // Add Client-Token if available
   if (clientToken) {
     headers["Client-Token"] = clientToken;
   }
@@ -687,7 +668,6 @@ async function sendWhatsAppMessageMetaCloud(
   message: string,
   supabase?: any
 ): Promise<boolean> {
-  // Format phone to E.164 without +
   let cleanPhone = phone.replace(/[^0-9]/g, "");
   if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
     cleanPhone = "55" + cleanPhone;
@@ -721,7 +701,6 @@ async function sendWhatsAppMessageMetaCloud(
     const wamid = result.messages?.[0]?.id;
     console.log("[whatsapp-chatbot] Message sent successfully via Meta Cloud API:", wamid);
 
-    // Log outbound message to whatsapp_messages
     if (supabase) {
       await supabase.from("whatsapp_messages").insert({
         phone: cleanPhone,

@@ -30,10 +30,11 @@ interface SendWhatsAppRequest {
   visitId?: string;
   contactId?: string;
   imageUrl?: string;
-  providerOverride?: 'zapi' | 'meta_cloud'; // Admin override
-  clientMessageId?: string; // For idempotency
-  metaTemplate?: MetaTemplatePayload; // For direct template sending via Meta Cloud API
-  bypassAutoCheck?: boolean; // Bypass automatic message category check (e.g., for WhatsApp verification flow)
+  providerOverride?: 'zapi' | 'meta_cloud';
+  clientMessageId?: string;
+  metaTemplate?: MetaTemplatePayload;
+  bypassAutoCheck?: boolean;
+  tenantId?: string; // Tenant isolation
 }
 
 // Replace template variables {{var}} with actual values
@@ -367,6 +368,49 @@ function isPhoneInWhitelist(phone: string, whitelist: string[] | null): boolean 
   });
 }
 
+// ============ RESOLVE TENANT ID ============
+async function resolveTenantId(
+  supabase: any,
+  tenantId: string | undefined,
+  phone: string | undefined
+): Promise<string | null> {
+  // 1. Explicit tenantId passed
+  if (tenantId) return tenantId;
+
+  // 2. Try to resolve from phone → contact → tenant_id
+  if (phone) {
+    const cleanPhone = phone.replace(/\D/g, "");
+    let phoneVariants = [cleanPhone];
+    if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
+      phoneVariants.push("55" + cleanPhone);
+    }
+    if (cleanPhone.startsWith("55")) {
+      phoneVariants.push(cleanPhone.substring(2));
+    }
+    phoneVariants.push("+" + (cleanPhone.startsWith("55") ? cleanPhone : "55" + cleanPhone));
+
+    const { data: contact } = await supabase
+      .from("office_contacts")
+      .select("tenant_id")
+      .in("telefone_norm", phoneVariants)
+      .limit(1)
+      .single();
+
+    if (contact?.tenant_id) return contact.tenant_id;
+  }
+
+  // 3. Fallback: if only one tenant exists, use it
+  const { data: allSettings } = await supabase
+    .from("integrations_settings")
+    .select("tenant_id")
+    .limit(2);
+
+  if (allSettings && allSettings.length === 1) {
+    return allSettings[0].tenant_id;
+  }
+
+  return null;
+}
 
 // ============ END PROVIDER ABSTRACTION ============
 
@@ -381,9 +425,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestBody: SendWhatsAppRequest = await req.json();
-    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck } = requestBody;
+    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck, tenantId: requestTenantId } = requestBody;
 
-    console.log(`[send-whatsapp] REQUEST - templateSlug: ${templateSlug}, phone: ${phone?.substring(0, 6)}..., providerOverride: ${providerOverride}, bypassAutoCheck: ${bypassAutoCheck}`);
+    console.log(`[send-whatsapp] REQUEST - templateSlug: ${templateSlug}, phone: ${phone?.substring(0, 6)}..., providerOverride: ${providerOverride}, bypassAutoCheck: ${bypassAutoCheck}, tenantId: ${requestTenantId || 'auto'}`);
 
     const isPublicTemplate = templateSlug && PUBLIC_TEMPLATES.includes(templateSlug);
 
@@ -425,8 +469,12 @@ Deno.serve(async (req) => {
       console.log(`[send-whatsapp] Authenticated user with role: ${roleData.role}`);
     }
 
+    // ============ RESOLVE TENANT ============
+    const tenantId = await resolveTenantId(supabase, requestTenantId, phone);
+    console.log(`[send-whatsapp] Resolved tenantId: ${tenantId}`);
+
     // ============ LOAD SETTINGS ============
-    const { data: settings, error: settingsError } = await supabase
+    let settingsQuery = supabase
       .from("integrations_settings")
       .select(`
         zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled,
@@ -436,9 +484,13 @@ Deno.serve(async (req) => {
         wa_auto_verificacao_enabled, wa_auto_captacao_enabled, wa_auto_pesquisa_enabled,
         wa_auto_evento_enabled, wa_auto_lideranca_enabled, wa_auto_membro_enabled,
         wa_auto_visita_enabled, wa_auto_optout_enabled, wa_auto_sms_fallback_enabled
-      `)
-      .limit(1)
-      .single();
+      `);
+
+    if (tenantId) {
+      settingsQuery = settingsQuery.eq("tenant_id", tenantId);
+    }
+
+    const { data: settings, error: settingsError } = await settingsQuery.limit(1).single();
 
     if (settingsError) {
       console.error("[send-whatsapp] Erro ao buscar configurações:", settingsError);
@@ -498,20 +550,17 @@ Deno.serve(async (req) => {
 
 
     // ============ CHECK AUTO MESSAGE CATEGORY ============
-    // Templates de verificação NUNCA devem ser bloqueados quando o método de verificação é whatsapp_consent
-    // Isso evita falhas silenciosas causadas por wa_auto_verificacao_enabled=false
     const VERIFICATION_TEMPLATES = ['verificacao-cadastro', 'verificacao-codigo', 'verificacao-confirmada', 'verificacao-sms-fallback', 'link-indicacao-sms-fallback'];
     const isVerificationTemplate = templateSlug && VERIFICATION_TEMPLATES.includes(templateSlug);
     
-    // Auto-bypass para templates de verificação quando o método ativo é whatsapp_consent
     let effectiveBypass = bypassAutoCheck || false;
     if (isVerificationTemplate && !effectiveBypass) {
-      // Buscar verification_method para decidir se deve fazer bypass automático
-      const { data: verSettings } = await supabase
+      let verSettingsQuery = supabase
         .from("integrations_settings")
-        .select("verification_method")
-        .limit(1)
-        .single();
+        .select("verification_method");
+      if (tenantId) verSettingsQuery = verSettingsQuery.eq("tenant_id", tenantId);
+      
+      const { data: verSettings } = await verSettingsQuery.limit(1).single();
       
       if (verSettings?.verification_method === 'whatsapp_consent') {
         effectiveBypass = true;
@@ -552,11 +601,16 @@ Deno.serve(async (req) => {
     if (templateSlug) {
       console.log(`[send-whatsapp] Loading template: ${templateSlug}`);
       
-      const { data: template, error: templateError } = await supabase
+      let templateQuery = supabase
         .from("whatsapp_templates")
         .select("mensagem, is_active")
-        .eq("slug", templateSlug)
-        .single();
+        .eq("slug", templateSlug);
+
+      if (tenantId) {
+        templateQuery = templateQuery.eq("tenant_id", tenantId);
+      }
+
+      const { data: template, error: templateError } = await templateQuery.single();
 
       if (templateError || !template) {
         return new Response(
@@ -592,18 +646,21 @@ Deno.serve(async (req) => {
     console.log(`[send-whatsapp] Sending to ${cleanPhone.substring(0, 6)}... via ${activeProvider}`);
 
     // ============ CREATE MESSAGE RECORD ============
+    const insertData: Record<string, any> = {
+      phone: cleanPhone,
+      message: finalMessage,
+      direction: "outgoing",
+      status: "pending",
+      visit_id: visitId || null,
+      contact_id: contactId || null,
+      provider: activeProvider,
+      client_message_id: clientMessageId || null,
+    };
+    if (tenantId) insertData.tenant_id = tenantId;
+
     const { data: messageRecord, error: insertError } = await supabase
       .from("whatsapp_messages")
-      .insert({
-        phone: cleanPhone,
-        message: finalMessage,
-        direction: "outgoing",
-        status: "pending",
-        visit_id: visitId || null,
-        contact_id: contactId || null,
-        provider: activeProvider,
-        client_message_id: clientMessageId || null,
-      })
+      .insert(insertData)
       .select("id")
       .single();
 
