@@ -246,9 +246,8 @@ const WhatsAppChatbot = () => {
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2" data-tutorial="bot-logs">
             <History className="h-4 w-4" /> Histórico
-          </TabsTrigger>
-          </TabsTrigger>
         </TabsList>
+
 
         {/* Config Tab */}
         <TabsContent value="config" className="space-y-4">
