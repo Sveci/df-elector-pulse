@@ -118,7 +118,7 @@ const Contato = () => {
               {
                 icon: Mail,
                 title: "Email",
-                description: "contato@eleitor360.com.br",
+                description: "contato@eleitor360.ai",
                 color: "text-[#F0E500]",
                 bg: "bg-[#F0E500]/10",
               },
