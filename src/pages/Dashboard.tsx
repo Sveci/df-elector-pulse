@@ -24,6 +24,8 @@ import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import { Step } from "react-joyride";
 import { useDemoMask } from "@/contexts/DemoModeContext";
+import { useOrganization } from "@/hooks/useOrganization";
+import { getLocationFieldType } from "@/constants/brazilPolitics";
 import {
   DEMO_DASHBOARD_STATS,
   DEMO_TOP_LEADERS,
