@@ -17,6 +17,8 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import LgpdCookies from "./pages/LgpdCookies";
 import SobreNos from "./pages/SobreNos";
 import Contato from "./pages/Contato";
+import CentralAjuda from "./pages/CentralAjuda";
+import StatusSistema from "./pages/StatusSistema";
 import Login from "./pages/Login";
 import DemoLogin from "./pages/DemoLogin";
 import ForgotPassword from "./pages/ForgotPassword";
