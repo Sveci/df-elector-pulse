@@ -46,7 +46,7 @@ import { useTeamMembers, TeamMember } from "@/hooks/team/useTeamMembers";
 import { useUpdateMember } from "@/hooks/team/useUpdateMember";
 import { useDeleteMember } from "@/hooks/team/useDeleteMember";
 import { useAuth } from "@/contexts/AuthContext";
-import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
+import { useTenantContext } from "@/contexts/TenantContext";
 import { RoleBadge } from "@/components/team/RoleBadge";
 import { AddMemberDialog } from "@/components/team/AddMemberDialog";
 import { EditMemberDialog } from "@/components/team/EditMemberDialog";
