@@ -171,20 +171,25 @@ export function useIntegrationsSettings() {
 export function useUpdateIntegrationsSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: async (updates: UpdateIntegrationsDTO) => {
-      const { data: existing } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
+        .select("id");
+      
+      if (tenantId) query = query.eq("tenant_id", tenantId);
+      
+      const { data: existing } = await query.limit(1).maybeSingle();
 
       if (!existing) {
-        // Auto-create if missing
+        const insertData: any = { ...updates };
+        if (tenantId) insertData.tenant_id = tenantId;
+        
         const { data: newRow, error: insertErr } = await supabase
           .from("integrations_settings")
-          .insert(updates)
+          .insert(insertData)
           .select()
           .single();
         if (insertErr) throw insertErr;
