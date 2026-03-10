@@ -270,24 +270,19 @@ export default function SurveyPublicForm() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Região onde mora *</Label>
-                  <Select
-                    value={registration.cidadeId}
-                    onValueChange={(value) => setRegistration({ ...registration, cidadeId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione sua região" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
-                          {city.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <LocationSelect
+                  value={registration.cidadeId}
+                  localidadeValue={registration.localidade}
+                  onLocationChange={({ cidadeId, localidade }) => 
+                    setRegistration({ 
+                      ...registration, 
+                      cidadeId: cidadeId || "", 
+                      localidade: localidade || "" 
+                    })
+                  }
+                  required
+                  showLabel
+                />
                 <div className="flex items-start gap-2">
                   <Checkbox
                     id="lgpd"
