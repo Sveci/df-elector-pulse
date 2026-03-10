@@ -232,14 +232,21 @@ const WhatsAppChatbot = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
+          <TabsTrigger value="communities" className="gap-2">
+            <MessageSquare className="h-4 w-4" /> Comunidades
+          </TabsTrigger>
           <TabsTrigger value="config" className="gap-2" data-tutorial="bot-config">
             <Settings className="h-4 w-4" /> Configurações
           </TabsTrigger>
           <TabsTrigger value="keywords" className="gap-2" data-tutorial="bot-keywords">
             <MessageSquare className="h-4 w-4" /> Palavras-Chave
           </TabsTrigger>
+          <TabsTrigger value="contacts" className="gap-2">
+            <MessageSquare className="h-4 w-4" /> Contatos
+          </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2" data-tutorial="bot-logs">
             <History className="h-4 w-4" /> Histórico
+          </TabsTrigger>
           </TabsTrigger>
         </TabsList>
 
