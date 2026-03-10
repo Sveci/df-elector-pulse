@@ -751,6 +751,7 @@ export function WhatsAppBulkSendTab() {
                     phone,
                     message: variables.link_afiliado,
                     contactId,
+                    tenantId,
                   },
                 });
               }
