@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { useTenantContext } from "@/contexts/TenantContext";
-import { getCargoLabelGendered } from "@/constants/brazilPolitics";
+import { getCargoLabelGendered, detectGenderByName } from "@/constants/brazilPolitics";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,7 +153,7 @@ const AIAgent = () => {
         role: "assistant",
         content: isDemoMode
           ? "Olá! 👋 Sou o assistente virtual da plataforma.\n\nEstou aqui para ajudá-lo com informações e análise de dados.\n\n**Como posso ajudar você hoje?** 🤝\n\n📊 Posso consultar:\n• Rankings de cadastros por região\n• Performance de coordenadores\n• Temas mais populares\n• Perfil demográfico"
-          : "Olá! 👋 Sou o assistente virtual do Deputado Rafael Prudente.\n\nEstou aqui para ajudá-lo com informações sobre nossa campanha e análise de dados políticos.\n\n**Como posso ajudar você hoje?** 🤝\n\n📊 Posso consultar:\n• Rankings de cadastros por região\n• Performance de coordenadores\n• Temas mais populares\n• Perfil demográfico dos eleitores",
+          : `Olá! 👋 Sou o assistente virtual ${activeTenant?.cargo_politico ? `${detectGenderByName(activeTenant.nome) === 'feminino' ? 'da' : 'do'} ${getCargoLabelGendered(activeTenant.cargo_politico, activeTenant.nome)}` : "de"} ${activeTenant?.nome || ""}.\n\nEstou aqui para ajudá-lo com informações sobre nossa campanha e análise de dados políticos.\n\n**Como posso ajudar você hoje?** 🤝\n\n📊 Posso consultar:\n• Rankings de cadastros por região\n• Performance de coordenadores\n• Temas mais populares\n• Perfil demográfico dos eleitores`,
         timestamp: new Date(),
       }]);
     }
