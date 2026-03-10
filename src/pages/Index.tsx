@@ -198,8 +198,8 @@ const Index = () => {
             <Button variant="ghost" onClick={() => navigate("/login")} className="text-gray-200 hover:text-white hover:bg-gray-800/60 hidden sm:inline-flex">
               Entrar
             </Button>
-            <Button onClick={() => navigate("/login")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold">
-              Acessar agora!
+            <Button onClick={() => navigate("/contato")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold">
+              Entrar em contato
             </Button>
           </div>
         </div>
@@ -641,7 +641,7 @@ const Index = () => {
                     </li>
                   ))}
                 </ul>
-                <Button onClick={() => navigate("/login")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold w-full border border-gray-600"}>
+                <Button onClick={() => navigate("/contato")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold w-full border border-gray-600"}>
                   Fale Conosco <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </motion.div>
