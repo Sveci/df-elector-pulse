@@ -708,17 +708,79 @@ const Index = () => {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t border-gray-800/60 bg-gray-900/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <img src={logo} alt="Eleitor 360.ai" className="h-6 w-auto" />
-              <div className="h-5 w-px bg-gray-800" />
-              <p className="text-gray-500 text-sm">© 2026 Eleitor 360.ai</p>
+      <footer className="border-t border-border/30 bg-[hsl(225,25%,8%)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Top section — Logo + Menus */}
+          <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+            {/* Brand */}
+            <div className="lg:col-span-2 space-y-4">
+              <img src={logo} alt="Eleitor 360.ai" className="h-8 w-auto" />
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
+                A plataforma mais completa de gestão política com inteligência artificial. 
+                Transforme dados em votos e relacionamentos em resultados.
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                {["Instagram", "LinkedIn", "YouTube"].map((social) => (
+                  <a key={social} href="#" className="w-9 h-9 rounded-lg bg-[hsl(225,20%,15%)] hover:bg-primary/20 flex items-center justify-center transition-colors group">
+                    <span className="text-xs text-muted-foreground group-hover:text-primary font-medium">{social[0]}</span>
+                  </a>
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-gray-600">
-              Desenvolvida por{" "}<span className="text-gray-400 font-medium">MEGA GLOBAL DIGITAL</span>
+
+            {/* Produto */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Produto</h4>
+              <ul className="space-y-3">
+                {["Recursos", "Planos e Preços", "Inteligência Artificial", "Mapa Político", "Eventos"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{item}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Empresa */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Empresa</h4>
+              <ul className="space-y-3">
+                {["Sobre Nós", "Blog", "Carreiras", "Contato", "Parceiros"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{item}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Suporte */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Suporte</h4>
+              <ul className="space-y-3">
+                {["Central de Ajuda", "Documentação", "Status do Sistema", "Fale Conosco", "WhatsApp"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{item}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-border/20" />
+
+          {/* Bottom section — Legal */}
+          <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Eleitor 360.ai — Todos os direitos reservados. Desenvolvida por{" "}
+              <span className="text-foreground/70 font-medium">MEGA GLOBAL DIGITAL</span>
             </p>
+            <div className="flex items-center gap-6">
+              {["Termos de Uso", "Política de Privacidade", "LGPD", "Cookies"].map((item) => (
+                <a key={item} href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  {item}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
