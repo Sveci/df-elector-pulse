@@ -122,7 +122,7 @@ const faqs = [
   { q: "Meus dados ficam seguros?", a: "Absolutamente. Utilizamos criptografia de ponta, autenticação robusta e RLS (Row Level Security) em todas as tabelas. Total conformidade com a LGPD." },
   { q: "Posso testar antes de assinar?", a: "Sim. Oferecemos uma demonstração personalizada para que você conheça todas as funcionalidades antes de tomar sua decisão." },
   { q: "Funciona para qualquer cargo político?", a: "Sim. A plataforma é flexível e atende desde vereadores até governadores. A arquitetura multi-tenant permite escalar para qualquer tamanho de operação." },
-  { q: "E o cancelamento?", a: "Sem fidelidade. Você pode cancelar a qualquer momento, sem multas ou burocracia. Seus dados permanecem acessíveis por 30 dias após o cancelamento." },
+  { q: "Meus dados estão seguros?", a: "Totalmente. Utilizamos criptografia de ponta a ponta, servidores com certificação internacional e estamos em conformidade total com a LGPD. Seus dados são seus e nunca são compartilhados com terceiros." },
   { q: "Quantas pessoas podem usar a plataforma?", a: "Depende do plano. O Essencial inclui 1 usuário, o Profissional até 5, e o Enterprise é ilimitado. Cada usuário tem permissões configuráveis." },
 ];
 
