@@ -53,6 +53,7 @@ export default function SurveyPublicForm() {
     whatsapp: "",
     email: "",
     cidadeId: "",
+    localidade: "",
     lgpdConsent: false,
   });
 
