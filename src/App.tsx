@@ -175,6 +175,8 @@ const App = () => (
             <Route path="/lgpd-cookies" element={<LgpdCookies />} />
             <Route path="/sobre" element={<SobreNos />} />
             <Route path="/contato" element={<Contato />} />
+            <Route path="/ajuda" element={<CentralAjuda />} />
+            <Route path="/status" element={<StatusSistema />} />
             
             {/* Coordinator Portal (public, own auth) */}
             <Route path="/coordenador/login" element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>} />
