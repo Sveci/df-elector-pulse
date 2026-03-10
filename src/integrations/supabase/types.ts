@@ -4391,25 +4391,46 @@ export type Database = {
           verification_code: string
         }[]
       }
-      upsert_contact_from_public_form: {
-        Args: {
-          _cidade_id?: string
-          _data_nascimento?: string
-          _email?: string
-          _endereco?: string
-          _facebook?: string
-          _instagram?: string
-          _nome: string
-          _source_id?: string
-          _source_type?: string
-          _telefone_norm: string
-          _utm_campaign?: string
-          _utm_content?: string
-          _utm_medium?: string
-          _utm_source?: string
-        }
-        Returns: string
-      }
+      upsert_contact_from_public_form:
+        | {
+            Args: {
+              _cidade_id?: string
+              _data_nascimento?: string
+              _email?: string
+              _endereco?: string
+              _facebook?: string
+              _instagram?: string
+              _localidade?: string
+              _nome: string
+              _source_id?: string
+              _source_type?: string
+              _telefone_norm: string
+              _utm_campaign?: string
+              _utm_content?: string
+              _utm_medium?: string
+              _utm_source?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _cidade_id?: string
+              _data_nascimento?: string
+              _email?: string
+              _endereco?: string
+              _facebook?: string
+              _instagram?: string
+              _nome: string
+              _source_id?: string
+              _source_type?: string
+              _telefone_norm: string
+              _utm_campaign?: string
+              _utm_content?: string
+              _utm_medium?: string
+              _utm_source?: string
+            }
+            Returns: string
+          }
       validate_checkin_pin: {
         Args: { _event_id: string; _pin: string }
         Returns: boolean

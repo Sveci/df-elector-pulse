@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LocationSelect } from "@/components/office/LocationSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
   Loader2, 
   CheckCircle2, 
   AlertCircle,
@@ -40,6 +34,7 @@ interface RegistrationData {
   whatsapp: string;
   email: string;
   cidadeId: string;
+  localidade: string;
   lgpdConsent: boolean;
 }
 
@@ -58,21 +53,11 @@ export default function SurveyPublicForm() {
     whatsapp: "",
     email: "",
     cidadeId: "",
+    localidade: "",
     lgpdConsent: false,
   });
 
-  // Fetch cities for region dropdown
-  const { data: cities } = useQuery({
-    queryKey: ['office_cities_public'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('office_cities')
-        .select('id, nome')
-        .eq('status', 'active')
-        .order('nome');
-      return data || [];
-    }
-  });
+
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [contactId, setContactId] = useState<string | null>(null);
   const [leaderId, setLeaderId] = useState<string | null>(null);
@@ -97,8 +82,8 @@ export default function SurveyPublicForm() {
 
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registration.cidadeId) {
-      toast.error("Por favor, selecione sua região");
+    if (!registration.cidadeId && !registration.localidade) {
+      toast.error("Por favor, selecione sua localidade");
       return;
     }
     if (!registration.lgpdConsent) {
@@ -128,7 +113,8 @@ export default function SurveyPublicForm() {
           _nome: registration.nome,
           _telefone_norm: normalizedPhone,
           _email: registration.email,
-          _cidade_id: registration.cidadeId,
+          _cidade_id: registration.cidadeId || null,
+          _localidade: registration.localidade || null,
           _source_type: "pesquisa",
           _source_id: referrerLeaderId || null,
           _utm_source: searchParams.get("utm_source"),
@@ -285,24 +271,19 @@ export default function SurveyPublicForm() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Região onde mora *</Label>
-                  <Select
-                    value={registration.cidadeId}
-                    onValueChange={(value) => setRegistration({ ...registration, cidadeId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione sua região" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
-                          {city.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <LocationSelect
+                  value={registration.cidadeId}
+                  localidadeValue={registration.localidade}
+                  onLocationChange={({ cidadeId, localidade }) => 
+                    setRegistration({ 
+                      ...registration, 
+                      cidadeId: cidadeId || "", 
+                      localidade: localidade || "" 
+                    })
+                  }
+                  required
+                  showLabel
+                />
                 <div className="flex items-start gap-2">
                   <Checkbox
                     id="lgpd"
