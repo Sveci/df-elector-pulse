@@ -24,6 +24,8 @@ import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import { Step } from "react-joyride";
 import { useDemoMask } from "@/contexts/DemoModeContext";
+import { useOrganization } from "@/hooks/useOrganization";
+import { getLocationFieldType } from "@/constants/brazilPolitics";
 import {
   DEMO_DASHBOARD_STATS,
   DEMO_TOP_LEADERS,
@@ -70,7 +72,7 @@ const dashboardTutorialSteps: Step[] = [
   {
     target: '[data-tutorial="stats-gerais"]',
     title: "📈 Estatísticas Gerais",
-    content: "Resumo com total de cadastros, cidades/RAs alcançadas, líderes ativos e quando foi o último cadastro no sistema.",
+    content: "Resumo com total de cadastros, localidades alcançadas, líderes ativos e quando foi o último cadastro no sistema.",
     placement: "left",
   },
   {
@@ -98,6 +100,10 @@ const Dashboard = () => {
   const [periodTemas, setPeriodTemas] = useState("30d");
   const queryClient = useQueryClient();
   const { m } = useDemoMask();
+  const { data: organization } = useOrganization();
+  const locationFieldType = getLocationFieldType(organization?.cargo);
+  const locationLabel = locationFieldType === 'bairro' ? 'Bairros' : locationFieldType === 'ra' ? 'RAs' : 'Cidades';
+  const locationSingularLabel = locationFieldType === 'bairro' ? 'Bairro' : locationFieldType === 'ra' ? 'RA' : 'Cidade';
 
   // Tutorial hook
   const { restartTutorial } = useTutorial("dashboard", dashboardTutorialSteps);
@@ -431,10 +437,10 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">Cidades Alcançadas</span>
+                    <span className="text-sm font-medium text-gray-700">{locationLabel} Alcançadas</span>
                   </div>
                   <span className="text-lg font-bold text-blue-600">
-                    {m.number(effectiveStats?.citiesReached || 0, 'cities')} RAs
+                    {m.number(effectiveStats?.citiesReached || 0, 'cities')} {locationLabel}
                   </span>
                 </div>
 
@@ -442,7 +448,7 @@ const Dashboard = () => {
                   <div className="p-3 bg-green-50 rounded-lg">
                     <div className="flex items-center mb-1">
                       <MapPin className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-sm font-medium text-gray-700">RA com mais cadastros</span>
+                      <span className="text-sm font-medium text-gray-700">{locationSingularLabel} com mais cadastros</span>
                     </div>
                     <span className="text-base font-semibold text-green-600">
                       {m.city(effectiveStats.topCity)} ({m.number(effectiveStats.topCityCount, 'top_city')})
