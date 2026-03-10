@@ -72,7 +72,7 @@ const dashboardTutorialSteps: Step[] = [
   {
     target: '[data-tutorial="stats-gerais"]',
     title: "📈 Estatísticas Gerais",
-    content: "Resumo com total de cadastros, cidades/RAs alcançadas, líderes ativos e quando foi o último cadastro no sistema.",
+    content: "Resumo com total de cadastros, localidades alcançadas, líderes ativos e quando foi o último cadastro no sistema.",
     placement: "left",
   },
   {
