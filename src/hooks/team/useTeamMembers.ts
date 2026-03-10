@@ -35,7 +35,7 @@ export function useTeamMembers() {
       const [usersRes, rolesRes, tenantsRes] = await Promise.all([
         supabase.from("users").select("id, is_active, last_login"),
         supabase.from("user_roles").select("user_id, role"),
-        supabase.from("user_tenants").select("user_id, tenant_id, role, tenant:tenants(name)"),
+        supabase.from("user_tenants").select("user_id, tenant_id, role, tenant:tenants(nome)"),
       ]);
 
       if (usersRes.error) throw usersRes.error;
@@ -59,7 +59,7 @@ export function useTeamMembers() {
           last_login: user?.last_login || null,
           tenants: userTenants.map((t) => ({
             tenant_id: t.tenant_id,
-            tenant_name: (t.tenant as any)?.name || "—",
+            tenant_name: (t.tenant as any)?.nome || "—",
             role: t.role,
           })),
         };
