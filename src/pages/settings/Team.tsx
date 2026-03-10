@@ -82,6 +82,7 @@ export default function Team() {
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
   const { user } = useAuth();
+  const { data: isSuperAdmin } = useIsSuperAdmin();
   const { restartTutorial } = useTutorial("team", teamTutorialSteps);
 
   const filteredMembers = members?.filter((member) => {
