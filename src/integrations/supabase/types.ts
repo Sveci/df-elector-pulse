@@ -3891,6 +3891,54 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_chat_state: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          id: string
+          municipio: string | null
+          phone: string
+          state: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          municipio?: string | null
+          phone: string
+          state?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          municipio?: string | null
+          phone?: string
+          state?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_chat_state_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "office_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_chat_state_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_chatbot_config: {
         Row: {
           ai_system_prompt: string | null
@@ -4041,6 +4089,47 @@ export type Database = {
           },
           {
             foreignKeyName: "whatsapp_chatbot_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_communities: {
+        Row: {
+          community_link: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          municipio: string
+          numero_lista: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          community_link?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          municipio: string
+          numero_lista: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          community_link?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          municipio?: string
+          numero_lista?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_communities_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

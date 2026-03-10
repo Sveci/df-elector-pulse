@@ -58,6 +58,7 @@ import {
   ChatbotKeyword,
   AVAILABLE_DYNAMIC_FUNCTIONS
 } from "@/hooks/useWhatsAppChatbot";
+import { useWhatsAppCommunities, useUpdateCommunity, useWhatsAppChatStates } from "@/hooks/useWhatsAppCommunities";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
@@ -74,7 +75,7 @@ const chatbotTutorialSteps: Step[] = [
 ];
 
 const WhatsAppChatbot = () => {
-  const [activeTab, setActiveTab] = useState("config");
+  const [activeTab, setActiveTab] = useState("communities");
   const [keywordDialogOpen, setKeywordDialogOpen] = useState(false);
   const [editingKeyword, setEditingKeyword] = useState<ChatbotKeyword | null>(null);
   const { restartTutorial } = useTutorial("whatsapp-chatbot", chatbotTutorialSteps);
@@ -95,12 +96,15 @@ const WhatsAppChatbot = () => {
   const { data: config, isLoading: loadingConfig } = useChatbotConfig();
   const { data: keywords, isLoading: loadingKeywords } = useChatbotKeywords();
   const { data: logs, isLoading: loadingLogs } = useChatbotLogs(100);
+  const { data: communities, isLoading: loadingCommunities } = useWhatsAppCommunities();
+  const { data: chatStates, isLoading: loadingChatStates } = useWhatsAppChatStates();
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
   const createKeyword = useCreateChatbotKeyword();
   const updateKeyword = useUpdateChatbotKeyword();
   const deleteKeyword = useDeleteChatbotKeyword();
+  const updateCommunity = useUpdateCommunity();
 
   const handleConfigChange = (field: string, value: any) => {
     updateConfig.mutate({ [field]: value });
@@ -228,16 +232,23 @@ const WhatsAppChatbot = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
+          <TabsTrigger value="communities" className="gap-2">
+            <MessageSquare className="h-4 w-4" /> Comunidades
+          </TabsTrigger>
           <TabsTrigger value="config" className="gap-2" data-tutorial="bot-config">
             <Settings className="h-4 w-4" /> Configurações
           </TabsTrigger>
           <TabsTrigger value="keywords" className="gap-2" data-tutorial="bot-keywords">
             <MessageSquare className="h-4 w-4" /> Palavras-Chave
           </TabsTrigger>
+          <TabsTrigger value="contacts" className="gap-2">
+            <MessageSquare className="h-4 w-4" /> Contatos
+          </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2" data-tutorial="bot-logs">
             <History className="h-4 w-4" /> Histórico
           </TabsTrigger>
         </TabsList>
+
 
         {/* Config Tab */}
         <TabsContent value="config" className="space-y-4">
@@ -449,6 +460,115 @@ const WhatsAppChatbot = () => {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   Nenhuma conversa registrada ainda
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Communities Tab */}
+        <TabsContent value="communities" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comunidades WhatsApp por Município</CardTitle>
+              <CardDescription>
+                Configure os links das comunidades WhatsApp para cada município. Quando uma pessoa entrar em contato, será direcionada para a comunidade do seu município.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingCommunities ? (
+                <Skeleton className="h-64 w-full" />
+              ) : communities && communities.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Município</TableHead>
+                      <TableHead>Link da Comunidade</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {communities.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-mono font-bold">{c.numero_lista}</TableCell>
+                        <TableCell className="font-semibold">{c.municipio}</TableCell>
+                        <TableCell>
+                          <Input
+                            placeholder="https://chat.whatsapp.com/..."
+                            value={c.community_link || ""}
+                            onChange={(e) =>
+                              updateCommunity.mutate({ id: c.id, community_link: e.target.value || null })
+                            }
+                            className="max-w-md"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={c.is_active}
+                            onCheckedChange={(checked) =>
+                              updateCommunity.mutate({ id: c.id, is_active: checked })
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma comunidade configurada
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Contacts Tab - Chat States */}
+        <TabsContent value="contacts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contatos no Fluxo</CardTitle>
+              <CardDescription>Pessoas que interagiram com o WhatsApp oficial e em qual etapa estão</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingChatStates ? (
+                <Skeleton className="h-64 w-full" />
+              ) : chatStates && chatStates.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Município</TableHead>
+                      <TableHead>Última Atividade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chatStates.map((cs) => (
+                      <TableRow key={cs.id}>
+                        <TableCell className="font-mono">{cs.phone}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            cs.state === 'registered' ? 'default' :
+                            cs.state === 'awaiting_municipality' ? 'secondary' : 'outline'
+                          }>
+                            {cs.state === 'new' ? 'Novo' :
+                             cs.state === 'awaiting_municipality' ? 'Aguardando município' :
+                             cs.state === 'registered' ? 'Registrado' : cs.state}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{cs.municipio || '-'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(cs.updated_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum contato interagiu com o fluxo ainda
                 </div>
               )}
             </CardContent>

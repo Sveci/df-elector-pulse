@@ -101,6 +101,208 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
   }
 }
 
+// =====================================================
+// CONVERSATIONAL FLOW: Welcome → Municipality → Community
+// =====================================================
+async function handleConversationalFlow(
+  supabase: any,
+  from: string,
+  normalizedPhone: string,
+  messageText: string,
+  tenantId: string | null
+): Promise<boolean> {
+  if (!tenantId) return false;
+
+  // Get or create chat state for this phone
+  const { data: chatState } = await supabase
+    .from('whatsapp_chat_state')
+    .select('*')
+    .eq('phone', from)
+    .eq('tenant_id', tenantId)
+    .limit(1)
+    .single();
+
+  // Get communities for this tenant
+  const { data: communities } = await supabase
+    .from('whatsapp_communities')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .order('numero_lista');
+
+  if (!communities || communities.length === 0) {
+    console.log('[Meta Webhook] No communities configured, skipping conversational flow');
+    return false;
+  }
+
+  const cleanMessage = messageText.trim();
+  const upperMessage = cleanMessage.toUpperCase();
+
+  // === STATE: NEW CONTACT (no chat state yet) ===
+  if (!chatState) {
+    // Check if this is an existing leader — if so, skip flow and let chatbot handle
+    const { data: existingLeader } = await supabase
+      .from('lideres')
+      .select('id')
+      .or(`telefone.eq.${normalizedPhone},telefone.eq.${from}`)
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    if (existingLeader) {
+      console.log('[Meta Webhook] Existing leader, skipping conversational flow');
+      return false;
+    }
+
+    // Create new chat state
+    await supabase.from('whatsapp_chat_state').insert({
+      phone: from,
+      tenant_id: tenantId,
+      state: 'awaiting_municipality',
+    });
+
+    // Send welcome + municipality list
+    let welcomeMsg = `Olá, seja bem-vindo(a) ao WhatsApp oficial do deputado Acácio Favacho! 🏛️\n\n`;
+    welcomeMsg += `Aqui você recebe informações diretas sobre projetos, programas e oportunidades para o Amapá.\n\n`;
+    welcomeMsg += `📍 *De qual município você é?*\n`;
+    welcomeMsg += `Digite o número correspondente:\n\n`;
+
+    for (const c of communities) {
+      welcomeMsg += `*${c.numero_lista}* - ${c.municipio}\n`;
+    }
+
+    await sendMetaCloudMessage(supabase, normalizedPhone, welcomeMsg, tenantId);
+    console.log('[Meta Webhook] Sent welcome message with municipality list');
+    return true;
+  }
+
+  // === STATE: AWAITING MUNICIPALITY ===
+  if (chatState.state === 'awaiting_municipality') {
+    // Try to match by number
+    const selectedNumber = parseInt(cleanMessage);
+    let matchedCommunity = null;
+
+    if (!isNaN(selectedNumber)) {
+      matchedCommunity = communities.find((c: any) => c.numero_lista === selectedNumber);
+    }
+
+    if (!matchedCommunity) {
+      // Try fuzzy name match
+      const normalizedInput = upperMessage.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      matchedCommunity = communities.find((c: any) => {
+        const normalizedName = c.municipio.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return normalizedName === normalizedInput || normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName);
+      });
+    }
+
+    if (!matchedCommunity) {
+      // Not recognized — resend the list
+      let retryMsg = `Não reconheci o município. Por favor, digite apenas o *número* correspondente:\n\n`;
+      for (const c of communities) {
+        retryMsg += `*${c.numero_lista}* - ${c.municipio}\n`;
+      }
+      await sendMetaCloudMessage(supabase, normalizedPhone, retryMsg, tenantId);
+      return true;
+    }
+
+    // Municipality matched! Update state
+    await supabase
+      .from('whatsapp_chat_state')
+      .update({
+        state: 'registered',
+        municipio: matchedCommunity.municipio,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', chatState.id);
+
+    // Send community link or confirmation
+    if (matchedCommunity.community_link) {
+      let successMsg = `✅ Ótimo! Você é de *${matchedCommunity.municipio}*!\n\n`;
+      successMsg += `🔗 Entre na nossa Comunidade WhatsApp do seu município:\n${matchedCommunity.community_link}\n\n`;
+      successMsg += `Lá você vai receber informações específicas da sua região! 📢`;
+      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId);
+    } else {
+      let successMsg = `✅ Ótimo! Você é de *${matchedCommunity.municipio}*!\n\n`;
+      successMsg += `A Comunidade WhatsApp do seu município está sendo preparada. Assim que estiver pronta, enviaremos o link para você! 📢`;
+      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId);
+    }
+
+    console.log(`[Meta Webhook] User ${from} registered for municipality: ${matchedCommunity.municipio}`);
+    return true;
+  }
+
+  // === STATE: REGISTERED (already selected a municipality) ===
+  if (chatState.state === 'registered') {
+    // Check if user wants to see menu or specific options
+    if (upperMessage === 'MENU' || upperMessage === 'OPCOES' || upperMessage === 'OPÇÕES') {
+      await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+      return true;
+    }
+
+    if (upperMessage === 'PROJETOS' || upperMessage === '1') {
+      const msg = `📋 *Projetos do Deputado Acácio Favacho*\n\n` +
+        `Para mais informações sobre os projetos, acompanhe nossas redes sociais ou visite nosso site.\n\n` +
+        `Digite *MENU* para ver outras opções.`;
+      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      return true;
+    }
+
+    if (upperMessage === 'EVENTOS' || upperMessage === '2') {
+      const msg = `📅 *Eventos*\n\n` +
+        `Fique atento às nossas comunicações para saber dos próximos eventos na sua região!\n\n` +
+        `Digite *MENU* para ver outras opções.`;
+      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      return true;
+    }
+
+    if (upperMessage === 'COMUNIDADE' || upperMessage === '3') {
+      // Resend community link
+      const { data: community } = await supabase
+        .from('whatsapp_communities')
+        .select('community_link, municipio')
+        .eq('tenant_id', tenantId)
+        .eq('municipio', chatState.municipio)
+        .limit(1)
+        .single();
+
+      if (community?.community_link) {
+        const msg = `🔗 *Comunidade ${community.municipio}*\n\n${community.community_link}\n\nDigite *MENU* para ver outras opções.`;
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      } else {
+        const msg = `A Comunidade do seu município ainda está sendo preparada. Em breve enviaremos o link!\n\nDigite *MENU* para ver outras opções.`;
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      }
+      return true;
+    }
+
+    if (upperMessage === 'FALAR' || upperMessage === '4') {
+      const msg = `📞 *Falar com um atendente*\n\n` +
+        `Sua mensagem será encaminhada para nossa equipe. Em breve alguém entrará em contato!\n\n` +
+        `Digite *MENU* para ver outras opções.`;
+      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      return true;
+    }
+
+    // For any other message from a registered user, send the menu
+    await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+    return true;
+  }
+
+  return false;
+}
+
+async function sendMenuMessage(supabase: any, phone: string, municipio: string | null, tenantId: string | null) {
+  let menuMsg = `🏛️ *Menu Principal*\n\n`;
+  menuMsg += `Escolha uma opção:\n\n`;
+  menuMsg += `*1* - 📋 Projetos e Programas\n`;
+  menuMsg += `*2* - 📅 Eventos\n`;
+  menuMsg += `*3* - 🔗 Comunidade${municipio ? ` (${municipio})` : ''}\n`;
+  menuMsg += `*4* - 📞 Falar com atendente\n`;
+  menuMsg += `\nDigite o número da opção desejada.`;
+  await sendMetaCloudMessage(supabase, phone, menuMsg, tenantId);
+}
+
 serve(async (req) => {
   const url = new URL(req.url);
   
@@ -526,7 +728,7 @@ serve(async (req) => {
                   }
                   continue;
                 }
-                // If no pending consent found, fall through to chatbot
+                // If no pending consent found, fall through to conversational flow / chatbot
               }
 
               // === LEGACY CODE DETECTION (5-6 char codes) ===
@@ -631,8 +833,18 @@ serve(async (req) => {
                 }
               }
 
-              // === CHATBOT FALLBACK ===
+              // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
               if (!handledAsVerification && messageText.trim()) {
+                const handledByFlow = await handleConversationalFlow(
+                  supabase, from, normalizedPhone, messageText, tenantId
+                );
+
+                if (handledByFlow) {
+                  console.log('[Meta Webhook] Handled by conversational flow');
+                  continue;
+                }
+
+                // === CHATBOT FALLBACK ===
                 console.log('[Meta Webhook] Forwarding to chatbot for:', from);
                 try {
                   const chatbotResponse = await fetch(
@@ -648,7 +860,7 @@ serve(async (req) => {
                         message: messageText,
                         messageId: messageId,
                         provider: 'meta_cloud',
-                        tenantId: tenantId, // Pass tenant to chatbot
+                        tenantId: tenantId,
                       }),
                     }
                   );
