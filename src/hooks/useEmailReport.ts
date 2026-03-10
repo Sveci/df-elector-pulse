@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface EmailReportItem {
   id: string;
@@ -15,11 +16,9 @@ export interface EmailReportItem {
   template_slug: string | null;
   leader_id: string | null;
   contact_id: string | null;
-  // Dados do líder
   leader_nome: string | null;
   leader_telefone: string | null;
   leader_cidade: string | null;
-  // Dados do contato
   contact_nome: string | null;
   contact_telefone: string | null;
   contact_cidade: string | null;
@@ -34,8 +33,10 @@ export interface EmailReportFilters {
 }
 
 export function useEmailReport(filters: EmailReportFilters) {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["email_report", filters],
+    queryKey: ["email_report", filters, tenantId],
     queryFn: async () => {
       let query = supabase
         .from("email_logs")
@@ -67,6 +68,11 @@ export function useEmailReport(filters: EmailReportFilters) {
           )
         `)
         .order("created_at", { ascending: false });
+
+      // Filter by active tenant
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
 
       if (filters.templateId) {
         query = query.eq("template_id", filters.templateId);
@@ -126,16 +132,24 @@ export function useEmailReport(filters: EmailReportFilters) {
 }
 
 export function useEmailReportStats(templateId: string | undefined) {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["email_report_stats", templateId],
+    queryKey: ["email_report_stats", templateId, tenantId],
     queryFn: async () => {
       if (!templateId) return null;
 
+      const baseQuery = () => {
+        let q = supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId);
+        if (tenantId) q = q.eq("tenant_id", tenantId);
+        return q;
+      };
+
       const [totalResult, sentResult, pendingResult, failedResult] = await Promise.all([
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("status", "sent"),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("status", "pending"),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("status", "failed"),
+        baseQuery(),
+        baseQuery().eq("status", "sent"),
+        baseQuery().eq("status", "pending"),
+        baseQuery().eq("status", "failed"),
       ]);
 
       if (totalResult.error) throw totalResult.error;
