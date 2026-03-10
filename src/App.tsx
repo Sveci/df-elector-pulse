@@ -15,6 +15,7 @@ import Index from "./pages/Index";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import LgpdCookies from "./pages/LgpdCookies";
+import SobreNos from "./pages/SobreNos";
 import Login from "./pages/Login";
 import DemoLogin from "./pages/DemoLogin";
 import ForgotPassword from "./pages/ForgotPassword";
