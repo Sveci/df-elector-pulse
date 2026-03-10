@@ -641,6 +641,7 @@ export function WhatsAppBulkSendTab() {
                     phone,
                     message: codigoMessage,
                     contactId,
+                    tenantId,
                   },
                 });
                 
