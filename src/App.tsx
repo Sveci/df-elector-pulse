@@ -12,6 +12,9 @@ import { DashboardLayout } from "./components/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 import Index from "./pages/Index";
+import TermosDeUso from "./pages/TermosDeUso";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import LgpdCookies from "./pages/LgpdCookies";
 import Login from "./pages/Login";
 import DemoLogin from "./pages/DemoLogin";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -162,6 +165,9 @@ const App = () => (
             <Route path="/v/:codigo" element={<VerifyContact />} />
             <Route path="/verificar-lider/:codigo" element={<VerifyLeader />} />
             <Route path="/s/:code" element={<ShortUrlRedirect />} />
+            <Route path="/termos-de-uso" element={<TermosDeUso />} />
+            <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+            <Route path="/lgpd-cookies" element={<LgpdCookies />} />
             
             {/* Coordinator Portal (public, own auth) */}
             <Route path="/coordenador/login" element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>} />
