@@ -754,7 +754,7 @@ const Index = () => {
                   { label: "Sobre Nós", href: "/sobre" },
                   { label: "Blog", href: "#" },
                   { label: "Carreiras", href: "#" },
-                  { label: "Contato", href: "#" },
+                  { label: "Contato", href: "/contato" },
                   { label: "Parceiros", href: "#" },
                 ].map((item) => (
                   <li key={item.label}>

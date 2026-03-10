@@ -24,6 +24,7 @@ const adminItems: MenuItem[] = [
   { title: "Tenants", url: "/admin/tenants", icon: Building2 },
   { title: "Tickets", url: "/admin/tickets", icon: Ticket },
   { title: "APIs Externas", url: "/admin/apis", icon: Key },
+  { title: "Contatos", url: "/admin/contatos", icon: MessageSquare },
 ];
 
 export function AdminSidebar() {
