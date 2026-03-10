@@ -46,6 +46,7 @@ import { useTeamMembers, TeamMember } from "@/hooks/team/useTeamMembers";
 import { useUpdateMember } from "@/hooks/team/useUpdateMember";
 import { useDeleteMember } from "@/hooks/team/useDeleteMember";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import { RoleBadge } from "@/components/team/RoleBadge";
 import { AddMemberDialog } from "@/components/team/AddMemberDialog";
 import { EditMemberDialog } from "@/components/team/EditMemberDialog";
@@ -81,6 +82,7 @@ export default function Team() {
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
   const { user } = useAuth();
+  const { data: isSuperAdmin } = useIsSuperAdmin();
   const { restartTutorial } = useTutorial("team", teamTutorialSteps);
 
   const filteredMembers = members?.filter((member) => {
@@ -262,6 +264,7 @@ export default function Team() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Membro</TableHead>
+                    {isSuperAdmin && <TableHead>Tenant</TableHead>}
                     <TableHead>Nível</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Cadastro</TableHead>
@@ -272,7 +275,7 @@ export default function Team() {
                 <TableBody>
                   {filteredMembers?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8">
                         <p className="text-muted-foreground">
                           Nenhum membro encontrado
                         </p>
@@ -297,6 +300,21 @@ export default function Team() {
                             </div>
                           </div>
                         </TableCell>
+                        {isSuperAdmin && (
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {member.tenants.length > 0 ? (
+                                member.tenants.map((t) => (
+                                  <Badge key={t.tenant_id} variant="outline" className="text-xs">
+                                    {t.tenant_name}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Sem tenant</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>
                           {member.role ? (
                             <RoleBadge role={member.role} />
