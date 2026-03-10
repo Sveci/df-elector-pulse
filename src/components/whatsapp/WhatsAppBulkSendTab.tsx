@@ -700,6 +700,7 @@ export function WhatsAppBulkSendTab() {
                     message,
                     contactId,
                     imageUrl: qrCodeDataUrl,
+                    tenantId,
                   },
                 });
                 
