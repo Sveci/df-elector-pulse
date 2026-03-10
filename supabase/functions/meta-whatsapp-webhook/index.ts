@@ -16,7 +16,21 @@ function normalizePhone(phone: string): string {
   return "+" + clean;
 }
 
-async function sendMetaCloudMessage(supabase: any, phone: string, message: string) {
+// Resolve tenant_id from the phone_number_id in the webhook payload
+async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: string): Promise<string | null> {
+  if (!phoneNumberId) return null;
+  
+  const { data } = await supabase
+    .from('integrations_settings')
+    .select('tenant_id')
+    .eq('meta_cloud_phone_number_id', phoneNumberId)
+    .limit(1)
+    .single();
+  
+  return data?.tenant_id || null;
+}
+
+async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null) {
   const accessToken = Deno.env.get('META_WA_ACCESS_TOKEN');
   
   if (!accessToken) {
@@ -24,11 +38,12 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
     return { success: false, error: 'META_WA_ACCESS_TOKEN not configured' };
   }
 
-  // Get Meta Cloud settings
-  const { data: settings } = await supabase
+  // Get Meta Cloud settings - filtered by tenant
+  let settingsQuery = supabase
     .from('integrations_settings')
-    .select('meta_cloud_phone_number_id, meta_cloud_api_version')
-    .single();
+    .select('meta_cloud_phone_number_id, meta_cloud_api_version');
+  if (tenantId) settingsQuery = settingsQuery.eq('tenant_id', tenantId);
+  const { data: settings } = await settingsQuery.limit(1).single();
 
   if (!settings?.meta_cloud_phone_number_id) {
     console.error('[Meta Webhook] meta_cloud_phone_number_id not configured');
@@ -38,7 +53,6 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
   const apiVersion = settings.meta_cloud_api_version || 'v20.0';
   const graphUrl = `https://graph.facebook.com/${apiVersion}/${settings.meta_cloud_phone_number_id}/messages`;
 
-  // Format phone for Graph API (country code without +)
   const formattedPhone = phone.replace(/\D/g, '');
 
   const body = {
@@ -68,14 +82,17 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
     }
 
     // Log outbound message
-    await supabase.from('whatsapp_messages').insert({
+    const insertData: Record<string, any> = {
       phone: formattedPhone,
       message: message,
       direction: 'outgoing',
       status: 'sent',
       provider: 'meta_cloud',
       metadata: { wamid: data.messages?.[0]?.id },
-    });
+    };
+    if (tenantId) insertData.tenant_id = tenantId;
+
+    await supabase.from('whatsapp_messages').insert(insertData);
 
     return { success: true, messageId: data.messages?.[0]?.id };
   } catch (error) {
@@ -87,7 +104,6 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
 serve(async (req) => {
   const url = new URL(req.url);
   
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -133,6 +149,11 @@ serve(async (req) => {
 
           const value = change.value;
           
+          // Resolve tenant from phone_number_id in the webhook metadata
+          const webhookPhoneNumberId = value?.metadata?.phone_number_id;
+          const tenantId = await resolveTenantFromPhoneNumberId(supabase, webhookPhoneNumberId);
+          console.log(`[Meta Webhook] Resolved tenant: ${tenantId} from phone_number_id: ${webhookPhoneNumberId}`);
+
           // Process incoming messages
           if (value.messages) {
             for (const message of value.messages) {
@@ -159,10 +180,11 @@ serve(async (req) => {
                 messageId,
                 messageType,
                 messageText: messageText.substring(0, 100),
+                tenantId,
               });
 
               // Log the incoming message
-              await supabase.from('whatsapp_messages').insert({
+              const incomingInsert: Record<string, any> = {
                 phone: from,
                 message: messageText,
                 direction: 'incoming',
@@ -173,15 +195,20 @@ serve(async (req) => {
                   timestamp,
                   raw: message,
                 },
-              });
+              };
+              if (tenantId) incomingInsert.tenant_id = tenantId;
+
+              await supabase.from('whatsapp_messages').insert(incomingInsert);
 
               // Try to find associated contact by phone
-              const { data: contact } = await supabase
+              let contactQuery = supabase
                 .from('office_contacts')
                 .select('id, nome, is_verified, verification_code, is_active, telefone_norm')
                 .eq('telefone_norm', normalizedPhone)
-                .limit(1)
-                .single();
+                .limit(1);
+              if (tenantId) contactQuery = contactQuery.eq('tenant_id', tenantId);
+              
+              const { data: contact } = await contactQuery.single();
 
               // Clean message for keyword matching
               const cleanMessage = messageText
@@ -205,7 +232,8 @@ serve(async (req) => {
                     .eq('id', contact.id);
                   
                   await sendMetaCloudMessage(supabase, normalizedPhone, 
-                    `Você foi removido(a) da nossa lista. Para voltar a receber mensagens, envie VOLTAR.`
+                    `Você foi removido(a) da nossa lista. Para voltar a receber mensagens, envie VOLTAR.`,
+                    tenantId
                   );
                 }
                 continue;
@@ -224,7 +252,8 @@ serve(async (req) => {
                   .eq('id', contact.id);
                 
                 await sendMetaCloudMessage(supabase, normalizedPhone,
-                  `Você foi adicionado(a) novamente à nossa lista. Bem-vindo(a) de volta!`
+                  `Você foi adicionado(a) novamente à nossa lista. Bem-vindo(a) de volta!`,
+                  tenantId
                 );
                 continue;
               }
@@ -243,7 +272,8 @@ serve(async (req) => {
 
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `❌ Código de retirada *${code}* não encontrado. Verifique se digitou corretamente.`
+                    `❌ Código de retirada *${code}* não encontrado. Verifique se digitou corretamente.`,
+                    tenantId
                   );
                   continue;
                 }
@@ -257,21 +287,24 @@ serve(async (req) => {
 
                 if (!leader || !leader.telefone || leader.telefone.replace(/\D/g, '').slice(-8) !== last8) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `⚠️ Este código de retirada não pertence a este número de telefone.`
+                    `⚠️ Este código de retirada não pertence a este número de telefone.`,
+                    tenantId
                   );
                   continue;
                 }
 
                 if (reservation.status === 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `✅ Esta retirada já foi confirmada anteriormente.`
+                    `✅ Esta retirada já foi confirmada anteriormente.`,
+                    tenantId
                   );
                   continue;
                 }
 
                 if (reservation.status !== 'reserved') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `⚠️ Esta reserva não está mais ativa (status: ${reservation.status}).`
+                    `⚠️ Esta reserva não está mais ativa (status: ${reservation.status}).`,
+                    tenantId
                   );
                   continue;
                 }
@@ -289,7 +322,8 @@ serve(async (req) => {
                 if (updateErr) {
                   console.error('[Meta Webhook] Error confirming withdrawal:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `❌ Erro ao confirmar retirada. Tente novamente.`
+                    `❌ Erro ao confirmar retirada. Tente novamente.`,
+                    tenantId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -299,7 +333,8 @@ serve(async (req) => {
                     .single();
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `✅ Retirada confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade: ${reservation.quantidade}\n👤 ${leader.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`
+                    `✅ Retirada confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade: ${reservation.quantidade}\n👤 ${leader.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
+                    tenantId
                   );
                   console.log(`[Meta Webhook] ✅ Withdrawal confirmed for reservation ${reservation.id}`);
                 }
@@ -320,7 +355,8 @@ serve(async (req) => {
 
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `❌ Código de devolução *${code}* não encontrado. Verifique se digitou corretamente.`
+                    `❌ Código de devolução *${code}* não encontrado. Verifique se digitou corretamente.`,
+                    tenantId
                   );
                   continue;
                 }
@@ -334,21 +370,24 @@ serve(async (req) => {
 
                 if (!leaderRet || !leaderRet.telefone || leaderRet.telefone.replace(/\D/g, '').slice(-8) !== last8ret) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `⚠️ Este código de devolução não pertence a este número de telefone.`
+                    `⚠️ Este código de devolução não pertence a este número de telefone.`,
+                    tenantId
                   );
                   continue;
                 }
 
                 if (reservation.status !== 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `⚠️ Esta reserva não está no status de retirada (status: ${reservation.status}).`
+                    `⚠️ Esta reserva não está no status de retirada (status: ${reservation.status}).`,
+                    tenantId
                   );
                   continue;
                 }
 
                 if (reservation.return_confirmed_via) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `✅ Esta devolução já foi confirmada anteriormente.`
+                    `✅ Esta devolução já foi confirmada anteriormente.`,
+                    tenantId
                   );
                   continue;
                 }
@@ -356,12 +395,12 @@ serve(async (req) => {
                 const returnable = reservation.quantidade - (reservation.returned_quantity || 0);
                 if (returnable <= 0) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `✅ Todo o material já foi devolvido.`
+                    `✅ Todo o material já foi devolvido.`,
+                    tenantId
                   );
                   continue;
                 }
 
-                // Confirm return of requested quantity (or all remaining if no specific request)
                 const returnQty = reservation.return_requested_quantity && reservation.return_requested_quantity > 0
                   ? Math.min(reservation.return_requested_quantity, returnable)
                   : returnable;
@@ -379,7 +418,8 @@ serve(async (req) => {
                 if (updateErr) {
                   console.error('[Meta Webhook] Error confirming return:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `❌ Erro ao confirmar devolução. Tente novamente.`
+                    `❌ Erro ao confirmar devolução. Tente novamente.`,
+                    tenantId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -389,7 +429,8 @@ serve(async (req) => {
                     .single();
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
-                    `✅ Devolução confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade devolvida: ${returnQty}\n👤 ${leaderRet.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`
+                    `✅ Devolução confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade devolvida: ${returnQty}\n👤 ${leaderRet.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
+                    tenantId
                   );
                   console.log(`[Meta Webhook] ✅ Return confirmed for reservation ${reservation.id}`);
                 }
@@ -418,7 +459,7 @@ serve(async (req) => {
                   console.log(`[Meta Webhook] Sending consent question to ${normalizedPhone}`);
 
                   try {
-                    await sendMetaCloudMessage(supabase, normalizedPhone, consentMessage);
+                    await sendMetaCloudMessage(supabase, normalizedPhone, consentMessage, tenantId);
                     
                     await supabase
                       .from('contact_verifications')
@@ -438,7 +479,7 @@ serve(async (req) => {
                   } else {
                     errorMessage = `Não encontramos um cadastro pendente com esse código. Verifique se digitou corretamente ou entre em contato conosco.`;
                   }
-                  await sendMetaCloudMessage(supabase, normalizedPhone, errorMessage);
+                  await sendMetaCloudMessage(supabase, normalizedPhone, errorMessage, tenantId);
                 }
                 continue;
               }
@@ -459,9 +500,8 @@ serve(async (req) => {
 
                 if (consentData?.success) {
                   const confirmMessage = `✅ Cadastro confirmado com sucesso!\n\nVocê receberá seu link de indicação em instantes.`;
-                  await sendMetaCloudMessage(supabase, normalizedPhone, confirmMessage);
+                  await sendMetaCloudMessage(supabase, normalizedPhone, confirmMessage, tenantId);
 
-                  // Call edge function to send affiliate links
                   try {
                     console.log(`[Meta Webhook] Calling send-leader-affiliate-links for ${consentData.contact_type} ${consentData.contact_id}`);
 
@@ -495,13 +535,14 @@ serve(async (req) => {
                 const code = codeMatch[0];
                 console.log(`[Meta Webhook] Detected potential code: ${code}. Guiding to CONFIRMAR flow.`);
 
-                // Check if it matches a contact or leader verification code
-                const { data: contactToVerify } = await supabase
+                let contactVerifyQuery = supabase
                   .from('office_contacts')
                   .select('id')
                   .eq('verification_code', code)
-                  .limit(1)
-                  .single();
+                  .limit(1);
+                if (tenantId) contactVerifyQuery = contactVerifyQuery.eq('tenant_id', tenantId);
+
+                const { data: contactToVerify } = await contactVerifyQuery.single();
 
                 const { data: leaderToVerify } = !contactToVerify ? await supabase
                   .from('lideres')
@@ -513,11 +554,13 @@ serve(async (req) => {
                 if (contactToVerify || leaderToVerify) {
                   if (leaderToVerify?.is_verified) {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
-                      `Seu cadastro já foi verificado! Se você precisa do seu link de indicação, entre em contato com nossa equipe.`
+                      `Seu cadastro já foi verificado! Se você precisa do seu link de indicação, entre em contato com nossa equipe.`,
+                      tenantId
                     );
                   } else {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
-                      `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`
+                      `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`,
+                      tenantId
                     );
                   }
                   continue;
@@ -525,10 +568,11 @@ serve(async (req) => {
               }
 
               // === CHECK VERIFICATION SETTINGS (simple keyword flow) ===
-              const { data: settings } = await supabase
+              let verSettingsQuery = supabase
                 .from('integrations_settings')
-                .select('verification_wa_keyword, verification_wa_enabled')
-                .single();
+                .select('verification_wa_keyword, verification_wa_enabled');
+              if (tenantId) verSettingsQuery = verSettingsQuery.eq('tenant_id', tenantId);
+              const { data: settings } = await verSettingsQuery.limit(1).single();
 
               let handledAsVerification = false;
 
@@ -536,21 +580,20 @@ serve(async (req) => {
                 const keyword = settings.verification_wa_keyword?.toUpperCase() || 'CONFIRMAR';
                 
                 if (cleanMessage === keyword || cleanMessage.startsWith(keyword + ' ')) {
-                  // Already handled by CONFIRMAR [TOKEN] flow above if it had a token
-                  // This catches bare "CONFIRMAR" without token
                   if (cleanMessage === keyword) {
                     console.log('[Meta Webhook] Bare keyword detected without token from:', from);
                     handledAsVerification = true;
                     
-                    // Find pending verification for this phone
-                    const { data: verification } = await supabase
+                    let verQuery = supabase
                       .from('contact_verifications')
                       .select('*')
                       .eq('phone', normalizedPhone)
                       .eq('status', 'pending')
                       .order('created_at', { ascending: false })
-                      .limit(1)
-                      .single();
+                      .limit(1);
+                    if (tenantId) verQuery = verQuery.eq('tenant_id', tenantId);
+
+                    const { data: verification } = await verQuery.single();
 
                     if (verification) {
                       await supabase
@@ -605,6 +648,7 @@ serve(async (req) => {
                         message: messageText,
                         messageId: messageId,
                         provider: 'meta_cloud',
+                        tenantId: tenantId, // Pass tenant to chatbot
                       }),
                     }
                   );
@@ -626,7 +670,6 @@ serve(async (req) => {
 
               console.log('[Meta Webhook] Status update:', { messageId, status: statusValue, recipientId });
 
-              // Try updating by metadata external_id (stored as JSON)
               const { data: msgs } = await supabase
                 .from('whatsapp_messages')
                 .select('id, metadata')
