@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTenantContext } from "@/contexts/TenantContext";
+import { useTenantId } from "@/hooks/useTenantId";
 
 interface Organization {
   id: string;
