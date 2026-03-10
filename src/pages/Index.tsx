@@ -742,7 +742,7 @@ const Index = () => {
 
             {/* Empresa */}
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Empresa</h4>
+              <h4 className="text-sm font-semibold text-white tracking-wide uppercase">Empresa</h4>
               <ul className="space-y-3">
                 {["Sobre Nós", "Blog", "Carreiras", "Contato", "Parceiros"].map((item) => (
                   <li key={item}>
