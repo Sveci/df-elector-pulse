@@ -692,7 +692,7 @@ const Index = () => {
               <Button onClick={() => navigate("/login")} size="lg" className="bg-primary hover:bg-primary-600 text-gray-900 font-bold text-lg px-10 py-6 shadow-[0_0_50px_hsl(54_100%_50%/0.12)]">
                 Acessar agora! <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" onClick={() => navigate("/login")} className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium text-lg px-10 py-6 border border-gray-700">
+              <Button size="lg" onClick={() => navigate("/contato")} className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium text-lg px-10 py-6 border border-gray-700">
                 Falar com especialista
               </Button>
             </motion.div>
