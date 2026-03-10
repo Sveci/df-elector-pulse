@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery } from "@tanstack/react-query";
 import {
   Send,

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 import {
   WhatsAppTemplate,
   replaceTemplateVariables,
