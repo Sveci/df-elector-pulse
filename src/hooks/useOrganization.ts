@@ -74,15 +74,21 @@ export function useOrganization() {
 
 export function useUpdateOrganization() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
   
   return useMutation({
     mutationFn: async (updates: Partial<Organization>) => {
-      // First get the existing organization
-      const { data: existing } = await supabase
+      // First get the existing organization for this tenant
+      let findQuery = supabase
         .from("organization")
         .select("id")
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      
+      if (tenantId) {
+        findQuery = findQuery.eq("tenant_id", tenantId);
+      }
+
+      const { data: existing } = await findQuery.maybeSingle();
 
       if (existing) {
         const { data, error } = await supabase
@@ -95,9 +101,12 @@ export function useUpdateOrganization() {
         if (error) throw error;
         return data;
       } else {
+        const insertData = tenantId 
+          ? { ...updates, tenant_id: tenantId }
+          : updates;
         const { data, error } = await supabase
           .from("organization")
-          .insert(updates)
+          .insert(insertData)
           .select()
           .single();
         
