@@ -176,7 +176,7 @@ const Contato = () => {
                 </p>
                 <Button
                   onClick={() => navigate("/")}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+                  className="bg-[#F0E500] hover:bg-[#d4c900] text-gray-900 font-semibold"
                 >
                   Voltar ao início
                 </Button>
