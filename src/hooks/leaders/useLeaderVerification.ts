@@ -158,6 +158,7 @@ export function useMarkLeaderVerifiedManually() {
 
 // Enviar link de afiliado após verificação
 export function useSendLeaderAffiliateLink() {
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({
       leaderId,
