@@ -86,27 +86,34 @@ const opinionFeatures = [
 ];
 
 /* ── SVG dot pattern ── */
-const DotPattern = ({ className = "" }: { className?: string }) => (
-  <svg className={`absolute pointer-events-none ${className}`} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-        <circle cx="1.5" cy="1.5" r="1" fill="currentColor" />
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#dots)" />
-  </svg>
-);
+let patternCounter = 0;
+const DotPattern = ({ className = "" }: { className?: string }) => {
+  const id = `dots-${++patternCounter}`;
+  return (
+    <svg className={`absolute pointer-events-none ${className}`} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id={id} x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.5" r="1" fill="currentColor" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
+    </svg>
+  );
+};
 
-const GridPattern = ({ className = "" }: { className?: string }) => (
-  <svg className={`absolute pointer-events-none ${className}`} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <pattern id="grid" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-        <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" />
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#grid)" />
-  </svg>
-);
+const GridPattern = ({ className = "" }: { className?: string }) => {
+  const id = `grid-${++patternCounter}`;
+  return (
+    <svg className={`absolute pointer-events-none ${className}`} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id={id} x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
+    </svg>
+  );
+};
 
 const Index = () => {
   const navigate = useNavigate();
@@ -362,7 +369,7 @@ const Index = () => {
                     </li>
                   ))}
                 </ul>
-                <Button onClick={() => navigate("/login")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "bg-gray-700 hover:bg-gray-600 text-white font-semibold w-full"}>
+                <Button onClick={() => navigate("/login")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "border border-primary/30 bg-transparent hover:bg-primary/10 text-primary font-semibold w-full"}>
                   Fale Conosco <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </motion.div>
@@ -392,7 +399,7 @@ const Index = () => {
               <Button onClick={() => navigate("/login")} size="lg" className="bg-primary hover:bg-primary-600 text-gray-900 font-bold text-lg px-10 py-6 shadow-[0_0_50px_hsl(54_100%_50%/0.12)]">
                 Acessar Plataforma <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate("/forgot-password")} className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white text-lg px-10 py-6">
+              <Button variant="outline" size="lg" onClick={() => navigate("/forgot-password")} className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 text-lg px-10 py-6">
                 Esqueci minha senha
               </Button>
             </motion.div>
