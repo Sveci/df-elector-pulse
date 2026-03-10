@@ -241,7 +241,7 @@ const Index = () => {
               </motion.div>
 
               <motion.div variants={fadeUp} custom={4} className="flex flex-wrap gap-x-5 gap-y-2">
-                {["Configurado em minutos", "Cancele quando quiser", "Suporte dedicado"].map((t) => (
+                {["Configurado em minutos", "Sem burocracia", "Suporte dedicado"].map((t) => (
                   <span key={t} className="flex items-center gap-1.5 text-sm text-gray-500">
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t}
                   </span>
@@ -697,7 +697,7 @@ const Index = () => {
               </Button>
             </motion.div>
             <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-x-6 gap-y-2 justify-center">
-              {["Configurado em minutos", "Cancele quando quiser", "Suporte dedicado"].map((t) => (
+              {["Configurado em minutos", "Sem burocracia", "Suporte dedicado"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5 text-sm text-gray-500">
                   <CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t}
                 </span>
