@@ -602,19 +602,21 @@ const Events = () => {
                     </div>
 
                     <div className="col-span-2">
-                      <Label htmlFor="region">Região *</Label>
-                      <Select value={newEvent.region} onValueChange={(value) => setNewEvent({ ...newEvent, region: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a cidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cities.map((city) => (
-                            <SelectItem key={city.id} value={city.nome}>
-                              {city.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <LocationSelect
+                        value={undefined}
+                        localidadeValue={newEvent.region}
+                        onLocationChange={({ cidadeId, localidade }) => {
+                          // For events, region is stored as text name
+                          if (cidadeId) {
+                            const city = cities.find(c => c.id === cidadeId);
+                            setNewEvent({ ...newEvent, region: city?.nome || '' });
+                          } else {
+                            setNewEvent({ ...newEvent, region: localidade || '' });
+                          }
+                        }}
+                        required
+                        showLabel
+                      />
                     </div>
 
                     <div className="col-span-2">
