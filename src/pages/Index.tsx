@@ -732,9 +732,15 @@ const Index = () => {
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-white tracking-wide uppercase">Produto</h4>
               <ul className="space-y-3">
-                {["Recursos", "Planos e Preços", "Inteligência Artificial", "Mapa Político", "Eventos"].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{item}</a>
+                {[
+                  { label: "Recursos", href: "#features" },
+                  { label: "Planos e Preços", href: "#planos" },
+                  { label: "Inteligência Artificial", href: "#como-funciona" },
+                  { label: "Mapa Político", href: "#features" },
+                  { label: "Eventos", href: "#features" },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <a href={item.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{item.label}</a>
                   </li>
                 ))}
               </ul>
