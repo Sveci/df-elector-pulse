@@ -275,7 +275,7 @@ export default function Team() {
                 <TableBody>
                   {filteredMembers?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={isSuperAdmin ? 7 : 6} className="text-center py-8">
                         <p className="text-muted-foreground">
                           Nenhum membro encontrado
                         </p>
