@@ -7,7 +7,7 @@ import { generateLeaderVerificationUrl, generateLeaderReferralUrl } from "@/lib/
 // Enviar SMS de verificação para novo líder
 export function useSendLeaderVerificationSMS() {
   const queryClient = useQueryClient();
-
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({
       leaderId,
