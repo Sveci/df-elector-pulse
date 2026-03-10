@@ -369,7 +369,7 @@ const Index = () => {
                     </li>
                   ))}
                 </ul>
-                <Button onClick={() => navigate("/login")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "bg-gray-700 hover:bg-gray-600 text-white font-semibold w-full"}>
+                <Button onClick={() => navigate("/login")} className={plan.highlight ? "bg-primary hover:bg-primary-600 text-gray-900 font-semibold w-full" : "border border-primary/30 bg-transparent hover:bg-primary/10 text-primary font-semibold w-full"}>
                   Fale Conosco <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </motion.div>
