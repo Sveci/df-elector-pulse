@@ -255,7 +255,7 @@ const Index = () => {
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-3 p-4">
                   {[
-                    { icon: DollarSign, label: "Contatos ativos", value: "12.847", color: "text-emerald-400" },
+                    { icon: Radar, label: "Opinião pública", value: "94%+", color: "text-emerald-400" },
                     { icon: Clock, label: "Horas economizadas", value: "30h/sem", color: "text-primary" },
                     { icon: TrendingUp, label: "Engajamento", value: "+340%", color: "text-sky-400" },
                   ].map((s, i) => (
