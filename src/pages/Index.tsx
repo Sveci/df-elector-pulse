@@ -781,9 +781,13 @@ const Index = () => {
               <span className="text-foreground/70 font-medium">MEGA GLOBAL DIGITAL</span>
             </p>
             <div className="flex items-center gap-6">
-              {["Termos de Uso", "Política de Privacidade", "LGPD", "Cookies"].map((item) => (
-                <a key={item} href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                  {item}
+              {[
+                { label: "Termos de Uso", href: "/termos-de-uso" },
+                { label: "Política de Privacidade", href: "/politica-de-privacidade" },
+                { label: "LGPD e Cookies", href: "/lgpd-cookies" },
+              ].map((item) => (
+                <a key={item.label} href={item.href} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  {item.label}
                 </a>
               ))}
             </div>
