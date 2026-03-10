@@ -57,6 +57,7 @@ export function WhatsAppTestSendDialog({
         body: {
           phone,
           message,
+          tenantId,
         },
       });
 

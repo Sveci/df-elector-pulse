@@ -252,6 +252,7 @@ export function WhatsAppOfficialApiTab() {
               message: `[Template: ${selectedTemplate}]`, // Fallback for logging
               metaTemplate,
               providerOverride: 'meta_cloud', // Force Meta Cloud API
+              tenantId,
             }
           });
 
