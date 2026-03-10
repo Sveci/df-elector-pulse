@@ -50,6 +50,8 @@ import { useUpdateEvent } from "@/hooks/events/useUpdateEvent";
 import { useDeleteEvent } from "@/hooks/events/useDeleteEvent";
 import { useEventRegistrations, useUpdateCheckIn } from "@/hooks/events/useEventRegistrations";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { LocationSelect } from "@/components/office/LocationSelect";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { useEventStats } from "@/hooks/events/useEventStats";
 import { useLeadersEventRanking } from "@/hooks/events/useLeadersEventRanking";
 import { useCitiesEventStats } from "@/hooks/events/useCitiesEventStats";
