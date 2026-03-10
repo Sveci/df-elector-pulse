@@ -151,7 +151,7 @@ export type Database = {
           leader_form_logo_url?: string | null
           leader_form_subtitle?: string | null
           leader_form_title?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -204,7 +204,7 @@ export type Database = {
           is_active?: boolean
           nome: string
           quantidade_produzida?: number
-          tenant_id: string
+          tenant_id?: string
           tipo?: string
           unidade?: string
           updated_at?: string
@@ -261,7 +261,7 @@ export type Database = {
           id?: string
           nome: string
           status?: string
-          tenant_id: string
+          tenant_id?: string
           total_cadastros?: number
           updated_at?: string
           utm_campaign: string
@@ -326,7 +326,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           action?: string
@@ -371,7 +371,7 @@ export type Database = {
           funnel_name: string
           id?: string
           lead_magnet_nome: string
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           contact_id?: string
@@ -427,7 +427,7 @@ export type Database = {
           page_identifier: string
           page_name?: string | null
           page_type: string
-          tenant_id: string
+          tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -496,7 +496,7 @@ export type Database = {
           method: string
           phone: string
           status?: string | null
-          tenant_id: string
+          tenant_id?: string
           token: string
           verified_at?: string | null
         }
@@ -542,7 +542,7 @@ export type Database = {
           id?: string
           leader_id: string
           password_hash: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -602,7 +602,7 @@ export type Database = {
           status?: string
           subject: string
           template_id?: string | null
-          tenant_id: string
+          tenant_id?: string
           to_email: string
           to_name?: string | null
           updated_at?: string
@@ -686,7 +686,7 @@ export type Database = {
           is_active?: boolean | null
           nome: string
           slug: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           variaveis?: Json | null
         }
@@ -740,7 +740,7 @@ export type Database = {
           short_code?: string | null
           sms_recipients_count?: number | null
           sms_sent?: boolean | null
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           created_at?: string | null
@@ -811,7 +811,7 @@ export type Database = {
           localidade?: string | null
           nome: string
           qr_code?: string | null
-          tenant_id: string
+          tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -923,7 +923,7 @@ export type Database = {
           show_registrations_count?: boolean
           slug: string
           status?: string
-          tenant_id: string
+          tenant_id?: string
           time: string
           updated_at?: string | null
         }
@@ -1125,7 +1125,7 @@ export type Database = {
           smsbarato_enabled?: boolean | null
           smsdev_api_key?: string | null
           smsdev_enabled?: boolean | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           verification_fallback_active?: boolean | null
           verification_method?: string | null
@@ -1274,7 +1274,7 @@ export type Database = {
           slug: string
           status?: string
           subtitulo?: string | null
-          tenant_id: string
+          tenant_id?: string
           texto_botao?: string
           titulo: string
           updated_at?: string
@@ -1380,7 +1380,7 @@ export type Database = {
           pontuacao_total?: number
           status?: Database["public"]["Enums"]["office_leader_status"]
           telefone?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           verification_code?: string | null
           verification_method?: string | null
@@ -1462,7 +1462,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
-          tenant_id: string
+          tenant_id?: string
           total_connections?: number | null
           total_contacts?: number | null
           total_leaders?: number | null
@@ -1537,7 +1537,7 @@ export type Database = {
           returned_at?: string | null
           returned_quantity?: number
           status?: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           withdrawn_at?: string | null
         }
@@ -1617,7 +1617,7 @@ export type Database = {
           observacao?: string | null
           quantidade: number
           registrado_por?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -1679,7 +1679,7 @@ export type Database = {
           longitude?: number | null
           nome: string
           status?: Database["public"]["Enums"]["office_city_status"]
-          tenant_id: string
+          tenant_id?: string
           tipo?: string
           updated_at?: string
         }
@@ -1761,7 +1761,7 @@ export type Database = {
           source_id?: string | null
           source_type?: string | null
           telefone_norm: string
-          tenant_id: string
+          tenant_id?: string
           unsubscribe_token?: string | null
           updated_at?: string
           utm_campaign?: string | null
@@ -1843,7 +1843,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           id?: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           visit_id: string
         }
@@ -1911,7 +1911,7 @@ export type Database = {
           pontos_form_submitted?: number
           protocolo_prefix?: string
           sound_notification_url?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           webhook_url?: string
         }
@@ -1973,7 +1973,7 @@ export type Database = {
           observacoes?: string | null
           submitted_at?: string | null
           tema_id?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           visit_id: string
         }
@@ -2062,7 +2062,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_time?: string | null
           status?: Database["public"]["Enums"]["office_visit_status"]
-          tenant_id: string
+          tenant_id?: string
           token?: string | null
           token_expires_at?: string | null
           updated_at?: string
@@ -2170,7 +2170,7 @@ export type Database = {
           nome?: string
           nome_plataforma?: string | null
           partido?: string | null
-          tenant_id: string
+          tenant_id?: string
           twitter?: string | null
           updated_at?: string
           website?: string | null
@@ -2227,7 +2227,7 @@ export type Database = {
           page_identifier: string
           page_type: string
           session_id?: string | null
-          tenant_id: string
+          tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -2267,7 +2267,7 @@ export type Database = {
           created_at?: string
           genero: string
           id?: string
-          tenant_id: string
+          tenant_id?: string
           valor: number
         }
         Update: {
@@ -2346,7 +2346,7 @@ export type Database = {
           next_run_at?: string | null
           provider: string
           run_interval_minutes?: number | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -2408,7 +2408,7 @@ export type Database = {
           positive_count?: number | null
           snapshot_date: string
           source_breakdown?: Json | null
-          tenant_id: string
+          tenant_id?: string
           top_emotions?: string[] | null
           top_topics?: string[] | null
           total_mentions?: number | null
@@ -2479,7 +2479,7 @@ export type Database = {
           sentiment_neutro_pct?: number | null
           sentiment_positivo_pct?: number | null
           tags?: string[] | null
-          tenant_id: string
+          tenant_id?: string
           tipo?: string
           titulo: string
           total_mentions?: number | null
@@ -2540,7 +2540,7 @@ export type Database = {
           insights?: Json
           period_days?: number
           stats?: Json
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           created_at?: string
@@ -2602,7 +2602,7 @@ export type Database = {
           raw_data?: Json | null
           source: string
           source_url?: string | null
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           author_handle?: string | null
@@ -2667,7 +2667,7 @@ export type Database = {
           palavras_chave?: string[] | null
           partido?: string | null
           redes_sociais?: Json | null
-          tenant_id: string
+          tenant_id?: string
           tipo?: string
           updated_at?: string
         }
@@ -2733,7 +2733,7 @@ export type Database = {
           sentiment: string
           sentiment_score?: number | null
           subcategory?: string | null
-          tenant_id: string
+          tenant_id?: string
           topics?: string[] | null
         }
         Update: {
@@ -2801,7 +2801,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           analysis?: Json
@@ -2880,7 +2880,7 @@ export type Database = {
           inicio: string
           nome: string
           status?: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -2918,7 +2918,7 @@ export type Database = {
           created_at?: string
           id?: string
           ra: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -2961,7 +2961,7 @@ export type Database = {
           material_name: string
           material_url: string
           sms_template_slug?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string | null
         }
         Update: {
@@ -3029,7 +3029,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           template_slug: string
-          tenant_id: string
+          tenant_id?: string
           variables?: Json | null
         }
         Update: {
@@ -3090,7 +3090,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           original_url: string
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           clicks?: number | null
@@ -3150,7 +3150,7 @@ export type Database = {
           retry_history?: Json | null
           sent_at?: string | null
           status?: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -3212,7 +3212,7 @@ export type Database = {
           mensagem: string
           nome: string
           slug: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           variaveis?: Json | null
         }
@@ -3334,7 +3334,7 @@ export type Database = {
           leader_responses?: number | null
           referred_responses?: number | null
           survey_id: string
-          tenant_id: string
+          tenant_id?: string
           total_responses?: number | null
           user_id: string
         }
@@ -3388,7 +3388,7 @@ export type Database = {
           ordem: number
           pergunta: string
           survey_id: string
-          tenant_id: string
+          tenant_id?: string
           tipo: string
         }
         Update: {
@@ -3445,7 +3445,7 @@ export type Database = {
           referred_by_leader_id?: string | null
           respostas?: Json
           survey_id: string
-          tenant_id: string
+          tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -3532,7 +3532,7 @@ export type Database = {
           logo_url?: string | null
           slug: string
           status?: string
-          tenant_id: string
+          tenant_id?: string
           titulo: string
           total_respostas?: number
           updated_at?: string
@@ -3580,7 +3580,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
-          tenant_id: string
+          tenant_id?: string
           tipo?: string
           titulo: string
         }
@@ -3618,7 +3618,7 @@ export type Database = {
           created_at?: string
           id?: string
           tema: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -3911,7 +3911,7 @@ export type Database = {
           id?: string
           is_enabled?: boolean
           max_messages_per_hour?: number
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           use_ai_for_unknown?: boolean
           welcome_message?: string | null
@@ -3964,7 +3964,7 @@ export type Database = {
           priority?: number
           response_type?: string
           static_response?: string | null
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
         }
         Update: {
@@ -4016,7 +4016,7 @@ export type Database = {
           phone: string
           processing_time_ms?: number | null
           response_type?: string | null
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           created_at?: string
@@ -4085,7 +4085,7 @@ export type Database = {
           read_at?: string | null
           sent_at?: string | null
           status?: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           visit_id?: string | null
         }
@@ -4154,7 +4154,7 @@ export type Database = {
           mensagem: string
           nome: string
           slug: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string
           variaveis?: Json | null
         }
@@ -4417,6 +4417,7 @@ export type Database = {
           unverified_count: number
         }[]
       }
+      get_default_tenant_id: { Args: never; Returns: string }
       get_distinct_cities_count:
         | { Args: never; Returns: number }
         | { Args: { _tenant_id?: string }; Returns: number }
