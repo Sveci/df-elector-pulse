@@ -193,7 +193,7 @@ const Contato = () => {
                       value={form.nome}
                       onChange={(e) => handleChange("nome", e.target.value)}
                       placeholder="Seu nome completo"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.nome && <p className="text-xs text-red-400">{errors.nome}</p>}
                   </div>
@@ -204,7 +204,7 @@ const Contato = () => {
                       value={form.email}
                       onChange={(e) => handleChange("email", e.target.value)}
                       placeholder="seu@email.com"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
                   </div>
