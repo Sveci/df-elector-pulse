@@ -57,18 +57,7 @@ export default function SurveyPublicForm() {
     lgpdConsent: false,
   });
 
-  // Fetch cities for region dropdown
-  const { data: cities } = useQuery({
-    queryKey: ['office_cities_public'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('office_cities')
-        .select('id, nome')
-        .eq('status', 'active')
-        .order('nome');
-      return data || [];
-    }
-  });
+
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [contactId, setContactId] = useState<string | null>(null);
   const [leaderId, setLeaderId] = useState<string | null>(null);
