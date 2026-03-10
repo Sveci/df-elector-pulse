@@ -553,7 +553,7 @@ const AIAgent = () => {
                     <Bot className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-semibold">{isDemoMode ? "Assistente IA da Plataforma" : "Assistente do Deputado Rafael Prudente"}</h1>
+                    <h1 className="text-lg font-semibold">{isDemoMode ? "Assistente IA da Plataforma" : `Assistente ${activeTenant?.cargo_politico ? `do ${activeTenant.cargo_politico}` : "de"} ${activeTenant?.nome || "IA"}`}</h1>
                     <p className="text-sm text-muted-foreground">Análise de dados políticos em tempo real</p>
                   </div>
                 </div>
