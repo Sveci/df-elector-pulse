@@ -264,6 +264,7 @@ export default function Team() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Membro</TableHead>
+                    {isSuperAdmin && <TableHead>Tenant</TableHead>}
                     <TableHead>Nível</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Cadastro</TableHead>
