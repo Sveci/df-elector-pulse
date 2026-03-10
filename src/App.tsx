@@ -17,6 +17,8 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import LgpdCookies from "./pages/LgpdCookies";
 import SobreNos from "./pages/SobreNos";
 import Contato from "./pages/Contato";
+import CentralAjuda from "./pages/CentralAjuda";
+import StatusSistema from "./pages/StatusSistema";
 import Login from "./pages/Login";
 import DemoLogin from "./pages/DemoLogin";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -173,6 +175,8 @@ const App = () => (
             <Route path="/lgpd-cookies" element={<LgpdCookies />} />
             <Route path="/sobre" element={<SobreNos />} />
             <Route path="/contato" element={<Contato />} />
+            <Route path="/ajuda" element={<CentralAjuda />} />
+            <Route path="/status" element={<StatusSistema />} />
             
             {/* Coordinator Portal (public, own auth) */}
             <Route path="/coordenador/login" element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>} />
