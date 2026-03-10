@@ -42,7 +42,8 @@ async function sendWhatsAppTemplate(
   templateSlug: string,
   variables: Record<string, string>,
   visitId?: string,
-  contactId?: string
+  contactId?: string,
+  tenantId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { data, error } = await supabase.functions.invoke("send-whatsapp", {
@@ -51,7 +52,8 @@ async function sendWhatsAppTemplate(
         templateSlug,
         variables,
         visitId,
-        contactId
+        contactId,
+        tenantId
       }
     });
 

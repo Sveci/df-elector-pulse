@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTenantId } from "@/hooks/useTenantId";
 import { useQuery } from "@tanstack/react-query";
 import {
   Send,
@@ -80,6 +81,7 @@ const BATCH_SIZE_OPTIONS = [
 ];
 
 export function WhatsAppBulkSendTab() {
+  const tenantId = useTenantId();
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
@@ -621,6 +623,7 @@ export function WhatsAppBulkSendTab() {
                   phone,
                   message,
                   contactId,
+                  tenantId,
                 },
               });
               
@@ -638,6 +641,7 @@ export function WhatsAppBulkSendTab() {
                     phone,
                     message: codigoMessage,
                     contactId,
+                    tenantId,
                   },
                 });
                 
@@ -696,6 +700,7 @@ export function WhatsAppBulkSendTab() {
                     message,
                     contactId,
                     imageUrl: qrCodeDataUrl,
+                    tenantId,
                   },
                 });
                 
@@ -727,6 +732,7 @@ export function WhatsAppBulkSendTab() {
                 phone,
                 message,
                 contactId,
+                tenantId,
               },
             });
 
@@ -745,6 +751,7 @@ export function WhatsAppBulkSendTab() {
                     phone,
                     message: variables.link_afiliado,
                     contactId,
+                    tenantId,
                   },
                 });
               }

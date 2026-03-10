@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 import { toast } from "sonner";
 import { 
   Send, 
@@ -61,6 +62,7 @@ interface MetaTemplatePayload {
 }
 
 export function WhatsAppOfficialApiTab() {
+  const tenantId = useTenantId();
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('bemvindo1');
   const [recipientType, setRecipientType] = useState<RecipientType>('individual');
   const [searchTerm, setSearchTerm] = useState("");
@@ -250,6 +252,7 @@ export function WhatsAppOfficialApiTab() {
               message: `[Template: ${selectedTemplate}]`, // Fallback for logging
               metaTemplate,
               providerOverride: 'meta_cloud', // Force Meta Cloud API
+              tenantId,
             }
           });
 

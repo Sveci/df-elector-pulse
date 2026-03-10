@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTenantId } from "@/hooks/useTenantId";
 import { generateLeaderVerificationUrl, generateLeaderReferralUrl } from "@/lib/urlHelper";
 
 // Enviar SMS de verificação para novo líder
 export function useSendLeaderVerificationSMS() {
   const queryClient = useQueryClient();
-
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({
       leaderId,
@@ -157,6 +158,7 @@ export function useMarkLeaderVerifiedManually() {
 
 // Enviar link de afiliado após verificação
 export function useSendLeaderAffiliateLink() {
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({
       leaderId,
@@ -190,6 +192,7 @@ export function useSendLeaderAffiliateLink() {
             link_cadastro_afiliado: affiliateLink,
           },
           imageUrl: qrCodeDataUrl,
+          tenantId,
         },
       });
 

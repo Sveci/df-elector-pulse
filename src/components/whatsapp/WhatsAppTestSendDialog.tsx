@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 import {
   WhatsAppTemplate,
   replaceTemplateVariables,
@@ -29,6 +30,7 @@ export function WhatsAppTestSendDialog({
   open,
   onOpenChange,
 }: WhatsAppTestSendDialogProps) {
+  const tenantId = useTenantId();
   const [phone, setPhone] = useState("");
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState(false);
@@ -55,6 +57,7 @@ export function WhatsAppTestSendDialog({
         body: {
           phone,
           message,
+          tenantId,
         },
       });
 
