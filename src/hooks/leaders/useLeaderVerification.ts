@@ -192,6 +192,7 @@ export function useSendLeaderAffiliateLink() {
             link_cadastro_afiliado: affiliateLink,
           },
           imageUrl: qrCodeDataUrl,
+          tenantId,
         },
       });
 
