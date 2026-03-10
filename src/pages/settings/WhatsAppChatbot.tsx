@@ -58,6 +58,7 @@ import {
   ChatbotKeyword,
   AVAILABLE_DYNAMIC_FUNCTIONS
 } from "@/hooks/useWhatsAppChatbot";
+import { useWhatsAppCommunities, useUpdateCommunity, useWhatsAppChatStates } from "@/hooks/useWhatsAppCommunities";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
