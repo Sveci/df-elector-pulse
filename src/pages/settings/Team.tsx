@@ -300,6 +300,21 @@ export default function Team() {
                             </div>
                           </div>
                         </TableCell>
+                        {isSuperAdmin && (
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {member.tenants.length > 0 ? (
+                                member.tenants.map((t) => (
+                                  <Badge key={t.tenant_id} variant="outline" className="text-xs">
+                                    {t.tenant_name}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Sem tenant</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>
                           {member.role ? (
                             <RoleBadge role={member.role} />
