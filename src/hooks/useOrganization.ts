@@ -38,14 +38,20 @@ export function useOrganization() {
     // Outside TenantProvider, fallback to null
   }
 
+  const tenantId = activeTenant?.id || null;
+
   return useQuery({
-    queryKey: ["organization", activeTenant?.id],
+    queryKey: ["organization", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("organization")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+        .select("*");
+      
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
       
       if (error) throw error;
 
