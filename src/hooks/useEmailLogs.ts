@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface EmailLog {
   id: string;
@@ -28,8 +29,10 @@ export function useEmailLogs(filters?: {
   startDate?: string;
   endDate?: string;
 }) {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["email_logs", filters],
+    queryKey: ["email_logs", filters, tenantId],
     queryFn: async () => {
       let query = supabase
         .from("email_logs")
@@ -39,6 +42,11 @@ export function useEmailLogs(filters?: {
         `)
         .order("created_at", { ascending: false })
         .limit(500);
+
+      // Filter by active tenant
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
 
       if (filters?.templateId) {
         query = query.eq("template_id", filters.templateId);
@@ -58,20 +66,27 @@ export function useEmailLogs(filters?: {
       if (error) throw error;
       return data as EmailLog[];
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 }
 
 export function useEmailLogStats() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["email_log_stats"],
+    queryKey: ["email_log_stats", tenantId],
     queryFn: async () => {
-      // Usar contagem exata do Supabase para evitar limite de 1000 linhas
+      const baseQuery = () => {
+        let q = supabase.from("email_logs").select("*", { count: "exact", head: true });
+        if (tenantId) q = q.eq("tenant_id", tenantId);
+        return q;
+      };
+
       const [totalResult, sentResult, pendingResult, failedResult] = await Promise.all([
-        supabase.from("email_logs").select("*", { count: "exact", head: true }),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("status", "sent"),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("status", "failed"),
+        baseQuery(),
+        baseQuery().eq("status", "sent"),
+        baseQuery().eq("status", "pending"),
+        baseQuery().eq("status", "failed"),
       ]);
 
       if (totalResult.error) throw totalResult.error;
