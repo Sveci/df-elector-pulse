@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface CoordinatorCadastroStats {
   id: string;
@@ -12,10 +13,14 @@ export interface CoordinatorCadastroStats {
 }
 
 export function useCoordinatorsCadastrosStats() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["coordinators_cadastros_stats"],
+    queryKey: ["coordinators_cadastros_stats", tenantId],
     queryFn: async (): Promise<CoordinatorCadastroStats[]> => {
-      const { data, error } = await supabase.rpc("get_coordinators_cadastros_report");
+      const { data, error } = await supabase.rpc("get_coordinators_cadastros_report", {
+        _tenant_id: tenantId || undefined,
+      });
 
       if (error) throw error;
 
@@ -35,5 +40,6 @@ export function useCoordinatorsCadastrosStats() {
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: !!tenantId,
   });
 }

@@ -316,7 +316,7 @@ export async function getLeaderByAffiliateToken(token: string): Promise<OfficeLe
     return null;
   }
   
-  return data as OfficeLeader;
+  return data as unknown as OfficeLeader;
 }
 
 export async function createOrUpdateContact(

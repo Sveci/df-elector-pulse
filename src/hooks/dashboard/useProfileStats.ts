@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 interface ProfileData {
   genero: Array<{ label: string; valor: number }>;
@@ -8,10 +9,14 @@ interface ProfileData {
 }
 
 export function useProfileStats() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["profile_stats"],
+    queryKey: ["profile_stats", tenantId],
     queryFn: async (): Promise<ProfileData> => {
-      const { data, error } = await (supabase.rpc as any)("get_profile_stats");
+      const { data, error } = await (supabase.rpc as any)("get_profile_stats", {
+        _tenant_id: tenantId || undefined,
+      });
       if (error) throw error;
 
       const result = data as any;
@@ -36,5 +41,6 @@ export function useProfileStats() {
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: !!tenantId,
   });
 }
