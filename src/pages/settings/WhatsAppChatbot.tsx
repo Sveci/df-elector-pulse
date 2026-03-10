@@ -96,12 +96,15 @@ const WhatsAppChatbot = () => {
   const { data: config, isLoading: loadingConfig } = useChatbotConfig();
   const { data: keywords, isLoading: loadingKeywords } = useChatbotKeywords();
   const { data: logs, isLoading: loadingLogs } = useChatbotLogs(100);
+  const { data: communities, isLoading: loadingCommunities } = useWhatsAppCommunities();
+  const { data: chatStates, isLoading: loadingChatStates } = useWhatsAppChatStates();
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
   const createKeyword = useCreateChatbotKeyword();
   const updateKeyword = useUpdateChatbotKeyword();
   const deleteKeyword = useDeleteChatbotKeyword();
+  const updateCommunity = useUpdateCommunity();
 
   const handleConfigChange = (field: string, value: any) => {
     updateConfig.mutate({ [field]: value });
