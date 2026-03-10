@@ -132,21 +132,30 @@ interface UpdateIntegrationsDTO {
 }
 
 export function useIntegrationsSettings() {
+  const tenantId = useTenantId();
+  
   return useQuery({
-    queryKey: ["integrations_settings"],
+    queryKey: ["integrations_settings", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+        .select("*");
+      
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+      
+      const { data, error } = await query.limit(1).maybeSingle();
       
       if (error) throw error;
       if (!data) {
         // Auto-create default row if none exists
+        const insertData: any = {};
+        if (tenantId) insertData.tenant_id = tenantId;
+        
         const { data: newRow, error: insertError } = await supabase
           .from("integrations_settings")
-          .insert({})
+          .insert(insertData)
           .select()
           .single();
         if (insertError) throw insertError;
@@ -154,6 +163,7 @@ export function useIntegrationsSettings() {
       }
       return data as IntegrationsSettings;
     },
+    enabled: !!tenantId,
     retry: 2,
   });
 }
