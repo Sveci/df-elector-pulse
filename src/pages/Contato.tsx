@@ -97,7 +97,7 @@ const Contato = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-[#F0E500] via-[#f5ed4e] to-[#d4c900] bg-clip-text text-transparent mb-4">
             Fale Conosco
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
@@ -119,22 +119,22 @@ const Contato = () => {
                 icon: Mail,
                 title: "Email",
                 description: "contato@eleitor360.com.br",
-                color: "text-blue-400",
-                bg: "bg-blue-500/10",
+                color: "text-[#F0E500]",
+                bg: "bg-[#F0E500]/10",
               },
               {
                 icon: Phone,
                 title: "Telefone",
-                description: "(61) 9 9999-9999",
-                color: "text-purple-400",
-                bg: "bg-purple-500/10",
+                description: "(27) 9 9916-1738",
+                color: "text-[#F0E500]",
+                bg: "bg-[#F0E500]/10",
               },
               {
                 icon: MapPin,
                 title: "Localização",
                 description: "Brasília, DF — Brasil",
-                color: "text-cyan-400",
-                bg: "bg-cyan-500/10",
+                color: "text-[#F0E500]",
+                bg: "bg-[#F0E500]/10",
               },
             ].map((item) => (
               <div
@@ -176,7 +176,7 @@ const Contato = () => {
                 </p>
                 <Button
                   onClick={() => navigate("/")}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+                  className="bg-[#F0E500] hover:bg-[#d4c900] text-gray-900 font-semibold"
                 >
                   Voltar ao início
                 </Button>
@@ -193,7 +193,7 @@ const Contato = () => {
                       value={form.nome}
                       onChange={(e) => handleChange("nome", e.target.value)}
                       placeholder="Seu nome completo"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.nome && <p className="text-xs text-red-400">{errors.nome}</p>}
                   </div>
@@ -204,7 +204,7 @@ const Contato = () => {
                       value={form.email}
                       onChange={(e) => handleChange("email", e.target.value)}
                       placeholder="seu@email.com"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
                   </div>
@@ -217,7 +217,7 @@ const Contato = () => {
                       value={form.telefone}
                       onChange={(e) => handleChange("telefone", e.target.value)}
                       placeholder="(00) 00000-0000"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.telefone && <p className="text-xs text-red-400">{errors.telefone}</p>}
                   </div>
@@ -227,7 +227,7 @@ const Contato = () => {
                       value={form.assunto}
                       onChange={(e) => handleChange("assunto", e.target.value)}
                       placeholder="Assunto da mensagem"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500]"
                     />
                     {errors.assunto && <p className="text-xs text-red-400">{errors.assunto}</p>}
                   </div>
@@ -240,7 +240,7 @@ const Contato = () => {
                     onChange={(e) => handleChange("mensagem", e.target.value)}
                     placeholder="Escreva sua mensagem aqui..."
                     rows={5}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-blue-500 resize-none"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-[#F0E500] resize-none"
                   />
                   {errors.mensagem && <p className="text-xs text-red-400">{errors.mensagem}</p>}
                 </div>
@@ -248,7 +248,7 @@ const Contato = () => {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white h-12 text-base gap-2"
+                  className="w-full bg-[#F0E500] hover:bg-[#d4c900] text-gray-900 font-semibold h-12 text-base gap-2"
                 >
                   {isSubmitting ? (
                     <>
