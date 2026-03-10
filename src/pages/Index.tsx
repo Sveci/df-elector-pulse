@@ -161,7 +161,7 @@ const Index = () => {
               <Button onClick={() => navigate("/login")} size="lg" className="bg-primary hover:bg-primary-600 text-gray-900 font-bold text-lg px-10 py-6 shadow-[0_0_50px_hsl(54_100%_50%/0.12)]">
                 Acessar Plataforma <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white text-lg px-10 py-6">
+              <Button variant="outline" size="lg" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 text-lg px-10 py-6">
                 Conhecer Recursos
               </Button>
             </motion.div>
