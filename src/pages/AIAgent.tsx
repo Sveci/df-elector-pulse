@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { useTenantContext } from "@/contexts/TenantContext";
-import { CARGOS_POLITICOS } from "@/constants/brazilPolitics";
+import { getCargoLabelGendered } from "@/constants/brazilPolitics";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -554,7 +554,7 @@ const AIAgent = () => {
                     <Bot className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-semibold">{isDemoMode ? "Assistente IA da Plataforma" : `Assistente ${activeTenant?.cargo_politico ? `do ${CARGOS_POLITICOS.find(c => c.value === activeTenant.cargo_politico)?.label || activeTenant.cargo_politico}` : "de"} ${activeTenant?.nome || "IA"}`}</h1>
+                    <h1 className="text-lg font-semibold">{isDemoMode ? "Assistente IA da Plataforma" : `Assistente ${activeTenant?.cargo_politico ? `do ${getCargoLabelGendered(activeTenant.cargo_politico, activeTenant.nome)}` : "de"} ${activeTenant?.nome || "IA"}`}</h1>
                     <p className="text-sm text-muted-foreground">Análise de dados políticos em tempo real</p>
                   </div>
                 </div>
