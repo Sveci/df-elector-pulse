@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 
 export interface TopLeader {
   id: string;
@@ -13,11 +14,16 @@ export interface TopLeader {
 }
 
 export function useTopLeaders() {
+  const tenantId = useTenantId();
+
   return useQuery({
-    queryKey: ["top_leaders"],
+    queryKey: ["top_leaders", tenantId],
     queryFn: async (): Promise<TopLeader[]> => {
       const { data, error } = await supabase
-        .rpc("get_top_leaders_with_indicacoes", { _limit: 10 });
+        .rpc("get_top_leaders_with_indicacoes", {
+          _limit: 10,
+          _tenant_id: tenantId || undefined,
+        });
 
       if (error) throw error;
 
@@ -34,5 +40,6 @@ export function useTopLeaders() {
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: !!tenantId,
   });
 }
