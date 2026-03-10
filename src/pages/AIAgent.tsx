@@ -93,6 +93,7 @@ const AIAgent = () => {
   const { isDemoMode } = useDemoMask();
   const isMobile = useIsMobile();
   const { restartTutorial } = useTutorial("ai-agent", aiAgentTutorialSteps);
+  const { activeTenant } = useTenantContext();
   
   const {
     conversations,
