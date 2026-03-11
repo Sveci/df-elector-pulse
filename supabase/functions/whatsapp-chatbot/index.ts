@@ -1137,11 +1137,21 @@ REGRAS OBRIGATÓRIAS:
     const data = await response.json();
     const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
 
+    // If AI denies having info but KB has it, use grounded fallback
     if (kbContext && responseDeniesKnowledge(aiAnswer)) {
       const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
       if (groundedFallback) {
         console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback");
         return groundedFallback;
+      }
+    }
+
+    // If AI denies AND no KB data, try Perplexity web search as final fallback
+    if (responseDeniesKnowledge(aiAnswer) || !aiAnswer) {
+      const perplexityResult = await searchPerplexityFallback(userMessage);
+      if (perplexityResult) {
+        console.log("[whatsapp-chatbot] Using Perplexity web search fallback");
+        return perplexityResult;
       }
     }
 
@@ -1155,6 +1165,9 @@ REGRAS OBRIGATÓRIAS:
     console.error("[whatsapp-chatbot] AI error:", err);
     const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
     if (groundedFallback) return groundedFallback;
+    // Try Perplexity as last resort
+    const perplexityResult = await searchPerplexityFallback(userMessage);
+    if (perplexityResult) return perplexityResult;
     return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
 }
