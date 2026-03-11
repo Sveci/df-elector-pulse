@@ -116,6 +116,7 @@ IMPORTANTE: Se a menção NÃO é sobre a entidade principal (ex: é sobre uma c
     return {
       mention_id: mention.id,
       entity_id: entityId,
+      tenant_id: tenantId,
       sentiment: a.sentiment,
       sentiment_score: a.sentiment_score,
       category: a.category,
