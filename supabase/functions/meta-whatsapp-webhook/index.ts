@@ -100,6 +100,52 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
     return { success: false, error: String(error) };
   }
 }
+// =====================================================
+// KNOWLEDGE BASE QUERY (for menu options)
+// =====================================================
+async function queryKnowledgeBase(supabase: any, query: string, tenantId: string | null): Promise<string | null> {
+  if (!tenantId) return null;
+
+  try {
+    // Search KB chunks using text similarity
+    const searchTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const orConditions = searchTerms.map(t => `content.ilike.%${t}%`).join(',');
+
+    const { data: chunks } = await supabase
+      .from('kb_chunks')
+      .select('content, document_id')
+      .eq('tenant_id', tenantId)
+      .or(orConditions)
+      .limit(3);
+
+    if (!chunks || chunks.length === 0) return null;
+
+    // Get document names for sources
+    const docIds = [...new Set(chunks.map((c: any) => c.document_id))];
+    const { data: docs } = await supabase
+      .from('kb_documents')
+      .select('id, title')
+      .in('id', docIds);
+
+    const docMap = new Map((docs || []).map((d: any) => [d.id, d.title]));
+
+    // Build a concise summary (limit to ~800 chars for WhatsApp)
+    let combined = chunks.map((c: any) => c.content).join('\n\n');
+    if (combined.length > 800) {
+      combined = combined.substring(0, 797) + '...';
+    }
+
+    const sources = [...new Set(chunks.map((c: any) => docMap.get(c.document_id)).filter(Boolean))];
+    if (sources.length > 0) {
+      combined += `\n\n📄 Fonte: ${sources.join(', ')}`;
+    }
+
+    return combined;
+  } catch (err) {
+    console.error('[Meta Webhook] KB query error:', err);
+    return null;
+  }
+}
 
 // =====================================================
 // CONVERSATIONAL FLOW: Welcome → Municipality → Community
