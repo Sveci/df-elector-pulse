@@ -1203,6 +1203,24 @@ Retorna: lista de programas com nome, descrição, status e pessoas impactadas.`
   {
     type: 'function',
     function: {
+      name: 'consultar_base_conhecimento',
+      description: `Consulta a Base de Conhecimento do sistema com documentos oficiais, briefings, planos de governo, FAQs e pesquisas.
+Use SEMPRE quando o usuário perguntar sobre: o político, mandato, propostas, plano de governo, posicionamentos, projetos de lei, biografia, atuação, histórico, realizações, FAQ, dúvidas comuns.
+Retorna: conteúdo relevante dos documentos com citação das fontes.
+IMPORTANTE: Priorize esta ferramenta para qualquer pergunta sobre o político ou seu mandato.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          pergunta: { type: 'string', description: 'A pergunta ou tema a ser pesquisado na base de conhecimento' },
+          categoria: { type: 'string', description: 'Categoria opcional para filtrar (mandato, programas, faq, biografia, legislacao, pesquisas, comunicacao)' }
+        },
+        required: ['pergunta']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'consultar_metricas_whatsapp',
       description: `Consulta métricas de comunicação via WhatsApp.
 Use quando o usuário perguntar sobre: WhatsApp, mensagens, taxa de entrega, taxa de leitura, comunicação.
