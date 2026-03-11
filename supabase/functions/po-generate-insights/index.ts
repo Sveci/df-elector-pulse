@@ -184,6 +184,7 @@ Gere de 4 a 8 insights estratégicos para o político. Cada insight deve ter:
       .from("po_insights")
       .insert({
         entity_id,
+        tenant_id: entity?.tenant_id,
         period_days,
         insights,
         stats: statsObj,
