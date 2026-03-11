@@ -3740,6 +3740,7 @@ export type Database = {
           observacoes: string | null
           plano: string
           regiao_administrativa_id: string | null
+          scd_domain_uuid: string | null
           slug: string
           status: string
           telefone: string | null
@@ -3762,6 +3763,7 @@ export type Database = {
           observacoes?: string | null
           plano?: string
           regiao_administrativa_id?: string | null
+          scd_domain_uuid?: string | null
           slug: string
           status?: string
           telefone?: string | null
@@ -3784,6 +3786,7 @@ export type Database = {
           observacoes?: string | null
           plano?: string
           regiao_administrativa_id?: string | null
+          scd_domain_uuid?: string | null
           slug?: string
           status?: string
           telefone?: string | null
