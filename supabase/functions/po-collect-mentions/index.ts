@@ -147,11 +147,22 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     } catch (e) { console.error("twitter_comments error:", e); }
   }
 
-  // ── 9a. TikTok ──
-  if (targetSources.includes("tiktok") && APIFY_API_TOKEN) {
+  // ── 9a. TikTok (SociaVault → Apify fallback) ──
+  if (targetSources.includes("tiktok")) {
     try {
       const tkHandle = entity.redes_sociais?.tiktok;
-      collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectTikTokViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, tkHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`TikTok: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("TikTok: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+      }
     } catch (e) { console.error("tiktok error:", e); }
   }
 
@@ -197,9 +208,22 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     } catch (e) { console.error("influencer_comments error:", e); }
   }
 
-  // ── 16. Google Search ──
-  if (targetSources.includes("google_search") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("google_search error:", e); }
+  // ── 16. Google Search (SociaVault → Apify fallback) ──
+  if (targetSources.includes("google_search")) {
+    try {
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectGoogleSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Google Search: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Google Search: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+      }
+    } catch (e) { console.error("google_search error:", e); }
   }
 
   // ── 17. Portais BR ──
@@ -207,17 +231,41 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     try { collectedMentions.push(...await collectPortaisBR(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("portais_br error:", e); }
   }
 
-  // ── 18. Threads ──
-  if (targetSources.includes("threads") && APIFY_API_TOKEN) {
+  // ── 18. Threads (SociaVault → Apify fallback) ──
+  if (targetSources.includes("threads")) {
     try {
       const thHandle = entity.redes_sociais?.threads || entity.redes_sociais?.instagram;
-      collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectThreadsViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Threads: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Threads: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+      }
     } catch (e) { console.error("threads error:", e); }
   }
 
-  // ── 19. YouTube Search ──
-  if (targetSources.includes("youtube_search") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("youtube_search error:", e); }
+  // ── 19. YouTube Search (SociaVault → Apify fallback) ──
+  if (targetSources.includes("youtube_search")) {
+    try {
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectYouTubeSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`YouTube Search: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("YouTube Search: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+      }
+    } catch (e) { console.error("youtube_search error:", e); }
   }
 
   // ── 20. Fontes Oficiais ──
