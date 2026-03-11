@@ -118,16 +118,15 @@ serve(async (req) => {
       // If already registered, delete old one first
       if (tenant?.scd_domain_uuid) {
         try {
-          await scdFetch("DELETE", `/accounts/${scdAccountUuid}/domains/${tenant.scd_domain_uuid}`);
+          await scdFetch("DELETE", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
         } catch (e) {
           console.log("Could not delete old SCD domain, continuing:", e.message);
         }
       }
 
       // Register new domain
-      const scdResult = await scdFetch("POST", `/accounts/${scdAccountUuid}/domains`, {
-        domain: cleanDomain,
-        upstream_uuid: scdUpstreamUuid,
+      const scdResult = await scdFetch("POST", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains`, {
+        host: cleanDomain,
       });
 
       const scdDomainUuid = scdResult.uuid || scdResult.data?.uuid || scdResult.id;
@@ -163,7 +162,7 @@ serve(async (req) => {
         .single();
 
       if (tenant?.scd_domain_uuid) {
-        await scdFetch("DELETE", `/accounts/${scdAccountUuid}/domains/${tenant.scd_domain_uuid}`);
+        await scdFetch("DELETE", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
         await supabase
           .from("tenants")
           .update({ scd_domain_uuid: null })
@@ -195,7 +194,7 @@ serve(async (req) => {
         });
       }
 
-      const scdResult = await scdFetch("GET", `/accounts/${scdAccountUuid}/domains/${tenant.scd_domain_uuid}`);
+      const scdResult = await scdFetch("GET", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
 
       return new Response(JSON.stringify({ 
         registered: true,
