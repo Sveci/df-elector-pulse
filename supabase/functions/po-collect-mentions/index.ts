@@ -376,9 +376,41 @@ serve(async (req) => {
     const { entity_id, sources, query } = await req.json();
     if (!entity_id) throw new Error("entity_id is required");
 
+    // Create a job record so the frontend can track progress
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get tenant_id from entity
+    const { data: entityData } = await supabase
+      .from("po_monitored_entities")
+      .select("tenant_id")
+      .eq("id", entity_id)
+      .single();
+
+    const { data: job } = await supabase
+      .from("po_collection_jobs")
+      .insert({
+        entity_id,
+        tenant_id: entityData?.tenant_id,
+        status: "running",
+        sources_requested: sources || ["news"],
+      })
+      .select("id")
+      .single();
+
+    const jobId = job?.id;
+
     // Dispatch background processing using EdgeRuntime.waitUntil
-    const bgTask = runCollection(entity_id, sources, query).catch(e => {
+    const bgTask = runCollection(entity_id, sources, query, jobId).catch(async (e) => {
       console.error("[BG] runCollection fatal error:", e);
+      if (jobId) {
+        await supabase.from("po_collection_jobs").update({
+          status: "error",
+          error_message: (e as Error).message?.substring(0, 500),
+          completed_at: new Date().toISOString(),
+        }).eq("id", jobId);
+      }
     });
 
     // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
@@ -386,11 +418,12 @@ serve(async (req) => {
       EdgeRuntime.waitUntil(bgTask);
     }
 
-    // Return immediately
+    // Return immediately with the job ID
     return new Response(JSON.stringify({
       success: true,
-      message: "Coleta iniciada em segundo plano. Os dados aparecerão em breve.",
+      message: "Coleta iniciada em segundo plano.",
       background: true,
+      job_id: jobId,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (e) {
