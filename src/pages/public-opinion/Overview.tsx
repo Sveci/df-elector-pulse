@@ -45,7 +45,6 @@ const Overview = () => {
     qc.invalidateQueries({ queryKey: ["po_mentions"] });
     qc.invalidateQueries({ queryKey: ["po_overview_stats"] });
     qc.invalidateQueries({ queryKey: ["po_pending_count"] });
-    setTimeout(() => setActiveJobId(null), 8000);
   }, [qc]);
 
   const isLoading = isLoadingEntities || isLoadingStats;
@@ -200,8 +199,8 @@ const Overview = () => {
         )}
       </div>
 
-      {/* Collection Progress */}
-      <CollectionProgressPanel jobId={activeJobId} onComplete={handleCollectionComplete} />
+      {/* Collection Progress - auto-detects running jobs */}
+      <CollectionProgressPanel jobId={activeJobId} entityId={principalEntity?.id} onComplete={handleCollectionComplete} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -58,22 +58,48 @@ interface CollectionJob {
 }
 
 interface CollectionProgressPanelProps {
-  jobId: string | null;
+  jobId?: string | null;
+  entityId?: string | null;
   onComplete?: () => void;
 }
 
-export function CollectionProgressPanel({ jobId, onComplete }: CollectionProgressPanelProps) {
+export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComplete }: CollectionProgressPanelProps) {
   const [job, setJob] = useState<CollectionJob | null>(null);
+  const [resolvedJobId, setResolvedJobId] = useState<string | null>(externalJobId || null);
+
+  // Auto-detect running jobs when no explicit jobId is provided
+  useEffect(() => {
+    if (externalJobId) {
+      setResolvedJobId(externalJobId);
+      return;
+    }
+    if (!entityId) return;
+
+    const findActiveJob = async () => {
+      const { data } = await (supabase as any)
+        .from("po_collection_jobs")
+        .select("id, status")
+        .eq("entity_id", entityId)
+        .in("status", ["pending", "running"])
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setResolvedJobId(data.id);
+      }
+    };
+    findActiveJob();
+  }, [externalJobId, entityId]);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!resolvedJobId) return;
 
     // Initial fetch
     const fetchJob = async () => {
       const { data } = await (supabase as any)
         .from("po_collection_jobs")
         .select("*")
-        .eq("id", jobId)
+        .eq("id", resolvedJobId)
         .single();
       if (data) setJob(data as CollectionJob);
     };
@@ -81,20 +107,25 @@ export function CollectionProgressPanel({ jobId, onComplete }: CollectionProgres
 
     // Subscribe to realtime changes
     const channel = supabase
-      .channel(`job-${jobId}`)
+      .channel(`job-${resolvedJobId}`)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
           table: "po_collection_jobs",
-          filter: `id=eq.${jobId}`,
+          filter: `id=eq.${resolvedJobId}`,
         },
         (payload) => {
           const updated = payload.new as unknown as CollectionJob;
           setJob(updated);
           if (updated.status === "completed" || updated.status === "error") {
             onComplete?.();
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+              setResolvedJobId(null);
+              setJob(null);
+            }, 8000);
           }
         }
       )
@@ -103,9 +134,9 @@ export function CollectionProgressPanel({ jobId, onComplete }: CollectionProgres
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [jobId, onComplete]);
+  }, [resolvedJobId, onComplete]);
 
-  if (!jobId || !job) return null;
+  if (!resolvedJobId || !job) return null;
 
   const totalSources = job.sources_requested.length;
   const completedSources = job.sources_completed.length;
