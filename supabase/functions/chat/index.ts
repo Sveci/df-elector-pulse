@@ -1418,6 +1418,8 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 
 **consultar_programas** → Use para: "programas", "projetos", "iniciativas", "impacto social"
 
+**consultar_base_conhecimento** → Use para: QUALQUER pergunta sobre o político, mandato, propostas, biografia, plano de governo, posicionamentos, projetos de lei, realizações, FAQ. PRIORIZE esta ferramenta. SEMPRE cite as fontes.
+
 **consultar_metricas_whatsapp** → Use para: "WhatsApp", "mensagens", "taxa de entrega/leitura"
 
 **consultar_opiniao_publica** → Use para: "opinião pública", "menções", "reclamações", "elogios", "o que estão falando", "sentimento", "críticas", "redes sociais", "imagem pública", "maiores reclamações", "maiores elogios"
