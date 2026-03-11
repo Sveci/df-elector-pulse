@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SCD_API_BASE = "https://api.saascustomdomains.com/api/v1";
+const SCD_API_BASE = "https://app.saascustomdomains.com/api/v1";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
