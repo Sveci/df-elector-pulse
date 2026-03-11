@@ -241,23 +241,62 @@ async function handleConversationalFlow(
     }
 
     if (upperMessage === 'PROJETOS' || upperMessage === '1') {
-      const msg = `📋 *Projetos do Deputado Acácio Favacho*\n\n` +
-        `Para mais informações sobre os projetos, acompanhe nossas redes sociais ou visite nosso site.\n\n` +
-        `Digite *MENU* para ver outras opções.`;
-      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      // Query KB for projects/programs info
+      try {
+        const kbResponse = await queryKnowledgeBase(supabase, "projetos programas do deputado", tenantId);
+        if (kbResponse) {
+          const msg = `📋 *Projetos e Programas*\n\n${kbResponse}\n\nDigite *MENU* para ver outras opções ou faça uma pergunta específica.`;
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        } else {
+          const msg = `📋 *Projetos e Programas*\n\nNo momento não encontrei informações detalhadas na base. Faça uma pergunta específica sobre um projeto e tentarei ajudar!\n\nDigite *MENU* para ver outras opções.`;
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        }
+      } catch (err) {
+        console.error('[Meta Webhook] Error querying KB for projects:', err);
+        const msg = `📋 *Projetos e Programas*\n\nOcorreu um erro ao buscar as informações. Tente novamente ou faça uma pergunta específica.\n\nDigite *MENU* para ver outras opções.`;
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      }
       return true;
     }
 
     if (upperMessage === 'EVENTOS' || upperMessage === '2') {
-      const msg = `📅 *Eventos*\n\n` +
-        `Fique atento às nossas comunicações para saber dos próximos eventos na sua região!\n\n` +
-        `Digite *MENU* para ver outras opções.`;
-      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      // List upcoming events from the events table
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        let eventsQuery = supabase
+          .from('events')
+          .select('name, date, time, location, slug')
+          .gte('date', today)
+          .eq('status', 'published')
+          .order('date', { ascending: true })
+          .limit(5);
+        if (tenantId) eventsQuery = eventsQuery.eq('tenant_id', tenantId);
+
+        const { data: events } = await eventsQuery;
+
+        if (events && events.length > 0) {
+          let msg = `📅 *Próximos Eventos*\n\n`;
+          for (const event of events) {
+            const dateFormatted = new Date(event.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            msg += `🔹 *${event.name}*\n`;
+            msg += `   📆 ${dateFormatted} às ${event.time || 'A definir'}\n`;
+            msg += `   📍 ${event.location || 'Local a confirmar'}\n\n`;
+          }
+          msg += `Digite *MENU* para ver outras opções.`;
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        } else {
+          const msg = `📅 *Eventos*\n\nNo momento não há eventos programados. Fique atento às nossas comunicações!\n\nDigite *MENU* para ver outras opções.`;
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        }
+      } catch (err) {
+        console.error('[Meta Webhook] Error fetching events:', err);
+        const msg = `📅 *Eventos*\n\nOcorreu um erro ao buscar os eventos. Tente novamente mais tarde.\n\nDigite *MENU* para ver outras opções.`;
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      }
       return true;
     }
 
     if (upperMessage === 'COMUNIDADE' || upperMessage === '3') {
-      // Resend community link
       const { data: community } = await supabase
         .from('whatsapp_communities')
         .select('community_link, municipio')
@@ -277,8 +316,22 @@ async function handleConversationalFlow(
     }
 
     if (upperMessage === 'FALAR' || upperMessage === '4') {
+      try {
+        await supabase.from('whatsapp_messages').insert({
+          phone: from,
+          message: '[SOLICITAÇÃO DE ATENDIMENTO] Usuário solicitou falar com atendente',
+          direction: 'system',
+          status: 'pending_human',
+          provider: 'meta_cloud',
+          tenant_id: tenantId,
+          metadata: { type: 'human_request', municipio: chatState.municipio },
+        });
+      } catch (e) {
+        console.error('[Meta Webhook] Error logging human request:', e);
+      }
       const msg = `📞 *Falar com um atendente*\n\n` +
-        `Sua mensagem será encaminhada para nossa equipe. Em breve alguém entrará em contato!\n\n` +
+        `Sua solicitação foi registrada! Um membro da nossa equipe entrará em contato em breve.\n\n` +
+        `Enquanto isso, você pode fazer perguntas diretamente aqui que tentarei ajudar.\n\n` +
         `Digite *MENU* para ver outras opções.`;
       await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
       return true;
