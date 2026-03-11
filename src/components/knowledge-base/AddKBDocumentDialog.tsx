@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Upload, Loader2 } from "lucide-react";
 import { useCreateKBDocument, KB_CATEGORIES } from "@/hooks/useKnowledgeBase";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   children: ReactNode;
@@ -23,6 +25,7 @@ export function AddKBDocumentDialog({ children }: Props) {
   const [content, setContent] = useState("");
   const [inputMethod, setInputMethod] = useState<"text" | "file">("text");
   const [fileName, setFileName] = useState("");
+  const [extracting, setExtracting] = useState(false);
   const createDocument = useCreateKBDocument();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +34,45 @@ export function AddKBDocumentDialog({ children }: Props) {
 
     setFileName(file.name);
 
-    // Read text content from file
-    if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+    const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+    if (isPDF) {
+      // Send PDF to edge function for AI extraction
+      setExtracting(true);
+      setContent("");
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const { data, error } = await supabase.functions.invoke("kb-extract-pdf", {
+          body: formData,
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        const extractedText = data?.text || "";
+        if (extractedText.length < 50) {
+          toast.error("Não foi possível extrair texto suficiente do PDF.");
+          return;
+        }
+
+        setContent(extractedText);
+        if (!title) setTitle(file.name.replace(/\.pdf$/i, ""));
+        toast.success(`PDF processado: ${extractedText.length.toLocaleString()} caracteres extraídos`);
+      } catch (err: any) {
+        console.error("PDF extraction error:", err);
+        toast.error(err.message || "Erro ao processar o PDF");
+      } finally {
+        setExtracting(false);
+      }
+      return;
+    }
+
+    // Text-based files
+    if (
+      file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")
+    ) {
       const text = await file.text();
       setContent(text);
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ""));
@@ -53,14 +93,13 @@ export function AddKBDocumentDialog({ children }: Props) {
       setContent(text);
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ""));
     } else {
-      // For other file types, try to read as text
       try {
         const text = await file.text();
         setContent(text);
         if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ""));
       } catch {
         setContent("");
-        alert("Formato de arquivo não suportado. Use .txt, .md, .json, .csv ou .html");
+        toast.error("Formato de arquivo não suportado.");
       }
     }
   };
@@ -78,7 +117,6 @@ export function AddKBDocumentDialog({ children }: Props) {
       file_size_bytes: new Blob([content]).size,
     });
 
-    // Reset form
     setTitle("");
     setDescription("");
     setCategory("geral");
@@ -87,7 +125,7 @@ export function AddKBDocumentDialog({ children }: Props) {
     setOpen(false);
   };
 
-  const isValid = title.trim() && content.trim();
+  const isValid = title.trim() && content.trim() && !extracting;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -176,16 +214,28 @@ export function AddKBDocumentDialog({ children }: Props) {
                     Arraste um arquivo ou clique para selecionar
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Suporta: .txt, .md, .json, .csv, .html
+                    Suporta: .pdf, .txt, .md, .json, .csv, .html
                   </p>
                   <Input
                     type="file"
-                    accept=".txt,.md,.json,.csv,.html"
+                    accept=".pdf,.txt,.md,.json,.csv,.html"
                     onChange={handleFileUpload}
                     className="max-w-xs mx-auto"
+                    disabled={extracting}
                   />
                 </div>
-                {fileName && (
+
+                {extracting && (
+                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Extraindo texto do PDF com IA...</p>
+                      <p className="text-xs text-muted-foreground">Isso pode levar alguns segundos</p>
+                    </div>
+                  </div>
+                )}
+
+                {fileName && !extracting && (
                   <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                     <FileText className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">{fileName}</span>
@@ -194,13 +244,13 @@ export function AddKBDocumentDialog({ children }: Props) {
                     </span>
                   </div>
                 )}
-                {content && (
+                {content && !extracting && (
                   <div className="space-y-2">
-                    <Label>Prévia do conteúdo</Label>
+                    <Label>Prévia do conteúdo extraído</Label>
                     <Textarea
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      rows={6}
+                      rows={8}
                       className="font-mono text-sm"
                     />
                   </div>
