@@ -192,9 +192,11 @@ serve(async (req) => {
     // Fetch entity and adversaries
     const { data: entity } = await supabase
       .from("po_monitored_entities")
-      .select("nome, tipo, partido, cargo, palavras_chave")
+      .select("nome, tipo, partido, cargo, palavras_chave, tenant_id")
       .eq("id", entity_id)
       .single();
+
+    const tenantId = entity?.tenant_id;
 
     const { data: adversaries } = await supabase
       .from("po_monitored_entities")
