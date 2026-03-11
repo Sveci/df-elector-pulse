@@ -390,7 +390,10 @@ Deno.serve(async (req) => {
     const activeKeywords = (keywords as ChatbotKeyword[]) || [];
 
     // Try to match message with a keyword
-    const normalizedMessage = message.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const normalizedMessage = normalizeTextForMatch(message.trim());
+    const messageForKeywordMatch = sanitizeKeywordCandidate(normalizedMessage);
+    const tokenCount = messageForKeywordMatch ? messageForKeywordMatch.split(" ").length : 0;
+    const isCommandLikeMessage = tokenCount <= 5 || messageForKeywordMatch.length <= 35;
 
     // === INTERCEPT VERIFICATION CODES ===
     const confirmMatchChatbot = normalizedMessage.match(/^CONFIRMAR\s+([A-Z0-9]{5,6})$/);
@@ -474,12 +477,10 @@ Deno.serve(async (req) => {
     let matchedKeyword: ChatbotKeyword | null = null;
 
     for (const kw of activeKeywords) {
-      const keywordNorm = kw.keyword.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const aliasesNorm = (kw.aliases || []).map(a => a.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+      const keywordNorm = normalizeTextForMatch(kw.keyword);
+      const aliasesNorm = (kw.aliases || []).map(normalizeTextForMatch);
       
-      if (normalizedMessage === keywordNorm || 
-          normalizedMessage.includes(keywordNorm) ||
-          aliasesNorm.some(a => normalizedMessage === a || normalizedMessage.includes(a))) {
+      if (isKeywordMatch(messageForKeywordMatch, keywordNorm, aliasesNorm, isCommandLikeMessage)) {
         matchedKeyword = kw;
         break;
       }
@@ -632,6 +633,37 @@ Deno.serve(async (req) => {
 function getFirstName(leader: Leader | null): string {
   if (!leader?.nome_completo) return "amigo(a)";
   return leader.nome_completo.split(" ")[0] || "amigo(a)";
+}
+
+function normalizeTextForMatch(value: string): string {
+  return value.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function sanitizeKeywordCandidate(value: string): string {
+  return value.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function isKeywordMatch(
+  messageForMatch: string,
+  keyword: string,
+  aliases: string[],
+  isCommandLikeMessage: boolean
+): boolean {
+  const candidates = [keyword, ...aliases]
+    .map(sanitizeKeywordCandidate)
+    .filter((candidate, index, arr) => candidate.length >= 2 && arr.indexOf(candidate) === index);
+
+  const messageTokens = new Set(messageForMatch.split(" ").filter(Boolean));
+
+  return candidates.some((candidate) => {
+    if (messageForMatch === candidate) return true;
+    if (messageTokens.has(candidate)) return true;
+
+    // Partial matching only for short command-like inputs to avoid false positives on natural questions
+    if (isCommandLikeMessage && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
+
+    return false;
+  });
 }
 
 // Normalize phone number
