@@ -53,9 +53,18 @@ Deno.serve(async (req) => {
 4. Cada chunk deve ser auto-contido e fazer sentido isoladamente
 5. Preservar contexto adicionando um breve cabeçalho contextual se necessário
 
+REGRA ESPECIAL PARA ARQUIVOS SQL:
+Se o documento contiver código SQL (CREATE TABLE, INSERT, SELECT, etc.):
+- NÃO retorne o SQL bruto. Abstraia e descreva as informações em linguagem natural.
+- Para CREATE TABLE: descreva a entidade, seus campos e o que cada campo representa.
+- Para INSERT/dados: extraia os dados concretos e descreva-os como informações úteis (ex: "A cidade X tem população Y", "O programa Z atende a comunidade W").
+- Para views/queries complexas: explique o que a consulta revela sobre os dados.
+- Agrupe informações relacionadas em chunks temáticos coerentes.
+- O objetivo é que a IA consiga responder perguntas usando essas informações sem precisar entender SQL.
+
 Retorne um JSON array com os chunks. Cada item deve ter:
-- "content": o texto do chunk (com contexto suficiente para ser entendido isoladamente)
-- "topic": o tópico principal do chunk (ex: "Programa Habitacional", "Atuação no Congresso")
+- "content": o texto do chunk em linguagem natural (com contexto suficiente para ser entendido isoladamente)
+- "topic": o tópico principal do chunk (ex: "Programa Habitacional", "Atuação no Congresso", "Dados Demográficos")
 - "summary": resumo de 1 linha do chunk
 
 IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem code blocks, sem texto adicional.`

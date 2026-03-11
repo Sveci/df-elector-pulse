@@ -87,7 +87,8 @@ export function AddKBDocumentDialog({ children }: Props) {
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ""));
     } else if (
       file.type === "text/csv" || file.name.endsWith(".csv") ||
-      file.type === "text/html" || file.name.endsWith(".html")
+      file.type === "text/html" || file.name.endsWith(".html") ||
+      file.name.endsWith(".sql")
     ) {
       const text = await file.text();
       setContent(text);
