@@ -2444,7 +2444,7 @@ export type Database = {
           sources_requested?: string[]
           started_at?: string
           status?: string
-          tenant_id?: string
+          tenant_id: string
         }
         Update: {
           completed_at?: string | null
