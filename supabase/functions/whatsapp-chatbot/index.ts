@@ -840,19 +840,26 @@ async function generateAIResponse(
     }
   }
 
-  const leaderContext = leader
+  const hasLeader = !!leader;
+  const leaderName = getFirstName(leader);
+  const fullLeaderName = leader?.nome_completo || "Visitante";
+  const cadastros = leader?.cadastros || 0;
+  const pontuacao = leader?.pontuacao_total || 0;
+  const isCoordinator = !!leader?.is_coordinator;
+
+  const leaderContext = hasLeader
     ? `
-O usuário é ${leader.nome_completo}, um líder político com:
-- ${leader.cadastros} cadastros realizados
-- ${leader.pontuacao_total} pontos de gamificação
-- ${leader.is_coordinator ? "É coordenador" : "Não é coordenador"}
+O usuário é ${fullLeaderName}, um líder político com:
+- ${cadastros} cadastros realizados
+- ${pontuacao} pontos de gamificação
+- ${isCoordinator ? "É coordenador" : "Não é coordenador"}
 `
     : `
 O usuário é um contato do WhatsApp já registrado no fluxo de atendimento, mas não está cadastrado como líder.
 Responda com foco institucional, sem mencionar dados internos de liderança ou gamificação.
 `;
 
-  const kbSection = kbContext 
+  const kbSection = kbContext
     ? `\n\nBASE DE CONHECIMENTO (use estas informações para responder):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nIMPORTANTE: Ao usar informações da base de conhecimento, SEMPRE cite a fonte no formato (Fonte: Nome do Documento).`
     : "";
 
@@ -866,7 +873,7 @@ ${kbSection}
 REGRAS OBRIGATÓRIAS:
 - Responda de forma breve (máximo 500 caracteres) e amigável. Use emojis moderadamente.
 - ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
-- ${leader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
+- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
 - NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
 - NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
 - Se o líder não tem cadastros ainda, diga apenas que ele pode compartilhar seu link de indicação para que novas pessoas se cadastrem.
@@ -892,13 +899,13 @@ REGRAS OBRIGATÓRIAS:
 
     if (!response.ok) {
       console.error("[whatsapp-chatbot] AI API error:", await response.text());
-      return leader ? `Olá ${getFirstName(leader)}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
+      return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "Não consegui processar sua mensagem.";
   } catch (err) {
     console.error("[whatsapp-chatbot] AI error:", err);
-    return leader ? `Olá ${getFirstName(leader)}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
+    return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
 }
