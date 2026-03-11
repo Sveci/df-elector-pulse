@@ -103,7 +103,7 @@ const AIProviders = () => {
     setIsLoading(true);
     
     try {
-      // A chave já foi adicionada via secrets manager do Lovable Cloud
+      // A chave já foi adicionada via secrets manager
       // Aqui apenas validamos que ela funciona
       await testConnection();
       setIsSaved(true);
