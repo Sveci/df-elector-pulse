@@ -821,7 +821,7 @@ async function searchKnowledgeBase(
 async function generateAIResponse(
   apiKey: string,
   userMessage: string,
-  leader: Leader,
+  leader: Leader | null,
   keywordContext: string,
   systemPrompt: string,
   supabase?: any,
@@ -840,11 +840,16 @@ async function generateAIResponse(
     }
   }
 
-  const leaderContext = `
+  const leaderContext = leader
+    ? `
 O usuário é ${leader.nome_completo}, um líder político com:
 - ${leader.cadastros} cadastros realizados
 - ${leader.pontuacao_total} pontos de gamificação
 - ${leader.is_coordinator ? "É coordenador" : "Não é coordenador"}
+`
+    : `
+O usuário é um contato do WhatsApp já registrado no fluxo de atendimento, mas não está cadastrado como líder.
+Responda com foco institucional, sem mencionar dados internos de liderança ou gamificação.
 `;
 
   const kbSection = kbContext 
@@ -860,8 +865,8 @@ ${kbSection}
 
 REGRAS OBRIGATÓRIAS:
 - Responda de forma breve (máximo 500 caracteres) e amigável. Use emojis moderadamente.
-- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : ""}
-- Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING.
+- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
+- ${leader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
 - NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
 - NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
 - Se o líder não tem cadastros ainda, diga apenas que ele pode compartilhar seu link de indicação para que novas pessoas se cadastrem.
@@ -887,13 +892,13 @@ REGRAS OBRIGATÓRIAS:
 
     if (!response.ok) {
       console.error("[whatsapp-chatbot] AI API error:", await response.text());
-      return `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+      return leader ? `Olá ${getFirstName(leader)}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "Não consegui processar sua mensagem.";
   } catch (err) {
     console.error("[whatsapp-chatbot] AI error:", err);
-    return `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+    return leader ? `Olá ${getFirstName(leader)}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
 }
