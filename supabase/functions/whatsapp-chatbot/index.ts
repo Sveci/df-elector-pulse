@@ -635,6 +635,37 @@ function getFirstName(leader: Leader | null): string {
   return leader.nome_completo.split(" ")[0] || "amigo(a)";
 }
 
+function normalizeTextForMatch(value: string): string {
+  return value.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function sanitizeKeywordCandidate(value: string): string {
+  return value.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function isKeywordMatch(
+  messageForMatch: string,
+  keyword: string,
+  aliases: string[],
+  isCommandLikeMessage: boolean
+): boolean {
+  const candidates = [keyword, ...aliases]
+    .map(sanitizeKeywordCandidate)
+    .filter((candidate, index, arr) => candidate.length >= 2 && arr.indexOf(candidate) === index);
+
+  const messageTokens = new Set(messageForMatch.split(" ").filter(Boolean));
+
+  return candidates.some((candidate) => {
+    if (messageForMatch === candidate) return true;
+    if (messageTokens.has(candidate)) return true;
+
+    // Partial matching only for short command-like inputs to avoid false positives on natural questions
+    if (isCommandLikeMessage && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
+
+    return false;
+  });
+}
+
 // Normalize phone number
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/[^0-9]/g, "");
