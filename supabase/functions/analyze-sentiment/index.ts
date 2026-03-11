@@ -14,6 +14,7 @@ async function analyzeBatch(
   entity: any,
   adversaries: any[],
   entityId: string,
+  tenantId: string,
   lovableApiKey: string,
 ): Promise<number> {
   const adversaryNames = adversaries.map(a => a.nome);
@@ -116,6 +117,7 @@ IMPORTANTE: Se a menção NÃO é sobre a entidade principal (ex: é sobre uma c
     return {
       mention_id: mention.id,
       entity_id: entityId,
+      tenant_id: tenantId,
       sentiment: a.sentiment,
       sentiment_score: a.sentiment_score,
       category: a.category,
@@ -190,9 +192,11 @@ serve(async (req) => {
     // Fetch entity and adversaries
     const { data: entity } = await supabase
       .from("po_monitored_entities")
-      .select("nome, tipo, partido, cargo, palavras_chave")
+      .select("nome, tipo, partido, cargo, palavras_chave, tenant_id")
       .eq("id", entity_id)
       .single();
+
+    const tenantId = entity?.tenant_id;
 
     const { data: adversaries } = await supabase
       .from("po_monitored_entities")
@@ -212,7 +216,7 @@ serve(async (req) => {
       let totalAnalyzed = 0;
       for (const batch of batches) {
         try {
-          const count = await analyzeBatch(supabase, batch, entity, adversaries || [], entity_id, LOVABLE_API_KEY);
+          const count = await analyzeBatch(supabase, batch, entity, adversaries || [], entity_id, tenantId, LOVABLE_API_KEY);
           totalAnalyzed += count;
           console.log(`Batch done: ${count} analyzed (total: ${totalAnalyzed})`);
         } catch (err) {
