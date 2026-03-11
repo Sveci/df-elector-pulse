@@ -494,23 +494,39 @@ Deno.serve(async (req) => {
 
       if (matchedKeyword.response_type === "static" && matchedKeyword.static_response) {
         responseMessage = matchedKeyword.static_response
-          .replace("{{nome}}", leader.nome_completo.split(" ")[0])
-          .replace("{{nome_completo}}", leader.nome_completo)
-          .replace("{{pontos}}", String(leader.pontuacao_total))
-          .replace("{{cadastros}}", String(leader.cadastros));
+          .replace("{{nome}}", getFirstName(actor))
+          .replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
+          .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
+          .replace("{{cadastros}}", String(actor?.cadastros || 0));
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        const fn = dynamicFunctions[matchedKeyword.dynamic_function];
-        if (fn) {
-          responseMessage = await fn(supabase, leader as Leader);
+        if (actor) {
+          const fn = dynamicFunctions[matchedKeyword.dynamic_function];
+          if (fn) {
+            responseMessage = await fn(supabase, actor);
+          } else {
+            responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
+          }
+        } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
+          responseType = "ai";
+          responseMessage = await generateAIResponse(
+            lovableApiKey,
+            message,
+            null,
+            matchedKeyword.description || "",
+            chatbotConfig.ai_system_prompt || "",
+            supabase,
+            tenantId
+          );
         } else {
-          responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
+          responseType = "fallback";
+          responseMessage = chatbotConfig.fallback_message || "Posso responder perguntas gerais sobre o mandato e os documentos disponíveis.";
         }
       } else if (matchedKeyword.response_type === "ai") {
         if (lovableApiKey && chatbotConfig.use_ai_for_unknown) {
           responseMessage = await generateAIResponse(
             lovableApiKey,
             message,
-            leader as Leader,
+            actor,
             matchedKeyword.description || "",
             chatbotConfig.ai_system_prompt || "",
             supabase,
@@ -526,7 +542,7 @@ Deno.serve(async (req) => {
       responseMessage = await generateAIResponse(
         lovableApiKey,
         message,
-        leader as Leader,
+        actor,
         "",
         chatbotConfig.ai_system_prompt || "",
         supabase,
@@ -535,7 +551,7 @@ Deno.serve(async (req) => {
     } else {
       responseType = "fallback";
       responseMessage = chatbotConfig.fallback_message || 
-        `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+        `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Digite AJUDA para ver os comandos disponíveis.`;
     }
 
     // Send response - decide provider (filtered by tenant)
