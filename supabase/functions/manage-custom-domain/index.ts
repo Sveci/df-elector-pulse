@@ -162,7 +162,7 @@ serve(async (req) => {
         .single();
 
       if (tenant?.scd_domain_uuid) {
-        await scdFetch("DELETE", `/accounts/${scdAccountUuid}/domains/${tenant.scd_domain_uuid}`);
+        await scdFetch("DELETE", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
         await supabase
           .from("tenants")
           .update({ scd_domain_uuid: null })
