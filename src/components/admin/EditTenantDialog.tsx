@@ -252,12 +252,43 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
             {/* Domínio Customizado */}
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="edit-custom-domain">Domínio Customizado</Label>
-              <Input id="edit-custom-domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="https://app.politico.com.br" />
+              <div className="flex gap-2">
+                <Input id="edit-custom-domain" value={form.custom_domain} onChange={(e) => setForm(p => ({ ...p, custom_domain: e.target.value }))} placeholder="app.politico.com.br" className="flex-1" />
+                {form.custom_domain && tenant && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleSyncDomain}
+                    disabled={isSyncing}
+                    title="Sincronizar domínio com SaaSCustomDomains"
+                  >
+                    {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
               
+              {/* SCD Status */}
+              {tenant?.scd_domain_uuid && (
+                <div className="flex items-center gap-1.5 text-xs text-green-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Registrado no SaaSCustomDomains</span>
+                </div>
+              )}
+              {form.custom_domain && !tenant?.scd_domain_uuid && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  <span>Domínio não sincronizado — salve ou clique em sincronizar</span>
+                </div>
+              )}
+
               {form.custom_domain && (
                 <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-xs space-y-2">
-                  <p className="font-semibold text-foreground">📋 Configuração DNS necessária:</p>
+                  <p className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5" />
+                    Configuração DNS necessária:
+                  </p>
                   <p className="text-muted-foreground">
                     O tenant deve criar o seguinte registro no provedor de DNS do domínio:
                   </p>
@@ -281,12 +312,11 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                     </div>
                     <div className="flex gap-2">
                       <span className="text-primary font-semibold">Destino:</span>
-                      <span>app.eleitor360.ai</span>
+                      <span>in.saascustomdomains.com</span>
                     </div>
                   </div>
                   <p className="text-muted-foreground">
-                    ⚠️ Caso use Cloudflare, ative o proxy (nuvem laranja) e configure SSL como <strong>Full</strong>.
-                    Para outros provedores, o domínio também precisa ser adicionado em <strong>Settings → Domains</strong> do projeto.
+                    ⚠️ O CNAME deve apontar para <strong>in.saascustomdomains.com</strong>. O SSL será provisionado automaticamente pelo SaaSCustomDomains.
                   </p>
                 </div>
               )}
