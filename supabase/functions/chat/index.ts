@@ -629,6 +629,79 @@ const availableFunctions: Record<string, (params: any) => Promise<any>> = {
   },
   
   // ──────────────────────────────────────────────────────────
+  // BASE DE CONHECIMENTO (Knowledge Base)
+  // ──────────────────────────────────────────────────────────
+  consultar_base_conhecimento: async (params: { pergunta: string, categoria?: string }) => {
+    console.log('Executando consultar_base_conhecimento com params:', params);
+    
+    const searchTerms = params.pergunta
+      .toLowerCase()
+      .replace(/[^\w\sáéíóúãõâêîôûç]/g, "")
+      .split(/\s+/)
+      .filter((w: string) => w.length > 2)
+      .slice(0, 8);
+
+    let chunks: any[] = [];
+    
+    if (searchTerms.length > 0) {
+      const ilikeConditions = searchTerms.map((term: string) => `content.ilike.%${term}%`);
+      
+      let query = supabase
+        .from("kb_chunks")
+        .select(`
+          content, metadata,
+          document:kb_documents(id, title, category)
+        `)
+        .or(ilikeConditions.join(","))
+        .limit(10);
+      
+      const { data } = await query;
+      chunks = data || [];
+    }
+
+    // Fallback: get all chunks if no term match
+    if (chunks.length === 0) {
+      let query = supabase
+        .from("kb_chunks")
+        .select(`
+          content, metadata,
+          document:kb_documents(id, title, category)
+        `)
+        .limit(8);
+      
+      const { data } = await query;
+      chunks = data || [];
+    }
+
+    if (chunks.length === 0) {
+      return {
+        encontrado: false,
+        mensagem: "Não há documentos na base de conhecimento para responder esta pergunta.",
+        fontes: []
+      };
+    }
+
+    const fontes = [...new Set(chunks.map((c: any) => {
+      const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+      return doc?.title || "Documento";
+    }))];
+
+    const conteudo = chunks.map((c: any) => {
+      const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+      return `[Fonte: ${doc?.title || "Documento"}] ${c.content}`;
+    }).join("\n\n");
+
+    console.log('Resultado consultar_base_conhecimento:', chunks.length, 'chunks,', fontes.length, 'fontes');
+    
+    return {
+      encontrado: true,
+      total_fragmentos: chunks.length,
+      fontes,
+      conteudo
+    };
+  },
+  
+  // ──────────────────────────────────────────────────────────
   // MÉTRICAS DE WHATSAPP (agregado, sem conteúdo)
   // ──────────────────────────────────────────────────────────
   consultar_metricas_whatsapp: async (params: { periodo?: string }) => {
@@ -1130,6 +1203,24 @@ Retorna: lista de programas com nome, descrição, status e pessoas impactadas.`
   {
     type: 'function',
     function: {
+      name: 'consultar_base_conhecimento',
+      description: `Consulta a Base de Conhecimento do sistema com documentos oficiais, briefings, planos de governo, FAQs e pesquisas.
+Use SEMPRE quando o usuário perguntar sobre: o político, mandato, propostas, plano de governo, posicionamentos, projetos de lei, biografia, atuação, histórico, realizações, FAQ, dúvidas comuns.
+Retorna: conteúdo relevante dos documentos com citação das fontes.
+IMPORTANTE: Priorize esta ferramenta para qualquer pergunta sobre o político ou seu mandato.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          pergunta: { type: 'string', description: 'A pergunta ou tema a ser pesquisado na base de conhecimento' },
+          categoria: { type: 'string', description: 'Categoria opcional para filtrar (mandato, programas, faq, biografia, legislacao, pesquisas, comunicacao)' }
+        },
+        required: ['pergunta']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'consultar_metricas_whatsapp',
       description: `Consulta métricas de comunicação via WhatsApp.
 Use quando o usuário perguntar sobre: WhatsApp, mensagens, taxa de entrega, taxa de leitura, comunicação.
@@ -1326,6 +1417,8 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 **consultar_regioes** → Use para: "regiões", "RAs", "cidades", "localidades"
 
 **consultar_programas** → Use para: "programas", "projetos", "iniciativas", "impacto social"
+
+**consultar_base_conhecimento** → Use para: QUALQUER pergunta sobre o político, mandato, propostas, biografia, plano de governo, posicionamentos, projetos de lei, realizações, FAQ. PRIORIZE esta ferramenta. SEMPRE cite as fontes.
 
 **consultar_metricas_whatsapp** → Use para: "WhatsApp", "mensagens", "taxa de entrega/leitura"
 

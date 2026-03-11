@@ -10,7 +10,7 @@ import {
   Building, LogOut, UserPlus, List, History as HistoryIcon, MessageSquare, Mail, HelpCircle,
   Ticket, Map, ClipboardList, Smartphone, GitBranch, Clock, CalendarDays, Globe,
   ChevronDown, Eye, Heart, GitCompare, UsersRound, MessageCircle, Sparkles, CalendarCheck, FileBarChart, Settings2,
-  Package
+  Package, Brain
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import {
@@ -42,6 +42,7 @@ const campaignItems: MenuItem[] = [
   { title: "Pesquisas", url: "/surveys", icon: ClipboardList, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "Eventos", url: "/events", icon: Calendar, roles: ['super_admin', 'admin', 'atendente', 'checkin_operator'] },
   { title: "Programas", url: "/projects", icon: FolderKanban, roles: ['super_admin', 'admin', 'atendente'] },
+  { title: "Base de Conhecimento", url: "/knowledge-base", icon: Brain, roles: ['super_admin', 'admin'] },
 ];
 
 const publicOpinionSubItems: SubMenuItem[] = [
