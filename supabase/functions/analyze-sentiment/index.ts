@@ -216,7 +216,7 @@ serve(async (req) => {
       let totalAnalyzed = 0;
       for (const batch of batches) {
         try {
-          const count = await analyzeBatch(supabase, batch, entity, adversaries || [], entity_id, LOVABLE_API_KEY);
+          const count = await analyzeBatch(supabase, batch, entity, adversaries || [], entity_id, tenantId, LOVABLE_API_KEY);
           totalAnalyzed += count;
           console.log(`Batch done: ${count} analyzed (total: ${totalAnalyzed})`);
         } catch (err) {
