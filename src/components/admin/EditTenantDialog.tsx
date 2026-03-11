@@ -22,6 +22,8 @@ interface EditTenantDialogProps {
 
 export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialogProps) {
   const updateTenant = useUpdateTenant();
+  const { registerDomain, isSyncing } = useCustomDomain();
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
     nome: "",
