@@ -629,6 +629,11 @@ Deno.serve(async (req) => {
   }
 });
 
+function getFirstName(leader: Leader | null): string {
+  if (!leader?.nome_completo) return "amigo(a)";
+  return leader.nome_completo.split(" ")[0] || "amigo(a)";
+}
+
 // Normalize phone number
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/[^0-9]/g, "");
