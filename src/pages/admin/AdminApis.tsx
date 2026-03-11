@@ -62,7 +62,7 @@ const apis: ApiConfig[] = [
     name: "OpenAI (Opcional)",
     icon: Brain,
     description: "Plataforma de inteligência artificial para modelos de linguagem.",
-    purpose: "Opcional. O sistema já utiliza IAs integradas do Lovable Cloud. Configure apenas se desejar usar modelos OpenAI específicos.",
+    purpose: "Opcional. O sistema já utiliza IAs integradas. Configure apenas se desejar usar modelos OpenAI específicos.",
     howToGet: "Acesse platform.openai.com → faça login → vá em API Keys → clique em 'Create new secret key'.",
     link: "https://platform.openai.com/api-keys",
     secretName: "OPENAI_API_KEY",

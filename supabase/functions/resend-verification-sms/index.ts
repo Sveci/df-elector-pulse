@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PRODUCTION_URL = "https://rafael-prudente.lovable.app";
+const PRODUCTION_URL = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
 
 function generateLeaderVerificationUrl(verificationCode: string): string {
   return `${PRODUCTION_URL}/verificar-lider/${verificationCode}`;

@@ -32,7 +32,7 @@ export function AddToCalendarButton({ event, className }: AddToCalendarButtonPro
         address: event.address,
         startDate,
         endDate,
-        uid: event.slug ? `evento-${event.slug}@sistema.lovable.app` : undefined,
+        uid: event.slug ? `evento-${event.slug}@eleitor360.ai` : undefined,
       };
       
       // Gerar nome do arquivo

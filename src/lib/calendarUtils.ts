@@ -56,7 +56,7 @@ function escapeICSText(text: string): string {
  * Gera o conteúdo de um arquivo .ics (iCalendar RFC 5545)
  */
 export function generateICSContent(event: CalendarEventData): string {
-  const uid = event.uid || `evento-${Date.now()}@sistema.lovable.app`;
+  const uid = event.uid || `evento-${Date.now()}@eleitor360.ai`;
   const now = new Date();
   
   // Combinar location e address

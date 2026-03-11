@@ -15,7 +15,7 @@ interface SendSMSRequest {
 }
 
 // Production URL for verification links
-const PRODUCTION_URL = "https://rafael-prudente.lovable.app";
+const PRODUCTION_URL = Deno.env.get("APP_BASE_URL") || "https://df-elector-pulse.lovable.app";
 
 function generateLeaderVerificationUrl(verificationCode: string): string {
   return `${PRODUCTION_URL}/verificar-lider/${verificationCode}`;

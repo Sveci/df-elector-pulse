@@ -143,7 +143,7 @@ const AIProviders = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          A chave de API é armazenada com segurança no Lovable Cloud (Supabase Secrets).
+          A chave de API é armazenada com segurança no servidor.
           Configure sua chave para habilitar o Agente IA com GPT-5.
         </AlertDescription>
       </Alert>
