@@ -860,7 +860,7 @@ Responda com foco institucional, sem mencionar dados internos de liderança ou g
 `;
 
   const kbSection = kbContext
-    ? `\n\nBASE DE CONHECIMENTO (use estas informações para responder):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nIMPORTANTE: Ao usar informações da base de conhecimento, SEMPRE cite a fonte no formato (Fonte: Nome do Documento).`
+    ? `\n\nBASE DE CONHECIMENTO (INFORMAÇÕES VERIFICADAS - USE OBRIGATORIAMENTE):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nREGRA ABSOLUTA: As informações acima são VERIFICADAS e CONFIÁVEIS. Você DEVE usá-las para responder. Se a resposta está na base de conhecimento acima, responda com base nela. NUNCA diga que "não tem a informação" se ela aparece no texto acima. Cite a fonte no formato (Fonte: Nome do Documento).`
     : "";
 
   const fullPrompt = `${systemPrompt}
@@ -871,15 +871,16 @@ ${keywordContext ? `Contexto adicional: ${keywordContext}` : ""}
 ${kbSection}
 
 REGRAS OBRIGATÓRIAS:
-- Responda de forma breve (máximo 500 caracteres) e amigável. Use emojis moderadamente.
-- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
+- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.
+- ${kbContext ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
 - ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
 - ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas como ver pontuação, ver mensagens, ver contatos, ranking, cadastros, árvore, subordinados ou qualquer recurso exclusivo de líderes. NÃO inclua listas de sugestões com emojis de funcionalidades internas. Responda APENAS sobre o conteúdo institucional da base de conhecimento." : ""}
 - NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
 - NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
 - Se o líder não tem cadastros ainda, diga apenas que ele pode compartilhar seu link de indicação para que novas pessoas se cadastrem.
 - NUNCA faça suposições sobre dados que você não tem. Se não sabe, diga que não tem a informação.
-- Se a mensagem parecer ser um código de verificação (ex: "CONFIRMAR ABC123"), NÃO responda como conversa normal. Informe que o sistema de verificação tratará a solicitação.`;
+- Se a mensagem parecer ser um código de verificação (ex: "CONFIRMAR ABC123"), NÃO responda como conversa normal. Informe que o sistema de verificação tratará a solicitação.
+- Ignore chunks que descrevem estrutura de tabelas SQL (ex: "A tabela X armazena..."). Foque no conteúdo factual e informativo.`;
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
