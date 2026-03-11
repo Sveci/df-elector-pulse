@@ -194,7 +194,7 @@ serve(async (req) => {
         });
       }
 
-      const scdResult = await scdFetch("GET", `/accounts/${scdAccountUuid}/domains/${tenant.scd_domain_uuid}`);
+      const scdResult = await scdFetch("GET", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
 
       return new Response(JSON.stringify({ 
         registered: true,
