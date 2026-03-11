@@ -126,6 +126,7 @@ serve(async (req) => {
         .from("po_daily_snapshots")
         .upsert({
           entity_id: entity.id,
+          tenant_id: entity.tenant_id,
           snapshot_date: targetDate,
           total_mentions: totalMentions,
           positive_count: positiveCount,
