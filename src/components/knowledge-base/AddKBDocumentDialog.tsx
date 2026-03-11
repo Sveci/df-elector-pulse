@@ -214,11 +214,11 @@ export function AddKBDocumentDialog({ children }: Props) {
                     Arraste um arquivo ou clique para selecionar
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Suporta: .pdf, .txt, .md, .json, .csv, .html
+                    Suporta: .pdf, .txt, .md, .json, .csv, .html, .sql
                   </p>
                   <Input
                     type="file"
-                    accept=".pdf,.txt,.md,.json,.csv,.html"
+                    accept=".pdf,.txt,.md,.json,.csv,.html,.sql"
                     onChange={handleFileUpload}
                     className="max-w-xs mx-auto"
                     disabled={extracting}
