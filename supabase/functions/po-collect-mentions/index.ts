@@ -42,8 +42,17 @@ const APIFY_ACTORS: Record<string, string> = {
   telegram: "lexer~telegram-channel-post-scraper",
 };
 
+// ── Job progress helper ──
+async function updateJobProgress(supabase: any, jobId: string, updates: Record<string, any>) {
+  try {
+    await supabase.from("po_collection_jobs").update(updates).eq("id", jobId);
+  } catch (e) {
+    console.error("[JOB] Failed to update progress:", e);
+  }
+}
+
 // ── Background collection logic ──
-async function runCollection(entity_id: string, sources: string[] | undefined, query: string | undefined) {
+async function runCollection(entity_id: string, sources: string[] | undefined, query: string | undefined, jobId?: string) {
   const APIFY_API_TOKEN = Deno.env.get("APIFY_API_TOKEN");
   const ZENSCRAPE_API_KEY = Deno.env.get("ZENSCRAPE_API_KEY");
   const SOCIAVAULT_API_KEY = Deno.env.get("SOCIAVAULT_API_KEY");
@@ -66,219 +75,217 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
   console.log(`[BG] Collecting for "${entity.nome}", query: ${searchQuery}, sources: ${targetSources.join(",")}`);
 
   const collectedMentions: any[] = [];
+  const completedSources: string[] = [];
+  const progressLog: { source: string; found: number; ts: string; provider?: string }[] = [];
+
+  // Helper to track source completion
+  async function trackSource(sourceName: string, fn: () => Promise<any[]>, provider?: string) {
+    if (jobId) {
+      await updateJobProgress(supabase, jobId, {
+        source_current: sourceName,
+      });
+    }
+    try {
+      const results = await fn();
+      collectedMentions.push(...results);
+      completedSources.push(sourceName);
+      const logEntry = { source: sourceName, found: results.length, ts: new Date().toISOString(), provider: provider || undefined };
+      progressLog.push(logEntry);
+      if (jobId) {
+        await updateJobProgress(supabase, jobId, {
+          sources_completed: completedSources,
+          source_current: null,
+          mentions_found: collectedMentions.length,
+          progress_log: progressLog,
+        });
+      }
+      return results;
+    } catch (e) {
+      console.error(`${sourceName} error:`, e);
+      completedSources.push(sourceName);
+      progressLog.push({ source: sourceName, found: 0, ts: new Date().toISOString(), provider: `error: ${(e as Error).message?.substring(0, 100)}` });
+      if (jobId) {
+        await updateJobProgress(supabase, jobId, {
+          sources_completed: completedSources,
+          source_current: null,
+          mentions_found: collectedMentions.length,
+          progress_log: progressLog,
+        });
+      }
+      return [];
+    }
+  }
 
   // ── 1. Zenscrape - news scraping (Bing + Yahoo) ──
   if (targetSources.includes("news") && ZENSCRAPE_API_KEY) {
-    try { collectedMentions.push(...await collectViaZenscrape(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("news error:", e); }
+    await trackSource("news", () => collectViaZenscrape(ZENSCRAPE_API_KEY!, searchQuery, entity.nome, entity_id), "zenscrape");
   }
 
-  // ── 2. Apify - Google News ──
+  // ── 2. Google News ──
   if (targetSources.includes("google_news") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectGoogleNews(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("google_news error:", e); }
+    await trackSource("google_news", () => collectGoogleNews(APIFY_API_TOKEN!, searchQuery, entity.nome, entity_id), "apify");
   }
 
   // ── 3. Twitter/X (SociaVault → Apify fallback) ──
   if (targetSources.includes("twitter")) {
-    try {
-      const twHandle = entity.redes_sociais?.twitter;
+    const twHandle = entity.redes_sociais?.twitter;
+    await trackSource("twitter", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectTwitterViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, twHandle || undefined);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`Twitter: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("Twitter: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+        return await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined);
       }
-    } catch (e) { console.error("twitter error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
   // ── 4. Instagram (SociaVault → Apify fallback) ──
   if (targetSources.includes("instagram")) {
-    try {
-      const igHandle = entity.redes_sociais?.instagram;
+    const igHandle = entity.redes_sociais?.instagram;
+    await trackSource("instagram", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectInstagramViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, igHandle || undefined);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`Instagram: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("Instagram: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+        return await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined);
       }
-    } catch (e) { console.error("instagram error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
-  // ── 5. Facebook (Apify only — SociaVault doesn't have keyword search for FB) ──
+  // ── 5. Facebook ──
   if (targetSources.includes("facebook") && APIFY_API_TOKEN) {
-    try {
-      const fbHandle = entity.redes_sociais?.facebook;
-      collectedMentions.push(...await collectFacebook(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, fbHandle || undefined));
-    } catch (e) { console.error("facebook error:", e); }
+    const fbHandle = entity.redes_sociais?.facebook;
+    await trackSource("facebook", () => collectFacebook(APIFY_API_TOKEN!, searchQuery, entity.nome, entity_id, fbHandle || undefined), "apify");
   }
 
   // ── 6. Facebook Comments ──
   if (targetSources.includes("facebook_comments") && APIFY_API_TOKEN) {
-    try {
-      const fbHandle = entity.redes_sociais?.facebook;
-      if (fbHandle) collectedMentions.push(...await collectFacebookComments(APIFY_API_TOKEN, fbHandle, entity.nome, entity_id));
-    } catch (e) { console.error("facebook_comments error:", e); }
+    const fbHandle = entity.redes_sociais?.facebook;
+    if (fbHandle) await trackSource("facebook_comments", () => collectFacebookComments(APIFY_API_TOKEN!, fbHandle, entity.nome, entity_id), "apify");
   }
 
   // ── 7. Instagram Comments ──
   if (targetSources.includes("instagram_comments") && APIFY_API_TOKEN) {
-    try {
-      const igHandle = entity.redes_sociais?.instagram;
-      if (igHandle) collectedMentions.push(...await collectInstagramComments(APIFY_API_TOKEN, igHandle, entity.nome, entity_id));
-    } catch (e) { console.error("instagram_comments error:", e); }
+    const igHandle = entity.redes_sociais?.instagram;
+    if (igHandle) await trackSource("instagram_comments", () => collectInstagramComments(APIFY_API_TOKEN!, igHandle, entity.nome, entity_id), "apify");
   }
 
   // ── 8. Twitter Replies ──
   if (targetSources.includes("twitter_comments") && APIFY_API_TOKEN) {
-    try {
-      const twHandle = entity.redes_sociais?.twitter;
-      if (twHandle) collectedMentions.push(...await collectTwitterReplies(APIFY_API_TOKEN, twHandle, entity.nome, entity_id));
-    } catch (e) { console.error("twitter_comments error:", e); }
+    const twHandle = entity.redes_sociais?.twitter;
+    if (twHandle) await trackSource("twitter_comments", () => collectTwitterReplies(APIFY_API_TOKEN!, twHandle, entity.nome, entity_id), "apify");
   }
 
   // ── 9a. TikTok (SociaVault → Apify fallback) ──
   if (targetSources.includes("tiktok")) {
-    try {
-      const tkHandle = entity.redes_sociais?.tiktok;
+    const tkHandle = entity.redes_sociais?.tiktok;
+    await trackSource("tiktok", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectTikTokViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, tkHandle || undefined);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`TikTok: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("TikTok: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+        return await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined);
       }
-    } catch (e) { console.error("tiktok error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
   // ── 9b. TikTok Comments ──
   if (targetSources.includes("tiktok_comments") && APIFY_API_TOKEN) {
-    try {
-      const tkHandle = entity.redes_sociais?.tiktok;
-      if (tkHandle) collectedMentions.push(...await collectTikTokComments(APIFY_API_TOKEN, tkHandle, entity.nome, entity_id));
-    } catch (e) { console.error("tiktok_comments error:", e); }
+    const tkHandle = entity.redes_sociais?.tiktok;
+    if (tkHandle) await trackSource("tiktok_comments", () => collectTikTokComments(APIFY_API_TOKEN!, tkHandle, entity.nome, entity_id), "apify");
   }
 
   // ── 10. YouTube Comments ──
   if (targetSources.includes("youtube_comments") && APIFY_API_TOKEN) {
-    try {
-      const ytHandle = entity.redes_sociais?.youtube;
-      if (ytHandle) collectedMentions.push(...await collectYouTubeComments(APIFY_API_TOKEN, ytHandle, entity.nome, entity_id));
-    } catch (e) { console.error("youtube_comments error:", e); }
+    const ytHandle = entity.redes_sociais?.youtube;
+    if (ytHandle) await trackSource("youtube_comments", () => collectYouTubeComments(APIFY_API_TOKEN!, ytHandle, entity.nome, entity_id), "apify");
   }
 
   // ── 11. Reddit ──
   if (targetSources.includes("reddit") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectReddit(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("reddit error:", e); }
+    await trackSource("reddit", () => collectReddit(APIFY_API_TOKEN!, searchQuery, entity.nome, entity_id), "apify");
   }
 
   // ── 12. Portais DF ──
   if (targetSources.includes("portais_df") && ZENSCRAPE_API_KEY) {
-    try { collectedMentions.push(...await collectPortaisDF(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("portais_df error:", e); }
+    await trackSource("portais_df", () => collectPortaisDF(ZENSCRAPE_API_KEY!, searchQuery, entity.nome, entity_id), "zenscrape");
   }
 
   // ── 13. Telegram ──
   if (targetSources.includes("telegram") && APIFY_API_TOKEN) {
-    try {
-      const tgChannels = (entity.redes_sociais as Record<string, any>)?.telegram;
-      if (tgChannels) collectedMentions.push(...await collectTelegram(APIFY_API_TOKEN, tgChannels, searchQuery, entity.nome, entity_id));
-    } catch (e) { console.error("telegram error:", e); }
+    const tgChannels = (entity.redes_sociais as Record<string, any>)?.telegram;
+    if (tgChannels) await trackSource("telegram", () => collectTelegram(APIFY_API_TOKEN!, tgChannels, searchQuery, entity.nome, entity_id), "apify");
   }
 
   // ── 14. Influencer Comments ──
   if (targetSources.includes("influencer_comments") && APIFY_API_TOKEN) {
-    try {
-      const influencers = (entity.redes_sociais as Record<string, any>)?.influenciadores_ig;
-      if (influencers) collectedMentions.push(...await collectInfluencerComments(APIFY_API_TOKEN, influencers, entity.nome, entity_id));
-    } catch (e) { console.error("influencer_comments error:", e); }
+    const influencers = (entity.redes_sociais as Record<string, any>)?.influenciadores_ig;
+    if (influencers) await trackSource("influencer_comments", () => collectInfluencerComments(APIFY_API_TOKEN!, influencers, entity.nome, entity_id), "apify");
   }
 
   // ── 16. Google Search (SociaVault → Apify fallback) ──
   if (targetSources.includes("google_search")) {
-    try {
+    await trackSource("google_search", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectGoogleSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`Google Search: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("Google Search: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        return await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id);
       }
-    } catch (e) { console.error("google_search error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
   // ── 17. Portais BR ──
   if (targetSources.includes("portais_br") && ZENSCRAPE_API_KEY) {
-    try { collectedMentions.push(...await collectPortaisBR(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("portais_br error:", e); }
+    await trackSource("portais_br", () => collectPortaisBR(ZENSCRAPE_API_KEY!, searchQuery, entity.nome, entity_id), "zenscrape");
   }
 
   // ── 18. Threads (SociaVault → Apify fallback) ──
   if (targetSources.includes("threads")) {
-    try {
-      const thHandle = entity.redes_sociais?.threads || entity.redes_sociais?.instagram;
+    const thHandle = entity.redes_sociais?.threads || entity.redes_sociais?.instagram;
+    await trackSource("threads", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectThreadsViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`Threads: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("Threads: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+        return await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined);
       }
-    } catch (e) { console.error("threads error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
   // ── 19. YouTube Search (SociaVault → Apify fallback) ──
   if (targetSources.includes("youtube_search")) {
-    try {
+    await trackSource("youtube_search", async () => {
       if (SOCIAVAULT_API_KEY) {
         const svResults = await collectYouTubeSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
-        if (svResults.length > 0) {
-          collectedMentions.push(...svResults);
-          console.log(`YouTube Search: SociaVault returned ${svResults.length} items`);
-        } else if (APIFY_API_TOKEN) {
-          console.log("YouTube Search: SociaVault empty, falling back to Apify");
-          collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
-        }
+        if (svResults.length > 0) return svResults;
+        if (APIFY_API_TOKEN) return await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id);
       } else if (APIFY_API_TOKEN) {
-        collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        return await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id);
       }
-    } catch (e) { console.error("youtube_search error:", e); }
+      return [];
+    }, SOCIAVAULT_API_KEY ? "sociavault" : "apify");
   }
 
   // ── 20. Fontes Oficiais ──
   if (targetSources.includes("fontes_oficiais") && ZENSCRAPE_API_KEY) {
-    try { collectedMentions.push(...await collectFontesOficiais(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("fontes_oficiais error:", e); }
+    await trackSource("fontes_oficiais", () => collectFontesOficiais(ZENSCRAPE_API_KEY!, searchQuery, entity.nome, entity_id), "zenscrape");
   }
 
   // ── 15. Custom Sites ──
   if (targetSources.includes("sites_custom") && ZENSCRAPE_API_KEY) {
-    try {
-      const sites = (entity.redes_sociais as Record<string, any>)?.sites_customizados;
-      if (sites) collectedMentions.push(...await collectCustomSites(ZENSCRAPE_API_KEY, sites, entity.nome, entity_id));
-    } catch (e) { console.error("sites_custom error:", e); }
+    const sites = (entity.redes_sociais as Record<string, any>)?.sites_customizados;
+    if (sites) await trackSource("sites_custom", () => collectCustomSites(ZENSCRAPE_API_KEY!, sites, entity.nome, entity_id), "zenscrape");
   }
 
   // ── Dedupe & Insert ──
@@ -305,6 +312,13 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
 
     if (uniqueMentions.length === 0) {
       console.log("[BG] All mentions already existed");
+      if (jobId) {
+        await updateJobProgress(supabase, jobId, {
+          status: "completed",
+          mentions_inserted: 0,
+          completed_at: new Date().toISOString(),
+        });
+      }
       return;
     }
 
@@ -315,11 +329,26 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
 
     if (insertError) {
       console.error("[BG] Insert error:", insertError);
+      if (jobId) {
+        await updateJobProgress(supabase, jobId, {
+          status: "error",
+          error_message: insertError.message,
+          completed_at: new Date().toISOString(),
+        });
+      }
       return;
     }
 
     const mentionIds = inserted?.map(m => m.id) || [];
     console.log(`[BG] Inserted ${mentionIds.length} mentions`);
+
+    if (jobId) {
+      await updateJobProgress(supabase, jobId, {
+        status: "completed",
+        mentions_inserted: mentionIds.length,
+        completed_at: new Date().toISOString(),
+      });
+    }
 
     if (mentionIds.length > 0) {
       fetch(`${supabaseUrl}/functions/v1/analyze-sentiment`, {
@@ -330,6 +359,13 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     }
   } else {
     console.log("[BG] No mentions found");
+    if (jobId) {
+      await updateJobProgress(supabase, jobId, {
+        status: "completed",
+        mentions_inserted: 0,
+        completed_at: new Date().toISOString(),
+      });
+    }
   }
 }
 
@@ -340,9 +376,41 @@ serve(async (req) => {
     const { entity_id, sources, query } = await req.json();
     if (!entity_id) throw new Error("entity_id is required");
 
+    // Create a job record so the frontend can track progress
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get tenant_id from entity
+    const { data: entityData } = await supabase
+      .from("po_monitored_entities")
+      .select("tenant_id")
+      .eq("id", entity_id)
+      .single();
+
+    const { data: job } = await supabase
+      .from("po_collection_jobs")
+      .insert({
+        entity_id,
+        tenant_id: entityData?.tenant_id,
+        status: "running",
+        sources_requested: sources || ["news"],
+      })
+      .select("id")
+      .single();
+
+    const jobId = job?.id;
+
     // Dispatch background processing using EdgeRuntime.waitUntil
-    const bgTask = runCollection(entity_id, sources, query).catch(e => {
+    const bgTask = runCollection(entity_id, sources, query, jobId).catch(async (e) => {
       console.error("[BG] runCollection fatal error:", e);
+      if (jobId) {
+        await supabase.from("po_collection_jobs").update({
+          status: "error",
+          error_message: (e as Error).message?.substring(0, 500),
+          completed_at: new Date().toISOString(),
+        }).eq("id", jobId);
+      }
     });
 
     // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
@@ -350,11 +418,12 @@ serve(async (req) => {
       EdgeRuntime.waitUntil(bgTask);
     }
 
-    // Return immediately
+    // Return immediately with the job ID
     return new Response(JSON.stringify({
       success: true,
-      message: "Coleta iniciada em segundo plano. Os dados aparecerão em breve.",
+      message: "Coleta iniciada em segundo plano.",
       background: true,
+      job_id: jobId,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (e) {
