@@ -21,6 +21,8 @@ serve(async (req) => {
     const scdAccountUuid = Deno.env.get("SCD_ACCOUNT_UUID");
     const scdUpstreamUuid = Deno.env.get("SCD_UPSTREAM_UUID");
 
+    console.log(`SCD Config - Account: "${scdAccountUuid}", Upstream: "${scdUpstreamUuid}", API Key present: ${!!scdApiKey}`);
+
     if (!scdApiKey || !scdAccountUuid || !scdUpstreamUuid) {
       return new Response(
         JSON.stringify({ error: "SaaSCustomDomains não configurado. Verifique os secrets." }),
