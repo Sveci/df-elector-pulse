@@ -96,6 +96,16 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
     }));
   };
 
+  const handleSyncDomain = async () => {
+    if (!tenant || !form.custom_domain?.trim()) return;
+    try {
+      await registerDomain(tenant.id, form.custom_domain.trim());
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+    } catch {
+      // toast already handled in hook
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
@@ -106,6 +116,8 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
     }
 
     try {
+      const domainChanged = form.custom_domain?.trim() !== (tenant.custom_domain || "");
+
       await updateTenant.mutateAsync({
         id: tenant.id,
         nome: form.nome.trim(),
@@ -123,6 +135,20 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
         regiao_administrativa_id: form.regiao_administrativa_id || null,
         custom_domain: form.custom_domain?.trim() || null,
       });
+
+      // Auto-register domain on SaaSCustomDomains if changed
+      if (domainChanged && form.custom_domain?.trim()) {
+        try {
+          await registerDomain(tenant.id, form.custom_domain.trim());
+        } catch {
+          // Domain registration failed but tenant was saved
+          toast({
+            title: "Tenant salvo, mas domínio não sincronizado",
+            description: "Use o botão de sincronizar para tentar novamente.",
+            variant: "destructive",
+          });
+        }
+      }
 
       toast({ title: "Tenant atualizado!", description: `${form.nome} foi salvo com sucesso.` });
       onOpenChange(false);
