@@ -199,6 +199,22 @@ Deno.serve(async (req) => {
         return jsonError(`Erro ${res.status}: ${errText.substring(0, 100)}`);
       }
 
+      case "sociavault": {
+        const apiKey = Deno.env.get("SOCIAVAULT_API_KEY");
+        if (!apiKey) return jsonError("SOCIAVAULT_API_KEY não configurada nos secrets");
+        const res = await fetch("https://api.sociavault.com/v1/scrape/google/search?query=test", {
+          headers: { "X-API-Key": apiKey },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const credits = data.creditsUsed || 0;
+          return jsonSuccess({ description: `Conectado — ${credits} crédito(s) usado(s) no teste` });
+        }
+        const errText = await res.text();
+        if (res.status === 402) return jsonError("Créditos insuficientes no SociaVault");
+        return jsonError(`Erro ${res.status}: ${errText.substring(0, 100)}`);
+      }
+
       default:
         return jsonError(`Provider desconhecido: ${provider}`);
     }

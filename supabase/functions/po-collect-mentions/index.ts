@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const APIFY_BASE = "https://api.apify.com/v2";
+const SOCIAVAULT_BASE = "https://api.sociavault.com/v1/scrape";
 
 // Map source names to Apify actor IDs
 const APIFY_ACTORS: Record<string, string> = {
@@ -45,6 +46,7 @@ const APIFY_ACTORS: Record<string, string> = {
 async function runCollection(entity_id: string, sources: string[] | undefined, query: string | undefined) {
   const APIFY_API_TOKEN = Deno.env.get("APIFY_API_TOKEN");
   const ZENSCRAPE_API_KEY = Deno.env.get("ZENSCRAPE_API_KEY");
+  const SOCIAVAULT_API_KEY = Deno.env.get("SOCIAVAULT_API_KEY");
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -75,23 +77,45 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     try { collectedMentions.push(...await collectGoogleNews(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("google_news error:", e); }
   }
 
-  // ── 3. Apify - Twitter/X ──
-  if (targetSources.includes("twitter") && APIFY_API_TOKEN) {
+  // ── 3. Twitter/X (SociaVault → Apify fallback) ──
+  if (targetSources.includes("twitter")) {
     try {
       const twHandle = entity.redes_sociais?.twitter;
-      collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectTwitterViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, twHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Twitter: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Twitter: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+      }
     } catch (e) { console.error("twitter error:", e); }
   }
 
-  // ── 4. Apify - Instagram ──
-  if (targetSources.includes("instagram") && APIFY_API_TOKEN) {
+  // ── 4. Instagram (SociaVault → Apify fallback) ──
+  if (targetSources.includes("instagram")) {
     try {
       const igHandle = entity.redes_sociais?.instagram;
-      collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectInstagramViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, igHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Instagram: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Instagram: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+      }
     } catch (e) { console.error("instagram error:", e); }
   }
 
-  // ── 5. Apify - Facebook ──
+  // ── 5. Facebook (Apify only — SociaVault doesn't have keyword search for FB) ──
   if (targetSources.includes("facebook") && APIFY_API_TOKEN) {
     try {
       const fbHandle = entity.redes_sociais?.facebook;
@@ -123,11 +147,22 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     } catch (e) { console.error("twitter_comments error:", e); }
   }
 
-  // ── 9a. TikTok ──
-  if (targetSources.includes("tiktok") && APIFY_API_TOKEN) {
+  // ── 9a. TikTok (SociaVault → Apify fallback) ──
+  if (targetSources.includes("tiktok")) {
     try {
       const tkHandle = entity.redes_sociais?.tiktok;
-      collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectTikTokViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, tkHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`TikTok: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("TikTok: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectTikTok(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, tkHandle || undefined));
+      }
     } catch (e) { console.error("tiktok error:", e); }
   }
 
@@ -173,9 +208,22 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     } catch (e) { console.error("influencer_comments error:", e); }
   }
 
-  // ── 16. Google Search ──
-  if (targetSources.includes("google_search") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("google_search error:", e); }
+  // ── 16. Google Search (SociaVault → Apify fallback) ──
+  if (targetSources.includes("google_search")) {
+    try {
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectGoogleSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Google Search: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Google Search: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectGoogleSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+      }
+    } catch (e) { console.error("google_search error:", e); }
   }
 
   // ── 17. Portais BR ──
@@ -183,17 +231,41 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     try { collectedMentions.push(...await collectPortaisBR(ZENSCRAPE_API_KEY, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("portais_br error:", e); }
   }
 
-  // ── 18. Threads ──
-  if (targetSources.includes("threads") && APIFY_API_TOKEN) {
+  // ── 18. Threads (SociaVault → Apify fallback) ──
+  if (targetSources.includes("threads")) {
     try {
       const thHandle = entity.redes_sociais?.threads || entity.redes_sociais?.instagram;
-      collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectThreadsViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Threads: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Threads: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectThreads(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, thHandle || undefined));
+      }
     } catch (e) { console.error("threads error:", e); }
   }
 
-  // ── 19. YouTube Search ──
-  if (targetSources.includes("youtube_search") && APIFY_API_TOKEN) {
-    try { collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("youtube_search error:", e); }
+  // ── 19. YouTube Search (SociaVault → Apify fallback) ──
+  if (targetSources.includes("youtube_search")) {
+    try {
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectYouTubeSearchViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`YouTube Search: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("YouTube Search: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectYouTubeSearch(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id));
+      }
+    } catch (e) { console.error("youtube_search error:", e); }
   }
 
   // ── 20. Fontes Oficiais ──
@@ -2151,4 +2223,376 @@ async function collectInstagramComments(token: string, igHandle: string, entityN
   return mentions;
 }
 
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT API HELPER
+// Base URL: https://api.sociavault.com/v1/scrape
+// Auth: X-API-Key header
+// ══════════════════════════════════════════════════
+
+async function runSociaVaultAPI(apiKey: string, path: string, params: Record<string, string>, timeoutMs = 30000): Promise<any> {
+  const url = new URL(`${SOCIAVAULT_BASE}/${path}`);
+  for (const [k, v] of Object.entries(params)) {
+    if (v) url.searchParams.set(k, v);
+  }
+  console.log(`SociaVault: GET ${url.pathname}?${url.searchParams.toString()}`);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "X-API-Key": apiKey },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`SociaVault ${path} error ${res.status}: ${errText.substring(0, 300)}`);
+      return null;
+    }
+
+    const data = await res.json();
+    if (!data?.success) {
+      console.error(`SociaVault ${path}: success=false`, JSON.stringify(data).substring(0, 300));
+      return null;
+    }
+    return data;
+  } catch (e) {
+    clearTimeout(timeout);
+    console.error(`SociaVault ${path} error:`, e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — TWITTER/X SEARCH
+// Endpoint: GET /twitter/search?query=...&type=Top
+// ══════════════════════════════════════════════════
+
+async function collectTwitterViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string, twHandle?: string): Promise<any[]> {
+  const searchQuery = query.replace(/"/g, "");
+  console.log(`SociaVault Twitter: searching "${searchQuery}"`);
+
+  const data = await runSociaVaultAPI(apiKey, "twitter/search", { query: searchQuery, type: "Top" });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  // SociaVault returns nested timeline structure
+  const timeline = data.data?.result?.timeline || data.data?.timeline;
+  if (!timeline) {
+    console.log("SociaVault Twitter: no timeline in response");
+    return [];
+  }
+
+  // Extract tweets from timeline instructions
+  const instructions = timeline.instructions || [];
+  for (const instruction of instructions) {
+    const entries = instruction.entries || [];
+    for (const entry of entries) {
+      try {
+        const tweetResult = entry.content?.itemContent?.tweet_results?.result ||
+          entry.content?.content?.tweetResult?.result;
+        if (!tweetResult?.legacy) continue;
+
+        const legacy = tweetResult.legacy;
+        const userLegacy = tweetResult.core?.user_results?.result?.legacy;
+        const content = (legacy.full_text || "").substring(0, 2000);
+        if (content.length < 5) continue;
+
+        mentions.push({
+          entity_id: entityId,
+          source: "twitter",
+          source_url: userLegacy?.screen_name ? `https://x.com/${userLegacy.screen_name}/status/${legacy.id_str || tweetResult.rest_id}` : null,
+          author_name: userLegacy?.name || null,
+          author_handle: userLegacy?.screen_name || null,
+          content,
+          published_at: legacy.created_at ? new Date(legacy.created_at).toISOString() : new Date().toISOString(),
+          engagement: {
+            likes: legacy.favorite_count || 0,
+            shares: legacy.retweet_count || 0,
+            comments: legacy.reply_count || 0,
+            views: tweetResult.views?.count ? parseInt(tweetResult.views.count) : 0,
+            bookmarks: legacy.bookmark_count || 0,
+            quotes: legacy.quote_count || 0,
+          },
+          hashtags: (legacy.entities?.hashtags || []).map((h: any) => h.text),
+          media_urls: (legacy.entities?.media || []).map((m: any) => m.media_url_https || m.url),
+          raw_data: { source: "sociavault_twitter_search" },
+        });
+      } catch (e) {
+        // Skip malformed entries
+      }
+    }
+  }
+
+  console.log(`SociaVault Twitter: extracted ${mentions.length} tweets`);
+  return mentions;
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — INSTAGRAM POSTS
+// Endpoint: GET /instagram/posts?username=...
+// ══════════════════════════════════════════════════
+
+async function collectInstagramViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string, igHandle?: string): Promise<any[]> {
+  if (!igHandle) {
+    console.log("SociaVault Instagram: no handle provided, skipping");
+    return [];
+  }
+
+  const handle = igHandle.replace(/^@/, "");
+  console.log(`SociaVault Instagram: fetching posts for @${handle}`);
+
+  const data = await runSociaVaultAPI(apiKey, "instagram/posts", { username: handle });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  const items = data.data?.data?.items || data.data?.items || [];
+
+  // items may be object with numeric keys
+  const itemsArray = Array.isArray(items) ? items : Object.values(items);
+
+  for (const item of itemsArray) {
+    try {
+      const caption = item.caption?.text || item.caption || "";
+      const content = (typeof caption === "string" ? caption : "").substring(0, 2000);
+      if (content.length < 5) continue;
+
+      const shortCode = item.code || item.shortcode;
+      const postUrl = shortCode ? `https://www.instagram.com/p/${shortCode}/` : null;
+
+      mentions.push({
+        entity_id: entityId,
+        source: "instagram",
+        source_url: postUrl,
+        author_name: item.user?.full_name || handle,
+        author_handle: item.user?.username || handle,
+        content,
+        published_at: item.taken_at ? new Date(item.taken_at * 1000).toISOString() : new Date().toISOString(),
+        engagement: {
+          likes: item.like_count || 0,
+          comments: item.comment_count || 0,
+          views: item.play_count || item.view_count || 0,
+          shares: item.reshare_count || 0,
+        },
+        hashtags: [],
+        media_urls: item.image_versions2?.candidates?.[0]?.url ? [item.image_versions2.candidates[0].url] : [],
+        raw_data: { source: "sociavault_instagram_posts" },
+      });
+    } catch (e) {
+      // Skip malformed items
+    }
+  }
+
+  console.log(`SociaVault Instagram: extracted ${mentions.length} posts`);
+  return mentions;
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — TIKTOK VIDEOS
+// Endpoint: GET /tiktok/videos?username=...
+// ══════════════════════════════════════════════════
+
+async function collectTikTokViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string, tkHandle?: string): Promise<any[]> {
+  if (!tkHandle) {
+    console.log("SociaVault TikTok: no handle provided, skipping");
+    return [];
+  }
+
+  const handle = tkHandle.replace(/^@/, "");
+  console.log(`SociaVault TikTok: fetching videos for @${handle}`);
+
+  const data = await runSociaVaultAPI(apiKey, "tiktok/videos", { username: handle });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  const awemeList = data.data?.aweme_list || {};
+  const items = Array.isArray(awemeList) ? awemeList : Object.values(awemeList);
+
+  for (const item of items) {
+    try {
+      const content = (item.desc || item.title || "").substring(0, 2000);
+      if (content.length < 5) continue;
+
+      const authorHandle = item.author?.unique_id || item.author?.uid || handle;
+      const videoId = item.aweme_id || item.id;
+      const sourceUrl = videoId ? `https://www.tiktok.com/@${authorHandle}/video/${videoId}` : null;
+
+      mentions.push({
+        entity_id: entityId,
+        source: "tiktok",
+        source_url: sourceUrl,
+        author_name: item.author?.nickname || handle,
+        author_handle: authorHandle,
+        content,
+        published_at: item.create_time ? new Date(item.create_time * 1000).toISOString() : new Date().toISOString(),
+        engagement: {
+          likes: item.statistics?.digg_count || 0,
+          comments: item.statistics?.comment_count || 0,
+          shares: item.statistics?.share_count || 0,
+          views: item.statistics?.play_count || 0,
+        },
+        hashtags: (item.text_extra || []).filter((t: any) => t.hashtag_name).map((t: any) => t.hashtag_name),
+        media_urls: item.video?.cover?.url_list?.[0] ? [item.video.cover.url_list[0]] : [],
+        raw_data: { source: "sociavault_tiktok_videos" },
+      });
+    } catch (e) {
+      // Skip malformed items
+    }
+  }
+
+  console.log(`SociaVault TikTok: extracted ${mentions.length} videos`);
+  return mentions;
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — THREADS SEARCH
+// Endpoint: GET /threads/search?query=...
+// ══════════════════════════════════════════════════
+
+async function collectThreadsViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string): Promise<any[]> {
+  const searchQuery = query.replace(/"/g, "");
+  console.log(`SociaVault Threads: searching "${searchQuery}"`);
+
+  const data = await runSociaVaultAPI(apiKey, "threads/search", { query: searchQuery });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  const posts = data.posts || data.data?.posts || [];
+  const postsArray = Array.isArray(posts) ? posts : Object.values(posts);
+
+  for (const post of postsArray) {
+    try {
+      const caption = post.caption?.text || post.text_post_app_info?.share_info?.quoted_text || "";
+      const content = caption.substring(0, 2000);
+      if (content.length < 5) continue;
+
+      const username = post.user?.username || null;
+      const postCode = post.code;
+
+      mentions.push({
+        entity_id: entityId,
+        source: "threads",
+        source_url: postCode && username ? `https://www.threads.net/@${username}/post/${postCode}` : null,
+        author_name: post.user?.full_name || username || null,
+        author_handle: username,
+        content,
+        published_at: post.taken_at ? new Date(post.taken_at * 1000).toISOString() : new Date().toISOString(),
+        engagement: {
+          likes: post.like_count || 0,
+          comments: post.text_post_app_info?.direct_reply_count || 0,
+          shares: post.text_post_app_info?.repost_count || post.reshare_count || 0,
+          views: 0,
+        },
+        hashtags: [],
+        media_urls: [],
+        raw_data: { source: "sociavault_threads_search" },
+      });
+    } catch (e) {
+      // Skip malformed
+    }
+  }
+
+  console.log(`SociaVault Threads: extracted ${mentions.length} posts`);
+  return mentions;
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — YOUTUBE SEARCH
+// Endpoint: GET /youtube/search?query=...&uploadDate=this_week
+// ══════════════════════════════════════════════════
+
+async function collectYouTubeSearchViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string): Promise<any[]> {
+  const searchQuery = query.replace(/"/g, "");
+  console.log(`SociaVault YouTube: searching "${searchQuery}"`);
+
+  const data = await runSociaVaultAPI(apiKey, "youtube/search", { query: searchQuery, uploadDate: "this_week", sortBy: "relevance" });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  const videos = data.data?.videos || {};
+  const videosArray = Array.isArray(videos) ? videos : Object.values(videos);
+
+  for (const item of videosArray) {
+    try {
+      const title = item.title || "";
+      const description = item.description || item.descriptionSnippet || "";
+      const content = (title + (description ? `. ${description}` : "")).substring(0, 2000);
+      if (content.length < 5) continue;
+
+      const videoUrl = item.url || (item.id ? `https://www.youtube.com/watch?v=${item.id}` : null);
+
+      mentions.push({
+        entity_id: entityId,
+        source: "youtube_search",
+        source_url: videoUrl,
+        author_name: item.channel?.title || item.channelTitle || null,
+        author_handle: item.channel?.handle || item.channel?.id || null,
+        content,
+        published_at: item.publishedTimeText || new Date().toISOString(),
+        engagement: {
+          views: item.viewCountInt || item.viewCount || 0,
+          likes: 0,
+          comments: 0,
+          shares: 0,
+        },
+        hashtags: [],
+        media_urls: item.thumbnail ? [item.thumbnail] : [],
+        raw_data: { source: "sociavault_youtube_search", duration: item.lengthText || null },
+      });
+    } catch (e) {
+      // Skip malformed
+    }
+  }
+
+  console.log(`SociaVault YouTube: extracted ${mentions.length} videos`);
+  return mentions;
+}
+
+// ══════════════════════════════════════════════════
+// SOCIAVAULT — GOOGLE SEARCH
+// Endpoint: GET /google/search?query=...&region=BR
+// ══════════════════════════════════════════════════
+
+async function collectGoogleSearchViaSociaVault(apiKey: string, query: string, entityName: string, entityId: string): Promise<any[]> {
+  const searchQuery = query.replace(/"/g, "");
+  console.log(`SociaVault Google: searching "${searchQuery}"`);
+
+  const data = await runSociaVaultAPI(apiKey, "google/search", { query: searchQuery, region: "BR" });
+  if (!data) return [];
+
+  const mentions: any[] = [];
+  const results = data.data?.results || {};
+  const resultsArray = Array.isArray(results) ? results : Object.values(results);
+
+  for (const item of resultsArray) {
+    try {
+      const title = item.title || "";
+      const description = item.description || "";
+      const content = (title + (description ? `. ${description}` : "")).substring(0, 2000);
+      if (content.length < 10) continue;
+
+      mentions.push({
+        entity_id: entityId,
+        source: "google_search",
+        source_url: item.url || null,
+        author_name: item.url ? new URL(item.url).hostname : null,
+        author_handle: null,
+        content,
+        published_at: new Date().toISOString(),
+        engagement: {},
+        hashtags: [],
+        media_urls: [],
+        raw_data: { source: "sociavault_google_search" },
+      });
+    } catch (e) {
+      // Skip malformed
+    }
+  }
+
+  console.log(`SociaVault Google: extracted ${mentions.length} results`);
+  return mentions;
+}
 
