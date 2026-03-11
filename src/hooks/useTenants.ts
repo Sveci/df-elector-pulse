@@ -20,6 +20,7 @@ export interface Tenant {
   cidade: string | null;
   regiao_administrativa_id: string | null;
   custom_domain: string | null;
+  scd_domain_uuid: string | null;
   created_at: string;
   updated_at: string;
 }
