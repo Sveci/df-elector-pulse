@@ -264,6 +264,15 @@ const App = () => (
               </RoleProtectedRoute>
             } />
             
+            {/* Knowledge Base - admin */}
+            <Route path="/knowledge-base" element={
+              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
+                <DashboardLayout>
+                  <KnowledgeBase />
+                </DashboardLayout>
+              </RoleProtectedRoute>
+            } />
+            
             {/* Surveys - admin e atendente */}
             <Route path="/surveys" element={
               <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
