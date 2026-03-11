@@ -44,7 +44,7 @@ serve(async (req) => {
     // Fetch entity
     const { data: entity } = await supabase
       .from("po_monitored_entities")
-      .select("nome, tipo, partido, cargo")
+      .select("nome, tipo, partido, cargo, tenant_id")
       .eq("id", entity_id)
       .single();
 
@@ -184,6 +184,7 @@ Gere de 4 a 8 insights estratégicos para o político. Cada insight deve ter:
       .from("po_insights")
       .insert({
         entity_id,
+        tenant_id: entity?.tenant_id,
         period_days,
         insights,
         stats: statsObj,
