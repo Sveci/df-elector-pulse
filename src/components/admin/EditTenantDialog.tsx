@@ -256,7 +256,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                   </div>
                   <p className="text-muted-foreground">
                     ⚠️ Caso use Cloudflare, ative o proxy (nuvem laranja) e configure SSL como <strong>Full</strong>.
-                    Para outros provedores, o domínio também precisa ser adicionado em <strong>Settings → Domains</strong> do projeto Lovable.
+                    Para outros provedores, o domínio também precisa ser adicionado em <strong>Settings → Domains</strong> do projeto.
                   </p>
                 </div>
               )}

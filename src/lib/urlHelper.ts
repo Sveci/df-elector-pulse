@@ -2,7 +2,7 @@
  * Retorna a URL base da aplicação de forma dinâmica.
  * No navegador: usa window.location.origin (funciona automaticamente com qualquer domínio).
  * Em edge functions: usa a variável de ambiente APP_BASE_URL.
- * Fallback: domínio publicado do Lovable.
+ * Fallback: domínio publicado da aplicação.
  */
 function getAppBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {

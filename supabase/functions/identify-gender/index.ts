@@ -66,7 +66,7 @@ ${names.map((n: any) => `{"id": "${n.id}", "nome": "${n.nome}"}`).join('\n')}`;
       
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao seu workspace Lovable." }),
+          JSON.stringify({ error: "Créditos insuficientes. Entre em contato com o suporte." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
