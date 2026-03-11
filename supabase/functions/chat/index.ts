@@ -1513,6 +1513,8 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 
 **consultar_opiniao_publica** → Use para: "opinião pública", "menções", "reclamações", "elogios", "o que estão falando", "sentimento", "críticas", "redes sociais", "imagem pública", "maiores reclamações", "maiores elogios"
 
+**pesquisar_web** → Use para: "pesquisar na internet", "buscar notícias", "clipping", "o que está acontecendo", "notícias sobre", "status do PL", "pesquisar na web", "verificar informação". Use também como complemento quando a base de conhecimento não tem dados atualizados.
+
 ═══════════════════════════════════════════════════════════
 🎨 COMO APRESENTAR DADOS
 ═══════════════════════════════════════════════════════════
