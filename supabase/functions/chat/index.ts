@@ -912,6 +912,76 @@ const availableFunctions: Record<string, (params: any) => Promise<any>> = {
     return resultado;
   },
 
+  // ──────────────────────────────────────────────────────────
+  // PESQUISA WEB (Perplexity AI)
+  // ──────────────────────────────────────────────────────────
+  pesquisar_web: async (params: {
+    query: string;
+    tipo?: string;
+    entidade?: string;
+  }) => {
+    console.log('Executando pesquisar_web com params:', params);
+    
+    const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
+    if (!perplexityKey) {
+      return { erro: "Pesquisa web não disponível (Perplexity não configurado)" };
+    }
+
+    const typeMap: Record<string, string> = {
+      noticias: "news_clipping",
+      legislacao: "legislation",
+      opiniao_publica: "public_opinion",
+    };
+
+    const searchType = typeMap[params.tipo || ""] || "general";
+    
+    const systemPrompts: Record<string, string> = {
+      news_clipping: `Busque notícias recentes sobre "${params.entidade || params.query}" na política brasileira. Retorne um resumo estruturado.`,
+      legislation: `Busque informações sobre legislação, projetos de lei e atividades parlamentares relacionadas a: ${params.query}`,
+      public_opinion: `Analise a percepção pública sobre "${params.entidade || params.query}" na política brasileira.`,
+      general: `Responda de forma precisa e factual em português brasileiro.`,
+    };
+
+    try {
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${perplexityKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: searchType === "general" ? "sonar" : "sonar-pro",
+          messages: [
+            { role: "system", content: systemPrompts[searchType] },
+            { role: "user", content: params.query },
+          ],
+          max_tokens: 1200,
+          search_recency_filter: searchType === "news_clipping" ? "week" : "month",
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Perplexity API error:", response.status);
+        return { erro: `Erro na pesquisa web (${response.status})` };
+      }
+
+      const data = await response.json();
+      const answer = data.choices?.[0]?.message?.content || "";
+      const citations = data.citations || [];
+
+      console.log(`pesquisar_web resultado: ${answer.length} chars, ${citations.length} fontes`);
+
+      return {
+        resultado: answer,
+        fontes: citations.slice(0, 5),
+        tipo: params.tipo || "geral",
+      };
+    } catch (err) {
+      console.error("pesquisar_web error:", err);
+      return { erro: "Falha na pesquisa web" };
+    }
+  },
+
   consultar_estatisticas_gerais: async () => {
     console.log('Executando consultar_estatisticas_gerais');
     
@@ -1253,6 +1323,25 @@ Retorna: total de menções, distribuição de sentimento (positivo/negativo/neu
   {
     type: 'function',
     function: {
+      name: 'pesquisar_web',
+      description: `Realiza pesquisa na web em tempo real usando inteligência artificial (Perplexity).
+Use quando o usuário pedir: pesquisar na internet, buscar notícias, clipping de mídia, monitorar legislação, verificar informações atuais, o que está acontecendo sobre X, notícias sobre Y, status de projetos de lei, buscar na web.
+Também use como complemento quando a base de conhecimento não tem informações suficientes sobre um tema atual.
+Retorna: resultado da pesquisa com fontes verificadas da internet.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'A pergunta ou tema a ser pesquisado na web' },
+          tipo: { type: 'string', enum: ['noticias', 'legislacao', 'opiniao_publica', 'geral'], description: 'Tipo de pesquisa (padrão: geral)' },
+          entidade: { type: 'string', description: 'Nome da entidade/pessoa para contextualizar a busca' }
+        },
+        required: ['query']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'consultar_estatisticas_gerais',
       description: `Consulta visão geral de todas as métricas do sistema.
 Use quando o usuário perguntar sobre: resumo geral, visão geral, dashboard, status do sistema, números gerais, "me dê um resumo".
@@ -1423,6 +1512,8 @@ Use emojis estratégicos (máximo 2-3 por resposta).
 **consultar_metricas_whatsapp** → Use para: "WhatsApp", "mensagens", "taxa de entrega/leitura"
 
 **consultar_opiniao_publica** → Use para: "opinião pública", "menções", "reclamações", "elogios", "o que estão falando", "sentimento", "críticas", "redes sociais", "imagem pública", "maiores reclamações", "maiores elogios"
+
+**pesquisar_web** → Use para: "pesquisar na internet", "buscar notícias", "clipping", "o que está acontecendo", "notícias sobre", "status do PL", "pesquisar na web", "verificar informação". Use também como complemento quando a base de conhecimento não tem dados atualizados.
 
 ═══════════════════════════════════════════════════════════
 🎨 COMO APRESENTAR DADOS
