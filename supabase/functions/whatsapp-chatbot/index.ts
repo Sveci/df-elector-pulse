@@ -503,7 +503,9 @@ Deno.serve(async (req) => {
             message,
             leader as Leader,
             matchedKeyword.description || "",
-            chatbotConfig.ai_system_prompt || ""
+            chatbotConfig.ai_system_prompt || "",
+            supabase,
+            tenantId
           );
         } else {
           responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
