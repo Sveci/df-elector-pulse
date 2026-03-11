@@ -502,8 +502,8 @@ const Index = () => {
                   O módulo varre toda a web — Instagram, Facebook, X, TikTok, portais locais e blogs — para entregar uma visão completa do cenário político onde você atua.
                 </motion.p>
                 <motion.div variants={fadeUp} custom={4}>
-                  <Button onClick={() => navigate("/login")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold px-8">
-                    Conhecer o Módulo <ChevronRight className="ml-1 h-4 w-4" />
+                  <Button onClick={() => navigate("/contato")} className="bg-primary hover:bg-primary-600 text-gray-900 font-semibold px-8">
+                    Entrar em contato agora! <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </motion.div>
               </div>
