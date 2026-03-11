@@ -314,25 +314,24 @@ Deno.serve(async (req) => {
       .limit(1)
       .single();
 
-    if (leaderError || !leader) {
-      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}`);
-      await supabase.from("whatsapp_chatbot_logs").insert({
-        phone: normalizedPhone,
-        message_in: message,
-        message_out: null,
-        error_message: "Líder não encontrado",
-        processing_time_ms: Date.now() - startTime,
-        ...(requestTenantId ? { tenant_id: requestTenantId } : {}),
-      });
+    const resolvedLeader = leaderError || !leader ? null : (leader as Leader);
+    const tenantId = requestTenantId || resolvedLeader?.tenant_id;
+
+    if (!tenantId) {
+      console.log(`[whatsapp-chatbot] No tenant context available for phone ${phone}`);
       return new Response(
-        JSON.stringify({ success: false, reason: "not_a_leader" }),
+        JSON.stringify({ success: false, reason: "missing_tenant" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Use leader's tenant_id as the resolved tenant
-    const tenantId = requestTenantId || leader.tenant_id;
-    console.log(`[whatsapp-chatbot] Found leader: ${leader.nome_completo} (${leader.id}), tenant: ${tenantId}`);
+    if (resolvedLeader) {
+      console.log(`[whatsapp-chatbot] Found leader: ${resolvedLeader.nome_completo} (${resolvedLeader.id}), tenant: ${tenantId}`);
+    } else {
+      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}, continuing as guest in tenant ${tenantId}`);
+    }
+
+    const actor: Leader | null = resolvedLeader;
 
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
