@@ -1,0 +1,220 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Loader2, CheckCircle2, XCircle, Search,
+  Globe, MessageSquare, Radio
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const SOURCE_LABELS: Record<string, string> = {
+  news: "Notícias (Bing/Yahoo)",
+  google_news: "Google News",
+  google_search: "Google Search",
+  twitter: "Twitter/X",
+  twitter_comments: "Twitter Respostas",
+  instagram: "Instagram",
+  instagram_comments: "Instagram Comentários",
+  facebook: "Facebook",
+  facebook_comments: "Facebook Comentários",
+  tiktok: "TikTok",
+  tiktok_comments: "TikTok Comentários",
+  youtube_comments: "YouTube Comentários",
+  youtube_search: "YouTube Busca",
+  threads: "Threads",
+  reddit: "Reddit",
+  telegram: "Telegram",
+  portais_df: "Portais DF",
+  portais_br: "Portais BR",
+  fontes_oficiais: "Fontes Oficiais",
+  influencer_comments: "Influenciadores",
+  sites_custom: "Sites Customizados",
+};
+
+const SOURCE_ICONS: Record<string, string> = {
+  twitter: "🐦", instagram: "📸", facebook: "📘", tiktok: "🎵",
+  youtube_comments: "▶️", youtube_search: "▶️", threads: "🧵",
+  reddit: "🤖", telegram: "✈️", news: "📰", google_news: "📰",
+  google_search: "🔍", portais_df: "🏛️", portais_br: "🌐",
+  fontes_oficiais: "🏛️", influencer_comments: "⭐", sites_custom: "🌍",
+  twitter_comments: "🐦", instagram_comments: "📸",
+  facebook_comments: "📘", tiktok_comments: "🎵",
+};
+
+interface CollectionJob {
+  id: string;
+  status: string;
+  sources_requested: string[];
+  sources_completed: string[];
+  source_current: string | null;
+  mentions_found: number;
+  mentions_inserted: number;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+  progress_log: { source: string; found: number; ts: string; provider?: string }[];
+}
+
+interface CollectionProgressPanelProps {
+  jobId: string | null;
+  onComplete?: () => void;
+}
+
+export function CollectionProgressPanel({ jobId, onComplete }: CollectionProgressPanelProps) {
+  const [job, setJob] = useState<CollectionJob | null>(null);
+
+  useEffect(() => {
+    if (!jobId) return;
+
+    // Initial fetch
+    const fetchJob = async () => {
+      const { data } = await supabase
+        .from("po_collection_jobs")
+        .select("*")
+        .eq("id", jobId)
+        .single();
+      if (data) setJob(data as unknown as CollectionJob);
+    };
+    fetchJob();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel(`job-${jobId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "po_collection_jobs",
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          const updated = payload.new as unknown as CollectionJob;
+          setJob(updated);
+          if (updated.status === "completed" || updated.status === "error") {
+            onComplete?.();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [jobId, onComplete]);
+
+  if (!jobId || !job) return null;
+
+  const totalSources = job.sources_requested.length;
+  const completedSources = job.sources_completed.length;
+  const progressPct = totalSources > 0 ? Math.round((completedSources / totalSources) * 100) : 0;
+  const isRunning = job.status === "running";
+  const isCompleted = job.status === "completed";
+  const isError = job.status === "error";
+  const elapsed = Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -10, height: 0 }}
+        animate={{ opacity: 1, y: 0, height: "auto" }}
+        exit={{ opacity: 0, y: -10, height: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className={`border-2 ${isRunning ? "border-primary/40 bg-primary/5" : isCompleted ? "border-green-500/30 bg-green-50" : "border-destructive/30 bg-destructive/5"}`}>
+          <CardContent className="pt-4 pb-4 space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isRunning ? (
+                  <div className="relative">
+                    <Radio className="h-5 w-5 text-primary animate-pulse" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-ping" />
+                  </div>
+                ) : isCompleted ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-destructive" />
+                )}
+                <span className="font-semibold text-sm">
+                  {isRunning ? "Coletando menções em tempo real..." : isCompleted ? "Coleta concluída!" : "Erro na coleta"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>{completedSources}/{totalSources} fontes</span>
+                <span>{elapsed}s</span>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <Progress value={progressPct} className="h-2" />
+
+            {/* Mentions counter */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  <motion.span
+                    key={job.mentions_found}
+                    initial={{ scale: 1.3, color: "hsl(var(--primary))" }}
+                    animate={{ scale: 1, color: "inherit" }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {job.mentions_found}
+                  </motion.span>
+                  {" "}menções encontradas
+                </span>
+              </div>
+              {isCompleted && job.mentions_inserted > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">
+                    {job.mentions_inserted} novas inseridas
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Source progress grid */}
+            <div className="flex flex-wrap gap-1.5">
+              {job.sources_requested.map((source) => {
+                const isCurrentSource = job.source_current === source;
+                const isDone = job.sources_completed.includes(source);
+                const logEntry = job.progress_log.find(l => l.source === source);
+                const hasError = logEntry?.provider?.startsWith("error:");
+                const found = logEntry?.found ?? 0;
+
+                return (
+                  <motion.div
+                    key={source}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Badge
+                      variant={isDone ? (hasError ? "destructive" : "default") : isCurrentSource ? "secondary" : "outline"}
+                      className={`text-xs gap-1 transition-all ${isCurrentSource ? "animate-pulse border-primary ring-1 ring-primary/30" : ""}`}
+                    >
+                      <span>{SOURCE_ICONS[source] || "📄"}</span>
+                      <span>{SOURCE_LABELS[source] || source}</span>
+                      {isCurrentSource && <Loader2 className="h-3 w-3 animate-spin" />}
+                      {isDone && !hasError && <span className="font-bold">({found})</span>}
+                      {isDone && hasError && <XCircle className="h-3 w-3" />}
+                    </Badge>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {isError && job.error_message && (
+              <p className="text-xs text-destructive">{job.error_message}</p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
