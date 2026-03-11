@@ -752,10 +752,7 @@ const Index = () => {
               <ul className="space-y-3">
               {[
                   { label: "Sobre Nós", href: "/sobre" },
-                  { label: "Blog", href: "#" },
-                  { label: "Carreiras", href: "#" },
                   { label: "Contato", href: "/contato" },
-                  { label: "Parceiros", href: "#" },
                 ].map((item) => (
                   <li key={item.label}>
                     <a href={item.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{item.label}</a>
