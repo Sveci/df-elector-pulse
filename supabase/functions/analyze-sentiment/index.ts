@@ -14,6 +14,7 @@ async function analyzeBatch(
   entity: any,
   adversaries: any[],
   entityId: string,
+  tenantId: string,
   lovableApiKey: string,
 ): Promise<number> {
   const adversaryNames = adversaries.map(a => a.nome);
