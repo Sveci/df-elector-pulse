@@ -160,15 +160,6 @@ const helpSections: HelpSection[] = [
       { title: "Como agendar uma visita?", content: "Visitantes podem agendar pelo link público ou o atendente pode criar agendamentos internamente. O sistema envia confirmações automáticas e gerencia a fila de espera no dia do atendimento." },
     ],
   },
-  {
-    icon: Globe,
-    title: "Multi-Tenant e Administração",
-    description: "Gerencie múltiplas organizações com isolamento de dados.",
-    articles: [
-      { title: "O que é Multi-Tenant?", content: "A arquitetura multi-tenant permite que múltiplas organizações utilizem a mesma instância da plataforma com completo isolamento de dados. Cada organização tem seus próprios contatos, lideranças, eventos e configurações." },
-      { title: "Como gerenciar usuários e permissões?", content: "Acesse Configurações > Equipe para adicionar usuários. Cada usuário tem um papel (admin, operador, visualizador) com permissões específicas. O super admin tem acesso a todas as funcionalidades e ao painel administrativo." },
-    ],
-  },
 ];
 
 const CentralAjuda = () => {
