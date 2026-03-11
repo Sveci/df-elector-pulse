@@ -28,7 +28,7 @@ serve(async (req) => {
     // Get all active entities
     const { data: entities, error: entErr } = await supabase
       .from("po_monitored_entities")
-      .select("id, nome")
+      .select("id, nome, tenant_id")
       .eq("is_active", true);
 
     if (entErr) throw entErr;
