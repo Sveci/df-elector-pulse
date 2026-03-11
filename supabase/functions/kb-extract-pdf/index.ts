@@ -77,8 +77,17 @@ Deno.serve(async (req) => {
     }
 
     const finalQuality = analyzeTextQuality(extractedText);
+    console.log(
+      `[kb-extract-pdf] Final result: ${extractedText.length} chars, method: ${extractionMethod}, usable: ${finalQuality.usable}, wordCount: ${finalQuality.wordCount}`
+    );
 
-    if (!extractedText || extractedText.length < 50 || !finalQuality.usable) {
+    // For vision-extracted text, be more lenient - if AI returned something with real words, trust it
+    const isAcceptable = extractedText && extractedText.length >= 50 && (
+      finalQuality.usable || 
+      (extractionMethod === "pdf_vision" && finalQuality.wordCount >= 20 && finalQuality.readableRatio > 0.5)
+    );
+
+    if (!isAcceptable) {
       // Last resort fallback only if raw text is genuinely readable
       if (rawQuality.usable && rawText.length > 50) {
         return new Response(
