@@ -314,25 +314,24 @@ Deno.serve(async (req) => {
       .limit(1)
       .single();
 
-    if (leaderError || !leader) {
-      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}`);
-      await supabase.from("whatsapp_chatbot_logs").insert({
-        phone: normalizedPhone,
-        message_in: message,
-        message_out: null,
-        error_message: "Líder não encontrado",
-        processing_time_ms: Date.now() - startTime,
-        ...(requestTenantId ? { tenant_id: requestTenantId } : {}),
-      });
+    const resolvedLeader = leaderError || !leader ? null : (leader as Leader);
+    const tenantId = requestTenantId || resolvedLeader?.tenant_id;
+
+    if (!tenantId) {
+      console.log(`[whatsapp-chatbot] No tenant context available for phone ${phone}`);
       return new Response(
-        JSON.stringify({ success: false, reason: "not_a_leader" }),
+        JSON.stringify({ success: false, reason: "missing_tenant" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Use leader's tenant_id as the resolved tenant
-    const tenantId = requestTenantId || leader.tenant_id;
-    console.log(`[whatsapp-chatbot] Found leader: ${leader.nome_completo} (${leader.id}), tenant: ${tenantId}`);
+    if (resolvedLeader) {
+      console.log(`[whatsapp-chatbot] Found leader: ${resolvedLeader.nome_completo} (${resolvedLeader.id}), tenant: ${tenantId}`);
+    } else {
+      console.log(`[whatsapp-chatbot] No leader found for phone ${phone}, continuing as guest in tenant ${tenantId}`);
+    }
+
+    const actor: Leader | null = resolvedLeader;
 
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
@@ -354,14 +353,24 @@ Deno.serve(async (req) => {
 
     // Check rate limit
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: recentMessages } = await supabase
+    let rateLimitQuery = supabase
       .from("whatsapp_chatbot_logs")
       .select("id", { count: "exact", head: true })
-      .eq("leader_id", leader.id)
-      .gte("created_at", oneHourAgo);
+      .gte("created_at", oneHourAgo)
+      .eq("phone", normalizedPhone);
+
+    if (actor?.id) {
+      rateLimitQuery = rateLimitQuery.eq("leader_id", actor.id);
+    }
+
+    if (tenantId) {
+      rateLimitQuery = rateLimitQuery.eq("tenant_id", tenantId);
+    }
+
+    const { count: recentMessages } = await rateLimitQuery;
 
     if (recentMessages && recentMessages >= (chatbotConfig.max_messages_per_hour || 20)) {
-      console.log(`[whatsapp-chatbot] Rate limit exceeded for leader ${leader.id}`);
+      console.log(`[whatsapp-chatbot] Rate limit exceeded for ${actor?.id ? `leader ${actor.id}` : `phone ${normalizedPhone}`}`);
       return new Response(
         JSON.stringify({ success: false, reason: "rate_limit" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -485,23 +494,39 @@ Deno.serve(async (req) => {
 
       if (matchedKeyword.response_type === "static" && matchedKeyword.static_response) {
         responseMessage = matchedKeyword.static_response
-          .replace("{{nome}}", leader.nome_completo.split(" ")[0])
-          .replace("{{nome_completo}}", leader.nome_completo)
-          .replace("{{pontos}}", String(leader.pontuacao_total))
-          .replace("{{cadastros}}", String(leader.cadastros));
+          .replace("{{nome}}", getFirstName(actor))
+          .replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
+          .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
+          .replace("{{cadastros}}", String(actor?.cadastros || 0));
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        const fn = dynamicFunctions[matchedKeyword.dynamic_function];
-        if (fn) {
-          responseMessage = await fn(supabase, leader as Leader);
+        if (actor) {
+          const fn = dynamicFunctions[matchedKeyword.dynamic_function];
+          if (fn) {
+            responseMessage = await fn(supabase, actor);
+          } else {
+            responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
+          }
+        } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
+          responseType = "ai";
+          responseMessage = await generateAIResponse(
+            lovableApiKey,
+            message,
+            null,
+            matchedKeyword.description || "",
+            chatbotConfig.ai_system_prompt || "",
+            supabase,
+            tenantId
+          );
         } else {
-          responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
+          responseType = "fallback";
+          responseMessage = chatbotConfig.fallback_message || "Posso responder perguntas gerais sobre o mandato e os documentos disponíveis.";
         }
       } else if (matchedKeyword.response_type === "ai") {
         if (lovableApiKey && chatbotConfig.use_ai_for_unknown) {
           responseMessage = await generateAIResponse(
             lovableApiKey,
             message,
-            leader as Leader,
+            actor,
             matchedKeyword.description || "",
             chatbotConfig.ai_system_prompt || "",
             supabase,
@@ -517,7 +542,7 @@ Deno.serve(async (req) => {
       responseMessage = await generateAIResponse(
         lovableApiKey,
         message,
-        leader as Leader,
+        actor,
         "",
         chatbotConfig.ai_system_prompt || "",
         supabase,
@@ -526,7 +551,7 @@ Deno.serve(async (req) => {
     } else {
       responseType = "fallback";
       responseMessage = chatbotConfig.fallback_message || 
-        `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+        `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Digite AJUDA para ver os comandos disponíveis.`;
     }
 
     // Send response - decide provider (filtered by tenant)
@@ -574,7 +599,7 @@ Deno.serve(async (req) => {
 
     // Log the interaction
     await supabase.from("whatsapp_chatbot_logs").insert({
-      leader_id: leader.id,
+      leader_id: actor?.id || null,
       phone: normalizedPhone,
       message_in: message,
       message_out: responseMessage,
@@ -603,6 +628,11 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function getFirstName(leader: Leader | null): string {
+  if (!leader?.nome_completo) return "amigo(a)";
+  return leader.nome_completo.split(" ")[0] || "amigo(a)";
+}
 
 // Normalize phone number
 function normalizePhone(phone: string): string {
@@ -791,7 +821,7 @@ async function searchKnowledgeBase(
 async function generateAIResponse(
   apiKey: string,
   userMessage: string,
-  leader: Leader,
+  leader: Leader | null,
   keywordContext: string,
   systemPrompt: string,
   supabase?: any,
@@ -810,14 +840,26 @@ async function generateAIResponse(
     }
   }
 
-  const leaderContext = `
-O usuário é ${leader.nome_completo}, um líder político com:
-- ${leader.cadastros} cadastros realizados
-- ${leader.pontuacao_total} pontos de gamificação
-- ${leader.is_coordinator ? "É coordenador" : "Não é coordenador"}
+  const hasLeader = !!leader;
+  const leaderName = getFirstName(leader);
+  const fullLeaderName = leader?.nome_completo || "Visitante";
+  const cadastros = leader?.cadastros || 0;
+  const pontuacao = leader?.pontuacao_total || 0;
+  const isCoordinator = !!leader?.is_coordinator;
+
+  const leaderContext = hasLeader
+    ? `
+O usuário é ${fullLeaderName}, um líder político com:
+- ${cadastros} cadastros realizados
+- ${pontuacao} pontos de gamificação
+- ${isCoordinator ? "É coordenador" : "Não é coordenador"}
+`
+    : `
+O usuário é um contato do WhatsApp já registrado no fluxo de atendimento, mas não está cadastrado como líder.
+Responda com foco institucional, sem mencionar dados internos de liderança ou gamificação.
 `;
 
-  const kbSection = kbContext 
+  const kbSection = kbContext
     ? `\n\nBASE DE CONHECIMENTO (use estas informações para responder):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nIMPORTANTE: Ao usar informações da base de conhecimento, SEMPRE cite a fonte no formato (Fonte: Nome do Documento).`
     : "";
 
@@ -830,8 +872,8 @@ ${kbSection}
 
 REGRAS OBRIGATÓRIAS:
 - Responda de forma breve (máximo 500 caracteres) e amigável. Use emojis moderadamente.
-- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : ""}
-- Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING.
+- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
+- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
 - NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
 - NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
 - Se o líder não tem cadastros ainda, diga apenas que ele pode compartilhar seu link de indicação para que novas pessoas se cadastrem.
@@ -857,13 +899,13 @@ REGRAS OBRIGATÓRIAS:
 
     if (!response.ok) {
       console.error("[whatsapp-chatbot] AI API error:", await response.text());
-      return `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+      return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "Não consegui processar sua mensagem.";
   } catch (err) {
     console.error("[whatsapp-chatbot] AI error:", err);
-    return `Olá ${leader.nome_completo.split(" ")[0]}! Digite AJUDA para ver os comandos disponíveis.`;
+    return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
 }
