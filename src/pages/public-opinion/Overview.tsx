@@ -168,7 +168,7 @@ const Overview = () => {
             <Button
               variant="outline"
               size="sm"
-              disabled={collectMentions.isPending}
+              disabled={collectMentions.isPending || !!activeJobId}
               onClick={() => {
                 const sources = ["news", "google_news", "google_search", "portais_df", "portais_br", "fontes_oficiais", "reddit"];
                 const redes = principalEntity.redes_sociais as Record<string, any> | null;
@@ -181,7 +181,16 @@ const Overview = () => {
                 if (redes?.telegram) sources.push("telegram");
                 if (redes?.influenciadores_ig?.length) sources.push("influencer_comments");
                 if (redes?.sites_customizados?.length) sources.push("sites_custom");
-                collectMentions.mutate({ entity_id: principalEntity.id, sources });
+                collectMentions.mutate(
+                  { entity_id: principalEntity.id, sources },
+                  {
+                    onSuccess: (data) => {
+                      if (data?.job_id) {
+                        setActiveJobId(data.job_id);
+                      }
+                    },
+                  }
+                );
               }}
             >
               {collectMentions.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
