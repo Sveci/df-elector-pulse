@@ -719,14 +719,93 @@ async function sendWhatsAppMessageMetaCloud(
   }
 }
 
-// Generate AI response using Lovable AI
+// Search Knowledge Base for relevant context
+async function searchKnowledgeBase(
+  supabase: any,
+  question: string,
+  tenantId: string
+): Promise<{ context: string; sources: string[] }> {
+  try {
+    // Search for relevant chunks using ILIKE
+    const searchTerms = question
+      .toLowerCase()
+      .replace(/[^\w\sáéíóúãõâêîôûç]/g, "")
+      .split(/\s+/)
+      .filter((w: string) => w.length > 2)
+      .slice(0, 6);
+
+    if (searchTerms.length === 0) return { context: "", sources: [] };
+
+    const ilikeConditions = searchTerms.map((term: string) => `content.ilike.%${term}%`);
+    
+    const { data: chunks } = await supabase
+      .from("kb_chunks")
+      .select(`
+        content, metadata,
+        document:kb_documents(title, category)
+      `)
+      .eq("tenant_id", tenantId)
+      .or(ilikeConditions.join(","))
+      .limit(5);
+
+    if (!chunks || chunks.length === 0) {
+      // Fallback: get some general chunks
+      const { data: fallbackChunks } = await supabase
+        .from("kb_chunks")
+        .select(`
+          content, metadata,
+          document:kb_documents(title, category)
+        `)
+        .eq("tenant_id", tenantId)
+        .limit(3);
+      
+      if (!fallbackChunks || fallbackChunks.length === 0) return { context: "", sources: [] };
+      
+      const sources = [...new Set(fallbackChunks.map((c: any) => {
+        const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+        return doc?.title || "Documento";
+      }))];
+      
+      const context = fallbackChunks.map((c: any) => c.content).join("\n\n");
+      return { context, sources: sources as string[] };
+    }
+
+    const sources = [...new Set(chunks.map((c: any) => {
+      const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+      return doc?.title || "Documento";
+    }))];
+
+    const context = chunks.map((c: any) => c.content).join("\n\n");
+    return { context, sources: sources as string[] };
+  } catch (err) {
+    console.error("[whatsapp-chatbot] KB search error:", err);
+    return { context: "", sources: [] };
+  }
+}
+
+// Generate AI response using Lovable AI + Knowledge Base
 async function generateAIResponse(
   apiKey: string,
   userMessage: string,
   leader: Leader,
   keywordContext: string,
-  systemPrompt: string
+  systemPrompt: string,
+  supabase?: any,
+  tenantId?: string
 ): Promise<string> {
+  // Search Knowledge Base for relevant context
+  let kbContext = "";
+  let kbSources: string[] = [];
+  
+  if (supabase && tenantId) {
+    const kb = await searchKnowledgeBase(supabase, userMessage, tenantId);
+    kbContext = kb.context;
+    kbSources = kb.sources;
+    if (kbContext) {
+      console.log(`[whatsapp-chatbot] KB context found: ${kbSources.length} sources, ${kbContext.length} chars`);
+    }
+  }
+
   const leaderContext = `
 O usuário é ${leader.nome_completo}, um líder político com:
 - ${leader.cadastros} cadastros realizados
@@ -734,14 +813,20 @@ O usuário é ${leader.nome_completo}, um líder político com:
 - ${leader.is_coordinator ? "É coordenador" : "Não é coordenador"}
 `;
 
+  const kbSection = kbContext 
+    ? `\n\nBASE DE CONHECIMENTO (use estas informações para responder):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nIMPORTANTE: Ao usar informações da base de conhecimento, SEMPRE cite a fonte no formato (Fonte: Nome do Documento).`
+    : "";
+
   const fullPrompt = `${systemPrompt}
 
 ${leaderContext}
 
 ${keywordContext ? `Contexto adicional: ${keywordContext}` : ""}
+${kbSection}
 
 REGRAS OBRIGATÓRIAS:
-- Responda de forma breve (máximo 300 caracteres) e amigável. Use emojis moderadamente.
+- Responda de forma breve (máximo 500 caracteres) e amigável. Use emojis moderadamente.
+- ${kbContext ? "PRIORIZE informações da Base de Conhecimento para responder. SEMPRE cite a fonte." : ""}
 - Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING.
 - NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
 - NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
@@ -762,7 +847,7 @@ REGRAS OBRIGATÓRIAS:
           { role: "system", content: fullPrompt },
           { role: "user", content: userMessage }
         ],
-        max_tokens: 200
+        max_tokens: 400
       })
     });
 
