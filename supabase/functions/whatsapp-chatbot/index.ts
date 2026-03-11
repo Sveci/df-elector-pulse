@@ -519,7 +519,9 @@ Deno.serve(async (req) => {
         message,
         leader as Leader,
         "",
-        chatbotConfig.ai_system_prompt || ""
+        chatbotConfig.ai_system_prompt || "",
+        supabase,
+        tenantId
       );
     } else {
       responseType = "fallback";
