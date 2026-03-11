@@ -1323,6 +1323,25 @@ Retorna: total de menções, distribuição de sentimento (positivo/negativo/neu
   {
     type: 'function',
     function: {
+      name: 'pesquisar_web',
+      description: `Realiza pesquisa na web em tempo real usando inteligência artificial (Perplexity).
+Use quando o usuário pedir: pesquisar na internet, buscar notícias, clipping de mídia, monitorar legislação, verificar informações atuais, o que está acontecendo sobre X, notícias sobre Y, status de projetos de lei, buscar na web.
+Também use como complemento quando a base de conhecimento não tem informações suficientes sobre um tema atual.
+Retorna: resultado da pesquisa com fontes verificadas da internet.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'A pergunta ou tema a ser pesquisado na web' },
+          tipo: { type: 'string', enum: ['noticias', 'legislacao', 'opiniao_publica', 'geral'], description: 'Tipo de pesquisa (padrão: geral)' },
+          entidade: { type: 'string', description: 'Nome da entidade/pessoa para contextualizar a busca' }
+        },
+        required: ['query']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'consultar_estatisticas_gerais',
       description: `Consulta visão geral de todas as métricas do sistema.
 Use quando o usuário perguntar sobre: resumo geral, visão geral, dashboard, status do sistema, números gerais, "me dê um resumo".
