@@ -87,7 +87,8 @@ export function AddKBDocumentDialog({ children }: Props) {
       if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ""));
     } else if (
       file.type === "text/csv" || file.name.endsWith(".csv") ||
-      file.type === "text/html" || file.name.endsWith(".html")
+      file.type === "text/html" || file.name.endsWith(".html") ||
+      file.name.endsWith(".sql")
     ) {
       const text = await file.text();
       setContent(text);
@@ -214,11 +215,11 @@ export function AddKBDocumentDialog({ children }: Props) {
                     Arraste um arquivo ou clique para selecionar
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Suporta: .pdf, .txt, .md, .json, .csv, .html
+                    Suporta: .pdf, .txt, .md, .json, .csv, .html, .sql
                   </p>
                   <Input
                     type="file"
-                    accept=".pdf,.txt,.md,.json,.csv,.html"
+                    accept=".pdf,.txt,.md,.json,.csv,.html,.sql"
                     onChange={handleFileUpload}
                     className="max-w-xs mx-auto"
                     disabled={extracting}
