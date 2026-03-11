@@ -31,6 +31,7 @@ import Contacts from "./pages/Contacts";
 import Campaigns from "./pages/Campaigns";
 import Events from "./pages/Events";
 import Projects from "./pages/Projects";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import Messaging from "./pages/Messaging";
 import Segments from "./pages/Segments";
 import AIAgent from "./pages/AIAgent";
