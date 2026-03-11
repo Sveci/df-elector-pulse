@@ -1,4 +1,4 @@
-// manage-custom-domain v2 - SaaSCustomDomains.com integration
+// manage-custom-domain v3 - SaaSCustomDomains.com integration (upstream path fix)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
