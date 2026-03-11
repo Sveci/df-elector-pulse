@@ -45,7 +45,6 @@ const Overview = () => {
     qc.invalidateQueries({ queryKey: ["po_mentions"] });
     qc.invalidateQueries({ queryKey: ["po_overview_stats"] });
     qc.invalidateQueries({ queryKey: ["po_pending_count"] });
-    setTimeout(() => setActiveJobId(null), 8000);
   }, [qc]);
 
   const isLoading = isLoadingEntities || isLoadingStats;
