@@ -1188,8 +1188,9 @@ REGRAS OBRIGATÓRIAS:
       }
     }
 
-    // If AI denies AND no KB data, try Perplexity web search as final fallback
-    if (responseDeniesKnowledge(aiAnswer) || !aiAnswer) {
+    // If AI denies knowledge OR KB lacks specific answer, try Perplexity web search
+    const shouldTryPerplexity = responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbLacksSpecificAnswer(userMessage, kbRankedChunks);
+    if (shouldTryPerplexity) {
       const perplexityResult = await searchPerplexityFallback(userMessage);
       if (perplexityResult) {
         console.log("[whatsapp-chatbot] Using Perplexity web search fallback");
