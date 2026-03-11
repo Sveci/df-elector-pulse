@@ -184,6 +184,19 @@ serve(async (req) => {
       finalHtml = template.conteudo_html;
       finalSubject = template.assunto;
 
+      // Auto-inject politico and cargo from organization table if not provided
+      if (!variables.politico || !variables.cargo) {
+        const { data: orgData } = await supabase
+          .from('organization')
+          .select('nome, cargo')
+          .limit(1)
+          .single();
+        if (orgData) {
+          if (!variables.politico) variables.politico = orgData.nome || '';
+          if (!variables.cargo) variables.cargo = orgData.cargo || '';
+        }
+      }
+
       // Replace variables in HTML and subject
       Object.entries(variables).forEach(([key, value]) => {
         const regex = new RegExp(`{{${key}}}`, 'g');
