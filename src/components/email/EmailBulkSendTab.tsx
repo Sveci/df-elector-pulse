@@ -573,6 +573,8 @@ export function EmailBulkSendTab() {
     const allRecipientsList = await Promise.all(recipients.map(async (r) => {
       const variables: Record<string, string> = {
         nome: r.name,
+        politico: organization?.nome || "",
+        cargo: organization?.cargo || "",
       };
 
       // Para templates de verificação, gerar código se necessário e link de verificação
