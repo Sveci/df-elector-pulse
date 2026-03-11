@@ -599,7 +599,7 @@ Deno.serve(async (req) => {
 
     // Log the interaction
     await supabase.from("whatsapp_chatbot_logs").insert({
-      leader_id: leader.id,
+      leader_id: actor?.id || null,
       phone: normalizedPhone,
       message_in: message,
       message_out: responseMessage,
