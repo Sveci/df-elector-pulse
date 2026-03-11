@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateTenant, Tenant } from "@/hooks/useTenants";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, Globe, CheckCircle2, AlertCircle } from "lucide-react";
 import { CARGOS_POLITICOS, ESTADOS_BR, getCargoConfig } from "@/constants/brazilPolitics";
 import { useBrazilCities } from "@/hooks/useBrazilCities";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { useCustomDomain } from "@/hooks/useCustomDomain";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EditTenantDialogProps {
   open: boolean;
