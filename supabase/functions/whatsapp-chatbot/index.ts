@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
     const { count: recentMessages } = await rateLimitQuery;
 
     if (recentMessages && recentMessages >= (chatbotConfig.max_messages_per_hour || 20)) {
-      console.log(`[whatsapp-chatbot] Rate limit exceeded for leader ${leader.id}`);
+      console.log(`[whatsapp-chatbot] Rate limit exceeded for ${actor?.id ? `leader ${actor.id}` : `phone ${normalizedPhone}`}`);
       return new Response(
         JSON.stringify({ success: false, reason: "rate_limit" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
