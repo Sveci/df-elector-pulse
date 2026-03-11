@@ -206,16 +206,16 @@ export function EmailBulkSendTab() {
     enabled: !!targetSurveyId && isSurveyInviteTemplate,
   });
 
-  // Buscar nome do deputado/organização (para template de reunião)
+  // Buscar nome do deputado/organização (para template de reunião e cabeçalho)
   const { data: organization } = useQuery({
     queryKey: ["organization-name-email"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("organization")
-        .select("nome")
+        .select("nome, cargo")
         .limit(1)
         .single();
-      if (error) return { nome: "Deputado" };
+      if (error) return { nome: "Deputado", cargo: "" };
       return data;
     },
   });
@@ -573,6 +573,8 @@ export function EmailBulkSendTab() {
     const allRecipientsList = await Promise.all(recipients.map(async (r) => {
       const variables: Record<string, string> = {
         nome: r.name,
+        politico: organization?.nome || "",
+        cargo: organization?.cargo || "",
       };
 
       // Para templates de verificação, gerar código se necessário e link de verificação
