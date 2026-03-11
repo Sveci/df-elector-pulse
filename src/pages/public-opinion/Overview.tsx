@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Users, MessageSquare, ThumbsUp, Eye, Loader2, RefreshCw, Zap, BarChart3 } from "lucide-react";
 import { useMonitoredEntities, usePoOverviewStats, useCollectMentions, useAnalyzePending, usePendingMentionsCount } from "@/hooks/public-opinion/usePublicOpinion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from "recharts";
+import { CollectionProgressPanel } from "@/components/public-opinion/CollectionProgressPanel";
+import { useQueryClient } from "@tanstack/react-query";
 
 const sourceColors: Record<string, string> = {
   twitter: '#1DA1F2', twitter_comments: '#1DA1F2',
@@ -35,6 +38,15 @@ const Overview = () => {
   const collectMentions = useCollectMentions();
   const analyzePending = useAnalyzePending();
   const { data: pendingCount = 0 } = usePendingMentionsCount(principalEntity?.id);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  const handleCollectionComplete = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["po_mentions"] });
+    qc.invalidateQueries({ queryKey: ["po_overview_stats"] });
+    qc.invalidateQueries({ queryKey: ["po_pending_count"] });
+    setTimeout(() => setActiveJobId(null), 8000);
+  }, [qc]);
 
   const isLoading = isLoadingEntities || isLoadingStats;
 
