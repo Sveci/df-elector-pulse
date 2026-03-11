@@ -313,8 +313,10 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     if (sites) await trackSource("sites_custom", () => collectCustomSites(ZENSCRAPE_API_KEY!, sites, entity.nome, entity_id), "zenscrape");
   }
 
-  // ── Sanitize published_at dates ──
+  // ── Normalize required persistence fields ──
   for (const m of collectedMentions) {
+    m.entity_id = entity_id;
+    m.tenant_id = entity.tenant_id;
     m.published_at = sanitizeDate(m.published_at);
   }
 
