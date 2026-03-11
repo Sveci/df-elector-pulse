@@ -284,9 +284,15 @@ async function handleConversationalFlow(
       return true;
     }
 
-    // For any other message from a registered user, send the menu
-    await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
-    return true;
+    // For short/ambiguous messages (single word, single char), show menu
+    // For longer natural language messages, fall through to AI chatbot
+    if (cleanMessage.length <= 15 && !cleanMessage.includes(' ')) {
+      await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+      return true;
+    }
+
+    // Fall through to AI chatbot for natural language questions
+    return false;
   }
 
   return false;
