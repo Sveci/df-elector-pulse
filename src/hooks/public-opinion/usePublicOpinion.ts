@@ -263,16 +263,11 @@ export function useCollectMentions() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return data;
+      return data as { success: boolean; background?: boolean; job_id?: string };
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["po_mentions"] });
       qc.invalidateQueries({ queryKey: ["po_sentiment_analyses"] });
-      if (data?.background) {
-        toast.success("Coleta iniciada em segundo plano. Os dados aparecerão em alguns minutos.");
-      } else {
-        toast.success(`${data.collected ?? 0} menções coletadas e enviadas para análise`);
-      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
