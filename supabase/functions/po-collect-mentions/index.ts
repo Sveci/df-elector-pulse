@@ -42,6 +42,31 @@ const APIFY_ACTORS: Record<string, string> = {
   telegram: "lexer~telegram-channel-post-scraper",
 };
 
+// ── Date sanitizer: converts relative dates and invalid strings to ISO ──
+function sanitizeDate(value: any): string {
+  if (!value || typeof value !== "string") return new Date().toISOString();
+  
+  // Already a valid ISO date?
+  const parsed = new Date(value);
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1970) return parsed.toISOString();
+  
+  // Relative date patterns like "4 days ago", "2 hours ago", "1 week ago"
+  const relMatch = value.match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i);
+  if (relMatch) {
+    const amount = parseInt(relMatch[1]);
+    const unit = relMatch[2].toLowerCase();
+    const now = new Date();
+    const ms: Record<string, number> = {
+      second: 1000, minute: 60000, hour: 3600000,
+      day: 86400000, week: 604800000, month: 2592000000, year: 31536000000,
+    };
+    return new Date(now.getTime() - amount * (ms[unit] || 86400000)).toISOString();
+  }
+  
+  // Fallback
+  return new Date().toISOString();
+}
+
 // ── Job progress helper ──
 async function updateJobProgress(supabase: any, jobId: string, updates: Record<string, any>) {
   try {
