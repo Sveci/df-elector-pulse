@@ -2413,6 +2413,65 @@ export type Database = {
           },
         ]
       }
+      po_collection_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entity_id: string
+          error_message: string | null
+          id: string
+          mentions_found: number
+          mentions_inserted: number
+          progress_log: Json
+          source_current: string | null
+          sources_completed: string[]
+          sources_requested: string[]
+          started_at: string
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entity_id: string
+          error_message?: string | null
+          id?: string
+          mentions_found?: number
+          mentions_inserted?: number
+          progress_log?: Json
+          source_current?: string | null
+          sources_completed?: string[]
+          sources_requested?: string[]
+          started_at?: string
+          status?: string
+          tenant_id?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string
+          error_message?: string | null
+          id?: string
+          mentions_found?: number
+          mentions_inserted?: number
+          progress_log?: Json
+          source_current?: string | null
+          sources_completed?: string[]
+          sources_requested?: string[]
+          started_at?: string
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_collection_jobs_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "po_monitored_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       po_daily_snapshots: {
         Row: {
           avg_sentiment_score: number | null
