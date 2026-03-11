@@ -760,16 +760,21 @@ async function searchKnowledgeBase(
   tenantId: string
 ): Promise<{ context: string; sources: string[] }> {
   try {
-    // Search for relevant chunks using ILIKE
+    // Extract meaningful search terms (skip common stop words)
+    const stopWords = new Set(["que", "como", "para", "por", "com", "uma", "dos", "das", "nos", "nas", "foi", "ser", "ter", "seu", "sua", "são", "tem", "mais", "quando", "onde", "qual", "quem", "ele", "ela", "sobre", "essa", "esse", "isso", "esta", "este", "isto", "muito", "pode", "pelo", "pela", "ainda", "bem", "sem"]);
+    
     const searchTerms = question
       .toLowerCase()
       .replace(/[^\w\sáéíóúãõâêîôûç]/g, "")
       .split(/\s+/)
-      .filter((w: string) => w.length > 2)
-      .slice(0, 6);
+      .filter((w: string) => w.length > 2 && !stopWords.has(w))
+      .slice(0, 8);
 
     if (searchTerms.length === 0) return { context: "", sources: [] };
 
+    console.log(`[whatsapp-chatbot] KB search terms: ${searchTerms.join(", ")}`);
+
+    // Fetch chunks matching any term
     const ilikeConditions = searchTerms.map((term: string) => `content.ilike.%${term}%`);
     
     const { data: chunks } = await supabase
@@ -780,7 +785,7 @@ async function searchKnowledgeBase(
       `)
       .eq("tenant_id", tenantId)
       .or(ilikeConditions.join(","))
-      .limit(5);
+      .limit(15);
 
     if (!chunks || chunks.length === 0) {
       // Fallback: get some general chunks
@@ -804,12 +809,32 @@ async function searchKnowledgeBase(
       return { context, sources: sources as string[] };
     }
 
-    const sources = [...new Set(chunks.map((c: any) => {
+    // Rank chunks by how many search terms they match (relevance scoring)
+    const rankedChunks = chunks
+      .map((chunk: any) => {
+        const contentLower = chunk.content.toLowerCase();
+        const metaTopic = (chunk.metadata?.topic || "").toLowerCase();
+        const metaSummary = (chunk.metadata?.summary || "").toLowerCase();
+        
+        let score = 0;
+        for (const term of searchTerms) {
+          if (contentLower.includes(term)) score += 1;
+          if (metaTopic.includes(term)) score += 2; // topic match is more valuable
+          if (metaSummary.includes(term)) score += 1;
+        }
+        return { ...chunk, _score: score };
+      })
+      .sort((a: any, b: any) => b._score - a._score)
+      .slice(0, 5); // Take top 5 most relevant
+
+    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: any) => `score=${c._score}`).join(", ")}`);
+
+    const sources = [...new Set(rankedChunks.map((c: any) => {
       const doc = Array.isArray(c.document) ? c.document[0] : c.document;
       return doc?.title || "Documento";
     }))];
 
-    const context = chunks.map((c: any) => c.content).join("\n\n");
+    const context = rankedChunks.map((c: any) => c.content).join("\n\n");
     return { context, sources: sources as string[] };
   } catch (err) {
     console.error("[whatsapp-chatbot] KB search error:", err);
