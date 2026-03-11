@@ -199,8 +199,8 @@ const Overview = () => {
         )}
       </div>
 
-      {/* Collection Progress */}
-      <CollectionProgressPanel jobId={activeJobId} onComplete={handleCollectionComplete} />
+      {/* Collection Progress - auto-detects running jobs */}
+      <CollectionProgressPanel jobId={activeJobId} entityId={principalEntity?.id} onComplete={handleCollectionComplete} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
