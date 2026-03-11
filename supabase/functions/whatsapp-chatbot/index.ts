@@ -947,8 +947,50 @@ function responseDeniesKnowledge(answer: string): boolean {
     "informacao nao esta disponivel",
     "nao esta disponivel na minha base",
     "nao consta na base",
-    "nao tenho dados"
+    "nao tenho dados",
+    "nao possuo informacao",
+    "nao ha informacao",
+    "nao encontrei dados",
+    "nao tenho detalhes",
+    "nao possuo detalhes",
+    "nao localizei informacao",
+    "nao disponivel na base",
+    "nao consta na minha base",
+    "nao tenho essa informacao",
+    "fora do meu conhecimento",
+    "alem do meu conhecimento",
+    "nao tenho acesso a essa informacao",
+    "base de conhecimento nao contem",
+    "documentos disponiveis nao mencionam",
+    "nao ha mencao",
+    "nao foi possivel encontrar",
   ].some((pattern) => normalized.includes(pattern));
+}
+
+// Check if KB chunks actually contain the specific topic the user asked about
+function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[]): boolean {
+  if (!rankedChunks.length) return true;
+  
+  // Extract specific identifiers from user message (numbers, acronyms+numbers, proper nouns)
+  const specificPatterns = userMessage.match(/\b(?:PEC|PL|PLP|PDL|MPV|EC)\s*\d+[\w\/]*/gi) || [];
+  const numberPatterns = userMessage.match(/\b\d{2,}\b/g) || [];
+  const allSpecifics = [...specificPatterns, ...numberPatterns];
+  
+  if (allSpecifics.length === 0) return false; // No specific identifiers to check
+  
+  // Check if any top KB chunk actually contains the specific identifier
+  const topChunks = rankedChunks.slice(0, 3);
+  const chunksText = topChunks.map(c => normalizeForKb(c.content)).join(" ");
+  
+  for (const specific of allSpecifics) {
+    const normalizedSpecific = normalizeForKb(specific);
+    if (chunksText.includes(normalizedSpecific)) {
+      return false; // Found specific match in KB
+    }
+  }
+  
+  console.log(`[whatsapp-chatbot] KB lacks specific answer for: ${allSpecifics.join(", ")}`);
+  return true; // KB has generic content but not the specific topic
 }
 
 // Perplexity web search fallback
