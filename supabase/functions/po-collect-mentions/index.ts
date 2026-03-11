@@ -46,6 +46,7 @@ const APIFY_ACTORS: Record<string, string> = {
 async function runCollection(entity_id: string, sources: string[] | undefined, query: string | undefined) {
   const APIFY_API_TOKEN = Deno.env.get("APIFY_API_TOKEN");
   const ZENSCRAPE_API_KEY = Deno.env.get("ZENSCRAPE_API_KEY");
+  const SOCIAVAULT_API_KEY = Deno.env.get("SOCIAVAULT_API_KEY");
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
