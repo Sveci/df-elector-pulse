@@ -44,7 +44,7 @@ serve(async (req) => {
     // Fetch entity
     const { data: entity } = await supabase
       .from("po_monitored_entities")
-      .select("nome, tipo, partido, cargo")
+      .select("nome, tipo, partido, cargo, tenant_id")
       .eq("id", entity_id)
       .single();
 
