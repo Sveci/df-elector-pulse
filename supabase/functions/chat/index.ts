@@ -629,6 +629,79 @@ const availableFunctions: Record<string, (params: any) => Promise<any>> = {
   },
   
   // ──────────────────────────────────────────────────────────
+  // BASE DE CONHECIMENTO (Knowledge Base)
+  // ──────────────────────────────────────────────────────────
+  consultar_base_conhecimento: async (params: { pergunta: string, categoria?: string }) => {
+    console.log('Executando consultar_base_conhecimento com params:', params);
+    
+    const searchTerms = params.pergunta
+      .toLowerCase()
+      .replace(/[^\w\sáéíóúãõâêîôûç]/g, "")
+      .split(/\s+/)
+      .filter((w: string) => w.length > 2)
+      .slice(0, 8);
+
+    let chunks: any[] = [];
+    
+    if (searchTerms.length > 0) {
+      const ilikeConditions = searchTerms.map((term: string) => `content.ilike.%${term}%`);
+      
+      let query = supabase
+        .from("kb_chunks")
+        .select(`
+          content, metadata,
+          document:kb_documents(id, title, category)
+        `)
+        .or(ilikeConditions.join(","))
+        .limit(10);
+      
+      const { data } = await query;
+      chunks = data || [];
+    }
+
+    // Fallback: get all chunks if no term match
+    if (chunks.length === 0) {
+      let query = supabase
+        .from("kb_chunks")
+        .select(`
+          content, metadata,
+          document:kb_documents(id, title, category)
+        `)
+        .limit(8);
+      
+      const { data } = await query;
+      chunks = data || [];
+    }
+
+    if (chunks.length === 0) {
+      return {
+        encontrado: false,
+        mensagem: "Não há documentos na base de conhecimento para responder esta pergunta.",
+        fontes: []
+      };
+    }
+
+    const fontes = [...new Set(chunks.map((c: any) => {
+      const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+      return doc?.title || "Documento";
+    }))];
+
+    const conteudo = chunks.map((c: any) => {
+      const doc = Array.isArray(c.document) ? c.document[0] : c.document;
+      return `[Fonte: ${doc?.title || "Documento"}] ${c.content}`;
+    }).join("\n\n");
+
+    console.log('Resultado consultar_base_conhecimento:', chunks.length, 'chunks,', fontes.length, 'fontes');
+    
+    return {
+      encontrado: true,
+      total_fragmentos: chunks.length,
+      fontes,
+      conteudo
+    };
+  },
+  
+  // ──────────────────────────────────────────────────────────
   // MÉTRICAS DE WHATSAPP (agregado, sem conteúdo)
   // ──────────────────────────────────────────────────────────
   consultar_metricas_whatsapp: async (params: { periodo?: string }) => {
