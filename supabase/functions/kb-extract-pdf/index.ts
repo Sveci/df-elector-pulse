@@ -38,10 +38,12 @@ Deno.serve(async (req) => {
 
     // Step 1: Try basic text extraction from PDF
     let rawText = extractTextFromPDF(bytes);
-    console.log(`[kb-extract-pdf] Raw extraction: ${rawText.length} chars`);
+    const readableRatio = getReadableRatio(rawText);
+    console.log(`[kb-extract-pdf] Raw extraction: ${rawText.length} chars, readable ratio: ${readableRatio.toFixed(2)}`);
 
-    // Step 2: If raw extraction got meaningful text, use AI to clean and structure it
-    // If not, use AI vision to read the PDF via base64
+    // Only consider raw text useful if it has a high ratio of readable characters
+    const hasUsableRawText = rawText.length > 500 && readableRatio > 0.7;
+
     const base64Content = uint8ArrayToBase64(bytes);
 
     const messages: any[] = [
@@ -60,8 +62,8 @@ REGRAS:
       }
     ];
 
-    if (rawText.length > 500) {
-      // We got some text, ask AI to clean it up
+    if (hasUsableRawText) {
+      console.log(`[kb-extract-pdf] Using raw text for AI cleanup`);
       messages.push({
         role: "user",
         content: `Aqui está o texto bruto extraído de um PDF chamado "${file.name}". 
@@ -70,7 +72,7 @@ Limpe, organize e estruture este texto, mantendo TODO o conteúdo original:
 ${rawText.substring(0, 80000)}`
       });
     } else {
-      // Use the file as base64 for AI to read
+      console.log(`[kb-extract-pdf] Raw text is garbage/insufficient, using base64 vision`);
       messages.push({
         role: "user",
         content: [
@@ -165,6 +167,13 @@ function extractTextFromPDF(bytes: Uint8Array): string {
     .filter((s) => s.length > 10);
 
   return texts.join("\n\n").substring(0, 100000);
+}
+
+function getReadableRatio(text: string): number {
+  if (!text || text.length === 0) return 0;
+  // Count characters that are normal readable text (letters, digits, punctuation, whitespace)
+  const readable = text.match(/[a-zA-ZÀ-ÿ0-9\s.,;:!?()[\]{}'"\-\/\\@#$%&*+=<>]/g);
+  return (readable?.length || 0) / text.length;
 }
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
