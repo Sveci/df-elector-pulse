@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const APIFY_BASE = "https://api.apify.com/v2";
+const SOCIAVAULT_BASE = "https://api.sociavault.com/v1/scrape";
 
 // Map source names to Apify actor IDs
 const APIFY_ACTORS: Record<string, string> = {
