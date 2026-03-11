@@ -353,11 +353,21 @@ Deno.serve(async (req) => {
 
     // Check rate limit
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: recentMessages } = await supabase
+    let rateLimitQuery = supabase
       .from("whatsapp_chatbot_logs")
       .select("id", { count: "exact", head: true })
-      .eq("leader_id", leader.id)
-      .gte("created_at", oneHourAgo);
+      .gte("created_at", oneHourAgo)
+      .eq("phone", normalizedPhone);
+
+    if (actor?.id) {
+      rateLimitQuery = rateLimitQuery.eq("leader_id", actor.id);
+    }
+
+    if (tenantId) {
+      rateLimitQuery = rateLimitQuery.eq("tenant_id", tenantId);
+    }
+
+    const { count: recentMessages } = await rateLimitQuery;
 
     if (recentMessages && recentMessages >= (chatbotConfig.max_messages_per_hour || 20)) {
       console.log(`[whatsapp-chatbot] Rate limit exceeded for leader ${leader.id}`);
