@@ -895,7 +895,7 @@ REGRAS OBRIGATÓRIAS:
           { role: "system", content: fullPrompt },
           { role: "user", content: userMessage }
         ],
-        max_tokens: 400
+        max_tokens: 600
       })
     });
 
