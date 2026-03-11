@@ -70,12 +70,12 @@ export function CollectionProgressPanel({ jobId, onComplete }: CollectionProgres
 
     // Initial fetch
     const fetchJob = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("po_collection_jobs")
         .select("*")
         .eq("id", jobId)
         .single();
-      if (data) setJob(data as unknown as CollectionJob);
+      if (data) setJob(data as CollectionJob);
     };
     fetchJob();
 
