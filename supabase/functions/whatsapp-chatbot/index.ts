@@ -951,6 +951,53 @@ function responseDeniesKnowledge(answer: string): boolean {
   ].some((pattern) => normalized.includes(pattern));
 }
 
+// Perplexity web search fallback
+async function searchPerplexityFallback(question: string): Promise<string | null> {
+  const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
+  if (!perplexityKey) return null;
+
+  try {
+    console.log("[whatsapp-chatbot] Trying Perplexity fallback...");
+    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${perplexityKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [
+          {
+            role: "system",
+            content: "Você é um assistente de um gabinete parlamentar. Responda de forma breve (máximo 400 caracteres), amigável e precisa. Use emojis moderadamente. Cite a fonte quando possível. Se não encontrar informação confiável, retorne exatamente: NO_RESULT",
+          },
+          { role: "user", content: question },
+        ],
+        max_tokens: 250,
+        search_recency_filter: "month",
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("[whatsapp-chatbot] Perplexity error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const answer = (data.choices?.[0]?.message?.content || "").trim();
+    const citations = data.citations || [];
+
+    if (!answer || answer === "NO_RESULT" || answer.length < 10) return null;
+
+    const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
+    console.log(`[whatsapp-chatbot] Perplexity fallback success: ${answer.length} chars`);
+    return `${answer}${citationSuffix}`;
+  } catch (err) {
+    console.error("[whatsapp-chatbot] Perplexity fallback error:", err);
+    return null;
+  }
+}
+
 function extractBestSentence(content: string, searchTerms: string[]): string {
   const compactContent = content.replace(/\s+/g, " ").trim();
   const sentences = compactContent
