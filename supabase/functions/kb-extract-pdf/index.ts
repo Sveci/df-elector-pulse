@@ -169,6 +169,13 @@ function extractTextFromPDF(bytes: Uint8Array): string {
   return texts.join("\n\n").substring(0, 100000);
 }
 
+function getReadableRatio(text: string): number {
+  if (!text || text.length === 0) return 0;
+  // Count characters that are normal readable text (letters, digits, punctuation, whitespace)
+  const readable = text.match(/[a-zA-ZÀ-ÿ0-9\s.,;:!?()[\]{}'"\-\/\\@#$%&*+=<>]/g);
+  return (readable?.length || 0) / text.length;
+}
+
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunkSize = 8192;
