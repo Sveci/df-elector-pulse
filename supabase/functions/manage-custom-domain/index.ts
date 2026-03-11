@@ -68,15 +68,27 @@ serve(async (req) => {
 
     // Helper to call SCD API
     const scdFetch = async (method: string, path: string, body?: unknown) => {
-      const res = await fetch(`${SCD_API_BASE}${path}`, {
+      const url = `${SCD_API_BASE}${path}`;
+      console.log(`SCD API ${method} ${url}`);
+      const res = await fetch(url, {
         method,
         headers: {
           "Authorization": `Bearer ${scdApiKey}`,
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: body ? JSON.stringify(body) : undefined,
       });
-      const data = await res.json();
+      const text = await res.text();
+      console.log(`SCD API response ${res.status}: ${text.substring(0, 500)}`);
+      
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`SCD API returned non-JSON (${res.status}): ${text.substring(0, 200)}`);
+      }
+      
       if (!res.ok) {
         throw new Error(data?.message || data?.error || `SCD API error: ${res.status}`);
       }
