@@ -77,23 +77,45 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     try { collectedMentions.push(...await collectGoogleNews(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id)); } catch (e) { console.error("google_news error:", e); }
   }
 
-  // ── 3. Apify - Twitter/X ──
-  if (targetSources.includes("twitter") && APIFY_API_TOKEN) {
+  // ── 3. Twitter/X (SociaVault → Apify fallback) ──
+  if (targetSources.includes("twitter")) {
     try {
       const twHandle = entity.redes_sociais?.twitter;
-      collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectTwitterViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, twHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Twitter: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Twitter: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectTwitter(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, twHandle || undefined));
+      }
     } catch (e) { console.error("twitter error:", e); }
   }
 
-  // ── 4. Apify - Instagram ──
-  if (targetSources.includes("instagram") && APIFY_API_TOKEN) {
+  // ── 4. Instagram (SociaVault → Apify fallback) ──
+  if (targetSources.includes("instagram")) {
     try {
       const igHandle = entity.redes_sociais?.instagram;
-      collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+      if (SOCIAVAULT_API_KEY) {
+        const svResults = await collectInstagramViaSociaVault(SOCIAVAULT_API_KEY, searchQuery, entity.nome, entity_id, igHandle || undefined);
+        if (svResults.length > 0) {
+          collectedMentions.push(...svResults);
+          console.log(`Instagram: SociaVault returned ${svResults.length} items`);
+        } else if (APIFY_API_TOKEN) {
+          console.log("Instagram: SociaVault empty, falling back to Apify");
+          collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+        }
+      } else if (APIFY_API_TOKEN) {
+        collectedMentions.push(...await collectInstagram(APIFY_API_TOKEN, searchQuery, entity.nome, entity_id, igHandle || undefined));
+      }
     } catch (e) { console.error("instagram error:", e); }
   }
 
-  // ── 5. Apify - Facebook ──
+  // ── 5. Facebook (Apify only — SociaVault doesn't have keyword search for FB) ──
   if (targetSources.includes("facebook") && APIFY_API_TOKEN) {
     try {
       const fbHandle = entity.redes_sociais?.facebook;
