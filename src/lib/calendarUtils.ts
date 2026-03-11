@@ -72,7 +72,7 @@ export function generateICSContent(event: CalendarEventData): string {
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Sistema Eventos Lovable//PT',
+    'PRODID:-//Eleitor360//PT',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
