@@ -578,7 +578,7 @@ Deno.serve(async (req) => {
         cidade_id,
         data_nascimento: birthDate || null,
         source_type: "webhook",
-        source_id: null,
+        source_id: pageUrl || null,
         tenant_id,
         utm_source: utmParams.utm_source || null,
         utm_medium: utmParams.utm_medium || null,

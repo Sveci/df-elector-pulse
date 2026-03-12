@@ -3,13 +3,12 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Webhook, Loader2, RefreshCw, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Webhook, Loader2, RefreshCw, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface WebhookLog {
   id: string;
@@ -33,8 +32,55 @@ const resultLabels: Record<string, { label: string; variant: "default" | "second
   leader_updated: { label: "Líder Atualizado", variant: "outline" },
 };
 
+// Campos que não devem ser exibidos nos detalhes colapsáveis
+const HIDDEN_FIELDS = ["timestamp", "user_agent"];
+
+// Labels amigáveis para os campos do payload
+const fieldLabels: Record<string, string> = {
+  nome: "Nome",
+  email: "E-mail",
+  telefone: "Telefone",
+  cpf: "CPF",
+  evento: "Evento",
+  origem: "Origem (URL)",
+  categoria: "Categoria",
+  municipio: "Município",
+  data_evento: "Data do Evento",
+  data_inscricao: "Data da Inscrição",
+  cidade: "Cidade",
+  data_nascimento: "Data de Nascimento",
+  utm_source: "UTM Source",
+  utm_medium: "UTM Medium",
+  utm_campaign: "UTM Campaign",
+  utm_content: "UTM Content",
+  url: "URL da Página",
+};
+
+function formatFieldValue(key: string, value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  const str = String(value);
+  
+  if (key === "data_inscricao" && str.includes("T")) {
+    try {
+      return format(new Date(str), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR });
+    } catch { return str; }
+  }
+  if (key === "data_evento") {
+    try {
+      const [y, m, d] = str.split("-");
+      return `${d}/${m}/${y}`;
+    } catch { return str; }
+  }
+  return str;
+}
+
+function isUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  return value.startsWith("http://") || value.startsWith("https://");
+}
+
 const AdminWebhookLogs = () => {
-  const [selected, setSelected] = useState<WebhookLog | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const { data: logs = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-webhook-logs"],
@@ -48,6 +94,26 @@ const AdminWebhookLogs = () => {
       return (data || []) as unknown as WebhookLog[];
     },
   });
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const getVisibleFields = (payload: Record<string, unknown> | null) => {
+    if (!payload) return [];
+    return Object.entries(payload)
+      .filter(([key]) => !HIDDEN_FIELDS.includes(key))
+      .map(([key, value]) => ({
+        key,
+        label: fieldLabels[key] || key,
+        value,
+      }));
+  };
 
   return (
     <AdminLayout>
@@ -86,121 +152,98 @@ const AdminWebhookLogs = () => {
               const result = resultLabels[log.processing_result || ""] || { label: log.processing_result || "Pendente", variant: "outline" as const };
               const payloadName = log.raw_payload?.nome || log.raw_payload?.name || "—";
               const payloadPhone = log.raw_payload?.telefone || log.raw_payload?.phone || log.raw_payload?.whatsapp || "—";
-              const payloadEmail = log.raw_payload?.email || "—";
+              const payloadOrigem = log.raw_payload?.origem;
+              const isExpanded = expandedIds.has(log.id);
+              const visibleFields = getVisibleFields(log.raw_payload);
 
               return (
-                <Card
-                  key={log.id}
-                  className="cursor-pointer hover:border-primary/30 transition-colors"
-                  onClick={() => setSelected(log)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm text-foreground truncate">
-                            {String(payloadName)}
-                          </span>
-                          <Badge variant={result.variant} className="text-[10px] px-1.5 shrink-0">
-                            {result.label}
-                          </Badge>
+                <Collapsible key={log.id} open={isExpanded} onOpenChange={() => toggleExpand(log.id)}>
+                  <Card className="transition-colors hover:border-primary/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm text-foreground truncate">
+                              {String(payloadName)}
+                            </span>
+                            <Badge variant={result.variant} className="text-[10px] px-1.5 shrink-0">
+                              {result.label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            📞 {String(payloadPhone)}
+                          </p>
+                          {payloadOrigem && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <ExternalLink className="h-3 w-3 shrink-0" />
+                              <a
+                                href={String(payloadOrigem)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {String(payloadOrigem)}
+                              </a>
+                            </p>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          📞 {String(payloadPhone)} · ✉️ {String(payloadEmail)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(log.raw_payload || {}).length} campos recebidos
-                        </p>
+                        <div className="flex items-start gap-2 shrink-0">
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(log.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(log.created_at), "HH:mm:ss")}
+                            </p>
+                          </div>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(log.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(log.created_at), "HH:mm:ss")}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                      <CollapsibleContent>
+                        <div className="mt-4 pt-3 border-t border-border">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+                            Dados recebidos ({visibleFields.length} campos)
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                            {visibleFields.map(({ key, label, value }) => (
+                              <div key={key} className="flex flex-col py-1">
+                                <span className="text-xs text-muted-foreground">{label}</span>
+                                {isUrl(value) ? (
+                                  <a
+                                    href={String(value)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-primary hover:underline break-all"
+                                  >
+                                    {String(value)}
+                                  </a>
+                                ) : (
+                                  <span className="text-sm text-foreground break-all">
+                                    {formatFieldValue(key, value)}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </CardContent>
+                  </Card>
+                </Collapsible>
               );
             })}
           </div>
         )}
-
-        {/* Detail Dialog */}
-        <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-          <DialogContent className="max-w-2xl max-h-[85vh]">
-            <DialogHeader>
-              <DialogTitle className="text-lg">Payload Bruto do Webhook</DialogTitle>
-            </DialogHeader>
-            {selected && (
-              <ScrollArea className="max-h-[65vh]">
-                <div className="space-y-4 pr-4">
-                  {/* Metadata */}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Data:</span>
-                      <p className="font-medium text-foreground">
-                        {format(new Date(selected.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Resultado:</span>
-                      <p className="font-medium text-foreground">
-                        {resultLabels[selected.processing_result || ""]?.label || selected.processing_result || "Pendente"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Content-Type:</span>
-                      <p className="font-medium text-foreground text-xs break-all">{selected.content_type || "—"}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Método:</span>
-                      <p className="font-medium text-foreground">{selected.method || "—"}</p>
-                    </div>
-                  </div>
-
-                  {/* Raw Payload */}
-                  <div>
-                    <span className="text-sm font-semibold text-foreground">Payload Recebido (dados brutos)</span>
-                    <pre className="mt-1 text-xs text-foreground whitespace-pre-wrap bg-muted/50 p-4 rounded-lg overflow-x-auto font-mono">
-                      {JSON.stringify(selected.raw_payload, null, 2)}
-                    </pre>
-                  </div>
-
-                  {/* Headers */}
-                  {selected.headers && Object.keys(selected.headers).length > 0 && (
-                    <div>
-                      <span className="text-sm font-semibold text-foreground">Headers</span>
-                      <pre className="mt-1 text-xs text-foreground whitespace-pre-wrap bg-muted/50 p-4 rounded-lg overflow-x-auto font-mono">
-                        {JSON.stringify(selected.headers, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {/* User Agent */}
-                  {selected.user_agent && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">User Agent:</span>
-                      <p className="text-xs text-foreground break-all">{selected.user_agent}</p>
-                    </div>
-                  )}
-
-                  {/* Response */}
-                  {selected.response_body && (
-                    <div>
-                      <span className="text-sm font-semibold text-foreground">Resposta do Processamento</span>
-                      <pre className="mt-1 text-xs text-foreground whitespace-pre-wrap bg-muted/50 p-4 rounded-lg overflow-x-auto font-mono">
-                        {JSON.stringify(selected.response_body, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );
