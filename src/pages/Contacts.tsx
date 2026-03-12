@@ -351,6 +351,9 @@ const Contacts = () => {
           const visita = visitasMap.get(contact.source_id);
           sourceInfo = visita ? `Visita: ${visita.protocolo}` : "Visita ao Gabinete";
           sourceName = visita?.protocolo || null;
+        } else if (contact.source_type === "webhook") {
+          sourceInfo = "Webhook (GreatPages)";
+          sourceName = "GreatPages";
         }
 
         return {
