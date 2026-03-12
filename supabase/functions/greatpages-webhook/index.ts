@@ -575,6 +575,7 @@ Deno.serve(async (req) => {
     if (pageUrl) {
       await supabase.from("contact_page_views").insert({
         contact_id: contactId,
+        tenant_id,
         page_type: "webhook",
         page_identifier: pageUrl,
         page_name: "Formulário GreatPages",
