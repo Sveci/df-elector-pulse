@@ -42,6 +42,7 @@ const SOURCE_ICONS: Record<string, string> = {
   fontes_oficiais: "🏛️", influencer_comments: "⭐", sites_custom: "🌍",
   twitter_comments: "🐦", instagram_comments: "📸",
   facebook_comments: "📘", tiktok_comments: "🎵",
+  perplexity_web: "🔮",
 };
 
 interface CollectionJob {
