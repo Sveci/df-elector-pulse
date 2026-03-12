@@ -470,6 +470,11 @@ const App = () => (
                 <AdminContatos />
               </RoleProtectedRoute>
             } />
+            <Route path="/admin/webhook-logs" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminWebhookLogs />
+              </RoleProtectedRoute>
+            } />
             
             {/* Strategic Map - admin, super_admin e atendente */}
             <Route path="/strategic-map" element={
