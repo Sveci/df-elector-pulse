@@ -1,0 +1,1 @@
+UPDATE po_collection_jobs SET status = 'completed', mentions_analyzed = 114, analysis_total = 114, completed_at = now() WHERE id = '2eaa6ee2-b034-4a58-b25f-7a514c15e228' AND status = 'processing';
