@@ -223,14 +223,14 @@ serve(async (req) => {
 
           // Update job progress if job_id provided
           if (job_id) {
-            await supabase
+            const { error: updateErr } = await supabase
               .from("po_collection_jobs")
               .update({
                 mentions_analyzed: totalAnalyzed,
                 analysis_total: allMentions.length,
-                updated_at: new Date().toISOString(),
               })
               .eq("id", job_id);
+            if (updateErr) console.error("Job progress update error:", updateErr);
           }
         } catch (err) {
           console.error(`Batch error (${batch.length} mentions):`, err);
