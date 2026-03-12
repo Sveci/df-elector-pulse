@@ -1181,8 +1181,11 @@ REGRAS OBRIGATÓRIAS:
     const data = await response.json();
     const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
 
-    // If AI denies having info but KB has it, use grounded fallback
-    if (kbContext && responseDeniesKnowledge(aiAnswer)) {
+    // Check if KB actually has specific info for this query
+    const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
+
+    // If AI denies having info but KB has it AND KB has specific content, use grounded fallback
+    if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
       const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
       if (groundedFallback) {
         console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback");
@@ -1191,8 +1194,7 @@ REGRAS OBRIGATÓRIAS:
     }
 
     // If AI denies knowledge OR KB lacks specific answer, try Perplexity web search
-    const shouldTryPerplexity = responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbLacksSpecificAnswer(userMessage, kbRankedChunks);
-    if (shouldTryPerplexity) {
+    if (responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbMissesSpecific) {
       const perplexityResult = await searchPerplexityFallback(userMessage);
       if (perplexityResult) {
         console.log("[whatsapp-chatbot] Using Perplexity web search fallback");
