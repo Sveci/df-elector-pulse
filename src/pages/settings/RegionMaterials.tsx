@@ -337,7 +337,7 @@ const RegionMaterials = () => {
             {/* Region Select */}
             {!editingMaterial && (
               <div className="space-y-2">
-                <Label htmlFor="city">Região Administrativa</Label>
+                <Label htmlFor="city">Região</Label>
                 <Select value={selectedCityId} onValueChange={setSelectedCityId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a RA" />

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRegions } from "@/hooks/useRegions";
+import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -183,6 +184,7 @@ const Contacts = () => {
   const { isAdmin } = useUserRole();
   const { user } = useAuth();
   const { isDemoMode, m } = useDemoMask();
+  const locationConfig = useTenantLocationConfig();
 
   // Buscar contact_ids que foram promovidos a líder
   const { data: promotedContactIds = [] } = useQuery({
@@ -1107,6 +1109,7 @@ const Contacts = () => {
 // Componente de detalhes do contato com Tabs
 const ContactDetails = ({ contact }: { contact: any }) => {
   const { m } = useDemoMask();
+  const locationConfig = useTenantLocationConfig();
   const { data: eventParticipation = [], isLoading: isLoadingEvents } = useContactEventParticipation(contact.id);
   const { data: pageViews = [], isLoading: isLoadingPageViews } = useContactPageViews(contact.id);
   const { data: downloads = [], isLoading: isLoadingDownloads } = useContactDownloads(contact.id);
@@ -1183,7 +1186,7 @@ const ContactDetails = ({ contact }: { contact: any }) => {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Região Administrativa</label>
+              <label className="text-xs font-medium text-muted-foreground">{locationConfig.label}</label>
               <p className="font-medium flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 {m.city(contact.region)}
