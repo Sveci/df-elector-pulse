@@ -531,11 +531,12 @@ Deno.serve(async (req) => {
         data_nascimento: birthDate || null,
         source_type: "webhook",
         source_id: null,
+        tenant_id,
         utm_source: utmParams.utm_source || null,
         utm_medium: utmParams.utm_medium || null,
         utm_campaign: utmParams.utm_campaign || null,
         utm_content: utmParams.utm_content || null,
-        is_verified: true, // Leads de webhook não precisam verificar
+        is_verified: true,
         is_active: true,
       })
       .select("id")
