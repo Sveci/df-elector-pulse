@@ -140,14 +140,18 @@ RESUMOS RECENTES:
 ${summaries}
 
 TENDÊNCIA (snapshots diários): ${JSON.stringify(snapshots?.map(s => ({ date: s.snapshot_date, mentions: s.total_mentions, pos: s.positive_count, neg: s.negative_count })) || [])}
-
+${perplexityContext ? `
+CONTEXTO DE MÍDIA EM TEMPO REAL (via Perplexity):
+${perplexityContext}
+` : ""}
 Gere de 4 a 8 insights estratégicos para o político. Cada insight deve ter:
 - Tipo: "oportunidade", "alerta", "tendência" ou "recomendação"
 - Prioridade: "alta", "média" ou "baixa"
 - Confiança: 0.00 a 1.00
 - Título curto e impactante
 - Descrição detalhada com ação recomendada
-- Temas relacionados`;
+- Temas relacionados
+${perplexityContext ? "- IMPORTANTE: Considere o contexto de mídia em tempo real ao gerar os insights. Se houver notícias recentes relevantes, inclua-as nos insights." : ""}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
