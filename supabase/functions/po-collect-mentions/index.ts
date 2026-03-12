@@ -392,10 +392,12 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
   }
 
   // ── Normalize required persistence fields ──
+  const nowIso = new Date().toISOString();
   for (const m of collectedMentions) {
     m.entity_id = entity_id;
     m.tenant_id = entity.tenant_id;
     m.published_at = sanitizeDate(m.published_at);
+    if (!m.collected_at) m.collected_at = nowIso;
   }
 
   // ── Dedupe & Insert ──
