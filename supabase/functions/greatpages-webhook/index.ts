@@ -545,6 +545,16 @@ Deno.serve(async (req) => {
         console.log(`[greatpages-webhook] Page view registrada para contato existente: ${pageUrl}`);
       }
       
+      // Atualizar log do webhook
+      if (webhookLogId) {
+        await supabase.from("webhook_logs").update({
+          response_status: 200,
+          processing_result: "contact_updated",
+          contact_id: contactId,
+          response_body: { type: "contact_updated", contactId },
+        }).eq("id", webhookLogId);
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
