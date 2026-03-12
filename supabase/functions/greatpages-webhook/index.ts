@@ -269,11 +269,37 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Capturar headers relevantes
+    const reqHeaders: Record<string, string> = {};
+    req.headers.forEach((value, key) => {
+      if (!["authorization", "apikey"].includes(key.toLowerCase())) {
+        reqHeaders[key] = value;
+      }
+    });
+    const contentType = req.headers.get("content-type") || "";
+    const userAgent = req.headers.get("user-agent") || null;
+
     // Parse payload baseado no Content-Type
     const payload = await parsePayload(req);
     
     console.log("[greatpages-webhook] Payload parseado:", JSON.stringify(payload));
     console.log("[greatpages-webhook] Chaves recebidas:", Object.keys(payload).join(", "));
+
+    // Salvar log bruto do webhook
+    const { data: logEntry } = await supabase
+      .from("webhook_logs")
+      .insert({
+        source: "greatpages",
+        method: req.method,
+        content_type: contentType,
+        headers: reqHeaders,
+        raw_payload: payload,
+        user_agent: userAgent,
+        tenant_id,
+      })
+      .select("id")
+      .single();
+    const webhookLogId = logEntry?.id;
 
     // Extrair dados com suporte a variações de campo
     const nome = extractName(payload);
