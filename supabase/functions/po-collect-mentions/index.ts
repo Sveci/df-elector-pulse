@@ -45,11 +45,11 @@ const APIFY_ACTORS: Record<string, string> = {
 // ── Date sanitizer: converts relative dates and invalid strings to ISO ──
 function sanitizeDate(value: any): string {
   if (!value || typeof value !== "string") return new Date().toISOString();
-  
+
   // Already a valid ISO date?
   const parsed = new Date(value);
   if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1970) return parsed.toISOString();
-  
+
   // Relative date patterns like "4 days ago", "2 hours ago", "1 week ago"
   const relMatch = value.match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i);
   if (relMatch) {
@@ -62,9 +62,25 @@ function sanitizeDate(value: any): string {
     };
     return new Date(now.getTime() - amount * (ms[unit] || 86400000)).toISOString();
   }
-  
+
   // Fallback
   return new Date().toISOString();
+}
+
+function normalizeMentionForInsert(raw: any, entityId: string, tenantId: string, fallbackIso: string) {
+  const base = raw && typeof raw === "object" ? { ...raw } : {};
+  const publishedAt = sanitizeDate(base.published_at ?? base.collected_at ?? fallbackIso);
+  const collectedAt = sanitizeDate(base.collected_at ?? base.published_at ?? fallbackIso);
+
+  return {
+    ...base,
+    entity_id: entityId,
+    tenant_id: tenantId,
+    source: typeof base.source === "string" && base.source.trim().length > 0 ? base.source : "news",
+    content: typeof base.content === "string" ? base.content : String(base.content ?? "").trim(),
+    published_at: publishedAt,
+    collected_at: collectedAt,
+  };
 }
 
 // ── Job progress helper ──
