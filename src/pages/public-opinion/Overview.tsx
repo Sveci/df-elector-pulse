@@ -171,7 +171,7 @@ const Overview = () => {
               size="sm"
               disabled={collectMentions.isPending || !!activeJobId}
               onClick={() => {
-                const sources = ["news", "google_news", "google_search", "portais_df", "portais_br", "fontes_oficiais", "reddit"];
+                const sources = ["news", "google_news", "google_search", "portais_df", "portais_br", "fontes_oficiais", "reddit", "perplexity_web"];
                 const redes = principalEntity.redes_sociais as Record<string, any> | null;
                 if (redes?.twitter) { sources.push("twitter"); sources.push("twitter_comments"); }
                 if (redes?.instagram) { sources.push("instagram"); sources.push("instagram_comments"); }
