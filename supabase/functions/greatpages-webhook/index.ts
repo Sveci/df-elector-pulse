@@ -255,17 +255,30 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Buscar tenant_id padrão
+    // Obter tenant_id do query param (obrigatório)
+    const url = new URL(req.url);
+    const tenant_id = url.searchParams.get("tenant_id");
+    
+    if (!tenant_id) {
+      console.error("[greatpages-webhook] tenant_id não informado na URL");
+      return new Response(
+        JSON.stringify({ success: false, error: "tenant_id é obrigatório como query param na URL do webhook" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validar que o tenant existe
     const { data: tenantData } = await supabase
       .from("tenants")
       .select("id")
-      .limit(1)
-      .single();
-    const tenant_id = tenantData?.id;
-    if (!tenant_id) {
+      .eq("id", tenant_id)
+      .maybeSingle();
+
+    if (!tenantData) {
+      console.error(`[greatpages-webhook] tenant_id inválido: ${tenant_id}`);
       return new Response(
-        JSON.stringify({ success: false, error: "Nenhum tenant configurado" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "tenant_id inválido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
