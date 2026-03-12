@@ -101,9 +101,9 @@ function extractPhone(payload: GreatPagesPayload): string | null {
   return findValue(payload, variants);
 }
 
-// Extrair cidade do payload
+// Extrair cidade/município do payload
 function extractCity(payload: GreatPagesPayload): string | null {
-  const variants = ["cidade", "city", "regiao", "region", "Cidade", "City", "Regiao", "Region"];
+  const variants = ["cidade", "city", "regiao", "region", "municipio", "município", "Cidade", "City", "Regiao", "Region", "Municipio", "Município"];
   return findValue(payload, variants);
 }
 
