@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Upload, Loader2 } from "lucide-react";
+import { FileText, Upload, Loader2, Globe } from "lucide-react";
 import { useCreateKBDocument, KB_CATEGORIES } from "@/hooks/useKnowledgeBase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,9 +23,11 @@ export function AddKBDocumentDialog({ children }: Props) {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("geral");
   const [content, setContent] = useState("");
-  const [inputMethod, setInputMethod] = useState<"text" | "file">("text");
+  const [inputMethod, setInputMethod] = useState<"text" | "file" | "url">("text");
   const [fileName, setFileName] = useState("");
   const [extracting, setExtracting] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [scrapedUrl, setScrapedUrl] = useState("");
   const createDocument = useCreateKBDocument();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +39,6 @@ export function AddKBDocumentDialog({ children }: Props) {
     const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
     if (isPDF) {
-      // Send PDF to edge function for AI extraction
       setExtracting(true);
       setContent("");
       try {
@@ -105,6 +106,33 @@ export function AddKBDocumentDialog({ children }: Props) {
     }
   };
 
+  const handleScrapeUrl = async () => {
+    if (!urlInput.trim()) return;
+
+    setExtracting(true);
+    setContent("");
+    setScrapedUrl("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("kb-scrape-url", {
+        body: { url: urlInput.trim() },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Erro ao extrair conteúdo da URL");
+
+      setContent(data.content);
+      setScrapedUrl(data.url);
+      if (!title && data.title) setTitle(data.title);
+      toast.success(`Página extraída: ${data.content.length.toLocaleString()} caracteres (via ${data.source})`);
+    } catch (err: any) {
+      console.error("URL scrape error:", err);
+      toast.error(err.message || "Erro ao extrair conteúdo da URL");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) return;
 
@@ -113,8 +141,8 @@ export function AddKBDocumentDialog({ children }: Props) {
       description: description.trim() || undefined,
       category,
       content: content.trim(),
-      file_name: fileName || undefined,
-      file_type: fileName ? fileName.split(".").pop() : undefined,
+      file_name: fileName || (scrapedUrl ? urlInput : undefined),
+      file_type: fileName ? fileName.split(".").pop() : (scrapedUrl ? "url" : undefined),
       file_size_bytes: new Blob([content]).size,
     });
 
@@ -123,6 +151,8 @@ export function AddKBDocumentDialog({ children }: Props) {
     setCategory("geral");
     setContent("");
     setFileName("");
+    setUrlInput("");
+    setScrapedUrl("");
     setOpen(false);
   };
 
@@ -178,7 +208,7 @@ export function AddKBDocumentDialog({ children }: Props) {
             />
           </div>
 
-          <Tabs value={inputMethod} onValueChange={(v) => setInputMethod(v as "text" | "file")}>
+          <Tabs value={inputMethod} onValueChange={(v) => setInputMethod(v as "text" | "file" | "url")}>
             <TabsList className="w-full">
               <TabsTrigger value="text" className="flex-1">
                 <FileText className="h-4 w-4 mr-2" />
@@ -187,6 +217,10 @@ export function AddKBDocumentDialog({ children }: Props) {
               <TabsTrigger value="file" className="flex-1">
                 <Upload className="h-4 w-4 mr-2" />
                 Enviar Arquivo
+              </TabsTrigger>
+              <TabsTrigger value="url" className="flex-1">
+                <Globe className="h-4 w-4 mr-2" />
+                Importar URL
               </TabsTrigger>
             </TabsList>
 
@@ -252,6 +286,71 @@ export function AddKBDocumentDialog({ children }: Props) {
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       rows={8}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="url" className="mt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>URL da página</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="url"
+                      placeholder="https://exemplo.com/pagina"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      disabled={extracting}
+                      onKeyDown={(e) => e.key === "Enter" && handleScrapeUrl()}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleScrapeUrl}
+                      disabled={!urlInput.trim() || extracting}
+                      variant="secondary"
+                    >
+                      {extracting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Globe className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O sistema irá extrair o conteúdo principal da página para uso como base de conhecimento.
+                  </p>
+                </div>
+
+                {extracting && (
+                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Extraindo conteúdo da página...</p>
+                      <p className="text-xs text-muted-foreground">Isso pode levar alguns segundos</p>
+                    </div>
+                  </div>
+                )}
+
+                {scrapedUrl && !extracting && (
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium truncate">{scrapedUrl}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({content.length.toLocaleString()} caracteres)
+                    </span>
+                  </div>
+                )}
+
+                {content && !extracting && inputMethod === "url" && (
+                  <div className="space-y-2">
+                    <Label>Conteúdo extraído (editável)</Label>
+                    <Textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      rows={10}
                       className="font-mono text-sm"
                     />
                   </div>
