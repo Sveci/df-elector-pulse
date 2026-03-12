@@ -84,6 +84,42 @@ serve(async (req) => {
 
     const summaries = analyses.slice(0, 30).map(a => a.ai_summary).filter(Boolean).join("\n");
 
+    // ── Enrich with Perplexity real-time context ──
+    let perplexityContext = "";
+    const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
+    if (PERPLEXITY_API_KEY) {
+      try {
+        console.log("[insights] Enriching with Perplexity context...");
+        const pResp = await fetch("https://api.perplexity.ai/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "sonar",
+            messages: [
+              { role: "system", content: "Você é um analista político. Resuma as últimas notícias e a percepção pública recente. Seja conciso e factual." },
+              { role: "user", content: `Análise de mídia e opinião pública sobre ${entity?.nome} (${entity?.partido || ""}, ${entity?.cargo || ""}) nos últimos ${period_days} dias na política brasileira.` },
+            ],
+            max_tokens: 800,
+            search_recency_filter: period_days <= 7 ? "week" : "month",
+          }),
+        });
+        if (pResp.ok) {
+          const pData = await pResp.json();
+          perplexityContext = pData.choices?.[0]?.message?.content || "";
+          const pCitations = pData.citations || [];
+          if (pCitations.length > 0) {
+            perplexityContext += "\n\nFontes: " + pCitations.slice(0, 5).join(", ");
+          }
+          console.log(`[insights] Perplexity context: ${perplexityContext.length} chars`);
+        }
+      } catch (e) {
+        console.warn("[insights] Perplexity enrichment failed:", e);
+      }
+    }
+
     const prompt = `Você é um consultor político estratégico. Analise os dados de opinião pública e gere insights acionáveis.
 
 ENTIDADE: ${entity?.nome} (${entity?.partido || "Sem partido"}, ${entity?.cargo || ""})
@@ -104,14 +140,18 @@ RESUMOS RECENTES:
 ${summaries}
 
 TENDÊNCIA (snapshots diários): ${JSON.stringify(snapshots?.map(s => ({ date: s.snapshot_date, mentions: s.total_mentions, pos: s.positive_count, neg: s.negative_count })) || [])}
-
+${perplexityContext ? `
+CONTEXTO DE MÍDIA EM TEMPO REAL (via Perplexity):
+${perplexityContext}
+` : ""}
 Gere de 4 a 8 insights estratégicos para o político. Cada insight deve ter:
 - Tipo: "oportunidade", "alerta", "tendência" ou "recomendação"
 - Prioridade: "alta", "média" ou "baixa"
 - Confiança: 0.00 a 1.00
 - Título curto e impactante
 - Descrição detalhada com ação recomendada
-- Temas relacionados`;
+- Temas relacionados
+${perplexityContext ? "- IMPORTANTE: Considere o contexto de mídia em tempo real ao gerar os insights. Se houver notícias recentes relevantes, inclua-as nos insights." : ""}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
