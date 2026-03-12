@@ -558,6 +558,7 @@ Deno.serve(async (req) => {
       .from("contact_activity_log")
       .insert({
         contact_id: contactId,
+        tenant_id,
         action: "created_from_webhook",
         details: {
           source: "greatpages",
