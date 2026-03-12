@@ -214,17 +214,43 @@ serve(async (req) => {
 
     const backgroundTask = (async () => {
       let totalAnalyzed = 0;
-      for (const batch of batches) {
+      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+        const batch = batches[batchIdx];
         try {
           const count = await analyzeBatch(supabase, batch, entity, adversaries || [], entity_id, tenantId, LOVABLE_API_KEY);
           totalAnalyzed += count;
           console.log(`Batch done: ${count} analyzed (total: ${totalAnalyzed})`);
+
+          // Update job progress if job_id provided
+          if (job_id) {
+            await supabase
+              .from("po_collection_jobs")
+              .update({
+                mentions_analyzed: totalAnalyzed,
+                analysis_total: allMentions.length,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", job_id);
+          }
         } catch (err) {
           console.error(`Batch error (${batch.length} mentions):`, err);
-          // Continue with next batch even if one fails
         }
       }
       console.log(`Background processing complete: ${totalAnalyzed} analyzed out of ${allMentions.length}`);
+
+      // Mark job as completed
+      if (job_id) {
+        await supabase
+          .from("po_collection_jobs")
+          .update({
+            status: "completed",
+            mentions_analyzed: totalAnalyzed,
+            analysis_total: allMentions.length,
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", job_id);
+      }
 
       // Trigger daily snapshot aggregation for today
       try {
