@@ -25,6 +25,7 @@ const adminItems: MenuItem[] = [
   { title: "Tickets", url: "/admin/tickets", icon: Ticket },
   { title: "APIs Externas", url: "/admin/apis", icon: Key },
   { title: "Contatos", url: "/admin/contatos", icon: MessageSquare },
+  { title: "Webhook Logs", url: "/admin/webhook-logs", icon: Webhook },
 ];
 
 export function AdminSidebar() {
