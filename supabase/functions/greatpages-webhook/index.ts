@@ -414,7 +414,8 @@ Deno.serve(async (req) => {
       // Registrar página acessada para líder (se tiver URL)
       if (pageUrl) {
         await supabase.from("contact_page_views").insert({
-          contact_id: existingLeader.id, // Usamos o leader id como referência
+          contact_id: existingLeader.id,
+          tenant_id,
           page_type: "webhook",
           page_identifier: pageUrl,
           page_name: "Formulário GreatPages",
