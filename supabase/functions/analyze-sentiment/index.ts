@@ -223,14 +223,14 @@ serve(async (req) => {
 
           // Update job progress if job_id provided
           if (job_id) {
-            await supabase
+            const { error: updateErr } = await supabase
               .from("po_collection_jobs")
               .update({
                 mentions_analyzed: totalAnalyzed,
                 analysis_total: allMentions.length,
-                updated_at: new Date().toISOString(),
               })
               .eq("id", job_id);
+            if (updateErr) console.error("Job progress update error:", updateErr);
           }
         } catch (err) {
           console.error(`Batch error (${batch.length} mentions):`, err);
@@ -240,16 +240,17 @@ serve(async (req) => {
 
       // Mark job as completed
       if (job_id) {
-        await supabase
+        const { error: completeErr } = await supabase
           .from("po_collection_jobs")
           .update({
             status: "completed",
             mentions_analyzed: totalAnalyzed,
             analysis_total: allMentions.length,
             completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
           })
           .eq("id", job_id);
+        if (completeErr) console.error("Job completion update error:", completeErr);
+        else console.log(`Job ${job_id} marked as completed`);
       }
 
       // Trigger daily snapshot aggregation for today
