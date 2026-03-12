@@ -86,7 +86,7 @@ const GreatPagesWebhookCard = () => {
           <Label>URL do Webhook</Label>
           <div className="flex gap-2">
             <Input 
-              value={WEBHOOK_URL} 
+              value={webhookUrl} 
               readOnly 
               className="font-mono text-xs sm:text-sm bg-muted"
             />
