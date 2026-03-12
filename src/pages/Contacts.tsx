@@ -184,6 +184,7 @@ const Contacts = () => {
   const { isAdmin } = useUserRole();
   const { user } = useAuth();
   const { isDemoMode, m } = useDemoMask();
+  const locationConfig = useTenantLocationConfig();
 
   // Buscar contact_ids que foram promovidos a líder
   const { data: promotedContactIds = [] } = useQuery({
