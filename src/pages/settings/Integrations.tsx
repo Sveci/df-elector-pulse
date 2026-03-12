@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Loader2, MessageSquare, Mail, Link2, Eye, EyeOff, CheckCircle2, XCircle
 import { useNavigate } from "react-router-dom";
 import { useIntegrationsSettings, useUpdateIntegrationsSettings, useTestZapiConnection, useTestSmsdevConnection, useTestSmsdevWebhook, useTestSmsbaratoConnection, useTestDisparoproConnection } from "@/hooks/useIntegrationsSettings";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useTenantId } from "@/hooks/useTenantId";
 
 import { toast } from "sonner";
 import { useTutorial } from "@/hooks/useTutorial";
@@ -36,15 +37,21 @@ const integrationsTutorialSteps: Step[] = [
   { target: '[data-tutorial="int-save"]', title: 'Salvar e Testar', content: 'Salve as configurações e teste as conexões.' },
 ];
 
-const WEBHOOK_URL = "https://eydqducvsddckhyatcux.supabase.co/functions/v1/greatpages-webhook";
-const SMSDEV_WEBHOOK_URL = "https://eydqducvsddckhyatcux.supabase.co/functions/v1/smsdev-webhook";
+const BASE_WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/greatpages-webhook`;
+const SMSDEV_WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/smsdev-webhook`;
 
 const GreatPagesWebhookCard = () => {
   const [copied, setCopied] = useState(false);
+  const tenantId = useTenantId();
+  
+  const webhookUrl = useMemo(() => {
+    if (!tenantId) return BASE_WEBHOOK_URL;
+    return `${BASE_WEBHOOK_URL}?tenant_id=${tenantId}`;
+  }, [tenantId]);
 
   const handleCopyUrl = async () => {
     try {
-      await navigator.clipboard.writeText(WEBHOOK_URL);
+      await navigator.clipboard.writeText(webhookUrl);
       setCopied(true);
       toast.success("URL copiada!");
       setTimeout(() => setCopied(false), 2000);
@@ -79,7 +86,7 @@ const GreatPagesWebhookCard = () => {
           <Label>URL do Webhook</Label>
           <div className="flex gap-2">
             <Input 
-              value={WEBHOOK_URL} 
+              value={webhookUrl} 
               readOnly 
               className="font-mono text-xs sm:text-sm bg-muted"
             />
