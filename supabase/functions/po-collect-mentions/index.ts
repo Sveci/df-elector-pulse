@@ -456,9 +456,9 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
 
     if (jobId) {
       await updateJobProgress(supabase, jobId, {
-        status: "completed",
+        status: mentionIds.length > 0 ? "processing" : "completed",
         mentions_inserted: mentionIds.length,
-        completed_at: new Date().toISOString(),
+        ...(mentionIds.length === 0 ? { completed_at: new Date().toISOString() } : {}),
       });
     }
 
@@ -466,7 +466,7 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
       fetch(`${supabaseUrl}/functions/v1/analyze-sentiment`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseKey}` },
-        body: JSON.stringify({ mention_ids: mentionIds, entity_id }),
+        body: JSON.stringify({ mention_ids: mentionIds, entity_id, job_id: jobId }),
       }).catch(err => console.error("[BG] Background analysis error:", err));
     }
   } else {

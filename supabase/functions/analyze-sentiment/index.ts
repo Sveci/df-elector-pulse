@@ -158,7 +158,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { mention_ids, entity_id, analyze_pending } = await req.json();
+    const { mention_ids, entity_id, analyze_pending, job_id } = await req.json();
 
     if (!entity_id) throw new Error("entity_id is required");
 
