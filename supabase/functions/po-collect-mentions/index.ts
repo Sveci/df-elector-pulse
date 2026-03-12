@@ -313,6 +313,84 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
     if (sites) await trackSource("sites_custom", () => collectCustomSites(ZENSCRAPE_API_KEY!, sites, entity.nome, entity_id), "zenscrape");
   }
 
+  // ── Perplexity Web Search Complement ──
+  const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
+  if (PERPLEXITY_API_KEY) {
+    await trackSource("perplexity_web", async () => {
+      try {
+        const perplexityBody = {
+          model: "sonar",
+          messages: [
+            { role: "system", content: `Você monitora menções e notícias sobre "${entity.nome}" na política brasileira. Retorne cada notícia/menção encontrada como um item separado. Seja factual e cite as fontes.` },
+            { role: "user", content: `Últimas notícias e menções sobre ${entity.nome} ${searchQuery !== entity.nome ? `relacionadas a: ${searchQuery}` : ""}` },
+          ],
+          max_tokens: 1500,
+          search_recency_filter: "week",
+        };
+
+        const resp = await fetch("https://api.perplexity.ai/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(perplexityBody),
+        });
+
+        if (!resp.ok) {
+          console.warn(`[Perplexity] API error ${resp.status}`);
+          return [];
+        }
+
+        const data = await resp.json();
+        const answer = data.choices?.[0]?.message?.content || "";
+        const citations = data.citations || [];
+
+        if (!answer) return [];
+
+        // Create one mention per citation, or a single aggregated one
+        const mentions: any[] = [];
+        if (citations.length > 0) {
+          // Split answer into paragraphs and map to citations
+          const paragraphs = answer.split(/\n\n+/).filter((p: string) => p.trim().length > 30);
+          for (let i = 0; i < Math.max(paragraphs.length, citations.length); i++) {
+            mentions.push({
+              entity_id,
+              tenant_id: entity.tenant_id,
+              source: "perplexity_web",
+              source_url: citations[i] || citations[0] || null,
+              content: paragraphs[i] || `Menção via Perplexity: ${citations[i] || ""}`,
+              author_name: "Perplexity AI",
+              published_at: new Date().toISOString(),
+              collected_at: new Date().toISOString(),
+              engagement: {},
+              hashtags: [],
+            });
+          }
+        } else {
+          mentions.push({
+            entity_id,
+            tenant_id: entity.tenant_id,
+            source: "perplexity_web",
+            source_url: null,
+            content: answer.substring(0, 2000),
+            author_name: "Perplexity AI",
+            published_at: new Date().toISOString(),
+            collected_at: new Date().toISOString(),
+            engagement: {},
+            hashtags: [],
+          });
+        }
+
+        console.log(`[Perplexity] Generated ${mentions.length} mentions from web search`);
+        return mentions;
+      } catch (e) {
+        console.error("[Perplexity] Collection error:", e);
+        return [];
+      }
+    }, "perplexity");
+  }
+
   // ── Normalize required persistence fields ──
   for (const m of collectedMentions) {
     m.entity_id = entity_id;

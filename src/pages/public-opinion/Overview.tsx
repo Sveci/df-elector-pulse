@@ -154,6 +154,7 @@ const Overview = () => {
         </div>
         {principalEntity && (
           <div className="flex items-center gap-2">
+            <PerplexitySearchPanel entityName={principalEntity.nome} entityId={principalEntity.id} />
             {pendingCount > 0 && (
               <Button
                 variant="outline"
