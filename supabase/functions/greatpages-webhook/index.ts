@@ -255,6 +255,20 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Buscar tenant_id padrão
+    const { data: tenantData } = await supabase
+      .from("tenants")
+      .select("id")
+      .limit(1)
+      .single();
+    const tenant_id = tenantData?.id;
+    if (!tenant_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Nenhum tenant configurado" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse payload baseado no Content-Type
     const payload = await parsePayload(req);
     
@@ -400,7 +414,8 @@ Deno.serve(async (req) => {
       // Registrar página acessada para líder (se tiver URL)
       if (pageUrl) {
         await supabase.from("contact_page_views").insert({
-          contact_id: existingLeader.id, // Usamos o leader id como referência
+          contact_id: existingLeader.id,
+          tenant_id,
           page_type: "webhook",
           page_identifier: pageUrl,
           page_name: "Formulário GreatPages",
@@ -482,6 +497,7 @@ Deno.serve(async (req) => {
       if (pageUrl) {
         await supabase.from("contact_page_views").insert({
           contact_id: contactId,
+          tenant_id,
           page_type: "webhook",
           page_identifier: pageUrl,
           page_name: "Formulário GreatPages",
@@ -517,11 +533,12 @@ Deno.serve(async (req) => {
         data_nascimento: birthDate || null,
         source_type: "webhook",
         source_id: null,
+        tenant_id,
         utm_source: utmParams.utm_source || null,
         utm_medium: utmParams.utm_medium || null,
         utm_campaign: utmParams.utm_campaign || null,
         utm_content: utmParams.utm_content || null,
-        is_verified: true, // Leads de webhook não precisam verificar
+        is_verified: true,
         is_active: true,
       })
       .select("id")
@@ -543,6 +560,7 @@ Deno.serve(async (req) => {
       .from("contact_activity_log")
       .insert({
         contact_id: contactId,
+        tenant_id,
         action: "created_from_webhook",
         details: {
           source: "greatpages",
@@ -557,6 +575,7 @@ Deno.serve(async (req) => {
     if (pageUrl) {
       await supabase.from("contact_page_views").insert({
         contact_id: contactId,
+        tenant_id,
         page_type: "webhook",
         page_identifier: pageUrl,
         page_name: "Formulário GreatPages",
