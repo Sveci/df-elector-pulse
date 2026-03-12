@@ -54,6 +54,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminApis from "./pages/admin/AdminApis";
 import AdminContatos from "./pages/admin/AdminContatos";
+import AdminWebhookLogs from "./pages/admin/AdminWebhookLogs";
 import Team from "./pages/settings/Team";
 import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
@@ -467,6 +468,11 @@ const App = () => (
             <Route path="/admin/contatos" element={
               <RoleProtectedRoute allowedRoles={['super_admin']}>
                 <AdminContatos />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/webhook-logs" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <AdminWebhookLogs />
               </RoleProtectedRoute>
             } />
             

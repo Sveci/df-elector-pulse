@@ -269,11 +269,37 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Capturar headers relevantes
+    const reqHeaders: Record<string, string> = {};
+    req.headers.forEach((value, key) => {
+      if (!["authorization", "apikey"].includes(key.toLowerCase())) {
+        reqHeaders[key] = value;
+      }
+    });
+    const contentType = req.headers.get("content-type") || "";
+    const userAgent = req.headers.get("user-agent") || null;
+
     // Parse payload baseado no Content-Type
     const payload = await parsePayload(req);
     
     console.log("[greatpages-webhook] Payload parseado:", JSON.stringify(payload));
     console.log("[greatpages-webhook] Chaves recebidas:", Object.keys(payload).join(", "));
+
+    // Salvar log bruto do webhook
+    const { data: logEntry } = await supabase
+      .from("webhook_logs")
+      .insert({
+        source: "greatpages",
+        method: req.method,
+        content_type: contentType,
+        headers: reqHeaders,
+        raw_payload: payload,
+        user_agent: userAgent,
+        tenant_id,
+      })
+      .select("id")
+      .single();
+    const webhookLogId = logEntry?.id;
 
     // Extrair dados com suporte a variações de campo
     const nome = extractName(payload);
@@ -427,6 +453,16 @@ Deno.serve(async (req) => {
         console.log(`[greatpages-webhook] Page view registrada para líder: ${pageUrl}`);
       }
       
+      // Atualizar log do webhook
+      if (webhookLogId) {
+        await supabase.from("webhook_logs").update({
+          response_status: 200,
+          processing_result: "leader_updated",
+          leader_id: existingLeader.id,
+          response_body: { type: "leader_updated", leaderId: existingLeader.id },
+        }).eq("id", webhookLogId);
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -509,6 +545,16 @@ Deno.serve(async (req) => {
         console.log(`[greatpages-webhook] Page view registrada para contato existente: ${pageUrl}`);
       }
       
+      // Atualizar log do webhook
+      if (webhookLogId) {
+        await supabase.from("webhook_logs").update({
+          response_status: 200,
+          processing_result: "contact_updated",
+          contact_id: contactId,
+          response_body: { type: "contact_updated", contactId },
+        }).eq("id", webhookLogId);
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -585,6 +631,16 @@ Deno.serve(async (req) => {
         utm_content: utmParams.utm_content || null,
       });
       console.log(`[greatpages-webhook] Page view registrada para novo contato: ${pageUrl}`);
+    }
+
+    // Atualizar log do webhook
+    if (webhookLogId) {
+      await supabase.from("webhook_logs").update({
+        response_status: 200,
+        processing_result: "contact_created",
+        contact_id: contactId,
+        response_body: { type: "contact_created", contactId },
+      }).eq("id", webhookLogId);
     }
 
     return new Response(
