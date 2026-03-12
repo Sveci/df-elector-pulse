@@ -104,9 +104,33 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
         .select("*")
         .eq("id", resolvedJobId)
         .single();
-      if (data) setJob(data as CollectionJob);
+      if (data) {
+        const j = data as CollectionJob;
+        setJob(j);
+        // If already completed/error on first fetch, auto-dismiss
+        if (j.status === "completed" || j.status === "error") {
+          onComplete?.();
+          setTimeout(() => { setResolvedJobId(null); setJob(null); }, 5000);
+        }
+      }
     };
     fetchJob();
+
+    // Poll every 15s as fallback in case realtime misses updates
+    const pollInterval = setInterval(fetchJob, 15000);
+
+    // Auto-recovery: if job is stuck in processing/running for too long (5 min), dismiss
+    const staleTimeout = setTimeout(() => {
+      setJob((prev) => {
+        if (prev && (prev.status === "running" || prev.status === "processing")) {
+          console.warn("CollectionProgressPanel: dismissing stale job", resolvedJobId);
+          onComplete?.();
+          setResolvedJobId(null);
+          return null;
+        }
+        return prev;
+      });
+    }, 5 * 60 * 1000);
 
     const channel = supabase
       .channel(`job-${resolvedJobId}`)
@@ -126,7 +150,7 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
             setTimeout(() => {
               setResolvedJobId(null);
               setJob(null);
-            }, 10000);
+            }, 8000);
           }
         }
       )
@@ -134,6 +158,8 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+      clearTimeout(staleTimeout);
     };
   }, [resolvedJobId, onComplete]);
 
