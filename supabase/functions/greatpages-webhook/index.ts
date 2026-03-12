@@ -255,6 +255,20 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Buscar tenant_id padrão
+    const { data: tenantData } = await supabase
+      .from("tenants")
+      .select("id")
+      .limit(1)
+      .single();
+    const tenant_id = tenantData?.id;
+    if (!tenant_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Nenhum tenant configurado" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse payload baseado no Content-Type
     const payload = await parsePayload(req);
     
