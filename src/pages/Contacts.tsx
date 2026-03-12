@@ -1109,6 +1109,7 @@ const Contacts = () => {
 // Componente de detalhes do contato com Tabs
 const ContactDetails = ({ contact }: { contact: any }) => {
   const { m } = useDemoMask();
+  const locationConfig = useTenantLocationConfig();
   const { data: eventParticipation = [], isLoading: isLoadingEvents } = useContactEventParticipation(contact.id);
   const { data: pageViews = [], isLoading: isLoadingPageViews } = useContactPageViews(contact.id);
   const { data: downloads = [], isLoading: isLoadingDownloads } = useContactDownloads(contact.id);
