@@ -2,7 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  LayoutDashboard, Building2, Ticket, LogOut, ArrowLeft, Key, MessageSquare
+  LayoutDashboard, Building2, Ticket, LogOut, ArrowLeft, Key, MessageSquare, Webhook
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -25,6 +25,7 @@ const adminItems: MenuItem[] = [
   { title: "Tickets", url: "/admin/tickets", icon: Ticket },
   { title: "APIs Externas", url: "/admin/apis", icon: Key },
   { title: "Contatos", url: "/admin/contatos", icon: MessageSquare },
+  { title: "Webhook Logs", url: "/admin/webhook-logs", icon: Webhook },
 ];
 
 export function AdminSidebar() {
