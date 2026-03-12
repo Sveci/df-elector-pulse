@@ -2519,11 +2519,13 @@ export type Database = {
       }
       po_collection_jobs: {
         Row: {
+          analysis_total: number | null
           completed_at: string | null
           created_at: string
           entity_id: string
           error_message: string | null
           id: string
+          mentions_analyzed: number | null
           mentions_found: number
           mentions_inserted: number
           progress_log: Json
@@ -2535,11 +2537,13 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          analysis_total?: number | null
           completed_at?: string | null
           created_at?: string
           entity_id: string
           error_message?: string | null
           id?: string
+          mentions_analyzed?: number | null
           mentions_found?: number
           mentions_inserted?: number
           progress_log?: Json
@@ -2551,11 +2555,13 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          analysis_total?: number | null
           completed_at?: string | null
           created_at?: string
           entity_id?: string
           error_message?: string | null
           id?: string
+          mentions_analyzed?: number | null
           mentions_found?: number
           mentions_inserted?: number
           progress_log?: Json
