@@ -43,9 +43,11 @@ const Overview = () => {
   const qc = useQueryClient();
 
   const handleCollectionComplete = useCallback(() => {
+    setActiveJobId(null);
     qc.invalidateQueries({ queryKey: ["po_mentions"] });
     qc.invalidateQueries({ queryKey: ["po_overview_stats"] });
     qc.invalidateQueries({ queryKey: ["po_pending_count"] });
+    qc.invalidateQueries({ queryKey: ["po_collection_jobs"] });
   }, [qc]);
 
   const isLoading = isLoadingEntities || isLoadingStats;
