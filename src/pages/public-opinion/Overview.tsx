@@ -21,7 +21,7 @@ const sourceColors: Record<string, string> = {
   portais_df: '#8B5CF6', portais_br: '#7C3AED',
   reddit: '#FF4500', telegram: '#0088CC',
   influencer_comments: '#C13584', sites_custom: '#059669',
-  fontes_oficiais: '#1E40AF',
+  fontes_oficiais: '#1E40AF', perplexity_web: '#20B2AA',
 };
 const sentimentColors = ['#22c55e', '#ef4444', '#94a3b8'];
 
