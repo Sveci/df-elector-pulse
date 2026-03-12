@@ -1185,7 +1185,7 @@ const ContactDetails = ({ contact }: { contact: any }) => {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Região Administrativa</label>
+              <label className="text-xs font-medium text-muted-foreground">{locationConfig.label}</label>
               <p className="font-medium flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 {m.city(contact.region)}
