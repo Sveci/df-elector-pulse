@@ -409,17 +409,14 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
 
   // ── Normalize required persistence fields ──
   const nowIso = new Date().toISOString();
-  for (const m of collectedMentions) {
-    m.entity_id = entity_id;
-    m.tenant_id = entity.tenant_id;
-    m.published_at = sanitizeDate(m.published_at);
-    if (!m.collected_at) m.collected_at = nowIso;
-  }
+  const normalizedMentions = collectedMentions
+    .map((m) => normalizeMentionForInsert(m, entity_id, entity.tenant_id, nowIso))
+    .filter((m) => m.content.length > 0);
 
   // ── Dedupe & Insert ──
-  console.log(`[BG] Total collected: ${collectedMentions.length} mentions`);
+  console.log(`[BG] Total collected: ${normalizedMentions.length} mentions`);
 
-  if (collectedMentions.length > 0) {
+  if (normalizedMentions.length > 0) {
     const { data: existing } = await supabase
       .from("po_mentions")
       .select("content")
@@ -431,11 +428,11 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
       (existing || []).map((e: any) => e.content.substring(0, 200))
     );
 
-    const uniqueMentions = collectedMentions.filter(
+    const uniqueMentions = normalizedMentions.filter(
       m => !existingSet.has(m.content.substring(0, 200))
     );
 
-    const dupeCount = collectedMentions.length - uniqueMentions.length;
+    const dupeCount = normalizedMentions.length - uniqueMentions.length;
     console.log(`[BG] Dedupe: ${dupeCount} duplicates removed, ${uniqueMentions.length} unique`);
 
     if (uniqueMentions.length === 0) {
@@ -450,9 +447,15 @@ async function runCollection(entity_id: string, sources: string[] | undefined, q
       return;
     }
 
+    const mentionsToInsert = uniqueMentions.map((m) => ({
+      ...m,
+      collected_at: sanitizeDate(m.collected_at ?? nowIso),
+      published_at: sanitizeDate(m.published_at ?? m.collected_at ?? nowIso),
+    }));
+
     const { data: inserted, error: insertError } = await supabase
       .from("po_mentions")
-      .insert(uniqueMentions)
+      .insert(mentionsToInsert)
       .select("id");
 
     if (insertError) {
