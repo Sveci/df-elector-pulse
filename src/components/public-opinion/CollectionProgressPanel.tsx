@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, CheckCircle2, XCircle, Search,
-  Globe, MessageSquare, Radio
+  Globe, MessageSquare, Radio, Brain, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -53,6 +53,8 @@ interface CollectionJob {
   source_current: string | null;
   mentions_found: number;
   mentions_inserted: number;
+  mentions_analyzed: number;
+  analysis_total: number;
   error_message: string | null;
   started_at: string;
   completed_at: string | null;
@@ -82,7 +84,7 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
         .from("po_collection_jobs")
         .select("id, status")
         .eq("entity_id", entityId)
-        .in("status", ["pending", "running"])
+        .in("status", ["pending", "running", "processing"])
         .order("started_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -96,7 +98,6 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
   useEffect(() => {
     if (!resolvedJobId) return;
 
-    // Initial fetch
     const fetchJob = async () => {
       const { data } = await (supabase as any)
         .from("po_collection_jobs")
@@ -107,7 +108,6 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
     };
     fetchJob();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel(`job-${resolvedJobId}`)
       .on(
@@ -123,11 +123,10 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
           setJob(updated);
           if (updated.status === "completed" || updated.status === "error") {
             onComplete?.();
-            // Auto-hide after 8 seconds
             setTimeout(() => {
               setResolvedJobId(null);
               setJob(null);
-            }, 8000);
+            }, 10000);
           }
         }
       )
@@ -142,11 +141,21 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
 
   const totalSources = job.sources_requested.length;
   const completedSources = job.sources_completed.length;
-  const progressPct = totalSources > 0 ? Math.round((completedSources / totalSources) * 100) : 0;
   const isRunning = job.status === "running";
+  const isProcessing = job.status === "processing";
   const isCompleted = job.status === "completed";
   const isError = job.status === "error";
   const elapsed = Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000);
+
+  const collectionPct = totalSources > 0 ? Math.round((completedSources / totalSources) * 100) : 0;
+  const analysisPct = (job.analysis_total || 0) > 0
+    ? Math.round(((job.mentions_analyzed || 0) / job.analysis_total) * 100)
+    : 0;
+
+  // Overall progress: collection is 50%, analysis is 50%
+  const overallPct = isProcessing || isCompleted
+    ? Math.round(50 + (analysisPct / 2))
+    : Math.round(collectionPct / 2);
 
   return (
     <AnimatePresence>
@@ -156,7 +165,12 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
         exit={{ opacity: 0, y: -10, height: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className={`border-2 ${isRunning ? "border-primary/40 bg-primary/5" : isCompleted ? "border-green-500/30 bg-green-50" : "border-destructive/30 bg-destructive/5"}`}>
+        <Card className={`border-2 ${
+          isRunning ? "border-primary/40 bg-primary/5" : 
+          isProcessing ? "border-amber-500/40 bg-amber-50" :
+          isCompleted ? "border-green-500/30 bg-green-50" : 
+          "border-destructive/30 bg-destructive/5"
+        }`}>
           <CardContent className="pt-4 pb-4 space-y-3">
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -166,13 +180,21 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
                     <Radio className="h-5 w-5 text-primary animate-pulse" />
                     <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full animate-ping" />
                   </div>
+                ) : isProcessing ? (
+                  <div className="relative">
+                    <Brain className="h-5 w-5 text-amber-600 animate-pulse" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-500 rounded-full animate-ping" />
+                  </div>
                 ) : isCompleted ? (
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                 ) : (
                   <XCircle className="h-5 w-5 text-destructive" />
                 )}
                 <span className="font-semibold text-sm">
-                  {isRunning ? "Coletando menções em tempo real..." : isCompleted ? "Coleta concluída!" : "Erro na coleta"}
+                  {isRunning ? "Coletando menções em tempo real..." : 
+                   isProcessing ? "Processando menções com IA..." :
+                   isCompleted ? "Coleta e processamento concluídos!" : 
+                   "Erro na coleta"}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -182,12 +204,13 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
             </div>
 
             {/* Progress bar */}
-            <Progress value={progressPct} className="h-2" />
+            <Progress value={overallPct} className="h-2" />
 
-            {/* Mentions counter */}
-            <div className="flex items-center gap-4">
+            {/* Two-phase indicator */}
+            <div className="flex items-center gap-6">
+              {/* Collection phase */}
               <div className="flex items-center gap-1.5">
-                <Search className="h-4 w-4 text-muted-foreground" />
+                <Search className={`h-4 w-4 ${isRunning ? "text-primary" : "text-muted-foreground"}`} />
                 <span className="text-sm font-medium">
                   <motion.span
                     key={job.mentions_found}
@@ -199,16 +222,52 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
                   </motion.span>
                   {" "}menções encontradas
                 </span>
+                {!isRunning && job.mentions_inserted > 0 && (
+                  <Badge variant="secondary" className="text-xs ml-1">
+                    {job.mentions_inserted} novas
+                  </Badge>
+                )}
               </div>
-              {isCompleted && job.mentions_inserted > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <MessageSquare className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">
-                    {job.mentions_inserted} novas inseridas
+
+              {/* Processing phase */}
+              {(isProcessing || isCompleted) && (job.analysis_total || 0) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Sparkles className={`h-4 w-4 ${isProcessing ? "text-amber-600 animate-pulse" : "text-green-600"}`} />
+                  <span className="text-sm font-medium">
+                    <motion.span
+                      key={job.mentions_analyzed}
+                      initial={{ scale: 1.3, color: "#d97706" }}
+                      animate={{ scale: 1, color: "inherit" }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {job.mentions_analyzed || 0}
+                    </motion.span>
+                    /{job.analysis_total} analisadas
                   </span>
-                </div>
+                  {isProcessing && <Loader2 className="h-3 w-3 animate-spin text-amber-600" />}
+                  {isCompleted && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                </motion.div>
               )}
             </div>
+
+            {/* Processing detail when in processing phase */}
+            {isProcessing && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-center gap-2 text-xs text-amber-700 bg-amber-100/50 rounded-md px-3 py-2"
+              >
+                <Brain className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  Analisando sentimento, categorias e temas com IA... 
+                  {analysisPct > 0 && <strong className="ml-1">{analysisPct}%</strong>}
+                </span>
+              </motion.div>
+            )}
 
             {/* Source progress grid */}
             <div className="flex flex-wrap gap-1.5">
