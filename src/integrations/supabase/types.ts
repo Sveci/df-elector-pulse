@@ -4096,6 +4096,63 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_logs: {
+        Row: {
+          contact_id: string | null
+          content_type: string | null
+          created_at: string
+          headers: Json | null
+          id: string
+          ip_address: string | null
+          leader_id: string | null
+          method: string | null
+          processing_result: string | null
+          raw_payload: Json | null
+          raw_text: string | null
+          response_body: Json | null
+          response_status: number | null
+          source: string
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          ip_address?: string | null
+          leader_id?: string | null
+          method?: string | null
+          processing_result?: string | null
+          raw_payload?: Json | null
+          raw_text?: string | null
+          response_body?: Json | null
+          response_status?: number | null
+          source?: string
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          content_type?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          ip_address?: string | null
+          leader_id?: string | null
+          method?: string | null
+          processing_result?: string | null
+          raw_payload?: Json | null
+          raw_text?: string | null
+          response_body?: Json | null
+          response_status?: number | null
+          source?: string
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_chat_state: {
         Row: {
           contact_id: string | null
