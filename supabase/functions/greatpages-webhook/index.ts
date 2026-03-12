@@ -357,39 +357,25 @@ Deno.serve(async (req) => {
     
     console.log(`[greatpages-webhook] Telefone normalizado: ${telefone_norm}`);
 
-    // Buscar cidade_id se informada
+    // Buscar cidade_id se informada (tenta match em office_cities)
     let cidade_id: string | null = null;
+    let localidade: string | null = cityName || null;
+    
     if (cityName) {
       const { data: cityData } = await supabase
         .from("office_cities")
         .select("id")
+        .eq("tenant_id", tenant_id)
         .ilike("nome", `%${cityName}%`)
         .limit(1)
         .maybeSingle();
       
       if (cityData) {
         cidade_id = cityData.id;
-        console.log(`[greatpages-webhook] Cidade encontrada: ${cityName} -> ${cidade_id}`);
-      }
-    }
-    
-    // Se não encontrou cidade, buscar cidade padrão (primeira ativa)
-    if (!cidade_id) {
-      const { data: defaultCity } = await supabase
-        .from("office_cities")
-        .select("id")
-        .eq("status", "active")
-        .limit(1)
-        .single();
-      
-      if (defaultCity) {
-        cidade_id = defaultCity.id;
+        console.log(`[greatpages-webhook] Cidade encontrada em office_cities: ${cityName} -> ${cidade_id}`);
       } else {
-        console.error("[greatpages-webhook] Nenhuma cidade encontrada no sistema");
-        return new Response(
-          JSON.stringify({ success: false, error: "Nenhuma cidade configurada no sistema" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        // Não encontrou nas office_cities, salvar como localidade texto
+        console.log(`[greatpages-webhook] Cidade não encontrada em office_cities, salvando como localidade: ${cityName}`);
       }
     }
 
