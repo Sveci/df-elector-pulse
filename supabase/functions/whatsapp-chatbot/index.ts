@@ -336,12 +336,14 @@ async function handleRegistrationStep(
     .single();
 
   const normalizedInput = userMessage.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  // Strip punctuation for matching (e.g., "SIM, GOSTARIA" → "SIM GOSTARIA")
+  const normalizedInputClean = normalizedInput.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
   const state = session.registration_state;
 
   // State: awaiting_confirmation
   if (state === "awaiting_confirmation") {
     const positiveResponses = ["SIM", "S", "QUERO", "CLARO", "PODE SER", "ACEITO", "BORA", "VAMOS", "OK", "PODE", "CADASTRAR", "EU QUERO"];
-    const isPositive = positiveResponses.some(r => normalizedInput === r || normalizedInput.startsWith(r + " "));
+    const isPositive = positiveResponses.some(r => normalizedInputClean === r || normalizedInputClean.startsWith(r + " "));
     
     if (isPositive) {
       const msg = "Ótimo! Vamos fazer seu cadastro rapidinho! 📝\n\nPor favor, me diga seu *nome completo*:";
@@ -1259,6 +1261,17 @@ function responseDeniesKnowledge(answer: string): boolean {
   ].some((pattern) => normalized.includes(pattern));
 }
 
+// Detect if AI correctly rejected as out-of-scope (should NOT trigger Perplexity)
+function responseIsOutOfScope(answer: string): boolean {
+  const normalized = normalizeForKb(answer);
+  return [
+    "so posso responder sobre assuntos relacionados ao mandato",
+    "desculpe so posso responder",
+    "fora do escopo",
+    "nao tenho como ajudar com esse tema",
+  ].some((pattern) => normalized.includes(pattern));
+}
+
 // Check if KB chunks actually contain the specific topic the user asked about
 function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[]): boolean {
   if (!rankedChunks.length) return true;
@@ -1526,6 +1539,12 @@ REGRAS OBRIGATÓRIAS:
 
     // Check if KB actually has specific info for this query
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
+    
+    // If AI correctly rejected as out-of-scope, return as-is (do NOT send to Perplexity)
+    if (responseIsOutOfScope(aiAnswer)) {
+      console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope, returning as-is");
+      return aiAnswer;
+    }
 
     // If AI denies having info but KB has it AND KB has specific content, use grounded fallback
     if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
