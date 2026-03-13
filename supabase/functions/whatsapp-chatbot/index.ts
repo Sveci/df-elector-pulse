@@ -1539,6 +1539,12 @@ REGRAS OBRIGATÓRIAS:
 
     // Check if KB actually has specific info for this query
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
+    
+    // If AI correctly rejected as out-of-scope, return as-is (do NOT send to Perplexity)
+    if (responseIsOutOfScope(aiAnswer)) {
+      console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope, returning as-is");
+      return aiAnswer;
+    }
 
     // If AI denies having info but KB has it AND KB has specific content, use grounded fallback
     if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
