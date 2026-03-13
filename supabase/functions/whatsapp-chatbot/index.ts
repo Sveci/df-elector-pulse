@@ -439,20 +439,25 @@ async function handleRegistrationStep(
     // Create/update contact in office_contacts
     const phoneNorm = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
     
+    // Search without tenant filter due to global unique constraint on telefone_norm
     const { data: existingContact } = await supabase
       .from("office_contacts")
-      .select("id")
+      .select("id, tenant_id")
       .eq("telefone_norm", phoneNorm)
-      .eq("tenant_id", tenantId)
       .maybeSingle();
 
     if (existingContact) {
-      const updateData: any = { nome: session.collected_name };
+      const updateData: any = { nome: session.collected_name, source_type: "whatsapp" };
       if (session.collected_email) updateData.email = session.collected_email;
       if (matchedCity) updateData.cidade_id = matchedCity.id;
+      // If contact is in a different tenant, update tenant_id to current
+      if (existingContact.tenant_id !== tenantId) {
+        updateData.tenant_id = tenantId;
+      }
       await supabase.from("office_contacts").update(updateData).eq("id", existingContact.id);
+      console.log(`[whatsapp-chatbot] Updated existing contact ${existingContact.id} for ${phoneNorm}`);
     } else {
-      await supabase.from("office_contacts").insert({
+      const { error: insertError } = await supabase.from("office_contacts").insert({
         nome: session.collected_name,
         telefone_norm: phoneNorm,
         email: session.collected_email || null,
@@ -461,6 +466,9 @@ async function handleRegistrationStep(
         tenant_id: tenantId,
         is_active: true,
       });
+      if (insertError) {
+        console.error(`[whatsapp-chatbot] Error inserting contact:`, insertError);
+      }
     }
 
     const cityName = matchedCity?.nome || userMessage.trim();

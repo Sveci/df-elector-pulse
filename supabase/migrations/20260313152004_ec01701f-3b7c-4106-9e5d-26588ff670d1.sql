@@ -1,0 +1,2 @@
+ALTER TABLE office_contacts DROP CONSTRAINT office_contacts_source_type_check;
+ALTER TABLE office_contacts ADD CONSTRAINT office_contacts_source_type_check CHECK (source_type = ANY (ARRAY['lider','campanha','evento','afiliado','manual','captacao','visita','webhook','whatsapp']));
