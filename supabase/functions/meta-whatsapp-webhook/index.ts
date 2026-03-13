@@ -941,10 +941,12 @@ serve(async (req) => {
               // === CHECK ACTIVE REGISTRATION FLOW ===
               let inRegistrationFlow = false;
               if (!handledAsVerification && tenantId) {
+                const phoneWithPlus = from.startsWith('+') ? from : `+${from}`;
+                const phoneWithoutPlus = from.startsWith('+') ? from.substring(1) : from;
                 const { data: regSession } = await supabase
                   .from('whatsapp_chatbot_sessions')
                   .select('registration_state')
-                  .eq('phone', from)
+                  .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithoutPlus}`)
                   .eq('tenant_id', tenantId)
                   .is('registration_completed_at', null)
                   .not('registration_state', 'is', null)
