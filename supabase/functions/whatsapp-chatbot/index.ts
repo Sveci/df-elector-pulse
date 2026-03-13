@@ -1244,7 +1244,7 @@ REGRAS OBRIGATÓRIAS:
     const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
     if (groundedFallback) return groundedFallback;
     // Try Perplexity as last resort
-    const perplexityResult = await searchPerplexityFallback(userMessage);
+    const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
     if (perplexityResult) return perplexityResult;
     return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
