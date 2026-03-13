@@ -470,6 +470,7 @@ async function handleRegistrationStep(
         telefone_norm: phoneNorm,
         email: session.collected_email || null,
         cidade_id: matchedCity?.id || null,
+        localidade: matchedCity ? matchedCity.nome : userMessage.trim(),
         source_type: "whatsapp",
         tenant_id: tenantId,
         is_active: true,
