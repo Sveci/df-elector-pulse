@@ -645,6 +645,37 @@ Deno.serve(async (req) => {
 
     console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
 
+    // =====================================================
+    // POST-RESPONSE: Check if we should trigger registration invite
+    // =====================================================
+    if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
+      const firstMsgTime = new Date(session.first_message_at).getTime();
+      const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
+      
+      if (minutesSinceFirst >= 30) {
+        console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
+        
+        const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
+        
+        // Send the registration invite
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
+        
+        // Update session state
+        await supabase
+          .from("whatsapp_chatbot_sessions")
+          .update({ registration_state: "awaiting_confirmation", registration_asked_at: new Date().toISOString() })
+          .eq("id", session.id);
+        
+        // Log
+        await supabase.from("whatsapp_chatbot_logs").insert({
+          leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
+          message_out: regInviteMsg, keyword_matched: null, response_type: "registration_invite",
+          processing_time_ms: Date.now() - startTime,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+        });
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
