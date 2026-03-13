@@ -447,10 +447,18 @@ async function handleRegistrationStep(
       .maybeSingle();
 
     if (existingContact) {
-      const updateData: any = { nome: session.collected_name, source_type: "whatsapp", is_active: true, opted_out_at: null, opt_out_reason: null, opt_out_channel: null };
+      const updateData: any = { 
+        nome: session.collected_name, 
+        source_type: "whatsapp", 
+        is_active: true, 
+        opted_out_at: null, 
+        opt_out_reason: null, 
+        opt_out_channel: null,
+        // Always update city fields: use matched city or store as text
+        cidade_id: matchedCity?.id || null,
+        localidade: matchedCity ? matchedCity.nome : userMessage.trim(),
+      };
       if (session.collected_email) updateData.email = session.collected_email;
-      if (matchedCity) updateData.cidade_id = matchedCity.id;
-      // If contact is in a different tenant, update tenant_id to current
       if (existingContact.tenant_id !== tenantId) {
         updateData.tenant_id = tenantId;
       }
@@ -462,6 +470,7 @@ async function handleRegistrationStep(
         telefone_norm: phoneNorm,
         email: session.collected_email || null,
         cidade_id: matchedCity?.id || null,
+        localidade: matchedCity ? matchedCity.nome : userMessage.trim(),
         source_type: "whatsapp",
         tenant_id: tenantId,
         is_active: true,
