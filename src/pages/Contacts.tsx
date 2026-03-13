@@ -138,6 +138,11 @@ const sourceConfig: Record<string, { label: string; className: string; icon: typ
     className: "bg-indigo-50 text-indigo-700 border-indigo-200",
     icon: ExternalLink,
   },
+  whatsapp: {
+    label: "WhatsApp",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: MessageSquare,
+  },
   pesquisa: {
     label: "Pesquisa",
     className: "bg-violet-50 text-violet-700 border-violet-200",
@@ -356,6 +361,9 @@ const Contacts = () => {
         } else if (contact.source_type === "webhook") {
           sourceInfo = "Webhook (GreatPages)";
           sourceName = "GreatPages";
+        } else if (contact.source_type === "whatsapp") {
+          sourceInfo = "WhatsApp";
+          sourceName = null;
         }
 
         return {
@@ -363,7 +371,7 @@ const Contacts = () => {
           name: contact.nome,
           phone: formatPhoneToBR(contact.telefone_norm),
           email: contact.email || "",
-          region: contact.cidade?.nome || "N/A",
+          region: contact.cidade?.nome || contact.localidade || "N/A",
           registrationDate: contact.created_at,
           source: sourceInfo,
           sourceName,
@@ -671,6 +679,7 @@ const Contacts = () => {
                 <SelectItem value="captacao">Captação</SelectItem>
                 <SelectItem value="visita">Visita</SelectItem>
                 <SelectItem value="webhook">Webhook</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
                 <SelectItem value="pesquisa">Pesquisa</SelectItem>
               </SelectContent>
             </Select>
