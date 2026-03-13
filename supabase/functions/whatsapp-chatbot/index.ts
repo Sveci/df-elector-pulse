@@ -333,6 +333,39 @@ Deno.serve(async (req) => {
 
     const actor: Leader | null = resolvedLeader;
 
+    // =====================================================
+    // SESSION TRACKING & REGISTRATION FLOW
+    // =====================================================
+    
+    // Upsert session to track first_message_at
+    const { data: existingSession } = await supabase
+      .from("whatsapp_chatbot_sessions")
+      .select("*")
+      .eq("phone", normalizedPhone)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    let session = existingSession;
+    if (!session) {
+      const { data: newSession } = await supabase
+        .from("whatsapp_chatbot_sessions")
+        .insert({ phone: normalizedPhone, tenant_id: tenantId, first_message_at: new Date().toISOString() })
+        .select()
+        .single();
+      session = newSession;
+    }
+
+    // Check if user is in a registration flow step
+    if (session?.registration_state && !session.registration_completed_at) {
+      const regResult = await handleRegistrationStep(
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+      );
+      if (regResult) {
+        return new Response(JSON.stringify(regResult), 
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
       .from("whatsapp_chatbot_config")
