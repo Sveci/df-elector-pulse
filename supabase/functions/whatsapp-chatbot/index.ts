@@ -1008,16 +1008,15 @@ async function searchPerplexityFallback(question: string): Promise<string | null
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar",
+        model: "sonar-pro",
         messages: [
           {
             role: "system",
-            content: "Você é um assistente de um gabinete parlamentar. Responda de forma breve (máximo 400 caracteres), amigável e precisa. Use emojis moderadamente. Cite a fonte quando possível. Se não encontrar informação confiável, retorne exatamente: NO_RESULT",
+            content: "Você é um assistente político brasileiro especializado. Responda de forma clara e objetiva (máximo 800 caracteres). Sempre forneça informações factuais e cite fontes. Use emojis moderadamente. NUNCA retorne 'NO_RESULT' - se não tiver certeza absoluta, explique o que encontrou de mais próximo.",
           },
           { role: "user", content: question },
         ],
-        max_tokens: 250,
-        search_recency_filter: "month",
+        max_tokens: 500,
       }),
     });
 
@@ -1030,7 +1029,12 @@ async function searchPerplexityFallback(question: string): Promise<string | null
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
 
-    if (!answer || answer === "NO_RESULT" || answer.length < 10) return null;
+    // Detect NO_RESULT in any format (plain, bold, markdown etc.)
+    const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
+    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") || answer.length < 15) {
+      console.log("[whatsapp-chatbot] Perplexity returned NO_RESULT or too short");
+      return null;
+    }
 
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
     console.log(`[whatsapp-chatbot] Perplexity fallback success: ${answer.length} chars`);
