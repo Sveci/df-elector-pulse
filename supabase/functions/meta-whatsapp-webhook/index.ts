@@ -938,8 +938,27 @@ serve(async (req) => {
                 }
               }
 
+              // === CHECK ACTIVE REGISTRATION FLOW ===
+              let inRegistrationFlow = false;
+              if (!handledAsVerification && tenantId) {
+                const { data: regSession } = await supabase
+                  .from('whatsapp_chatbot_sessions')
+                  .select('registration_state')
+                  .eq('phone', from)
+                  .eq('tenant_id', tenantId)
+                  .is('registration_completed_at', null)
+                  .not('registration_state', 'is', null)
+                  .limit(1)
+                  .maybeSingle();
+                
+                if (regSession?.registration_state) {
+                  inRegistrationFlow = true;
+                  console.log(`[Meta Webhook] User ${from} is in registration flow (state: ${regSession.registration_state}), skipping conversational flow`);
+                }
+              }
+
               // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
-              if (!handledAsVerification && messageText.trim()) {
+              if (!handledAsVerification && !inRegistrationFlow && messageText.trim()) {
                 const handledByFlow = await handleConversationalFlow(
                   supabase, from, normalizedPhone, messageText, tenantId
                 );
