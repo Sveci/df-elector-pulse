@@ -361,6 +361,9 @@ const Contacts = () => {
         } else if (contact.source_type === "webhook") {
           sourceInfo = "Webhook (GreatPages)";
           sourceName = "GreatPages";
+        } else if (contact.source_type === "whatsapp") {
+          sourceInfo = "WhatsApp";
+          sourceName = null;
         }
 
         return {
@@ -368,7 +371,7 @@ const Contacts = () => {
           name: contact.nome,
           phone: formatPhoneToBR(contact.telefone_norm),
           email: contact.email || "",
-          region: contact.cidade?.nome || "N/A",
+          region: contact.cidade?.nome || contact.localidade || "N/A",
           registrationDate: contact.created_at,
           source: sourceInfo,
           sourceName,
