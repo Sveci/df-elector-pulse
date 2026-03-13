@@ -938,8 +938,27 @@ serve(async (req) => {
                 }
               }
 
+              // === CHECK ACTIVE REGISTRATION FLOW ===
+              let inRegistrationFlow = false;
+              if (!handledAsVerification && tenantId) {
+                const { data: regSession } = await supabase
+                  .from('whatsapp_chatbot_sessions')
+                  .select('registration_state')
+                  .eq('phone', from)
+                  .eq('tenant_id', tenantId)
+                  .is('registration_completed_at', null)
+                  .not('registration_state', 'is', null)
+                  .limit(1)
+                  .maybeSingle();
+                
+                if (regSession?.registration_state) {
+                  inRegistrationFlow = true;
+                  console.log(`[Meta Webhook] User ${from} is in registration flow (state: ${regSession.registration_state}), skipping conversational flow`);
+                }
+              }
+
               // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
-              if (!handledAsVerification && messageText.trim()) {
+              if (!handledAsVerification && !inRegistrationFlow && messageText.trim()) {
                 const handledByFlow = await handleConversationalFlow(
                   supabase, from, normalizedPhone, messageText, tenantId
                 );
@@ -973,6 +992,34 @@ serve(async (req) => {
                   console.log('[Meta Webhook] Chatbot response:', chatbotResult);
                 } catch (chatbotError) {
                   console.error('[Meta Webhook] Chatbot error:', chatbotError);
+                }
+              }
+
+              // === REGISTRATION FLOW: Forward directly to chatbot ===
+              if (inRegistrationFlow && messageText.trim()) {
+                console.log('[Meta Webhook] Forwarding registration flow message to chatbot for:', from);
+                try {
+                  const chatbotResponse = await fetch(
+                    `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`,
+                      },
+                      body: JSON.stringify({
+                        phone: from,
+                        message: messageText,
+                        messageId: messageId,
+                        provider: 'meta_cloud',
+                        tenantId: tenantId,
+                      }),
+                    }
+                  );
+                  const chatbotResult = await chatbotResponse.json();
+                  console.log('[Meta Webhook] Registration chatbot response:', chatbotResult);
+                } catch (chatbotError) {
+                  console.error('[Meta Webhook] Registration chatbot error:', chatbotError);
                 }
               }
             }
