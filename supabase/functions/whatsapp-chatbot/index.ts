@@ -994,13 +994,38 @@ function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[
   return true; // KB has generic content but not the specific topic
 }
 
-// Perplexity web search fallback
-async function searchPerplexityFallback(question: string): Promise<string | null> {
+// Perplexity web search fallback - restricted to tenant/political scope
+async function searchPerplexityFallback(question: string, supabase?: any, tenantId?: string): Promise<string | null> {
   const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
   if (!perplexityKey) return null;
 
+  // Fetch org name to scope the search
+  let orgName = "";
+  let orgCargo = "";
+  if (supabase && tenantId) {
+    try {
+      const { data: org } = await supabase
+        .from("organization")
+        .select("nome, cargo")
+        .eq("tenant_id", tenantId)
+        .limit(1)
+        .single();
+      orgName = org?.nome || "";
+      orgCargo = org?.cargo || "";
+    } catch { /* ignore */ }
+  }
+
+  const scopeEntity = orgName ? `${orgCargo} ${orgName}`.trim() : "";
+
+  // Check if question is related to the political scope
+  // If there's no org context, we can't scope - skip fallback
+  if (!scopeEntity) {
+    console.log("[whatsapp-chatbot] Perplexity skipped: no org context for scoping");
+    return null;
+  }
+
   try {
-    console.log("[whatsapp-chatbot] Trying Perplexity fallback...");
+    console.log("[whatsapp-chatbot] Trying Perplexity fallback (scoped to: " + scopeEntity + ")...");
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: {
@@ -1012,7 +1037,7 @@ async function searchPerplexityFallback(question: string): Promise<string | null
         messages: [
           {
             role: "system",
-            content: "Você é um assistente político brasileiro especializado. Responda de forma clara e objetiva (máximo 800 caracteres). Sempre forneça informações factuais e cite fontes. Use emojis moderadamente. NUNCA retorne 'NO_RESULT' - se não tiver certeza absoluta, explique o que encontrou de mais próximo.",
+            content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Você SOMENTE responde perguntas que sejam diretamente relacionadas a ${scopeEntity}, ao mandato parlamentar, projetos de lei, ações políticas, eventos ou temas legislativos que envolvam ${scopeEntity}. Se a pergunta NÃO tem relação com ${scopeEntity} ou com política/legislação brasileira no contexto do mandato, retorne EXATAMENTE: FORA_DO_ESCOPO. Responda de forma clara e objetiva (máximo 800 caracteres). Cite fontes quando possível. Use emojis moderadamente.`,
           },
           { role: "user", content: question },
         ],
@@ -1029,10 +1054,12 @@ async function searchPerplexityFallback(question: string): Promise<string | null
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
 
-    // Detect NO_RESULT in any format (plain, bold, markdown etc.)
+    // Detect out-of-scope or NO_RESULT responses
     const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
-    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") || answer.length < 15) {
-      console.log("[whatsapp-chatbot] Perplexity returned NO_RESULT or too short");
+    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") || 
+        cleanAnswer.startsWith("FORA_DO_ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || 
+        answer.length < 15) {
+      console.log("[whatsapp-chatbot] Perplexity: out of scope or no result");
       return null;
     }
 
