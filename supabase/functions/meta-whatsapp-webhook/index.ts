@@ -994,6 +994,34 @@ serve(async (req) => {
                   console.error('[Meta Webhook] Chatbot error:', chatbotError);
                 }
               }
+
+              // === REGISTRATION FLOW: Forward directly to chatbot ===
+              if (inRegistrationFlow && messageText.trim()) {
+                console.log('[Meta Webhook] Forwarding registration flow message to chatbot for:', from);
+                try {
+                  const chatbotResponse = await fetch(
+                    `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`,
+                      },
+                      body: JSON.stringify({
+                        phone: from,
+                        message: messageText,
+                        messageId: messageId,
+                        provider: 'meta_cloud',
+                        tenantId: tenantId,
+                      }),
+                    }
+                  );
+                  const chatbotResult = await chatbotResponse.json();
+                  console.log('[Meta Webhook] Registration chatbot response:', chatbotResult);
+                } catch (chatbotError) {
+                  console.error('[Meta Webhook] Registration chatbot error:', chatbotError);
+                }
+              }
             }
           }
 
