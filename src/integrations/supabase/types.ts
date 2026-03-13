@@ -4358,6 +4358,59 @@ export type Database = {
           },
         ]
       }
+      whatsapp_chatbot_sessions: {
+        Row: {
+          collected_city: string | null
+          collected_email: string | null
+          collected_name: string | null
+          created_at: string
+          first_message_at: string
+          id: string
+          phone: string
+          registration_asked_at: string | null
+          registration_completed_at: string | null
+          registration_state: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          collected_city?: string | null
+          collected_email?: string | null
+          collected_name?: string | null
+          created_at?: string
+          first_message_at?: string
+          id?: string
+          phone: string
+          registration_asked_at?: string | null
+          registration_completed_at?: string | null
+          registration_state?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          collected_city?: string | null
+          collected_email?: string | null
+          collected_name?: string | null
+          created_at?: string
+          first_message_at?: string
+          id?: string
+          phone?: string
+          registration_asked_at?: string | null
+          registration_completed_at?: string | null
+          registration_state?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_chatbot_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_communities: {
         Row: {
           community_link: string | null

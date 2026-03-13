@@ -282,6 +282,216 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
   }
 };
 
+// =====================================================
+// HELPER: Send response via configured provider
+// =====================================================
+async function sendResponseToUser(
+  supabase: any,
+  integrationSettings: any,
+  provider: string | undefined,
+  phone: string,
+  message: string
+): Promise<boolean> {
+  const useMetaCloud = provider === 'meta_cloud' || 
+    (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
+
+  if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
+    const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+    if (metaAccessToken) {
+      return await sendWhatsAppMessageMetaCloud(
+        integrationSettings.meta_cloud_phone_number_id,
+        integrationSettings.meta_cloud_api_version || "v20.0",
+        metaAccessToken, phone, message, supabase
+      );
+    }
+  }
+  
+  if (integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
+    return await sendWhatsAppMessage(
+      integrationSettings.zapi_instance_id, integrationSettings.zapi_token,
+      integrationSettings.zapi_client_token, phone, message
+    );
+  }
+  
+  return false;
+}
+
+// =====================================================
+// REGISTRATION FLOW HANDLER
+// =====================================================
+async function handleRegistrationStep(
+  supabase: any,
+  session: any,
+  phone: string,
+  userMessage: string,
+  tenantId: string,
+  provider: string | undefined,
+  startTime: number
+): Promise<any | null> {
+  const { data: intSettings } = await supabase
+    .from("integrations_settings")
+    .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active")
+    .eq("tenant_id", tenantId)
+    .limit(1)
+    .single();
+
+  const normalizedInput = userMessage.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const state = session.registration_state;
+
+  // State: awaiting_confirmation
+  if (state === "awaiting_confirmation") {
+    const positiveResponses = ["SIM", "S", "QUERO", "CLARO", "PODE SER", "ACEITO", "BORA", "VAMOS", "OK", "PODE", "CADASTRAR", "EU QUERO"];
+    const isPositive = positiveResponses.some(r => normalizedInput === r || normalizedInput.startsWith(r + " "));
+    
+    if (isPositive) {
+      const msg = "Ótimo! Vamos fazer seu cadastro rapidinho! 📝\n\nPor favor, me diga seu *nome completo*:";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await supabase.from("whatsapp_chatbot_sessions").update({ registration_state: "collecting_name" }).eq("id", session.id);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_confirm", tenantId, startTime);
+      return { success: true, responseType: "registration_confirm" };
+    } else {
+      const msg = "Sem problemas! 😊 Se mudar de ideia, é só me dizer que quer se cadastrar.";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await supabase.from("whatsapp_chatbot_sessions").update({ registration_state: "declined", registration_completed_at: new Date().toISOString() }).eq("id", session.id);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_declined", tenantId, startTime);
+      return { success: true, responseType: "registration_declined" };
+    }
+  }
+
+  // State: collecting_name
+  if (state === "collecting_name") {
+    if (userMessage.length < 3 || userMessage.length > 100) {
+      const msg = "Por favor, digite seu *nome completo* (mínimo 3 caracteres):";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_retry_name", tenantId, startTime);
+      return { success: true, responseType: "registration_retry_name" };
+    }
+    
+    await supabase.from("whatsapp_chatbot_sessions").update({ collected_name: userMessage, registration_state: "collecting_email" }).eq("id", session.id);
+    const msg = `Obrigado, *${userMessage.split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logRegistration(supabase, phone, userMessage, msg, "registration_name_collected", tenantId, startTime);
+    return { success: true, responseType: "registration_name_collected" };
+  }
+
+  // State: collecting_email
+  if (state === "collecting_email") {
+    let email: string | null = null;
+    const skipWords = ["PULAR", "NAO", "NAO TENHO", "NADA", "PULA", "SEM"];
+    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
+    
+    if (!isSkip) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userMessage.trim())) {
+        const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um e-mail válido ou *PULAR* para continuar sem:";
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await logRegistration(supabase, phone, userMessage, msg, "registration_retry_email", tenantId, startTime);
+        return { success: true, responseType: "registration_retry_email" };
+      }
+      email = userMessage.trim().toLowerCase();
+    }
+    
+    await supabase.from("whatsapp_chatbot_sessions").update({ collected_email: email, registration_state: "collecting_city" }).eq("id", session.id);
+    
+    const { data: cities } = await supabase
+      .from("office_cities")
+      .select("nome")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .order("nome")
+      .limit(30);
+    
+    let msg = `${email ? "E-mail registrado!" : "Tudo bem, sem problemas!"} 👍\n\nAgora, em qual *cidade* você mora?`;
+    if (cities && cities.length > 0) {
+      msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
+      msg += `\n\nDigite o nome da sua cidade:`;
+    }
+    
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logRegistration(supabase, phone, userMessage, msg, "registration_email_collected", tenantId, startTime);
+    return { success: true, responseType: "registration_email_collected" };
+  }
+
+  // State: collecting_city
+  if (state === "collecting_city") {
+    if (userMessage.length < 2) {
+      const msg = "Por favor, digite o nome da sua *cidade*:";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_retry_city", tenantId, startTime);
+      return { success: true, responseType: "registration_retry_city" };
+    }
+
+    const { data: matchedCity } = await supabase
+      .from("office_cities")
+      .select("id, nome")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .ilike("nome", `%${userMessage.trim()}%`)
+      .limit(1)
+      .maybeSingle();
+
+    await supabase.from("whatsapp_chatbot_sessions").update({ 
+      collected_city: userMessage.trim(), 
+      registration_state: "completed",
+      registration_completed_at: new Date().toISOString()
+    }).eq("id", session.id);
+
+    // Create/update contact in office_contacts
+    const phoneNorm = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
+    
+    const { data: existingContact } = await supabase
+      .from("office_contacts")
+      .select("id")
+      .eq("telefone_norm", phoneNorm)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (existingContact) {
+      const updateData: any = { nome: session.collected_name };
+      if (session.collected_email) updateData.email = session.collected_email;
+      if (matchedCity) updateData.cidade_id = matchedCity.id;
+      await supabase.from("office_contacts").update(updateData).eq("id", existingContact.id);
+    } else {
+      await supabase.from("office_contacts").insert({
+        nome: session.collected_name,
+        telefone_norm: phoneNorm,
+        email: session.collected_email || null,
+        cidade_id: matchedCity?.id || null,
+        source_type: "whatsapp",
+        tenant_id: tenantId,
+        is_active: true,
+      });
+    }
+
+    const cityName = matchedCity?.nome || userMessage.trim();
+    const firstName = (session.collected_name || "").split(" ")[0];
+    const msg = `Cadastro realizado com sucesso! 🎉\n\n` +
+      `📋 *Seus dados:*\n` +
+      `👤 Nome: ${session.collected_name}\n` +
+      `📱 WhatsApp: ${phone}\n` +
+      `${session.collected_email ? `📧 E-mail: ${session.collected_email}\n` : ""}` +
+      `📍 Cidade: ${cityName}\n\n` +
+      `Obrigado, ${firstName}! Agora você receberá informações e novidades que podem te ajudar. 😊`;
+    
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logRegistration(supabase, phone, userMessage, msg, "registration_completed", tenantId, startTime);
+    
+    console.log(`[whatsapp-chatbot] Registration completed for ${phone}: ${session.collected_name}`);
+    return { success: true, responseType: "registration_completed" };
+  }
+
+  return null;
+}
+
+async function logRegistration(supabase: any, phone: string, msgIn: string, msgOut: string, type: string, tenantId: string, startTime: number) {
+  await supabase.from("whatsapp_chatbot_logs").insert({
+    leader_id: null, phone, message_in: msgIn, message_out: msgOut,
+    keyword_matched: null, response_type: type,
+    processing_time_ms: Date.now() - startTime,
+    tenant_id: tenantId,
+  });
+}
+
 // Main handler
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -332,6 +542,39 @@ Deno.serve(async (req) => {
     }
 
     const actor: Leader | null = resolvedLeader;
+
+    // =====================================================
+    // SESSION TRACKING & REGISTRATION FLOW
+    // =====================================================
+    
+    // Upsert session to track first_message_at
+    const { data: existingSession } = await supabase
+      .from("whatsapp_chatbot_sessions")
+      .select("*")
+      .eq("phone", normalizedPhone)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    let session = existingSession;
+    if (!session) {
+      const { data: newSession } = await supabase
+        .from("whatsapp_chatbot_sessions")
+        .insert({ phone: normalizedPhone, tenant_id: tenantId, first_message_at: new Date().toISOString() })
+        .select()
+        .single();
+      session = newSession;
+    }
+
+    // Check if user is in a registration flow step
+    if (session?.registration_state && !session.registration_completed_at) {
+      const regResult = await handleRegistrationStep(
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+      );
+      if (regResult) {
+        return new Response(JSON.stringify(regResult), 
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
@@ -611,6 +854,37 @@ Deno.serve(async (req) => {
     });
 
     console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
+
+    // =====================================================
+    // POST-RESPONSE: Check if we should trigger registration invite
+    // =====================================================
+    if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
+      const firstMsgTime = new Date(session.first_message_at).getTime();
+      const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
+      
+      if (minutesSinceFirst >= 30) {
+        console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
+        
+        const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
+        
+        // Send the registration invite
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
+        
+        // Update session state
+        await supabase
+          .from("whatsapp_chatbot_sessions")
+          .update({ registration_state: "awaiting_confirmation", registration_asked_at: new Date().toISOString() })
+          .eq("id", session.id);
+        
+        // Log
+        await supabase.from("whatsapp_chatbot_logs").insert({
+          leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
+          message_out: regInviteMsg, keyword_matched: null, response_type: "registration_invite",
+          processing_time_ms: Date.now() - startTime,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+        });
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
