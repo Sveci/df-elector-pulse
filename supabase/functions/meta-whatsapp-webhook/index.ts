@@ -791,6 +791,55 @@ serve(async (req) => {
                 continue;
               }
 
+              // === CHECK ACTIVE REGISTRATION FLOW (before consent/verification) ===
+              let inRegistrationFlow = false;
+              if (tenantId) {
+                const phoneWithPlus = from.startsWith('+') ? from : `+${from}`;
+                const phoneWithoutPlus = from.startsWith('+') ? from.substring(1) : from;
+                const { data: regSession } = await supabase
+                  .from('whatsapp_chatbot_sessions')
+                  .select('registration_state')
+                  .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithoutPlus}`)
+                  .eq('tenant_id', tenantId)
+                  .is('registration_completed_at', null)
+                  .not('registration_state', 'is', null)
+                  .limit(1)
+                  .maybeSingle();
+                
+                if (regSession?.registration_state) {
+                  inRegistrationFlow = true;
+                  console.log(`[Meta Webhook] User ${from} is in registration flow (state: ${regSession.registration_state}), forwarding to chatbot`);
+                }
+              }
+
+              if (inRegistrationFlow) {
+                // Forward directly to chatbot for registration flow
+                try {
+                  const chatbotResponse = await fetch(
+                    `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`,
+                      },
+                      body: JSON.stringify({
+                        phone: from,
+                        message: messageText,
+                        messageId: messageId,
+                        provider: 'meta_cloud',
+                        tenantId: tenantId,
+                      }),
+                    }
+                  );
+                  const chatbotResult = await chatbotResponse.json();
+                  console.log('[Meta Webhook] Registration chatbot response:', chatbotResult);
+                } catch (chatbotError) {
+                  console.error('[Meta Webhook] Registration chatbot error:', chatbotError);
+                }
+                continue;
+              }
+
               // === SIM (CONSENT CONFIRMATION) ===
               if (cleanMessage === "SIM") {
                 console.log(`[Meta Webhook] Detected SIM consent response from ${normalizedPhone}`);
