@@ -676,6 +676,7 @@ const Contacts = () => {
                 <SelectItem value="captacao">Captação</SelectItem>
                 <SelectItem value="visita">Visita</SelectItem>
                 <SelectItem value="webhook">Webhook</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
                 <SelectItem value="pesquisa">Pesquisa</SelectItem>
               </SelectContent>
             </Select>
