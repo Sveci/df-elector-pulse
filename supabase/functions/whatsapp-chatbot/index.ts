@@ -447,7 +447,7 @@ async function handleRegistrationStep(
       .maybeSingle();
 
     if (existingContact) {
-      const updateData: any = { nome: session.collected_name, source_type: "whatsapp" };
+      const updateData: any = { nome: session.collected_name, source_type: "whatsapp", is_active: true, opted_out_at: null, opt_out_reason: null, opt_out_channel: null };
       if (session.collected_email) updateData.email = session.collected_email;
       if (matchedCity) updateData.cidade_id = matchedCity.id;
       // If contact is in a different tenant, update tenant_id to current
