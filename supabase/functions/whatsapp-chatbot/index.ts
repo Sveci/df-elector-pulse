@@ -1127,6 +1127,22 @@ async function generateAIResponse(
   supabase?: any,
   tenantId?: string
 ): Promise<string> {
+  // Fetch org name for scope restriction
+  let orgScope = "";
+  if (supabase && tenantId) {
+    try {
+      const { data: org } = await supabase
+        .from("organization")
+        .select("nome, cargo")
+        .eq("tenant_id", tenantId)
+        .limit(1)
+        .single();
+      if (org?.nome) {
+        orgScope = `${org.cargo || ""} ${org.nome}`.trim();
+      }
+    } catch { /* ignore */ }
+  }
+
   // Search Knowledge Base for relevant context
   let kbContext = "";
   let kbSources: string[] = [];
