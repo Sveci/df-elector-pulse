@@ -138,6 +138,11 @@ const sourceConfig: Record<string, { label: string; className: string; icon: typ
     className: "bg-indigo-50 text-indigo-700 border-indigo-200",
     icon: ExternalLink,
   },
+  whatsapp: {
+    label: "WhatsApp",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: MessageSquare,
+  },
   pesquisa: {
     label: "Pesquisa",
     className: "bg-violet-50 text-violet-700 border-violet-200",
