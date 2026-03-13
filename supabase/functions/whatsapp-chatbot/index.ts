@@ -336,12 +336,14 @@ async function handleRegistrationStep(
     .single();
 
   const normalizedInput = userMessage.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  // Strip punctuation for matching (e.g., "SIM, GOSTARIA" → "SIM GOSTARIA")
+  const normalizedInputClean = normalizedInput.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
   const state = session.registration_state;
 
   // State: awaiting_confirmation
   if (state === "awaiting_confirmation") {
     const positiveResponses = ["SIM", "S", "QUERO", "CLARO", "PODE SER", "ACEITO", "BORA", "VAMOS", "OK", "PODE", "CADASTRAR", "EU QUERO"];
-    const isPositive = positiveResponses.some(r => normalizedInput === r || normalizedInput.startsWith(r + " "));
+    const isPositive = positiveResponses.some(r => normalizedInputClean === r || normalizedInputClean.startsWith(r + " "));
     
     if (isPositive) {
       const msg = "Ótimo! Vamos fazer seu cadastro rapidinho! 📝\n\nPor favor, me diga seu *nome completo*:";
