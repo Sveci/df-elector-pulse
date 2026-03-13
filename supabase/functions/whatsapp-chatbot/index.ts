@@ -1226,7 +1226,7 @@ REGRAS OBRIGATÓRIAS:
 
     // If AI denies knowledge OR KB lacks specific answer, try Perplexity web search
     if (responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbMissesSpecific) {
-      const perplexityResult = await searchPerplexityFallback(userMessage);
+      const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
       if (perplexityResult) {
         console.log("[whatsapp-chatbot] Using Perplexity web search fallback");
         return perplexityResult;
