@@ -1261,6 +1261,17 @@ function responseDeniesKnowledge(answer: string): boolean {
   ].some((pattern) => normalized.includes(pattern));
 }
 
+// Detect if AI correctly rejected as out-of-scope (should NOT trigger Perplexity)
+function responseIsOutOfScope(answer: string): boolean {
+  const normalized = normalizeForKb(answer);
+  return [
+    "so posso responder sobre assuntos relacionados ao mandato",
+    "desculpe so posso responder",
+    "fora do escopo",
+    "nao tenho como ajudar com esse tema",
+  ].some((pattern) => normalized.includes(pattern));
+}
+
 // Check if KB chunks actually contain the specific topic the user asked about
 function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[]): boolean {
   if (!rankedChunks.length) return true;
