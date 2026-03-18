@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
-import logo from "@/assets/logo-rafael-prudente.png";
+const logo = "/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png";
 
 export default function CoordinatorEvents() {
   const tenantDomain = useTenantDomain();
