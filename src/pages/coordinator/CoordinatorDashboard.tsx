@@ -25,7 +25,7 @@ import {
   getPointsToNextLevel,
   getProgressToNextLevel,
 } from "@/hooks/leaders/useLeaderLevels";
-import logo from "@/assets/logo-rafael-prudente.png";
+const logo = "/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png";
 import { useMaterialReservations } from "@/hooks/materials/useMaterialReservations";
 
 export default function CoordinatorDashboard() {
