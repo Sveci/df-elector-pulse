@@ -165,7 +165,8 @@ export default function PublicLeaderRegistration() {
           p_nome: data.nome_completo.trim(),
           p_telefone: normalizedPhone,
           p_email: normalizedEmail || null,
-          p_cidade_id: data.cidade_id,
+          // Para cargos fora do DF, cidade/localidade é texto e não UUID de office_cities
+          p_cidade_id: locationConfig.fieldType === "ra" ? data.cidade_id : undefined,
           p_data_nascimento: dataNascimentoISO || null,
           p_observacao: data.observacao.trim() || null,
         });
@@ -581,7 +582,8 @@ export default function PublicLeaderRegistration() {
                           value={field.value}
                           localidadeValue={localidade}
                           onLocationChange={({ cidadeId: cid, localidade: loc }) => {
-                            field.onChange(cid || "");
+                            // Em modos de cidade/bairro/estado+cidade, o valor vem em localidade (texto)
+                            field.onChange(cid || loc || "");
                             setLocalidade(loc || "");
                           }}
                         />
