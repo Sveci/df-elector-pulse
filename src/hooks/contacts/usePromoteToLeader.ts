@@ -9,7 +9,8 @@ interface PromoteToLeaderParams {
     nome: string;
     telefone_norm: string;
     email?: string | null;
-    cidade_id: string;
+    cidade_id?: string | null;
+    localidade?: string | null;
     data_nascimento?: string | null;
   };
   actionBy: string;
@@ -26,7 +27,8 @@ export function usePromoteToLeader() {
           p_nome: contact.nome,
           p_telefone: contact.telefone_norm,
           p_email: contact.email || null,
-          p_cidade_id: contact.cidade_id,
+          p_cidade_id: contact.cidade_id || undefined,
+          p_localidade: contact.localidade || undefined,
           p_data_nascimento: contact.data_nascimento || null,
           p_observacao: null,
         });
