@@ -612,7 +612,7 @@ export default function PublicLeaderRegistration() {
                   name="observacao"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Observação / Motivação *</FormLabel>
+                      <FormLabel>Observação / Motivação</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Conte-nos um pouco sobre você e sua motivação para fazer parte da rede de apoiadores..."
