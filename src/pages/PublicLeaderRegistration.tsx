@@ -37,7 +37,7 @@ const formSchema = z.object({
     .min(10, "Data de nascimento obrigatória")
     .refine((val) => isValidDateBR(val), "Data inválida. Use o formato DD/MM/AAAA")
     .refine((val) => isNotFutureDate(val), "Data não pode ser futura"),
-  observacao: z.string().min(10, "Observação deve ter pelo menos 10 caracteres"),
+  observacao: z.string().optional(),
   lgpd: z.boolean().refine((val) => val === true, "Você deve aceitar os termos"),
 });
 
