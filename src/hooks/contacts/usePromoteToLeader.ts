@@ -9,7 +9,8 @@ interface PromoteToLeaderParams {
     nome: string;
     telefone_norm: string;
     email?: string | null;
-    cidade_id: string;
+    cidade_id?: string | null;
+    localidade?: string | null;
     data_nascimento?: string | null;
   };
   actionBy: string;
