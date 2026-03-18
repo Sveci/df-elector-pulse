@@ -84,7 +84,7 @@ export default function CoordinatorMaterials() {
       <div className="bg-card border-b sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo" className="h-3" />
+            <img src={logo} alt="Logo" className="h-4" />
             <div>
               <p className="font-semibold text-sm">{session.nome_completo}</p>
               <p className="text-xs text-muted-foreground">Solicitar Material</p>
