@@ -141,16 +141,18 @@ export default function CoordinatorEvents() {
             </Button>
             <img src={logo} alt="Logo" className="h-4 shrink-0" />
           </div>
-          <div className="text-right">
-            <p className="font-semibold text-sm truncate">{session.nome_completo}</p>
-            <p className="text-xs text-muted-foreground">Meus Eventos</p>
-          </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" /> Criar Evento
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="text-right">
+              <p className="font-semibold text-sm truncate">{session.nome_completo}</p>
+              <p className="text-xs text-muted-foreground">Meus Eventos</p>
+            </div>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
+                  <Plus className="h-3.5 w-3.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Criar Evento</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Criar Novo Evento</DialogTitle>
@@ -296,6 +298,7 @@ export default function CoordinatorEvents() {
               </div>
             </DialogContent>
           </Dialog>
+        </div>
         </div>
       </div>
 
