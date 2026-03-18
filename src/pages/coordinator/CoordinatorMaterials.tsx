@@ -13,7 +13,7 @@ import { useMaterialReservations, useCreateReservation, useCancelReservation, us
 import { ConfirmationDetailsDialog } from "@/components/materials/ConfirmationDetailsDialog";
 import { differenceInSeconds, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import logo from "@/assets/logo-rafael-prudente.png";
+const logo = "/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png";
 
 function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   const [timeLeft, setTimeLeft] = useState("");
