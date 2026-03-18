@@ -129,6 +129,15 @@ export default function CoordinatorDashboard() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Welcome Section */}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Olá, {(session.nome_completo || "").split(" ")[0]}! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {session.cidade_nome ? `${session.cidade_nome} · ` : ""}Bem-vindo(a) ao seu painel de coordenação.
+          </p>
+        </div>
         {isLoading ? (
           <>
             {/* Loading skeleton */}
