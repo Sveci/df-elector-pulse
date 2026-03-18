@@ -10,7 +10,7 @@ import {
   ShieldCheck, ShieldAlert, AlertCircle,
 } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/whatsappLink";
-import logo from "@/assets/logo-rafael-prudente.png";
+const logo = "/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png";
 
 type VerificationState =
   | { status: "idle" }
