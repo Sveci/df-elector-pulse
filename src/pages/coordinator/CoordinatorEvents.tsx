@@ -141,10 +141,10 @@ export default function CoordinatorEvents() {
             </Button>
             <img src={logo} alt="Logo" className="h-4 shrink-0" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm">
+                <Button size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
                   <Plus className="h-3.5 w-3.5 sm:mr-1" />
                   <span className="hidden sm:inline">Criar Evento</span>
                 </Button>
