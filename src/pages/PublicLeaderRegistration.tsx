@@ -582,7 +582,8 @@ export default function PublicLeaderRegistration() {
                           value={field.value}
                           localidadeValue={localidade}
                           onLocationChange={({ cidadeId: cid, localidade: loc }) => {
-                            field.onChange(cid || "");
+                            // Em modos de cidade/bairro/estado+cidade, o valor vem em localidade (texto)
+                            field.onChange(cid || loc || "");
                             setLocalidade(loc || "");
                           }}
                         />
