@@ -142,6 +142,10 @@ export default function CoordinatorEvents() {
             <img src={logo} alt="Logo" className="h-4 shrink-0" />
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <div className="text-right">
+              <p className="font-semibold text-sm truncate">{session.nome_completo}</p>
+              <p className="text-xs text-muted-foreground">Meus Eventos</p>
+            </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
