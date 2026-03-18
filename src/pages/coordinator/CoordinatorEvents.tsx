@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
-import logo from "@/assets/logo-rafael-prudente.png";
+const logo = "/lovable-uploads/7fcd39d2-d59f-4493-8232-a462c15b3f07.png";
 
 export default function CoordinatorEvents() {
   const tenantDomain = useTenantDomain();
@@ -134,13 +134,16 @@ export default function CoordinatorEvents() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button size="sm" variant="ghost" onClick={() => navigate("/coordenador/dashboard")}>
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0" onClick={() => navigate("/coordenador/dashboard")}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <img src={logo} alt="Logo" className="h-8" />
-            <h1 className="font-semibold">Meus Eventos</h1>
+            <img src={logo} alt="Logo" className="h-4 shrink-0" />
+          </div>
+          <div className="text-right">
+            <p className="font-semibold text-sm truncate">{session.nome_completo}</p>
+            <p className="text-xs text-muted-foreground">Meus Eventos</p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
