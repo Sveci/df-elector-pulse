@@ -90,8 +90,9 @@ export default function CoordinatorMaterials() {
               <p className="text-xs text-muted-foreground">Solicitar Material</p>
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={() => navigate("/coordenador/dashboard")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/dashboard")}>
+            <ArrowLeft className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Voltar</span>
           </Button>
         </div>
       </div>
