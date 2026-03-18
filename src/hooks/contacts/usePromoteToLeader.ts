@@ -26,7 +26,8 @@ export function usePromoteToLeader() {
           p_nome: contact.nome,
           p_telefone: contact.telefone_norm,
           p_email: contact.email || null,
-          p_cidade_id: contact.cidade_id,
+          p_cidade_id: contact.cidade_id || undefined,
+          p_localidade: contact.localidade || undefined,
           p_data_nascimento: contact.data_nascimento || null,
           p_observacao: null,
         });
