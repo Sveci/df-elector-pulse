@@ -109,20 +109,23 @@ export default function CoordinatorDashboard() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <img src={logo} alt="Logo" className="h-4" />
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => navigate("/coordenador/verificar")}>
-              <ShieldCheck className="h-4 w-4 mr-1" /> Verificar
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <img src={logo} alt="Logo" className="h-4 shrink-0" />
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+            <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/verificar")}>
+              <ShieldCheck className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Verificar</span>
             </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/coordenador/eventos")}>
-              <Plus className="h-4 w-4 mr-1" /> Eventos
+            <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/eventos")}>
+              <Plus className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Eventos</span>
             </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/coordenador/materiais")}>
-              <Package className="h-4 w-4 mr-1" /> Material
+            <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/materiais")}>
+              <Package className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Material</span>
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => { logout(); navigate("/coordenador/login"); }}>
-              <LogOut className="h-4 w-4" />
+            <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { logout(); navigate("/coordenador/login"); }}>
+              <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
