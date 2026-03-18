@@ -82,18 +82,17 @@ export default function CoordinatorMaterials() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo" className="h-4" />
-            <div>
-              <p className="font-semibold text-sm">{session.nome_completo}</p>
-              <p className="text-xs text-muted-foreground">Solicitar Material</p>
-            </div>
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0" onClick={() => navigate("/coordenador/dashboard")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <img src={logo} alt="Logo" className="h-4 shrink-0" />
           </div>
-          <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/dashboard")}>
-            <ArrowLeft className="h-3.5 w-3.5 sm:mr-1" />
-            <span className="hidden sm:inline">Voltar</span>
-          </Button>
+          <div className="text-right">
+            <p className="font-semibold text-sm truncate">{session.nome_completo}</p>
+            <p className="text-xs text-muted-foreground">Solicitar Material</p>
+          </div>
         </div>
       </div>
 
