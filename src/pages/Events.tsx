@@ -1217,6 +1217,15 @@ const Events = () => {
           onOpenChange={(open) => !open && setPhotosDialogEvent(null)}
           event={photosDialogEvent}
         />
+
+        {/* Embed Code Dialog */}
+        {embedDialogEvent && (
+          <EventEmbedCodeDialog
+            event={embedDialogEvent}
+            open={!!embedDialogEvent}
+            onOpenChange={(open) => !open && setEmbedDialogEvent(null)}
+          />
+        )}
       </div>
     </div>
   );
