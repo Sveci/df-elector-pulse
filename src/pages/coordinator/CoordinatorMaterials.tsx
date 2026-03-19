@@ -82,7 +82,7 @@ export default function CoordinatorMaterials() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-2 min-h-[48px]">
           <div className="flex items-center gap-2">
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0" onClick={() => navigate("/coordenador/dashboard")}>
               <ArrowLeft className="h-4 w-4" />

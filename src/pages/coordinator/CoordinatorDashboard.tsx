@@ -109,7 +109,7 @@ export default function CoordinatorDashboard() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-2 min-h-[48px]">
           <img src={logo} alt="Logo" className="h-4 shrink-0" />
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
             <Button size="sm" variant="outline" className="h-8 px-2 sm:px-3 text-xs sm:text-sm" onClick={() => navigate("/coordenador/verificar")}>
