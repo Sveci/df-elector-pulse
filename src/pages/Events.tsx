@@ -42,7 +42,8 @@ import {
   PieChart as PieChartIcon,
   Repeat,
   Camera,
-  Crown
+  Crown,
+  Code
 } from "lucide-react";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useCreateEvent } from "@/hooks/events/useCreateEvent";
