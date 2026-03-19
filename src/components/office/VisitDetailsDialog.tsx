@@ -84,22 +84,24 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
       <html>
         <head>
           <title>Ficha de Visita - ${visit.protocolo}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .logo { font-size: 24px; font-weight: bold; color: #f97316; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-            .field { margin-bottom: 10px; }
-            .field-label { font-weight: bold; color: #666; }
-            .field-value { color: #333; }
-            .protocol { font-size: 20px; color: #f97316; font-weight: bold; }
-            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-            .status-checked-in { background-color: #dcfce7; color: #166534; }
-            .status-form-submitted { background-color: #dbeafe; color: #1e40af; }
-            @media print {
-              body { padding: 20px; }
-            }
+            <style>
+              @page { size: portrait; margin: 15mm; }
+              body { font-family: Arial, sans-serif; padding: 20px; max-width: 100%; margin: 0 auto; }
+              .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+              .logo { font-size: 20px; font-weight: bold; color: #f97316; }
+              .section { margin-bottom: 15px; }
+              .section-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+              .field { margin-bottom: 6px; font-size: 12px; }
+              .field-label { font-weight: bold; color: #666; }
+              .field-value { color: #333; }
+              .protocol { font-size: 18px; color: #f97316; font-weight: bold; }
+              .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+              .status-checked-in { background-color: #dcfce7; color: #166534; }
+              .status-form-submitted { background-color: #dbeafe; color: #1e40af; }
+              .notes-section { margin-top: 20px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; min-height: 200px; }
+              .notes-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px; }
+              .notes-lines { border-bottom: 1px solid #eee; height: 28px; }
+              @media print { body { padding: 0; } }
           </style>
         </head>
         <body>
