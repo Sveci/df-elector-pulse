@@ -151,8 +151,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
         </DialogHeader>
 
         <Tabs defaultValue="info" className="flex flex-col flex-1 min-h-0">
-          <div className="w-full overflow-x-auto scrollbar-thin flex justify-center">
-            <TabsList className="inline-flex w-max items-center gap-1 h-auto p-1">
+          <div className="w-full overflow-x-auto scrollbar-thin">
+            <TabsList className="inline-flex min-w-max items-center gap-1 h-auto p-1">
               <TabsTrigger value="info" className="text-xs whitespace-nowrap">Info</TabsTrigger>
               
               <TabsTrigger value="indicacoes" className="text-xs whitespace-nowrap">Indicações</TabsTrigger>
