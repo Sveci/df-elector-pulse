@@ -19,9 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Plus, Calendar, MapPin, Users, ArrowLeft,
-  Copy, Link as LinkIcon, Clock, Eye, UserCheck,
+  Copy, Link as LinkIcon, Clock, Eye, UserCheck, Code,
 } from "lucide-react";
 import { CoordinatorEventDetailsDialog } from "@/components/coordinator/CoordinatorEventDetailsDialog";
+import { EventEmbedCodeDialog } from "@/components/coordinator/EventEmbedCodeDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
@@ -41,6 +42,7 @@ export default function CoordinatorEvents() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsEvent, setDetailsEvent] = useState<any>(null);
+  const [embedEvent, setEmbedEvent] = useState<any>(null);
   const [newEvent, setNewEvent] = useState({
     name: "",
     slug: "",
@@ -374,6 +376,14 @@ export default function CoordinatorEvents() {
                     >
                       <Copy className="h-3 w-3 mr-1" /> Link
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEmbedEvent(ev)}
+                      disabled={ev.status !== "active"}
+                    >
+                      <Code className="h-3 w-3 mr-1" /> Embed
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -387,6 +397,16 @@ export default function CoordinatorEvents() {
         <CoordinatorEventDetailsDialog
           event={detailsEvent}
           onClose={() => setDetailsEvent(null)}
+        />
+      )}
+
+      {/* Embed Code Dialog */}
+      {embedEvent && (
+        <EventEmbedCodeDialog
+          event={embedEvent}
+          affiliateToken={session.affiliate_token || undefined}
+          open={!!embedEvent}
+          onOpenChange={(open) => !open && setEmbedEvent(null)}
         />
       )}
     </div>
