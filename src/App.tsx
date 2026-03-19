@@ -175,6 +175,7 @@ const App = () => (
             <Route path="/v/:codigo" element={<VerifyContact />} />
             <Route path="/verificar-lider/:codigo" element={<VerifyLeader />} />
             <Route path="/s/:code" element={<ShortUrlRedirect />} />
+            <Route path="/meeting-photo-upload/:token" element={<MeetingPhotoUpload />} />
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
             <Route path="/lgpd-cookies" element={<LgpdCookies />} />
