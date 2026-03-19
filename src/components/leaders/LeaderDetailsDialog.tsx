@@ -1038,7 +1038,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     </Card>
                   ))}
                 </div>
-              )
+              )}
             </TabsContent>
 
             {/* ABA PONTUAÇÃO */}
