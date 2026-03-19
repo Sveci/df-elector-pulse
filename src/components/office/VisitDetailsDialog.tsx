@@ -13,7 +13,7 @@ import { ProtocolBadge } from "./ProtocolBadge";
 import { OfficeStatusBadge } from "./OfficeStatusBadge";
 import { formatPhoneBR } from "@/services/office/officeService";
 import { generateVisitFormUrl, generateVisitCheckinUrl } from "@/lib/urlHelper";
-import { Copy, QrCode, Printer, CheckCircle2, XCircle, Download } from "lucide-react";
+import { Copy, QrCode, Printer, CheckCircle2, XCircle, Download, Instagram, Users } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
