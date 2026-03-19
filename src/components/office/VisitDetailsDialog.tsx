@@ -424,9 +424,22 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
 
           {/* Líder */}
           {visit.leader && (
-            <div>
-              <Label>Líder Responsável</Label>
-              <p className="text-sm mt-1">{visit.leader.nome_completo}</p>
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Líder Responsável
+              </h3>
+              <p className="text-sm font-medium">{visit.leader.nome_completo}</p>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="p-2 bg-muted rounded-md text-center">
+                  <p className="text-lg font-bold">{visit.leader.cadastros || 0}</p>
+                  <p className="text-xs text-muted-foreground">Cadastros</p>
+                </div>
+                <div className="p-2 bg-muted rounded-md text-center">
+                  <p className="text-lg font-bold">{visit.leader.pontuacao_total || 0}</p>
+                  <p className="text-xs text-muted-foreground">Pontos</p>
+                </div>
+              </div>
             </div>
           )}
 
