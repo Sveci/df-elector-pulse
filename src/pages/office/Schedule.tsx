@@ -13,7 +13,7 @@ import { CreateScheduledVisitDialog } from "@/components/office/CreateScheduledV
 import { OfficeStatusBadge } from "@/components/office/OfficeStatusBadge";
 import { ProtocolBadge } from "@/components/office/ProtocolBadge";
 import { formatPhoneBR } from "@/services/office/officeService";
-import { Loader2, Plus, CalendarDays, Clock, CheckCircle2, AlertCircle, User, FileText, Send } from "lucide-react";
+import { Loader2, Plus, CalendarDays, Clock, CheckCircle2, AlertCircle, User, FileText, Send, ClipboardEdit } from "lucide-react";
 import type { OfficeVisitStatus } from "@/types/office";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
