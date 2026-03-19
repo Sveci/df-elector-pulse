@@ -399,6 +399,16 @@ export default function CoordinatorEvents() {
           onClose={() => setDetailsEvent(null)}
         />
       )}
+
+      {/* Embed Code Dialog */}
+      {embedEvent && (
+        <EventEmbedCodeDialog
+          event={embedEvent}
+          affiliateToken={session.affiliate_token || undefined}
+          open={!!embedEvent}
+          onOpenChange={(open) => !open && setEmbedEvent(null)}
+        />
+      )}
     </div>
   );
 }
