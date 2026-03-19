@@ -68,6 +68,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, X
 import EventQRCode from "@/components/EventQRCode";
 import { EventAffiliateDialog } from "@/components/events/EventAffiliateDialog";
 import { SendEventPhotosDialog } from "@/components/events/SendEventPhotosDialog";
+import { EventEmbedCodeDialog } from "@/components/coordinator/EventEmbedCodeDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
