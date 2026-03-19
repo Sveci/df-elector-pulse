@@ -165,8 +165,8 @@ const App = () => (
             <Route path="/affiliate/:leaderToken" element={<AffiliateForm />} />
             <Route path="/cadastro/*" element={<CadastroRedirect />} />
             <Route path="/cadastro/:leaderToken" element={<LeaderRegistrationForm />} />
-            <Route path="/eventos/:slug" element={<EventRegistration />} />
             <Route path="/eventos/embed/:slug" element={<EventRegistrationEmbed />} />
+            <Route path="/eventos/:slug" element={<EventRegistration />} />
             <Route path="/captacao/:slug" element={<LeadCaptureLanding />} />
             <Route path="/lider/cadastro" element={<PublicLeaderRegistration />} />
             <Route path="/descadastro" element={<Unsubscribe />} />
