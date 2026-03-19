@@ -60,6 +60,7 @@ import SetupUsers from "./pages/SetupUsers";
 import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
 import NotFound from "./pages/NotFound";
 import EventRegistration from "./pages/EventRegistration";
+import EventRegistrationEmbed from "./pages/EventRegistrationEmbed";
 import EventCheckin from "./pages/EventCheckin";
 import LeadCaptureLanding from "./pages/LeadCaptureLanding";
 import PublicLeaderRegistration from "./pages/PublicLeaderRegistration";
