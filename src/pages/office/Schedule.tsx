@@ -342,6 +342,12 @@ export default function Schedule() {
         onOpenChange={setCreateDialogOpen}
         initialDate={selectedDate}
       />
+
+      <ManualVisitFormDialog
+        visit={manualFormVisit}
+        open={!!manualFormVisit}
+        onOpenChange={(open) => !open && setManualFormVisit(null)}
+      />
     </div>
   );
 }
