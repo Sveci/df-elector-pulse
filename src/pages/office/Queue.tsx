@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOfficeVisits } from "@/hooks/office/useOfficeVisits";
 import { useScheduledVisitsToday } from "@/hooks/office/useScheduledVisits";
-import { Loader2, Clock, Send, FileText, CheckCircle, CheckCircle2, XCircle, CalendarClock, Search, CalendarDays, AlertCircle } from "lucide-react";
+import { Loader2, Clock, Send, FileText, CheckCircle, CheckCircle2, XCircle, CalendarClock, Search, CalendarDays, AlertCircle, ClipboardEdit } from "lucide-react";
 import { OfficeStatusBadge } from "@/components/office/OfficeStatusBadge";
 import { ProtocolBadge } from "@/components/office/ProtocolBadge";
 import { VisitDetailsDialog } from "@/components/office/VisitDetailsDialog";
