@@ -84,6 +84,7 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [manualFormVisit, setManualFormVisit] = useState<any>(null);
   const { restartTutorial } = useTutorial("office-schedule", scheduleTutorialSteps);
 
   const { data: monthVisits = [], isLoading: monthLoading } = useScheduledVisitsByMonth(currentMonth);
