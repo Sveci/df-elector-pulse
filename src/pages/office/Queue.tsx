@@ -13,6 +13,7 @@ import { VisitDetailsDialog } from "@/components/office/VisitDetailsDialog";
 import { RescheduleVisitDialog } from "@/components/office/RescheduleVisitDialog";
 import { CompleteMeetingDialog } from "@/components/office/CompleteMeetingDialog";
 import { MeetingMinutesDialog } from "@/components/office/MeetingMinutesDialog";
+import { ManualVisitFormDialog } from "@/components/office/ManualVisitFormDialog";
 import { useVisitMeetingActions } from "@/hooks/office/useVisitMeetingActions";
 import { formatPhoneBR } from "@/services/office/officeService";
 import type { OfficeVisitStatus } from "@/types/office";
