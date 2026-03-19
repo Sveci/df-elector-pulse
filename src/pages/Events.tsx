@@ -924,6 +924,15 @@ const Events = () => {
                                   Enviar Fotos
                                 </Button>
                               )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEmbedDialogEvent(event)}
+                                disabled={event.status !== "active"}
+                              >
+                                <Code className="h-4 w-4 mr-2" />
+                                Embed
+                              </Button>
                             </>
                           )}
                         </div>
