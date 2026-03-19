@@ -139,6 +139,7 @@ const Events = () => {
   const [qrCodeEvent, setQrCodeEvent] = useState<any>(null);
   const [affiliateDialogEvent, setAffiliateDialogEvent] = useState<any>(null);
   const [photosDialogEvent, setPhotosDialogEvent] = useState<any>(null);
+  const [embedDialogEvent, setEmbedDialogEvent] = useState<any>(null);
   const [newEvent, setNewEvent] = useState({
     name: "",
     slug: "",
