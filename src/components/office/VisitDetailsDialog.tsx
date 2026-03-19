@@ -193,6 +193,20 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
             </div>` : ''}
           </div>
 
+          ${formData?.segue_instagram !== undefined ? `
+          <div class="section">
+            <div class="section-title">Instagram</div>
+            <div class="field">
+              <span class="field-label">Segue @rafaelprudentedep:</span>
+              <span class="field-value">${formData.segue_instagram ? 'Sim ✓' : 'Não'}</span>
+            </div>
+          </div>` : ''}
+
+          <div class="notes-section">
+            <div class="notes-title">📝 Anotações</div>
+            ${Array.from({ length: 8 }).map(() => '<div class="notes-lines"></div>').join('')}
+          </div>
+
           <script>
             window.onload = function() {
               window.print();
