@@ -63,6 +63,7 @@ export default function Queue() {
   const [rescheduleVisit, setRescheduleVisit] = useState<any>(null);
   const [completeMeetingVisit, setCompleteMeetingVisit] = useState<any>(null);
   const [minutesVisit, setMinutesVisit] = useState<any>(null);
+  const [manualFormVisit, setManualFormVisit] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { completeMeeting, cancelMeeting, rescheduleMeeting } = useVisitMeetingActions();
   const { restartTutorial } = useTutorial("office-queue", queueTutorialSteps);
