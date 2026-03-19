@@ -42,7 +42,8 @@ import {
   PieChart as PieChartIcon,
   Repeat,
   Camera,
-  Crown
+  Crown,
+  Code
 } from "lucide-react";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useCreateEvent } from "@/hooks/events/useCreateEvent";
@@ -67,6 +68,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, X
 import EventQRCode from "@/components/EventQRCode";
 import { EventAffiliateDialog } from "@/components/events/EventAffiliateDialog";
 import { SendEventPhotosDialog } from "@/components/events/SendEventPhotosDialog";
+import { EventEmbedCodeDialog } from "@/components/coordinator/EventEmbedCodeDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
@@ -137,6 +139,7 @@ const Events = () => {
   const [qrCodeEvent, setQrCodeEvent] = useState<any>(null);
   const [affiliateDialogEvent, setAffiliateDialogEvent] = useState<any>(null);
   const [photosDialogEvent, setPhotosDialogEvent] = useState<any>(null);
+  const [embedDialogEvent, setEmbedDialogEvent] = useState<any>(null);
   const [newEvent, setNewEvent] = useState({
     name: "",
     slug: "",
@@ -921,6 +924,15 @@ const Events = () => {
                                   Enviar Fotos
                                 </Button>
                               )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEmbedDialogEvent(event)}
+                                disabled={event.status !== "active"}
+                              >
+                                <Code className="h-4 w-4 mr-2" />
+                                Embed
+                              </Button>
                             </>
                           )}
                         </div>
@@ -1205,6 +1217,15 @@ const Events = () => {
           onOpenChange={(open) => !open && setPhotosDialogEvent(null)}
           event={photosDialogEvent}
         />
+
+        {/* Embed Code Dialog */}
+        {embedDialogEvent && (
+          <EventEmbedCodeDialog
+            event={embedDialogEvent}
+            open={!!embedDialogEvent}
+            onOpenChange={(open) => !open && setEmbedDialogEvent(null)}
+          />
+        )}
       </div>
     </div>
   );
