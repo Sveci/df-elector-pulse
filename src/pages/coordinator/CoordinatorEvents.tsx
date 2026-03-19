@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Plus, Calendar, MapPin, Users, ArrowLeft,
-  Copy, Link as LinkIcon, Clock, Eye, UserCheck,
+  Copy, Link as LinkIcon, Clock, Eye, UserCheck, Code,
 } from "lucide-react";
 import { CoordinatorEventDetailsDialog } from "@/components/coordinator/CoordinatorEventDetailsDialog";
 import { EventEmbedCodeDialog } from "@/components/coordinator/EventEmbedCodeDialog";
