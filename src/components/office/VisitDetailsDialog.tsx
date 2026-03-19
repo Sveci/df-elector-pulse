@@ -397,6 +397,21 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                   )}
                 </div>
 
+                {/* Instagram Follow Status */}
+                {formData.segue_instagram !== undefined && (
+                  <div className="mb-4">
+                    <Label className="flex items-center gap-2">
+                      <Instagram className="h-4 w-4" />
+                      Segue @rafaelprudentedep
+                    </Label>
+                    <p className="text-sm mt-1">
+                      <Badge variant={formData.segue_instagram ? "default" : "secondary"}>
+                        {formData.segue_instagram ? "✓ Segue" : "Não segue"}
+                      </Badge>
+                    </p>
+                  </div>
+                )}
+
                 {formData.observacoes && (
                   <div>
                     <Label>Observações</Label>
