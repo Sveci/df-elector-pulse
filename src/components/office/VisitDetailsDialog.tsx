@@ -13,7 +13,7 @@ import { ProtocolBadge } from "./ProtocolBadge";
 import { OfficeStatusBadge } from "./OfficeStatusBadge";
 import { formatPhoneBR } from "@/services/office/officeService";
 import { generateVisitFormUrl, generateVisitCheckinUrl } from "@/lib/urlHelper";
-import { Copy, QrCode, Printer, CheckCircle2, XCircle, Download } from "lucide-react";
+import { Copy, QrCode, Printer, CheckCircle2, XCircle, Download, Instagram, Users } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
@@ -84,22 +84,24 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
       <html>
         <head>
           <title>Ficha de Visita - ${visit.protocolo}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .logo { font-size: 24px; font-weight: bold; color: #f97316; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-            .field { margin-bottom: 10px; }
-            .field-label { font-weight: bold; color: #666; }
-            .field-value { color: #333; }
-            .protocol { font-size: 20px; color: #f97316; font-weight: bold; }
-            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-            .status-checked-in { background-color: #dcfce7; color: #166534; }
-            .status-form-submitted { background-color: #dbeafe; color: #1e40af; }
-            @media print {
-              body { padding: 20px; }
-            }
+            <style>
+              @page { size: portrait; margin: 15mm; }
+              body { font-family: Arial, sans-serif; padding: 20px; max-width: 100%; margin: 0 auto; }
+              .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+              .logo { font-size: 20px; font-weight: bold; color: #f97316; }
+              .section { margin-bottom: 15px; }
+              .section-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+              .field { margin-bottom: 6px; font-size: 12px; }
+              .field-label { font-weight: bold; color: #666; }
+              .field-value { color: #333; }
+              .protocol { font-size: 18px; color: #f97316; font-weight: bold; }
+              .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+              .status-checked-in { background-color: #dcfce7; color: #166534; }
+              .status-form-submitted { background-color: #dbeafe; color: #1e40af; }
+              .notes-section { margin-top: 20px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; min-height: 200px; }
+              .notes-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px; }
+              .notes-lines { border-bottom: 1px solid #eee; height: 28px; }
+              @media print { body { padding: 0; } }
           </style>
         </head>
         <body>
@@ -189,6 +191,20 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
               <span class="field-label">Check-in realizado em:</span>
               <span class="field-value">${format(new Date(visit.checked_in_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
             </div>` : ''}
+          </div>
+
+          ${formData?.segue_instagram !== undefined ? `
+          <div class="section">
+            <div class="section-title">Instagram</div>
+            <div class="field">
+              <span class="field-label">Segue @rafaelprudentedep:</span>
+              <span class="field-value">${formData.segue_instagram ? 'Sim ✓' : 'Não'}</span>
+            </div>
+          </div>` : ''}
+
+          <div class="notes-section">
+            <div class="notes-title">📝 Anotações</div>
+            ${Array.from({ length: 8 }).map(() => '<div class="notes-lines"></div>').join('')}
           </div>
 
           <script>
@@ -397,6 +413,21 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                   )}
                 </div>
 
+                {/* Instagram Follow Status */}
+                {formData.segue_instagram !== undefined && (
+                  <div className="mb-4">
+                    <Label className="flex items-center gap-2">
+                      <Instagram className="h-4 w-4" />
+                      Segue @rafaelprudentedep
+                    </Label>
+                    <p className="text-sm mt-1">
+                      <Badge variant={formData.segue_instagram ? "default" : "secondary"}>
+                        {formData.segue_instagram ? "✓ Segue" : "Não segue"}
+                      </Badge>
+                    </p>
+                  </div>
+                )}
+
                 {formData.observacoes && (
                   <div>
                     <Label>Observações</Label>
@@ -409,9 +440,22 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
 
           {/* Líder */}
           {visit.leader && (
-            <div>
-              <Label>Líder Responsável</Label>
-              <p className="text-sm mt-1">{visit.leader.nome_completo}</p>
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Líder Responsável
+              </h3>
+              <p className="text-sm font-medium">{visit.leader.nome_completo}</p>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="p-2 bg-muted rounded-md text-center">
+                  <p className="text-lg font-bold">{visit.leader.cadastros || 0}</p>
+                  <p className="text-xs text-muted-foreground">Cadastros</p>
+                </div>
+                <div className="p-2 bg-muted rounded-md text-center">
+                  <p className="text-lg font-bold">{visit.leader.pontuacao_total || 0}</p>
+                  <p className="text-xs text-muted-foreground">Pontos</p>
+                </div>
+              </div>
             </div>
           )}
 

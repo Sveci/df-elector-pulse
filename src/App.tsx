@@ -81,6 +81,7 @@ import OfficeSettings from "./pages/office/Settings";
 import VisitCheckin from "./pages/office/VisitCheckin";
 import Schedule from "./pages/office/Schedule";
 import ScheduleVisit from "./pages/ScheduleVisit";
+import MeetingPhotoUpload from "./pages/MeetingPhotoUpload";
 import AffiliateForm from "./pages/AffiliateForm";
 import Unsubscribe from "./pages/Unsubscribe";
 import StrategicMap from "./pages/StrategicMap";
@@ -174,6 +175,7 @@ const App = () => (
             <Route path="/v/:codigo" element={<VerifyContact />} />
             <Route path="/verificar-lider/:codigo" element={<VerifyLeader />} />
             <Route path="/s/:code" element={<ShortUrlRedirect />} />
+            <Route path="/meeting-photo-upload/:token" element={<MeetingPhotoUpload />} />
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
             <Route path="/lgpd-cookies" element={<LgpdCookies />} />

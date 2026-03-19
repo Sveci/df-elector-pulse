@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ManualVisitFormDialog } from "@/components/office/ManualVisitFormDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -12,7 +13,7 @@ import { CreateScheduledVisitDialog } from "@/components/office/CreateScheduledV
 import { OfficeStatusBadge } from "@/components/office/OfficeStatusBadge";
 import { ProtocolBadge } from "@/components/office/ProtocolBadge";
 import { formatPhoneBR } from "@/services/office/officeService";
-import { Loader2, Plus, CalendarDays, Clock, CheckCircle2, AlertCircle, User, FileText, Send } from "lucide-react";
+import { Loader2, Plus, CalendarDays, Clock, CheckCircle2, AlertCircle, User, FileText, Send, ClipboardEdit } from "lucide-react";
 import type { OfficeVisitStatus } from "@/types/office";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -83,6 +84,7 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [manualFormVisit, setManualFormVisit] = useState<any>(null);
   const { restartTutorial } = useTutorial("office-schedule", scheduleTutorialSteps);
 
   const { data: monthVisits = [], isLoading: monthLoading } = useScheduledVisitsByMonth(currentMonth);
@@ -312,6 +314,21 @@ export default function Schedule() {
                         Indicação: {visit.leader.nome_completo}
                       </div>
                     )}
+
+                    {/* Botão preencher ficha para visitas sem formulário */}
+                    {(visit.status === "SCHEDULED" || visit.status === "REGISTERED" || visit.status === "LINK_SENT") && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setManualFormVisit(visit)}
+                        >
+                          <ClipboardEdit className="mr-2 h-3 w-3" />
+                          Preencher Ficha
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -324,6 +341,12 @@ export default function Schedule() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         initialDate={selectedDate}
+      />
+
+      <ManualVisitFormDialog
+        visit={manualFormVisit}
+        open={!!manualFormVisit}
+        onOpenChange={(open) => !open && setManualFormVisit(null)}
       />
     </div>
   );

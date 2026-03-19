@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOfficeVisits } from "@/hooks/office/useOfficeVisits";
 import { useScheduledVisitsToday } from "@/hooks/office/useScheduledVisits";
-import { Loader2, Clock, Send, FileText, CheckCircle, CheckCircle2, XCircle, CalendarClock, Search, CalendarDays, AlertCircle } from "lucide-react";
+import { Loader2, Clock, Send, FileText, CheckCircle, CheckCircle2, XCircle, CalendarClock, Search, CalendarDays, AlertCircle, ClipboardEdit } from "lucide-react";
 import { OfficeStatusBadge } from "@/components/office/OfficeStatusBadge";
 import { ProtocolBadge } from "@/components/office/ProtocolBadge";
 import { VisitDetailsDialog } from "@/components/office/VisitDetailsDialog";
 import { RescheduleVisitDialog } from "@/components/office/RescheduleVisitDialog";
 import { CompleteMeetingDialog } from "@/components/office/CompleteMeetingDialog";
 import { MeetingMinutesDialog } from "@/components/office/MeetingMinutesDialog";
+import { ManualVisitFormDialog } from "@/components/office/ManualVisitFormDialog";
 import { useVisitMeetingActions } from "@/hooks/office/useVisitMeetingActions";
 import { formatPhoneBR } from "@/services/office/officeService";
 import type { OfficeVisitStatus } from "@/types/office";
@@ -62,6 +63,7 @@ export default function Queue() {
   const [rescheduleVisit, setRescheduleVisit] = useState<any>(null);
   const [completeMeetingVisit, setCompleteMeetingVisit] = useState<any>(null);
   const [minutesVisit, setMinutesVisit] = useState<any>(null);
+  const [manualFormVisit, setManualFormVisit] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { completeMeeting, cancelMeeting, rescheduleMeeting } = useVisitMeetingActions();
   const { restartTutorial } = useTutorial("office-queue", queueTutorialSteps);
@@ -347,6 +349,22 @@ export default function Queue() {
                     <OfficeStatusBadge status={visit.status} className="mt-2" />
                   </div>
                   
+                  {/* Botão Preencher Ficha */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setManualFormVisit(visit);
+                      }}
+                    >
+                      <ClipboardEdit className="mr-1 h-3 w-3" />
+                      Preencher Ficha
+                    </Button>
+                  </div>
+
                   {/* Botões de ação para visitas atrasadas */}
                   {overdueByDate && (
                     <TooltipProvider>
@@ -698,6 +716,12 @@ export default function Queue() {
         visit={minutesVisit}
         open={!!minutesVisit}
         onOpenChange={(open) => !open && setMinutesVisit(null)}
+      />
+      
+      <ManualVisitFormDialog
+        visit={manualFormVisit}
+        open={!!manualFormVisit}
+        onOpenChange={(open) => !open && setManualFormVisit(null)}
       />
     </div>
   );
