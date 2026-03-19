@@ -81,6 +81,7 @@ import OfficeSettings from "./pages/office/Settings";
 import VisitCheckin from "./pages/office/VisitCheckin";
 import Schedule from "./pages/office/Schedule";
 import ScheduleVisit from "./pages/ScheduleVisit";
+import MeetingPhotoUpload from "./pages/MeetingPhotoUpload";
 import AffiliateForm from "./pages/AffiliateForm";
 import Unsubscribe from "./pages/Unsubscribe";
 import StrategicMap from "./pages/StrategicMap";
