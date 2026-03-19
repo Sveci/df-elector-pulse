@@ -375,14 +375,8 @@ export default function CoordinatorEvents() {
                     >
                       <Copy className="h-3 w-3 mr-1" /> Link
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEmbedEvent(ev)}
-                      disabled={ev.status !== "active"}
-                    >
-                      <Code className="h-3 w-3 mr-1" /> Embed
-                    </Button>
+
+
                   </div>
                 </CardContent>
               </Card>
