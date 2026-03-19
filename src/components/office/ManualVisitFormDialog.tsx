@@ -42,11 +42,11 @@ export function ManualVisitFormDialog({ visit, open, onOpenChange }: ManualVisit
     queryKey: ["temas"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("temas")
+        .from("temas" as any)
         .select("id, tema")
         .eq("is_active", true)
         .order("tema");
-      return data || [];
+      return (data || []) as { id: string; tema: string }[];
     },
   });
 
