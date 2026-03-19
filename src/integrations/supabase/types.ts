@@ -1968,6 +1968,8 @@ export type Database = {
           file_name: string | null
           file_path: string | null
           id: string
+          photo_path: string | null
+          photo_transcription: string | null
           tenant_id: string
           updated_at: string
           visit_id: string
@@ -1980,6 +1982,8 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           id?: string
+          photo_path?: string | null
+          photo_transcription?: string | null
           tenant_id?: string
           updated_at?: string
           visit_id: string
@@ -1992,6 +1996,8 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           id?: string
+          photo_path?: string | null
+          photo_transcription?: string | null
           tenant_id?: string
           updated_at?: string
           visit_id?: string
@@ -2008,6 +2014,54 @@ export type Database = {
             foreignKeyName: "office_meeting_minutes_visit_id_fkey"
             columns: ["visit_id"]
             isOneToOne: true
+            referencedRelation: "office_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      office_meeting_upload_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          tenant_id: string
+          token: string
+          used_at: string | null
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          tenant_id?: string
+          token?: string
+          used_at?: string | null
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          tenant_id?: string
+          token?: string
+          used_at?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_meeting_upload_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_meeting_upload_tokens_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
             referencedRelation: "office_visits"
             referencedColumns: ["id"]
           },
@@ -2091,7 +2145,9 @@ export type Database = {
           facebook: string | null
           id: string
           instagram: string | null
+          instagram_check_status: string | null
           observacoes: string | null
+          segue_instagram: boolean | null
           submitted_at: string | null
           tema_id: string | null
           tenant_id: string
@@ -2107,7 +2163,9 @@ export type Database = {
           facebook?: string | null
           id?: string
           instagram?: string | null
+          instagram_check_status?: string | null
           observacoes?: string | null
+          segue_instagram?: boolean | null
           submitted_at?: string | null
           tema_id?: string | null
           tenant_id?: string
@@ -2123,7 +2181,9 @@ export type Database = {
           facebook?: string | null
           id?: string
           instagram?: string | null
+          instagram_check_status?: string | null
           observacoes?: string | null
+          segue_instagram?: boolean | null
           submitted_at?: string | null
           tema_id?: string | null
           tenant_id?: string
@@ -2172,6 +2232,7 @@ export type Database = {
           scheduled_by: string | null
           scheduled_date: string | null
           scheduled_time: string | null
+          short_url: string | null
           status: Database["public"]["Enums"]["office_visit_status"]
           tenant_id: string
           token: string | null
@@ -2198,6 +2259,7 @@ export type Database = {
           scheduled_by?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          short_url?: string | null
           status?: Database["public"]["Enums"]["office_visit_status"]
           tenant_id?: string
           token?: string | null
@@ -2224,6 +2286,7 @@ export type Database = {
           scheduled_by?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          short_url?: string | null
           status?: Database["public"]["Enums"]["office_visit_status"]
           tenant_id?: string
           token?: string | null
