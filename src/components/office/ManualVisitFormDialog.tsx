@@ -46,7 +46,7 @@ export function ManualVisitFormDialog({ visit, open, onOpenChange }: ManualVisit
         .select("id, tema")
         .eq("is_active", true)
         .order("tema");
-      return (data || []) as { id: string; tema: string }[];
+      return (data || []) as unknown as { id: string; tema: string }[];
     },
   });
 
