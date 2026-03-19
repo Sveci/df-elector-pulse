@@ -349,6 +349,22 @@ export default function Queue() {
                     <OfficeStatusBadge status={visit.status} className="mt-2" />
                   </div>
                   
+                  {/* Botão Preencher Ficha */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setManualFormVisit(visit);
+                      }}
+                    >
+                      <ClipboardEdit className="mr-1 h-3 w-3" />
+                      Preencher Ficha
+                    </Button>
+                  </div>
+
                   {/* Botões de ação para visitas atrasadas */}
                   {overdueByDate && (
                     <TooltipProvider>
