@@ -701,6 +701,12 @@ export default function Queue() {
         open={!!minutesVisit}
         onOpenChange={(open) => !open && setMinutesVisit(null)}
       />
+      
+      <ManualVisitFormDialog
+        visit={manualFormVisit}
+        open={!!manualFormVisit}
+        onOpenChange={(open) => !open && setManualFormVisit(null)}
+      />
     </div>
   );
 }
