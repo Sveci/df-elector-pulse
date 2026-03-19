@@ -914,7 +914,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
             </TabsContent>
 
             {/* ABA COMUNICAÇÕES */}
-            <TabsContent value="comunicacoes" className="mt-0 space-y-4 pr-4 overflow-x-hidden max-w-full">
+            <TabsContent value="comunicacoes" className="mt-0 space-y-4 pr-4">
               {/* WhatsApp */}
               <div className="flex items-center justify-between">
                 <h4 className="font-medium flex items-center gap-2">
