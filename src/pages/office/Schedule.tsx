@@ -314,6 +314,21 @@ export default function Schedule() {
                         Indicação: {visit.leader.nome_completo}
                       </div>
                     )}
+
+                    {/* Botão preencher ficha para visitas sem formulário */}
+                    {(visit.status === "SCHEDULED" || visit.status === "REGISTERED" || visit.status === "LINK_SENT") && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setManualFormVisit(visit)}
+                        >
+                          <ClipboardEdit className="mr-2 h-3 w-3" />
+                          Preencher Ficha
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
