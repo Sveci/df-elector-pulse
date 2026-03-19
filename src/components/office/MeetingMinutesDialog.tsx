@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisitMeetingActions } from "@/hooks/office/useVisitMeetingActions";
-import { FileText, Upload, Loader2 } from "lucide-react";
+import { FileText, Upload, Loader2, QrCode, Camera, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import QRCodeLib from "qrcode";
 
 interface MeetingMinutesDialogProps {
   visit: any;
@@ -29,6 +31,17 @@ export function MeetingMinutesDialog({
   const [contentText, setContentText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const { saveMeetingMinutes } = useVisitMeetingActions();
+  const [photoQr, setPhotoQr] = useState<string | null>(null);
+  const [photoLink, setPhotoLink] = useState<string | null>(null);
+  const [generatingQr, setGeneratingQr] = useState(false);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (!open) {
+      setPhotoQr(null);
+      setPhotoLink(null);
+    }
+  }, [open]);
 
   if (!visit) return null;
 
@@ -69,6 +82,44 @@ export function MeetingMinutesDialog({
         },
       }
     );
+  };
+
+  const handleGeneratePhotoQr = async () => {
+    setGeneratingQr(true);
+    try {
+      // Create upload token
+      const { data: session } = await supabase.auth.getSession();
+      const { data: tokenData, error } = await supabase
+        .from("office_meeting_upload_tokens")
+        .insert({
+          visit_id: visit.id,
+          created_by: session?.session?.user?.id,
+        })
+        .select("token")
+        .single();
+
+      if (error) throw error;
+
+      const uploadUrl = `${window.location.origin}/meeting-photo-upload/${tokenData.token}`;
+      setPhotoLink(uploadUrl);
+
+      const qrDataUrl = await QRCodeLib.toDataURL(uploadUrl);
+      setPhotoQr(qrDataUrl);
+
+      toast.success("QR Code gerado! Escaneie com o celular.");
+    } catch (err: any) {
+      console.error("Error generating QR:", err);
+      toast.error("Erro ao gerar QR Code");
+    } finally {
+      setGeneratingQr(false);
+    }
+  };
+
+  const handleCopyPhotoLink = () => {
+    if (photoLink) {
+      navigator.clipboard.writeText(photoLink);
+      toast.success("Link copiado!");
+    }
   };
 
   return (
@@ -133,6 +184,51 @@ export function MeetingMinutesDialog({
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Photo Upload via QR Code */}
+        <div className="border-t pt-4 mt-2">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Foto da Ata (via celular)
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Escaneie o QR Code com o celular para enviar uma foto da ata manuscrita
+              </p>
+            </div>
+            {!photoQr && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGeneratePhotoQr}
+                disabled={generatingQr}
+              >
+                {generatingQr ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Gerar QR Code
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {photoQr && (
+            <div className="flex flex-col items-center gap-3 p-4 bg-muted rounded-lg">
+              <img src={photoQr} alt="QR Code Upload" className="w-48 h-48" />
+              <p className="text-xs text-muted-foreground text-center">
+                Escaneie com a câmera do celular para enviar a foto
+              </p>
+              <Button variant="outline" size="sm" onClick={handleCopyPhotoLink}>
+                <Copy className="mr-2 h-3 w-3" />
+                Copiar Link
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-3 pt-4">
           <Button
