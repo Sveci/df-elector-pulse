@@ -933,10 +933,10 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   {whatsappMessages.slice(0, 10).map((msg) => {
                     const statusInfo = whatsappStatusConfig[msg.status] || whatsappStatusConfig.pending;
                     return (
-                      <Card key={msg.id} className="overflow-hidden w-full">
-                        <CardContent className="p-3 max-w-full">
-                          <div className="flex items-start justify-between gap-2 w-full">
-                            <div className="flex-1 min-w-0 overflow-hidden">
+                      <Card key={msg.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 {msg.direction === 'outgoing' ? (
                                   <Send className="h-3 w-3 text-blue-600" />
@@ -969,7 +969,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                 </h4>
                 <Badge variant="secondary">{smsMessages.length} mensagens</Badge>
               </div>
-              
+
               {!smsMessages.length ? (
                 <p className="text-sm text-muted-foreground">Nenhum SMS enviado.</p>
               ) : (
@@ -977,10 +977,10 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   {smsMessages.slice(0, 10).map((sms) => {
                     const statusInfo = whatsappStatusConfig[sms.status] || whatsappStatusConfig.pending;
                     return (
-                      <Card key={sms.id} className="overflow-hidden w-full">
-                        <CardContent className="p-3 max-w-full">
-                          <div className="flex items-start justify-between gap-2 w-full">
-                            <div className="flex-1 min-w-0 overflow-hidden">
+                      <Card key={sms.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <Send className="h-3 w-3 text-purple-600" />
                                 <span className={`flex items-center gap-1 text-xs ${statusInfo.className}`}>
@@ -1009,22 +1009,22 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                 </h4>
                 <Badge variant="secondary">{emailLogs.length} emails</Badge>
               </div>
-              
+
               {!emailLogs.length ? (
                 <p className="text-sm text-muted-foreground">Nenhum email enviado.</p>
               ) : (
                 <div className="space-y-2">
                   {emailLogs.slice(0, 10).map((email) => (
-                    <Card key={email.id} className="overflow-hidden w-full">
-                      <CardContent className="p-3 max-w-full">
-                        <div className="flex items-start justify-between gap-2 w-full">
-                          <div className="flex-1 min-w-0 overflow-hidden">
+                    <Card key={email.id}>
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm line-clamp-1">{email.subject}</p>
                             <p className="text-xs text-muted-foreground line-clamp-1">{email.to_email}</p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className={email.status === 'sent' ? 'text-green-600' : email.status === 'failed' ? 'text-red-600' : ''}
                             >
                               {email.status === 'sent' ? 'Enviado' : email.status === 'failed' ? 'Falhou' : 'Pendente'}
@@ -1038,7 +1038,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     </Card>
                   ))}
                 </div>
-              )}
+              )
             </TabsContent>
 
             {/* ABA PONTUAÇÃO */}
