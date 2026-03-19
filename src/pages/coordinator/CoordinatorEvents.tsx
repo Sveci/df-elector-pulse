@@ -22,6 +22,7 @@ import {
   Copy, Link as LinkIcon, Clock, Eye, UserCheck,
 } from "lucide-react";
 import { CoordinatorEventDetailsDialog } from "@/components/coordinator/CoordinatorEventDetailsDialog";
+import { EventEmbedCodeDialog } from "@/components/coordinator/EventEmbedCodeDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { generateEventUrl } from "@/lib/eventUrlHelper";
