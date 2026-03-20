@@ -628,7 +628,7 @@ export function EmailBulkSendTab() {
 
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken) {
-          variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, affiliateToken);
+          variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, affiliateToken, tenantDomain);
         }
       }
 
