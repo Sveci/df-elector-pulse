@@ -662,7 +662,7 @@ export function EmailBulkSendTab() {
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
 
         if (affiliateToken && selectedTemplate === "lideranca-reuniao-link") {
-          const linkReuniaoAfiliado = generateAffiliateUrl(affiliateToken);
+          const linkReuniaoAfiliado = generateAffiliateUrl(affiliateToken, tenantDomain);
           variables.deputado_nome = organization?.nome || "Deputado";
           variables.link_reuniao_afiliado = linkReuniaoAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkReuniaoAfiliado)}`;
