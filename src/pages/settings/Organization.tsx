@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useOrganization, useUpdateOrganization, uploadOrganizationLogo } from "@/hooks/useOrganization";
 import { useDemoMask } from "@/contexts/DemoModeContext";

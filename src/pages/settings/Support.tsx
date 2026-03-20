@@ -11,7 +11,7 @@ import { TicketStatusBadge } from "@/components/support/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/support/TicketPriorityBadge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, Ticket, Loader2 } from "lucide-react";
+import { Plus, Ticket, Loader2, HelpCircle } from "lucide-react";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
