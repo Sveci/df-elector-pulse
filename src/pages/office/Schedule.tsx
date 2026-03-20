@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,15 +109,9 @@ export default function Schedule() {
     <div className="container mx-auto py-6">
       <TutorialOverlay page="office-schedule" />
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6" data-tutorial="schedule-header">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold">Agenda de Visitas</h1>
-            <TutorialButton onClick={restartTutorial} />
-          </div>
-          <p className="text-muted-foreground">
-            Gerencie os agendamentos de visitas ao gabinete
-          </p>
-        </div>
+        <PageHeader icon={CalendarDays} title="Agenda de Visitas" subtitle="Gerencie os agendamentos de visitas ao gabinete">
+          <TutorialButton onClick={restartTutorial} />
+        </PageHeader>
 
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

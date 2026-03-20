@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ANALYZED_EVENTS } from "@/data/public-opinion/demoPublicOpinionData";
@@ -37,13 +38,9 @@ const AnalyzedEvents = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Eventos Analisados</h1>
-        <p className="text-gray-500 mt-1">
-          Análise do impacto de eventos públicos na opinião popular
-          {!hasRealData && <Badge variant="outline" className="ml-2">Demo</Badge>}
-        </p>
-      </div>
+      <PageHeader icon={Calendar} title="Eventos Analisados" subtitle="Análise do impacto de eventos públicos na opinião popular">
+        {!hasRealData && <Badge variant="outline">Demo</Badge>}
+      </PageHeader>
 
       {/* Impact Chart */}
       <Card>

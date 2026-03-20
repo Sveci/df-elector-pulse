@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -338,13 +339,9 @@ const Comparison = () => {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Análise Estratégica Comparativa</h1>
-          <p className="text-muted-foreground mt-1">
-            Comparação multidimensional com insights de IA
-            {isDemo && <Badge variant="outline" className="ml-2">Demo</Badge>}
-          </p>
-        </div>
+        <PageHeader icon={Swords} title="Análise Estratégica Comparativa" subtitle={`Comparação multidimensional com insights de IA${isDemo ? '' : ''}`}>
+          {isDemo && <Badge variant="outline">Demo</Badge>}
+        </PageHeader>
         <div className="flex gap-2">
           {analysis && (
             <Button

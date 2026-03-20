@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,10 +170,7 @@ export default function Gamification() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">Gamificação</h1>
-          <p className="text-muted-foreground">Configure as regras de pontuação e níveis de líderes</p>
-        </div>
+        <PageHeader icon={Trophy} title="Gamificação" subtitle="Configure as regras de pontuação e níveis de líderes" className="flex-1" />
         <TutorialButton onClick={restartTutorial} />
       </div>
 

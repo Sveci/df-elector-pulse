@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Upload, FileText, Trash2, Edit, ExternalLink, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Trash2, Edit, ExternalLink, MapPin, Clock, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
 import { useSMSTemplates } from "@/hooks/useSMSTemplates";
@@ -175,12 +176,7 @@ const RegionMaterials = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Materiais por Região</h1>
-          <p className="text-muted-foreground">
-            Configure materiais exclusivos para cada RA que serão enviados automaticamente após a verificação do líder
-          </p>
-        </div>
+        <PageHeader icon={Package} title="Materiais por Região" subtitle="Configure materiais exclusivos para cada RA que serão enviados automaticamente após a verificação do líder" />
       </div>
 
       {/* Global Settings Card */}

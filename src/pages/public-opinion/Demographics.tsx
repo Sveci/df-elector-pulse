@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DEMOGRAPHIC_DATA } from "@/data/public-opinion/demoPublicOpinionData";
@@ -5,6 +6,7 @@ import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { BarChart2 } from "lucide-react";
 import { useMemo } from "react";
 
 const categoryColors = ['#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6b7280', '#84cc16', '#f97316'];
@@ -210,13 +212,9 @@ const Demographics = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Análise de Conteúdo</h1>
-        <p className="text-muted-foreground mt-1">
-          Categorias, temas e fontes das menções sobre você
-          {!hasRealData && <Badge variant="outline" className="ml-2">Demo</Badge>}
-        </p>
-      </div>
+      <PageHeader icon={BarChart2} title="Análise de Conteúdo" subtitle="Categorias, temas e fontes das menções sobre você">
+        {!hasRealData && <Badge variant="outline">Demo</Badge>}
+      </PageHeader>
 
       {/* Word Cloud - full width */}
       <Card>
