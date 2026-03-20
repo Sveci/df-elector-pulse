@@ -741,7 +741,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, reason: "deferred_to_verification" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-...
+
     console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
 
     const sources: string[] = [...new Set(rankedChunks.map((c: RankedKBChunk) => c.source))];
