@@ -581,6 +581,7 @@ Deno.serve(async (req) => {
         status: "pending",
         contact_id: contactId || null,
         provider: activeProvider,
+        tenant_id: resolvedTenantId,
       })
       .select()
       .single();
