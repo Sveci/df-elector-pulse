@@ -40,7 +40,7 @@ const PUBLIC_TEMPLATES = [
  * 5. Default (first) tenant in DB
  */
 async function resolveTenantId(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   requestTenantId: string | undefined,
   userId: string | undefined,
   contactId: string | undefined,

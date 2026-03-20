@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         const apiToken = settings?.passkit_api_token;
         if (!apiToken) return jsonError("Token do PassKit não configurado nas integrações");
         const baseUrl = settings?.passkit_api_base_url || "https://api.pub1.passkit.io";
-        return jsonSuccess({ description: `Token configurado — Região: ${baseUrl.includes("pub1") ? "pub1" : "pub2"}` });
+        return jsonSuccess({ description: `Token configurado — Região: ${(baseUrl as string).includes("pub1") ? "pub1" : "pub2"}` });
       }
 
       case "apify": {
