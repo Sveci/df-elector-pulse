@@ -83,6 +83,7 @@ const BATCH_SIZE_OPTIONS = [
 
 export function WhatsAppBulkSendTab() {
   const tenantId = useTenantId();
+  const tenantDomain = useTenantDomain();
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
