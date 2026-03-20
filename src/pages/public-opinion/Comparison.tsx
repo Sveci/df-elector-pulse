@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { COMPETITOR_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -152,29 +154,6 @@ function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, d
   });
 }
 
-// ── Per-date analysis detail ──
-function useDateAnalysisDetail(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
-  return useQuery({
-    queryKey: ["po_comparison_date_detail", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
-    enabled: !!entityId && !!dateRange?.from,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
-      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
-
-      const { data: snapshots } = await supabase
-        .from("po_daily_snapshots")
-        .select("snapshot_date, total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics, top_emotions, source_breakdown")
-        .eq("entity_id", entityId!)
-        .gte("snapshot_date", fromDate)
-        .lte("snapshot_date", toDate)
-        .order("snapshot_date", { ascending: false });
-
-      return snapshots || [];
-    },
-  });
-}
-
 const Comparison = () => {
   const { data: entities } = useMonitoredEntities();
   const hasRealEntities = entities && entities.length >= 1;
@@ -194,10 +173,20 @@ const Comparison = () => {
   const statsArr = [e0, e1, e2, e3, e4];
   const isLoadingStats = statsArr.some((s, i) => entities?.[i] && s.isLoading);
 
-  // Per-date detail for principal entity
-  const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const dateDetail = useDateAnalysisDetail(principalEntity?.id, true, resolvedRange);
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  // History of analyses
+  const { data: analysisHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ["po_strategic_analysis_history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("po_strategic_analyses")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [historyDialogItem, setHistoryDialogItem] = useState<any>(null);
 
   const comparisonData = hasRealEntities
     ? entities.map((e, i) => {
@@ -254,9 +243,6 @@ const Comparison = () => {
       setAnalysis(data);
 
       if (user?.id) {
-        // Delete all previous analyses before inserting the new one
-        await supabase.from("po_strategic_analyses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
         const { error } = await supabase
           .from("po_strategic_analyses")
           .insert({
@@ -271,6 +257,7 @@ const Comparison = () => {
           const now = new Date().toISOString();
           setSavedAt(now);
           queryClient.invalidateQueries({ queryKey: ["po_strategic_analysis_last"] });
+          queryClient.invalidateQueries({ queryKey: ["po_strategic_analysis_history"] });
           toast.success("Análise estratégica gerada e salva com sucesso!");
         }
       } else {
@@ -509,134 +496,71 @@ const Comparison = () => {
         })}
       </div>
 
-      {/* Per-Date Analysis */}
-      {hasRealEntities && principalEntity && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              Análises por Data — {principalEntity.nome}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dateDetail.isLoading ? (
-              <div className="space-y-2">
-                {[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
-            ) : !dateDetail.data?.length ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para o período selecionado.</p>
-            ) : (
-              <div className="space-y-2">
-                {dateDetail.data.map((snap: any) => {
-                  const isExpanded = expandedDate === snap.snapshot_date;
-                  const total = (snap.positive_count || 0) + (snap.negative_count || 0) + (snap.neutral_count || 0);
-                  const posPct = total > 0 ? Math.round((snap.positive_count / total) * 100) : 0;
-                  const negPct = total > 0 ? Math.round((snap.negative_count / total) * 100) : 0;
-                  const neuPct = total > 0 ? Math.round((snap.neutral_count / total) * 100) : 0;
-                  return (
-                    <div key={snap.snapshot_date} className="border rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => setExpandedDate(isExpanded ? null : snap.snapshot_date)}
-                        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="font-medium text-sm text-foreground min-w-[90px]">
-                            {format(new Date(snap.snapshot_date + "T12:00:00"), "dd/MM/yyyy")}
+      {/* Histórico de Análises */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            Histórico de Análises
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingHistory ? (
+            <div className="space-y-2">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+            </div>
+          ) : !analysisHistory?.length ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhuma análise salva ainda. Clique em "Gerar Análise IA" para criar a primeira.</p>
+          ) : (
+            <div className="space-y-2">
+              {analysisHistory.map((item: any) => {
+                const a = item.analysis;
+                const compData = item.comparison_data as any[];
+                const totalMentions = compData?.reduce((sum: number, c: any) => sum + (c.mentions || 0), 0) || 0;
+                const fraquezas = a?.fraquezas?.length || 0;
+                const forcas = a?.forcas?.length || 0;
+                const entitiesNames = compData?.map((c: any) => c.nome).join(", ") || "—";
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setHistoryDialogItem(item)}
+                    className="w-full border rounded-lg p-4 hover:bg-muted/50 transition-colors text-left flex items-center justify-between gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-foreground">
+                          {format(new Date(item.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                        {item.id === lastSavedAnalysis?.id && (
+                          <Badge className="text-xs">Atual</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{entitiesNames}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <Badge variant="outline" className="gap-1 text-xs">
+                          <MessageSquare className="h-3 w-3" />
+                          {totalMentions.toLocaleString()} menções
+                        </Badge>
+                        {forcas > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <Shield className="h-3 w-3" /> {forcas} forças
                           </span>
-                          <Badge variant="outline" className="gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {snap.total_mentions || 0} menções
-                          </Badge>
-                          <div className="hidden sm:flex items-center gap-2 text-xs">
-                            <span className="text-green-600">▲ {posPct}%</span>
-                            <span className="text-muted-foreground">● {neuPct}%</span>
-                            <span className="text-red-600">▼ {negPct}%</span>
-                          </div>
-                          {snap.avg_sentiment_score != null && (
-                            <Badge variant="secondary" className="text-xs">
-                              Score: {(Math.round(((snap.avg_sentiment_score + 1) / 2) * 100) / 10).toFixed(1)}
-                            </Badge>
-                          )}
-                        </div>
-                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                      </button>
-                      {isExpanded && (
-                        <div className="border-t p-4 bg-muted/30 space-y-4">
-                          {/* Sentiment breakdown bar */}
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-2">Distribuição de Sentimento</p>
-                            <div className="flex h-6 rounded-md overflow-hidden">
-                              {posPct > 0 && <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${posPct}%` }}>{posPct}%</div>}
-                              {neuPct > 0 && <div className="bg-gray-400 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${neuPct}%` }}>{neuPct}%</div>}
-                              {negPct > 0 && <div className="bg-red-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${negPct}%` }}>{negPct}%</div>}
-                            </div>
-                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                              <span>✅ {snap.positive_count || 0} positivas</span>
-                              <span>⬜ {snap.neutral_count || 0} neutras</span>
-                              <span>❌ {snap.negative_count || 0} negativas</span>
-                            </div>
-                          </div>
-
-                          {/* Top topics */}
-                          {snap.top_topics && snap.top_topics.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-2">Principais Tópicos</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {snap.top_topics.slice(0, 8).map((t: any, i: number) => {
-                                  const name = typeof t === "string" ? t : t.name;
-                                  const count = typeof t === "string" ? null : t.count;
-                                  return (
-                                    <Badge key={i} variant="secondary" className="text-xs">
-                                      {name}{count ? ` (${count})` : ""}
-                                    </Badge>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Top emotions */}
-                          {snap.top_emotions && snap.top_emotions.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-2">Emoções Detectadas</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {snap.top_emotions.slice(0, 6).map((e: any, i: number) => {
-                                  const name = typeof e === "string" ? e : e.name;
-                                  const count = typeof e === "string" ? null : e.count;
-                                  return <Badge key={i} variant="outline" className="text-xs">{name}{count ? ` (${count})` : ""}</Badge>;
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Source breakdown */}
-                          {snap.source_breakdown && snap.source_breakdown.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-2">Fontes</p>
-                              <div className="flex flex-wrap gap-2">
-                                {snap.source_breakdown.map((s: any, i: number) => (
-                                  <div key={i} className="flex items-center gap-1.5 text-xs bg-background border rounded-md px-2 py-1">
-                                    <span className="font-medium">{s.name}</span>
-                                    <span className="text-muted-foreground">({s.count})</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="text-xs text-muted-foreground pt-1 border-t">
-                            Total de menções analisadas nesta data: <span className="font-semibold text-foreground">{snap.total_mentions || 0}</span>
-                          </div>
-                        </div>
-                      )}
+                        )}
+                        {fraquezas > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-red-600">
+                            <Swords className="h-3 w-3" /> {fraquezas} fraquezas
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {!analysis && !analysisMutation.isPending && (
         <Card className="border-dashed">
@@ -908,6 +832,113 @@ const Comparison = () => {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* History Detail Dialog */}
+      <Dialog open={!!historyDialogItem} onOpenChange={(open) => !open && setHistoryDialogItem(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Análise de {historyDialogItem ? format(new Date(historyDialogItem.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[65vh] pr-4">
+            {historyDialogItem && (() => {
+              const ha = historyDialogItem.analysis;
+              const hComp = historyDialogItem.comparison_data as any[];
+              return (
+                <div className="space-y-6">
+                  {/* Entities comparison summary */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Entidades Comparadas</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {hComp?.map((c: any, i: number) => (
+                        <div key={i} className="border rounded-md p-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: c.color || entityColors[i % entityColors.length] }}>
+                              {c.nome?.charAt(0)}
+                            </div>
+                            <span className="font-medium">{c.nome}</span>
+                            {c.is_principal && <Badge className="text-xs">Principal</Badge>}
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                            <span>Menções: <span className="font-medium text-foreground">{(c.mentions || 0).toLocaleString()}</span></span>
+                            <span>Score: <span className="font-medium text-foreground">{c.sentiment_score || 0}/10</span></span>
+                            <span>Positivo: <span className="text-green-600 font-medium">{c.positive_pct || 0}%</span></span>
+                            <span>Negativo: <span className="text-red-600 font-medium">{c.negative_pct || 0}%</span></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Forças */}
+                  {ha?.forcas?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1"><Shield className="h-4 w-4" /> Forças ({ha.forcas.length})</h4>
+                      <div className="space-y-2">
+                        {ha.forcas.map((f: any, i: number) => (
+                          <div key={i} className="border border-green-200 rounded-md p-3 bg-green-50/30 text-sm">
+                            <p className="font-medium text-foreground">{f.aspecto}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{f.definicao}</p>
+                            {f.por_que_forca && <p className="text-xs text-green-700 mt-1">{f.por_que_forca}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fraquezas */}
+                  {ha?.fraquezas?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-1"><Swords className="h-4 w-4" /> Fraquezas ({ha.fraquezas.length})</h4>
+                      <div className="space-y-2">
+                        {ha.fraquezas.map((f: any, i: number) => (
+                          <div key={i} className="border border-red-200 rounded-md p-3 bg-red-50/30 text-sm">
+                            <p className="font-medium text-foreground">{f.aspecto}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{f.definicao}</p>
+                            {f.por_que_fraqueza && <p className="text-xs text-red-700 mt-1">{f.por_que_fraqueza}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Oportunidades */}
+                  {ha?.oportunidades?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-amber-700 mb-2 flex items-center gap-1"><Lightbulb className="h-4 w-4" /> Oportunidades ({ha.oportunidades.length})</h4>
+                      <div className="space-y-2">
+                        {ha.oportunidades.map((o: any, i: number) => (
+                          <div key={i} className="border rounded-md p-3 text-sm">
+                            <p className="font-medium text-foreground">{o.titulo}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{o.descricao}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Load into main view */}
+                  <div className="pt-2 border-t flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setAnalysis(ha);
+                        setSavedAt(historyDialogItem.created_at);
+                        setHistoryDialogItem(null);
+                        toast.success("Análise carregada na tela principal.");
+                      }}
+                      className="gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      Carregar na Tela Principal
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
