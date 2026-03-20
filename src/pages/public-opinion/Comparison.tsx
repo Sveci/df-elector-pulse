@@ -385,6 +385,53 @@ const Comparison = () => {
         )}
       </div>
 
+      {/* Date Filter */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Período:</span>
+            <div className="flex gap-2 flex-wrap">
+              {[7, 15, 30, 60].map(days => (
+                <Button
+                  key={days}
+                  variant={
+                    dateRange?.from && Math.round((new Date().getTime() - dateRange.from.getTime()) / 86400000) === days
+                      ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setDateRange({ from: subDays(new Date(), days), to: new Date() })}
+                >
+                  {days} dias
+                </Button>
+              ))}
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>{format(dateRange.from, "dd/MM/yy")} — {format(dateRange.to, "dd/MM/yy")}</>
+                    ) : format(dateRange.from, "dd/MM/yy")
+                  ) : "Selecionar datas"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  disabled={{ after: new Date() }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Blocks */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className={fraquezasCount > 0 ? "border-red-200 bg-red-50/50" : ""}>
@@ -427,29 +474,169 @@ const Comparison = () => {
 
       {/* Entity Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {comparisonData.map((c) => (
-          <Card key={c.id} className={c.is_principal ? 'border-primary border-2' : ''}>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-white text-xl font-bold" style={{ backgroundColor: c.color }}>
-                  {c.nome.charAt(0)}
+        {comparisonData.map((c, idx) => {
+          const isLoading = hasRealEntities && statsArr[idx]?.isLoading;
+          return (
+            <Card key={c.id} className={c.is_principal ? 'border-primary border-2' : ''}>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-white text-xl font-bold" style={{ backgroundColor: c.color }}>
+                    {c.nome.charAt(0)}
+                  </div>
+                  <h3 className="font-bold mt-2">{c.nome}</h3>
+                  <Badge variant="outline" className="mt-1">{c.partido}</Badge>
                 </div>
-                <h3 className="font-bold mt-2">{c.nome}</h3>
-                <Badge variant="outline" className="mt-1">{c.partido}</Badge>
-              </div>
-              <div className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="h-3 w-3" /> Menções</span><span className="font-semibold">{(c.mentions || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> Sentimento</span><span className="font-semibold">{c.sentiment_score || 0}/10</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Eng. Médio</span><span className="font-semibold">{(c.engagement_rate || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Eng. Total</span><span className="font-semibold">{(c.engagement_total || 0).toLocaleString()}</span></div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {isLoading ? (
+                  <div className="mt-3 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="h-3 w-3" /> Menções</span><span className="font-semibold">{(c.mentions || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> Sentimento</span><span className="font-semibold">{c.sentiment_score || 0}/10</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Eng. Médio</span><span className="font-semibold">{(c.engagement_rate || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Eng. Total</span><span className="font-semibold">{(c.engagement_total || 0).toLocaleString()}</span></div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Per-Date Analysis */}
+      {hasRealEntities && principalEntity && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Análises por Data — {principalEntity.nome}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dateDetail.isLoading ? (
+              <div className="space-y-2">
+                {[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : !dateDetail.data?.length ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para o período selecionado.</p>
+            ) : (
+              <div className="space-y-2">
+                {dateDetail.data.map((snap: any) => {
+                  const isExpanded = expandedDate === snap.snapshot_date;
+                  const total = (snap.positive_count || 0) + (snap.negative_count || 0) + (snap.neutral_count || 0);
+                  const posPct = total > 0 ? Math.round((snap.positive_count / total) * 100) : 0;
+                  const negPct = total > 0 ? Math.round((snap.negative_count / total) * 100) : 0;
+                  const neuPct = total > 0 ? Math.round((snap.neutral_count / total) * 100) : 0;
+                  return (
+                    <div key={snap.snapshot_date} className="border rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setExpandedDate(isExpanded ? null : snap.snapshot_date)}
+                        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="font-medium text-sm text-foreground min-w-[90px]">
+                            {format(new Date(snap.snapshot_date + "T12:00:00"), "dd/MM/yyyy")}
+                          </span>
+                          <Badge variant="outline" className="gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {snap.total_mentions || 0} menções
+                          </Badge>
+                          <div className="hidden sm:flex items-center gap-2 text-xs">
+                            <span className="text-green-600">▲ {posPct}%</span>
+                            <span className="text-muted-foreground">● {neuPct}%</span>
+                            <span className="text-red-600">▼ {negPct}%</span>
+                          </div>
+                          {snap.avg_sentiment_score != null && (
+                            <Badge variant="secondary" className="text-xs">
+                              Score: {(Math.round(((snap.avg_sentiment_score + 1) / 2) * 100) / 10).toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t p-4 bg-muted/30 space-y-4">
+                          {/* Sentiment breakdown bar */}
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-2">Distribuição de Sentimento</p>
+                            <div className="flex h-6 rounded-md overflow-hidden">
+                              {posPct > 0 && <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${posPct}%` }}>{posPct}%</div>}
+                              {neuPct > 0 && <div className="bg-gray-400 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${neuPct}%` }}>{neuPct}%</div>}
+                              {negPct > 0 && <div className="bg-red-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${negPct}%` }}>{negPct}%</div>}
+                            </div>
+                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                              <span>✅ {snap.positive_count || 0} positivas</span>
+                              <span>⬜ {snap.neutral_count || 0} neutras</span>
+                              <span>❌ {snap.negative_count || 0} negativas</span>
+                            </div>
+                          </div>
+
+                          {/* Top topics */}
+                          {snap.top_topics && snap.top_topics.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Principais Tópicos</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {snap.top_topics.slice(0, 8).map((t: any, i: number) => {
+                                  const name = typeof t === "string" ? t : t.name;
+                                  const count = typeof t === "string" ? null : t.count;
+                                  return (
+                                    <Badge key={i} variant="secondary" className="text-xs">
+                                      {name}{count ? ` (${count})` : ""}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Top emotions */}
+                          {snap.top_emotions && snap.top_emotions.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Emoções Detectadas</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {snap.top_emotions.slice(0, 6).map((e: any, i: number) => {
+                                  const name = typeof e === "string" ? e : e.name;
+                                  const count = typeof e === "string" ? null : e.count;
+                                  return <Badge key={i} variant="outline" className="text-xs">{name}{count ? ` (${count})` : ""}</Badge>;
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Source breakdown */}
+                          {snap.source_breakdown && snap.source_breakdown.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Fontes</p>
+                              <div className="flex flex-wrap gap-2">
+                                {snap.source_breakdown.map((s: any, i: number) => (
+                                  <div key={i} className="flex items-center gap-1.5 text-xs bg-background border rounded-md px-2 py-1">
+                                    <span className="font-medium">{s.name}</span>
+                                    <span className="text-muted-foreground">({s.count})</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="text-xs text-muted-foreground pt-1 border-t">
+                            Total de menções analisadas nesta data: <span className="font-semibold text-foreground">{snap.total_mentions || 0}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {!analysis && !analysisMutation.isPending && (
         <Card className="border-dashed">
