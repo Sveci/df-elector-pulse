@@ -434,7 +434,7 @@ export function WhatsAppBulkSendTab() {
     let errorCount = 0;
 
     // SEMPRE usa URL de produção para comunicações externas
-    const baseUrl = getProductionUrl();
+    const baseUrl = getTenantBaseUrl(tenantDomain);
 
     try {
       const recipients = recipientsData.recipients as Record<string, unknown>[];
