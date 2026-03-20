@@ -39,7 +39,7 @@ import {
 } from "@/hooks/useWhatsAppTemplates";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getProductionUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
+import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
 
 type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts";
 
