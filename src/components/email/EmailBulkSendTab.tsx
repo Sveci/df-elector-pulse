@@ -610,7 +610,7 @@ export function EmailBulkSendTab() {
         // Gerar link de verificação baseado no tipo
         const linkVerificacao = isLeader
           ? `${baseUrl}/verificar-lider/${verificationCode}`
-          : generateVerificationUrl(verificationCode);
+          : generateVerificationUrl(verificationCode, tenantDomain);
 
         variables.link_verificacao = linkVerificacao;
         variables.deputado_nome = organization?.nome || "Deputado";
