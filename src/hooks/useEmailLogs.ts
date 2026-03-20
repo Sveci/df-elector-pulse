@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "@/hooks/useTenantId";
 
@@ -11,6 +11,7 @@ export interface EmailLog {
   status: string;
   resend_id: string | null;
   error_message: string | null;
+  body_html: string | null;
   contact_id: string | null;
   leader_id: string | null;
   event_id: string | null;
@@ -38,6 +39,7 @@ export function useEmailLogs(filters?: {
         .from("email_logs")
         .select(`
           *,
+          body_html,
           email_templates (nome, slug)
         `)
         .order("created_at", { ascending: false })
@@ -100,6 +102,45 @@ export function useEmailLogStats() {
         pending: pendingResult.count || 0,
         failed: failedResult.count || 0,
       };
+    },
+  });
+}
+
+/**
+ * Retry a failed email by re-invoking the send-email edge function
+ * using the body_html stored in the log record.
+ */
+export function useRetryEmailLog() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+
+  return useMutation({
+    mutationFn: async (log: EmailLog) => {
+      if (!log.body_html) {
+        throw new Error("Conteúdo do email não disponível para reenvio");
+      }
+
+      const { data, error } = await supabase.functions.invoke("send-email", {
+        body: {
+          to: log.to_email,
+          toName: log.to_name ?? undefined,
+          subject: log.subject,
+          html: log.body_html,
+          tenantId: tenantId ?? undefined,
+          contactId: log.contact_id ?? undefined,
+          leaderId: log.leader_id ?? undefined,
+          eventId: log.event_id ?? undefined,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Falha ao reenviar email");
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email_logs"] });
+      queryClient.invalidateQueries({ queryKey: ["email_log_stats"] });
     },
   });
 }
