@@ -687,7 +687,7 @@ export function WhatsAppBulkSendTab() {
             }
 
             if (selectedTemplateData.slug === "lideranca-cadastro-link") {
-              const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
+              const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken, tenantDomain);
               variables.link_cadastro_afiliado = linkCadastroAfiliado;
 
               // Gerar QR code e enviar junto com a mensagem
