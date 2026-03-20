@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { memo, useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -84,7 +84,7 @@ const adminSettingsItems: MenuItem[] = [
   { title: "Painel Admin", url: "/admin", icon: Shield, roles: ['super_admin'] },
 ];
 
-export function AppSidebar() {
+export const AppSidebar = memo(function AppSidebar() {
   const { state, setOpenMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -337,4 +337,4 @@ export function AppSidebar() {
       </SidebarContent>
     </Sidebar>
   );
-}
+});

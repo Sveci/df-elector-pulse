@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Bell, MessageCircle, Info, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,7 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 
-export function NotificationBell() {
+export const NotificationBell = memo(function NotificationBell() {
   const navigate = useNavigate();
   const { data: isSuperAdmin } = useIsSuperAdmin();
   const { data: unreadCount } = useUnreadCount();
@@ -179,4 +180,4 @@ export function NotificationBell() {
       </PopoverContent>
     </Popover>
   );
-}
+});

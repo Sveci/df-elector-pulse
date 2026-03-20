@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +31,7 @@ import {
   ChevronDown
 } from "lucide-react";
 
-const UserMenu = () => {
+const UserMenu = memo(function UserMenu() {
   const { user, logout } = useAuth();
   const { m } = useDemoMask();
   const navigate = useNavigate();
@@ -153,6 +153,6 @@ const UserMenu = () => {
       </AlertDialog>
     </>
   );
-};
+});
 
 export default UserMenu;

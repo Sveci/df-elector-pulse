@@ -1,9 +1,16 @@
-import React from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TrackingProvider } from "./components/TrackingProvider";
 import { TutorialProvider } from "./contexts/TutorialContext";
@@ -11,632 +18,550 @@ import { DemoModeProvider } from "./contexts/DemoModeContext";
 import { DashboardLayout } from "./components/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
-import Index from "./pages/Index";
-import TermosDeUso from "./pages/TermosDeUso";
-import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
-import LgpdCookies from "./pages/LgpdCookies";
-import SobreNos from "./pages/SobreNos";
-import Contato from "./pages/Contato";
-import CentralAjuda from "./pages/CentralAjuda";
-import StatusSistema from "./pages/StatusSistema";
-import Login from "./pages/Login";
-import DemoLogin from "./pages/DemoLogin";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ResetSuccess from "./pages/ResetSuccess";
-import Dashboard from "./pages/Dashboard";
-import Leaders from "./pages/Leaders";
-import LeadersRanking from "./pages/LeadersRanking";
-import Contacts from "./pages/Contacts";
-import Campaigns from "./pages/Campaigns";
-import Events from "./pages/Events";
-import Projects from "./pages/Projects";
-import KnowledgeBase from "./pages/KnowledgeBase";
-import Messaging from "./pages/Messaging";
-import Segments from "./pages/Segments";
-import AIAgent from "./pages/AIAgent";
-import WhatsAppMarketing from "./pages/WhatsAppMarketing";
-import EmailMarketing from "./pages/EmailMarketing";
-import SMSMarketing from "./pages/SMSMarketing";
-import ScheduledMessages from "./pages/ScheduledMessages";
-import Settings from "./pages/Settings";
-import AIProviders from "./pages/settings/AIProviders";
-
-import TrackingSettings from "./pages/settings/TrackingSettings";
-import AffiliateFormSettings from "./pages/settings/AffiliateFormSettings";
-import Profile from "./pages/settings/Profile";
-import Organization from "./pages/settings/Organization";
-import Privacy from "./pages/settings/Privacy";
-import Integrations from "./pages/settings/Integrations";
-import Support from "./pages/settings/Support";
-import AdminTickets from "./pages/settings/AdminTickets";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminTenants from "./pages/admin/AdminTenants";
-import AdminApis from "./pages/admin/AdminApis";
-import AdminContatos from "./pages/admin/AdminContatos";
-import AdminWebhookLogs from "./pages/admin/AdminWebhookLogs";
-import Team from "./pages/settings/Team";
-import SetupUsers from "./pages/SetupUsers";
-import LeaderRegistrationForm from "./pages/LeaderRegistrationForm";
-import NotFound from "./pages/NotFound";
-import EventRegistration from "./pages/EventRegistration";
-import EventRegistrationEmbed from "./pages/EventRegistrationEmbed";
-import EventCheckin from "./pages/EventCheckin";
-import LeadCaptureLanding from "./pages/LeadCaptureLanding";
-import PublicLeaderRegistration from "./pages/PublicLeaderRegistration";
-import LeaderFormSettings from "./pages/settings/LeaderFormSettings";
-import Gamification from "./pages/settings/Gamification";
-import WhatsAppChatbot from "./pages/settings/WhatsAppChatbot";
-import Reports from "./pages/settings/Reports";
-import RegionMaterials from "./pages/settings/RegionMaterials";
-import DuplicateContacts from "./pages/settings/DuplicateContacts";
-import DispatchRegionMaterials from "./pages/DispatchRegionMaterials";
-import DownloadCoordinatorReport from "./pages/DownloadCoordinatorReport";
-
-// Office module pages
-import NewVisit from "./pages/office/NewVisit";
-import Queue from "./pages/office/Queue";
-import History from "./pages/office/History";
-import OfficeSettings from "./pages/office/Settings";
-import VisitCheckin from "./pages/office/VisitCheckin";
-import Schedule from "./pages/office/Schedule";
-import ScheduleVisit from "./pages/ScheduleVisit";
-import MeetingPhotoUpload from "./pages/MeetingPhotoUpload";
-import AffiliateForm from "./pages/AffiliateForm";
-import Unsubscribe from "./pages/Unsubscribe";
-import StrategicMap from "./pages/StrategicMap";
-import Surveys from "./pages/Surveys";
-import SurveyEditor from "./pages/SurveyEditor";
-import SurveyResults from "./pages/SurveyResults";
-import SurveyPublicForm from "./pages/SurveyPublicForm";
-import VerifyContact from "./pages/VerifyContact";
-import VerifyLeader from "./pages/VerifyLeader";
-import LeaderTree from "./pages/LeaderTree";
-import ShortUrlRedirect from "./pages/ShortUrlRedirect";
-import CoordinatorLogin from "./pages/coordinator/CoordinatorLogin";
-import CoordinatorDashboard from "./pages/coordinator/CoordinatorDashboard";
-import CoordinatorEvents from "./pages/coordinator/CoordinatorEvents";
-import CoordinatorMaterials from "./pages/coordinator/CoordinatorMaterials";
-import CoordinatorVerifyLeader from "./pages/coordinator/CoordinatorVerifyLeader";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PageLoader } from "./components/PageLoader";
 import { CoordinatorAuthProvider } from "./contexts/CoordinatorAuthContext";
 import { DynamicMetaTags } from "./components/DynamicMetaTags";
-
-// Public Opinion module
 import { PublicOpinionRealtimeProvider } from "./components/public-opinion/PublicOpinionRealtimeProvider";
-import Materials from "./pages/Materials";
-import InstagramFollowers from "./pages/InstagramFollowers";
-import PublicOpinionOverview from "./pages/public-opinion/Overview";
-import PublicOpinionSentiment from "./pages/public-opinion/SentimentAnalysis";
-import PublicOpinionTimeline from "./pages/public-opinion/Timeline";
-import PublicOpinionComparison from "./pages/public-opinion/Comparison";
-import PublicOpinionDemographics from "./pages/public-opinion/Demographics";
-import PublicOpinionComments from "./pages/public-opinion/Comments";
-import PublicOpinionInsights from "./pages/public-opinion/Insights";
-import PublicOpinionEvents from "./pages/public-opinion/AnalyzedEvents";
-import PublicOpinionReports from "./pages/public-opinion/Reports";
-import PublicOpinionSettings from "./pages/public-opinion/Settings";
 import { TenantProvider } from "./contexts/TenantContext";
 import { TenantSelectorModal } from "./components/TenantSelectorModal";
+import type { AppRole } from "./hooks/useUserRole";
 
-const queryClient = new QueryClient();
+// ─── Lazy imports: each page is a separate chunk ────────────────────────────
+// Public / auth pages (lightweight, load fast)
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const DemoLogin = lazy(() => import("./pages/DemoLogin"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ResetSuccess = lazy(() => import("./pages/ResetSuccess"));
+const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
+const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
+const LgpdCookies = lazy(() => import("./pages/LgpdCookies"));
+const SobreNos = lazy(() => import("./pages/SobreNos"));
+const Contato = lazy(() => import("./pages/Contato"));
+const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
+const StatusSistema = lazy(() => import("./pages/StatusSistema"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Public functional pages
+const LeaderRegistrationForm = lazy(() => import("./pages/LeaderRegistrationForm"));
+const EventRegistration = lazy(() => import("./pages/EventRegistration"));
+const EventRegistrationEmbed = lazy(() => import("./pages/EventRegistrationEmbed"));
+const EventCheckin = lazy(() => import("./pages/EventCheckin"));
+const LeadCaptureLanding = lazy(() => import("./pages/LeadCaptureLanding"));
+const PublicLeaderRegistration = lazy(() => import("./pages/PublicLeaderRegistration"));
+const AffiliateForm = lazy(() => import("./pages/AffiliateForm"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const SurveyPublicForm = lazy(() => import("./pages/SurveyPublicForm"));
+const VerifyContact = lazy(() => import("./pages/VerifyContact"));
+const VerifyLeader = lazy(() => import("./pages/VerifyLeader"));
+const ShortUrlRedirect = lazy(() => import("./pages/ShortUrlRedirect"));
+const MeetingPhotoUpload = lazy(() => import("./pages/MeetingPhotoUpload"));
+const ScheduleVisit = lazy(() => import("./pages/ScheduleVisit"));
+const SetupUsers = lazy(() => import("./pages/SetupUsers"));
+
+// Coordinator portal
+const CoordinatorLogin = lazy(() => import("./pages/coordinator/CoordinatorLogin"));
+const CoordinatorDashboard = lazy(() => import("./pages/coordinator/CoordinatorDashboard"));
+const CoordinatorEvents = lazy(() => import("./pages/coordinator/CoordinatorEvents"));
+const CoordinatorMaterials = lazy(() => import("./pages/coordinator/CoordinatorMaterials"));
+const CoordinatorVerifyLeader = lazy(() => import("./pages/coordinator/CoordinatorVerifyLeader"));
+
+// Main app pages (heavy, split into separate chunks)
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Leaders = lazy(() => import("./pages/Leaders"));
+const LeadersRanking = lazy(() => import("./pages/LeadersRanking"));
+const LeaderTree = lazy(() => import("./pages/LeaderTree"));
+const Contacts = lazy(() => import("./pages/Contacts"));
+const Campaigns = lazy(() => import("./pages/Campaigns"));
+const Events = lazy(() => import("./pages/Events"));
+const Projects = lazy(() => import("./pages/Projects"));
+const KnowledgeBase = lazy(() => import("./pages/KnowledgeBase"));
+const Messaging = lazy(() => import("./pages/Messaging"));
+const Segments = lazy(() => import("./pages/Segments"));
+const AIAgent = lazy(() => import("./pages/AIAgent"));
+const WhatsAppMarketing = lazy(() => import("./pages/WhatsAppMarketing"));
+const WhatsAppHistory = lazy(() => import("./pages/WhatsAppHistory"));
+const EmailMarketing = lazy(() => import("./pages/EmailMarketing"));
+const SMSMarketing = lazy(() => import("./pages/SMSMarketing"));
+const ScheduledMessages = lazy(() => import("./pages/ScheduledMessages"));
+const Surveys = lazy(() => import("./pages/Surveys"));
+const SurveyEditor = lazy(() => import("./pages/SurveyEditor"));
+const SurveyResults = lazy(() => import("./pages/SurveyResults"));
+const StrategicMap = lazy(() => import("./pages/StrategicMap"));
+const Materials = lazy(() => import("./pages/Materials"));
+const InstagramFollowers = lazy(() => import("./pages/InstagramFollowers"));
+const DownloadCoordinatorReport = lazy(() => import("./pages/DownloadCoordinatorReport"));
+const DispatchRegionMaterials = lazy(() => import("./pages/DispatchRegionMaterials"));
+
+// Settings pages
+const Settings = lazy(() => import("./pages/Settings"));
+const AIProviders = lazy(() => import("./pages/settings/AIProviders"));
+const TrackingSettings = lazy(() => import("./pages/settings/TrackingSettings"));
+const AffiliateFormSettings = lazy(() => import("./pages/settings/AffiliateFormSettings"));
+const Profile = lazy(() => import("./pages/settings/Profile"));
+const Organization = lazy(() => import("./pages/settings/Organization"));
+const Privacy = lazy(() => import("./pages/settings/Privacy"));
+const Integrations = lazy(() => import("./pages/settings/Integrations"));
+const Support = lazy(() => import("./pages/settings/Support"));
+const AdminTickets = lazy(() => import("./pages/settings/AdminTickets"));
+const Team = lazy(() => import("./pages/settings/Team"));
+const LeaderFormSettings = lazy(() => import("./pages/settings/LeaderFormSettings"));
+const Gamification = lazy(() => import("./pages/settings/Gamification"));
+const WhatsAppChatbot = lazy(() => import("./pages/settings/WhatsAppChatbot"));
+const Reports = lazy(() => import("./pages/settings/Reports"));
+const RegionMaterials = lazy(() => import("./pages/settings/RegionMaterials"));
+const DuplicateContacts = lazy(() => import("./pages/settings/DuplicateContacts"));
+
+// Admin pages
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminTenants = lazy(() => import("./pages/admin/AdminTenants"));
+const AdminApis = lazy(() => import("./pages/admin/AdminApis"));
+const AdminContatos = lazy(() => import("./pages/admin/AdminContatos"));
+const AdminWebhookLogs = lazy(() => import("./pages/admin/AdminWebhookLogs"));
+
+// Office module
+const NewVisit = lazy(() => import("./pages/office/NewVisit"));
+const Queue = lazy(() => import("./pages/office/Queue"));
+const History = lazy(() => import("./pages/office/History"));
+const OfficeSettings = lazy(() => import("./pages/office/Settings"));
+const VisitCheckin = lazy(() => import("./pages/office/VisitCheckin"));
+const Schedule = lazy(() => import("./pages/office/Schedule"));
+
+// Public Opinion module
+const PublicOpinionOverview = lazy(() => import("./pages/public-opinion/Overview"));
+const PublicOpinionSentiment = lazy(() => import("./pages/public-opinion/SentimentAnalysis"));
+const PublicOpinionTimeline = lazy(() => import("./pages/public-opinion/Timeline"));
+const PublicOpinionComparison = lazy(() => import("./pages/public-opinion/Comparison"));
+const PublicOpinionDemographics = lazy(() => import("./pages/public-opinion/Demographics"));
+const PublicOpinionComments = lazy(() => import("./pages/public-opinion/Comments"));
+const PublicOpinionInsights = lazy(() => import("./pages/public-opinion/Insights"));
+const PublicOpinionEvents = lazy(() => import("./pages/public-opinion/AnalyzedEvents"));
+const PublicOpinionReports = lazy(() => import("./pages/public-opinion/Reports"));
+const PublicOpinionSettings = lazy(() => import("./pages/public-opinion/Settings"));
+
+// ─── Scroll restoration on route change ─────────────────────────────────────
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+};
+
+// ─── Helper: CadastroRedirect ────────────────────────────────────────────────
 const CadastroRedirect = () => {
   const location = useLocation();
-
-  // Suporta variações comuns como "/cadastro/" (barra final)
-  // e garante que preservamos parâmetros UTM.
   const pathname = location.pathname.replace(/\/+$/, "");
-  if (pathname !== "/cadastro") {
-    // Se por algum motivo cair aqui com subrota, não força redirect.
-    return null;
-  }
-
+  if (pathname !== "/cadastro") return null;
   return <Navigate to={`/lider/cadastro${location.search}`} replace />;
 };
 
+// ─── Helpers: route wrappers ─────────────────────────────────────────────────
+/** Wraps a page in DashboardLayout + RoleProtectedRoute */
+const RP = ({
+  roles,
+  children,
+}: {
+  roles: AppRole[];
+  children: React.ReactNode;
+}) => (
+  <RoleProtectedRoute allowedRoles={roles}>
+    <DashboardLayout>{children}</DashboardLayout>
+  </RoleProtectedRoute>
+);
+
+/** Wraps a page in DashboardLayout + ProtectedRoute */
+const P = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <DashboardLayout>{children}</DashboardLayout>
+  </ProtectedRoute>
+);
+
+const ADMIN_ROLES: AppRole[] = ["super_admin", "admin"];
+const ALL_ROLES: AppRole[] = ["super_admin", "admin", "atendente"];
+const CHECKIN_ROLES: AppRole[] = [
+  "super_admin",
+  "admin",
+  "atendente",
+  "checkin_operator",
+];
+
+// ─── App ─────────────────────────────────────────────────────────────────────
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <TutorialProvider>
-        <Toaster />
-        <Sonner />
-        <DynamicMetaTags />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <TutorialProvider>
+          <Toaster />
+          <Sonner />
+          <DynamicMetaTags />
           <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <TrackingProvider>
-          <AuthProvider>
-          <DemoModeProvider>
-          <TenantProvider>
-          <TenantSelectorModal />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/demo" element={<DemoLogin />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/reset-success" element={<ResetSuccess />} />
-            <Route path="/setup-users" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <SetupUsers />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Public routes */}
-            <Route path="/visita-gabinete/:visitId" element={<ScheduleVisit />} />
-            <Route path="/affiliate/:leaderToken" element={<AffiliateForm />} />
-            <Route path="/cadastro/*" element={<CadastroRedirect />} />
-            <Route path="/cadastro/:leaderToken" element={<LeaderRegistrationForm />} />
-            <Route path="/eventos/embed/:slug" element={<EventRegistrationEmbed />} />
-            <Route path="/eventos/:slug" element={<EventRegistration />} />
-            <Route path="/captacao/:slug" element={<LeadCaptureLanding />} />
-            <Route path="/lider/cadastro" element={<PublicLeaderRegistration />} />
-            <Route path="/descadastro" element={<Unsubscribe />} />
-            <Route path="/pesquisa/:slug" element={<SurveyPublicForm />} />
-            <Route path="/v/:codigo" element={<VerifyContact />} />
-            <Route path="/verificar-lider/:codigo" element={<VerifyLeader />} />
-            <Route path="/s/:code" element={<ShortUrlRedirect />} />
-            <Route path="/meeting-photo-upload/:token" element={<MeetingPhotoUpload />} />
-            <Route path="/termos-de-uso" element={<TermosDeUso />} />
-            <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-            <Route path="/lgpd-cookies" element={<LgpdCookies />} />
-            <Route path="/sobre" element={<SobreNos />} />
-            <Route path="/contato" element={<Contato />} />
-            <Route path="/ajuda" element={<CentralAjuda />} />
-            <Route path="/status" element={<StatusSistema />} />
-            
-            {/* Coordinator Portal (public, own auth) */}
-            <Route path="/coordenador/login" element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>} />
-            <Route path="/coordenador/dashboard" element={<CoordinatorAuthProvider><CoordinatorDashboard /></CoordinatorAuthProvider>} />
-            <Route path="/coordenador/eventos" element={<CoordinatorAuthProvider><CoordinatorEvents /></CoordinatorAuthProvider>} />
-            <Route path="/coordenador/materiais" element={<CoordinatorAuthProvider><CoordinatorMaterials /></CoordinatorAuthProvider>} />
-            <Route path="/coordenador/verificar" element={<CoordinatorVerifyLeader />} />
-            
-            {/* Public check-in route with PIN protection */}
-            <Route path="/checkin/:qrCode" element={<EventCheckin />} />
-            <Route path="/office/checkin/:qrCode" element={
-              <ProtectedRoute>
-                <VisitCheckin />
-              </ProtectedRoute>
-            } />
-            
-            {/* Dashboard - admin e atendente */}
-            <Route path="/dashboard" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Leaders - admin e atendente */}
-            <Route path="/leaders" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Leaders />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/leaders/ranking" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <LeadersRanking />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Leader Tree - admin, atendente e super_admin */}
-            <Route path="/leaders/tree" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <LeaderTree />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Contacts - admin e atendente */}
-            <Route path="/contacts" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Contacts />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Campaigns - admin e atendente */}
-            <Route path="/campaigns" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Campaigns />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Events - admin, atendente e checkin_operator */}
-            <Route path="/events" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente', 'checkin_operator']}>
-                <DashboardLayout>
-                  <Events />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Projects - admin e atendente */}
-            <Route path="/projects" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Projects />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Knowledge Base - admin */}
-            <Route path="/knowledge-base" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <KnowledgeBase />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Surveys - admin e atendente */}
-            <Route path="/surveys" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Surveys />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/surveys/:id/edit" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <SurveyEditor />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/surveys/:id/results" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <SurveyResults />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* AI Agent - admin e atendente */}
-            <Route path="/ai-agent" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <AIAgent />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* WhatsApp - admin e atendente */}
-            <Route path="/whatsapp" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <WhatsAppMarketing />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Email - admin e atendente */}
-            <Route path="/email" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <EmailMarketing />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* SMS - admin e atendente */}
-            <Route path="/sms" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <SMSMarketing />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Scheduled Messages - admin e atendente */}
-            <Route path="/scheduled" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <ScheduledMessages />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Settings - todos os roles autenticados */}
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Settings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
-            
-            {/* Settings - apenas admin */}
-            <Route path="/settings/ai-providers" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <AIProviders />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/tracking" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <TrackingSettings />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/organization" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <Organization />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/integrations" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <Integrations />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/team" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <Team />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Settings - admin e atendente */}
-            <Route path="/settings/affiliate-form" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <AffiliateFormSettings />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/leader-form" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <LeaderFormSettings />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/gamification" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <Gamification />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/whatsapp-chatbot" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <WhatsAppChatbot />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/settings/region-materials" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <RegionMaterials />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Settings - todos */}
-            <Route path="/settings/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            <Route path="/settings/privacy" element={
-              <ProtectedRoute>
-                <Privacy />
-              </ProtectedRoute>
-            } />
-            <Route path="/settings/support" element={
-              <ProtectedRoute>
-                <Support />
-              </ProtectedRoute>
-            } />
-            
-            {/* Reports - admin e atendente */}
-            <Route path="/settings/reports" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Reports />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Admin Tickets - redirect antigo para nova rota */}
-            <Route path="/settings/admin-tickets" element={
-              <Navigate to="/admin/tickets" replace />
-            } />
-            
-            {/* Admin Panel - apenas super_admin */}
-            <Route path="/admin" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminDashboard />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/admin/tickets" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminTickets />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/admin/tenants" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminTenants />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/admin/apis" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminApis />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/admin/contatos" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminContatos />
-              </RoleProtectedRoute>
-            } />
-            <Route path="/admin/webhook-logs" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <AdminWebhookLogs />
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Strategic Map - admin, super_admin e atendente */}
-            <Route path="/strategic-map" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <StrategicMap />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Office module routes - admin e atendente */}
-            <Route path="/office/schedule" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout>
-                  <Schedule />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/office/new" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <NewVisit />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/office/queue" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <Queue />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/office/history" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin', 'atendente']}>
-                <DashboardLayout>
-                  <History />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/office/settings" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <OfficeSettings />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            {/* Dispatch Region Materials */}
-            <Route path="/disparar-materiais" element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <DispatchRegionMaterials />
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <ScrollToTop />
+            <TrackingProvider>
+              <AuthProvider>
+                <DemoModeProvider>
+                  <TenantProvider>
+                    <TenantSelectorModal />
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        {/* ── Public: Landing & Auth ────────────────── */}
+                        <Route path="/" element={<Index />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/demo" element={<DemoLogin />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/reset-success" element={<ResetSuccess />} />
+                        <Route path="/termos-de-uso" element={<TermosDeUso />} />
+                        <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                        <Route path="/lgpd-cookies" element={<LgpdCookies />} />
+                        <Route path="/sobre" element={<SobreNos />} />
+                        <Route path="/contato" element={<Contato />} />
+                        <Route path="/ajuda" element={<CentralAjuda />} />
+                        <Route path="/status" element={<StatusSistema />} />
 
-            {/* Download Coordinator Report */}
-            <Route path="/relatorio-coordenadores" element={
-              <ProtectedRoute>
-                <DownloadCoordinatorReport />
-              </ProtectedRoute>
-            } />
-            
-            {/* Duplicate Contacts */}
-            <Route path="/settings/duplicates" element={
-              <RoleProtectedRoute allowedRoles={['super_admin', 'admin']}>
-                <DashboardLayout>
-                  <DuplicateContacts />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            
-            
-            {/* Public Opinion module - super_admin only — Realtime ativo em todas as rotas */}
-            <Route path="/public-opinion" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionOverview /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/sentiment" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionSentiment /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/timeline" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionTimeline /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/comparison" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionComparison /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/demographics" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionDemographics /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/comments" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionComments /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/insights" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionInsights /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/events" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionEvents /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/reports" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionReports /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
-            <Route path="/public-opinion/settings" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout><PublicOpinionRealtimeProvider><PublicOpinionSettings /></PublicOpinionRealtimeProvider></DashboardLayout>
-              </RoleProtectedRoute>
-            } />
+                        {/* ── Public: Functional ───────────────────── */}
+                        <Route path="/visita-gabinete/:visitId" element={<ScheduleVisit />} />
+                        <Route path="/affiliate/:leaderToken" element={<AffiliateForm />} />
+                        <Route path="/cadastro/*" element={<CadastroRedirect />} />
+                        <Route path="/cadastro/:leaderToken" element={<LeaderRegistrationForm />} />
+                        <Route path="/eventos/embed/:slug" element={<EventRegistrationEmbed />} />
+                        <Route path="/eventos/:slug" element={<EventRegistration />} />
+                        <Route path="/captacao/:slug" element={<LeadCaptureLanding />} />
+                        <Route path="/lider/cadastro" element={<PublicLeaderRegistration />} />
+                        <Route path="/descadastro" element={<Unsubscribe />} />
+                        <Route path="/pesquisa/:slug" element={<SurveyPublicForm />} />
+                        <Route path="/v/:codigo" element={<VerifyContact />} />
+                        <Route path="/verificar-lider/:codigo" element={<VerifyLeader />} />
+                        <Route path="/s/:code" element={<ShortUrlRedirect />} />
+                        <Route path="/meeting-photo-upload/:token" element={<MeetingPhotoUpload />} />
+                        <Route path="/checkin/:qrCode" element={<EventCheckin />} />
 
-            {/* Materials - super_admin only */}
-            <Route path="/materials" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout>
-                  <Materials />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
+                        {/* ── Coordinator portal ────────────────────── */}
+                        <Route
+                          path="/coordenador/login"
+                          element={<CoordinatorAuthProvider><CoordinatorLogin /></CoordinatorAuthProvider>}
+                        />
+                        <Route
+                          path="/coordenador/dashboard"
+                          element={<CoordinatorAuthProvider><CoordinatorDashboard /></CoordinatorAuthProvider>}
+                        />
+                        <Route
+                          path="/coordenador/eventos"
+                          element={<CoordinatorAuthProvider><CoordinatorEvents /></CoordinatorAuthProvider>}
+                        />
+                        <Route
+                          path="/coordenador/materiais"
+                          element={<CoordinatorAuthProvider><CoordinatorMaterials /></CoordinatorAuthProvider>}
+                        />
+                        <Route path="/coordenador/verificar" element={<CoordinatorVerifyLeader />} />
 
-            {/* Instagram Followers - super_admin only */}
-            <Route path="/instagram-followers" element={
-              <RoleProtectedRoute allowedRoles={['super_admin']}>
-                <DashboardLayout>
-                  <InstagramFollowers />
-                </DashboardLayout>
-              </RoleProtectedRoute>
-            } />
+                        {/* ── Protected: office check-in ────────────── */}
+                        <Route
+                          path="/office/checkin/:qrCode"
+                          element={<ProtectedRoute><VisitCheckin /></ProtectedRoute>}
+                        />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TenantProvider>
-        </DemoModeProvider>
-        </AuthProvider>
-        </TrackingProvider>
+                        {/* ── Setup (super_admin only) ──────────────── */}
+                        <Route
+                          path="/setup-users"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <SetupUsers />
+                            </RoleProtectedRoute>
+                          }
+                        />
+
+                        {/* ── Main dashboard ────────────────────────── */}
+                        <Route path="/dashboard" element={<RP roles={[...ALL_ROLES]}><Dashboard /></RP>} />
+
+                        {/* ── Leaders ───────────────────────────────── */}
+                        <Route path="/leaders" element={<RP roles={[...ALL_ROLES]}><Leaders /></RP>} />
+                        <Route path="/leaders/ranking" element={<RP roles={[...ALL_ROLES]}><LeadersRanking /></RP>} />
+                        <Route path="/leaders/tree" element={<RP roles={[...ALL_ROLES]}><LeaderTree /></RP>} />
+
+                        {/* ── Contacts ──────────────────────────────── */}
+                        <Route path="/contacts" element={<RP roles={[...ALL_ROLES]}><Contacts /></RP>} />
+
+                        {/* ── Campaigns ─────────────────────────────── */}
+                        <Route path="/campaigns" element={<RP roles={[...ALL_ROLES]}><Campaigns /></RP>} />
+
+                        {/* ── Events ────────────────────────────────── */}
+                        <Route path="/events" element={<RP roles={[...CHECKIN_ROLES]}><Events /></RP>} />
+
+                        {/* ── Projects ──────────────────────────────── */}
+                        <Route path="/projects" element={<RP roles={[...ALL_ROLES]}><Projects /></RP>} />
+
+                        {/* ── Knowledge Base ────────────────────────── */}
+                        <Route path="/knowledge-base" element={<RP roles={[...ADMIN_ROLES]}><KnowledgeBase /></RP>} />
+
+                        {/* ── Surveys ───────────────────────────────── */}
+                        <Route path="/surveys" element={<RP roles={[...ALL_ROLES]}><Surveys /></RP>} />
+                        <Route path="/surveys/:id/edit" element={<RP roles={[...ALL_ROLES]}><SurveyEditor /></RP>} />
+                        <Route path="/surveys/:id/results" element={<RP roles={[...ALL_ROLES]}><SurveyResults /></RP>} />
+
+                        {/* ── AI Agent ──────────────────────────────── */}
+                        <Route path="/ai-agent" element={<RP roles={[...ALL_ROLES]}><AIAgent /></RP>} />
+
+                        {/* ── Communication ─────────────────────────── */}
+                        <Route
+                          path="/whatsapp"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <WhatsAppMarketing />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/whatsapp/history"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <DashboardLayout><WhatsAppHistory /></DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/email"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <EmailMarketing />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/sms"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <SMSMarketing />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/scheduled"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <ScheduledMessages />
+                            </RoleProtectedRoute>
+                          }
+                        />
+
+                        {/* ── Strategic Map ─────────────────────────── */}
+                        <Route path="/strategic-map" element={<RP roles={[...ALL_ROLES]}><StrategicMap /></RP>} />
+
+                        {/* ── Office module ─────────────────────────── */}
+                        <Route
+                          path="/office/schedule"
+                          element={<RP roles={["super_admin"]}><Schedule /></RP>}
+                        />
+                        <Route path="/office/new" element={<RP roles={[...ALL_ROLES]}><NewVisit /></RP>} />
+                        <Route path="/office/queue" element={<RP roles={[...ALL_ROLES]}><Queue /></RP>} />
+                        <Route path="/office/history" element={<RP roles={[...ALL_ROLES]}><History /></RP>} />
+                        <Route path="/office/settings" element={<RP roles={[...ADMIN_ROLES]}><OfficeSettings /></RP>} />
+
+                        {/* ── Reports & Materials ───────────────────── */}
+                        <Route
+                          path="/disparar-materiais"
+                          element={<ProtectedRoute><DashboardLayout><DispatchRegionMaterials /></DashboardLayout></ProtectedRoute>}
+                        />
+                        <Route
+                          path="/relatorio-coordenadores"
+                          element={<ProtectedRoute><DownloadCoordinatorReport /></ProtectedRoute>}
+                        />
+                        <Route path="/materials" element={<RP roles={["super_admin"]}><Materials /></RP>} />
+                        <Route path="/instagram-followers" element={<RP roles={["super_admin"]}><InstagramFollowers /></RP>} />
+
+                        {/* ── Settings ──────────────────────────────── */}
+                        <Route path="/settings" element={<P><Settings /></P>} />
+                        <Route path="/settings/ai-providers" element={<RP roles={[...ADMIN_ROLES]}><AIProviders /></RP>} />
+                        <Route path="/settings/tracking" element={<RP roles={[...ADMIN_ROLES]}><TrackingSettings /></RP>} />
+                        <Route
+                          path="/settings/organization"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ADMIN_ROLES]}>
+                              <Organization />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings/integrations"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ADMIN_ROLES]}>
+                              <Integrations />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route path="/settings/team" element={<RP roles={[...ADMIN_ROLES]}><Team /></RP>} />
+                        <Route path="/settings/affiliate-form" element={<RP roles={[...ALL_ROLES]}><AffiliateFormSettings /></RP>} />
+                        <Route path="/settings/leader-form" element={<RP roles={[...ALL_ROLES]}><LeaderFormSettings /></RP>} />
+                        <Route path="/settings/gamification" element={<RP roles={[...ADMIN_ROLES]}><Gamification /></RP>} />
+                        <Route path="/settings/whatsapp-chatbot" element={<RP roles={[...ADMIN_ROLES]}><WhatsAppChatbot /></RP>} />
+                        <Route path="/settings/region-materials" element={<RP roles={[...ADMIN_ROLES]}><RegionMaterials /></RP>} />
+                        <Route path="/settings/reports" element={<RP roles={[...ALL_ROLES]}><Reports /></RP>} />
+                        <Route path="/settings/duplicates" element={<RP roles={[...ADMIN_ROLES]}><DuplicateContacts /></RP>} />
+                        <Route
+                          path="/settings/profile"
+                          element={<ProtectedRoute><Profile /></ProtectedRoute>}
+                        />
+                        <Route
+                          path="/settings/privacy"
+                          element={<ProtectedRoute><Privacy /></ProtectedRoute>}
+                        />
+                        <Route
+                          path="/settings/support"
+                          element={<ProtectedRoute><Support /></ProtectedRoute>}
+                        />
+                        {/* Redirect legacy route */}
+                        <Route path="/settings/admin-tickets" element={<Navigate to="/admin/tickets" replace />} />
+
+                        {/* ── Admin panel ───────────────────────────── */}
+                        <Route path="/admin" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminDashboard /></RoleProtectedRoute>} />
+                        <Route path="/admin/tickets" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminTickets /></RoleProtectedRoute>} />
+                        <Route path="/admin/tenants" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminTenants /></RoleProtectedRoute>} />
+                        <Route path="/admin/apis" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminApis /></RoleProtectedRoute>} />
+                        <Route path="/admin/contatos" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminContatos /></RoleProtectedRoute>} />
+                        <Route path="/admin/webhook-logs" element={<RoleProtectedRoute allowedRoles={["super_admin"]}><AdminWebhookLogs /></RoleProtectedRoute>} />
+
+                        {/* ── Public Opinion (super_admin) ──────────── */}
+                        <Route
+                          path="/public-opinion"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionOverview />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/sentiment"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionSentiment />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/timeline"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionTimeline />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/comparison"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionComparison />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/demographics"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionDemographics />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/comments"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionComments />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/insights"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionInsights />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/events"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionEvents />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/reports"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionReports />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/public-opinion/settings"
+                          element={
+                            <RoleProtectedRoute allowedRoles={["super_admin"]}>
+                              <DashboardLayout>
+                                <PublicOpinionRealtimeProvider>
+                                  <PublicOpinionSettings />
+                                </PublicOpinionRealtimeProvider>
+                              </DashboardLayout>
+                            </RoleProtectedRoute>
+                          }
+                        />
+
+                        {/* ── 404 ──────────────────────────────────── */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </TenantProvider>
+                </DemoModeProvider>
+              </AuthProvider>
+            </TrackingProvider>
           </BrowserRouter>
-      </TutorialProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </TutorialProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

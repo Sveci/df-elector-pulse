@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { memo, ReactNode, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import UserMenu from "./UserMenu";
@@ -7,82 +7,96 @@ import { SessionLogoutWarning } from "./SessionLogoutWarning";
 import { InactivityWarning } from "./InactivityWarning";
 import { WhatsAppDisconnectedAlert } from "./WhatsAppDisconnectedAlert";
 import { useTenantContext } from "@/contexts/TenantContext";
-import { Building2 } from "lucide-react";
-import { Menu } from "lucide-react";
+import { Building2, Menu } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-export function DashboardLayout({
-  children
-}: DashboardLayoutProps) {
-  const { activeTenant, isSuperAdmin, setShowTenantSelector, isLoading } = useTenantContext();
+// Plan badge styling map
+const PLAN_STYLES: Record<string, string> = {
+  premium: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
+  pro: "bg-blue-500/10 text-blue-600 border border-blue-500/20",
+  basic: "bg-muted text-muted-foreground border border-border",
+};
 
-  // Super admin chegou no dashboard sem tenant ativo → mostrar seletor
+/**
+ * DashboardLayout – root layout for authenticated pages.
+ * Memoized to prevent re-renders when parent contexts update unrelated state.
+ */
+export const DashboardLayout = memo(function DashboardLayout({
+  children,
+}: DashboardLayoutProps) {
+  const { activeTenant, isSuperAdmin, setShowTenantSelector, isLoading } =
+    useTenantContext();
+
+  // Auto-open tenant selector for super admins without an active tenant
   useEffect(() => {
     if (isSuperAdmin && !activeTenant && !isLoading) {
       setShowTenantSelector(true);
     }
   }, [isSuperAdmin, activeTenant, isLoading, setShowTenantSelector]);
+
   return (
     <SidebarProvider>
-      {/* Warning de logout forçado */}
+      {/* Session / inactivity warnings */}
       <SessionLogoutWarning />
-      
-      {/* Warning de inatividade */}
       <InactivityWarning />
-      
+
       <div className="min-h-screen flex w-full max-w-full overflow-x-hidden bg-background">
         <AppSidebar />
-        
+
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <header className="bg-card border-b border-border h-16 flex items-center px-4 sm:px-6 sticky top-0 z-10">
-            <SidebarTrigger className="mr-4 h-8 w-8 rounded-md hover:bg-accent flex items-center justify-center">
+          {/* ── Top header ─────────────────────────────────────────────── */}
+          <header className="bg-card/95 backdrop-blur-sm border-b border-border h-16 flex items-center px-4 sm:px-6 sticky top-0 z-20 shadow-sm">
+            {/* Sidebar toggle */}
+            <SidebarTrigger
+              className="mr-4 h-8 w-8 rounded-md hover:bg-accent transition-colors flex items-center justify-center"
+              aria-label="Alternar menu lateral"
+            >
               <Menu className="h-4 w-4" />
             </SidebarTrigger>
-            
+
+            {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Tenant ativo (só para super_admin) */}
+            {/* Tenant selector (super_admin only) */}
             {isSuperAdmin && activeTenant && (
               <button
                 onClick={() => setShowTenantSelector(true)}
-                className="flex items-center gap-2 mr-3 px-3 py-1.5 rounded-lg border border-border bg-accent/50 hover:bg-accent transition-colors text-sm"
+                className="group flex items-center gap-2 mr-3 px-3 py-1.5 rounded-lg border border-border bg-accent/50 hover:bg-accent transition-all duration-150 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                title="Trocar tenant ativo"
               >
-                <Building2 className="h-4 w-4 text-primary" />
+                <Building2 className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="font-medium text-foreground truncate max-w-[160px]">
                   {activeTenant.nome}
                 </span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                  activeTenant.plano === 'premium'
-                    ? 'bg-amber-500/10 text-amber-600'
-                    : activeTenant.plano === 'pro'
-                    ? 'bg-blue-500/10 text-blue-600'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                    PLAN_STYLES[activeTenant.plano] ?? PLAN_STYLES.basic
+                  }`}
+                >
                   {activeTenant.plano}
                 </span>
               </button>
             )}
 
-            {/* Alerta de WhatsApp desconectado */}
+            {/* WhatsApp disconnect alert */}
             <WhatsAppDisconnectedAlert />
 
-            {/* Notification Bell */}
+            {/* Notification bell */}
             <NotificationBell />
 
-            {/* User Menu */}
+            {/* User menu */}
             <UserMenu />
           </header>
 
-          {/* Main content */}
-          <main className="flex-1 overflow-auto">
+          {/* ── Page content ───────────────────────────────────────────── */}
+          <main className="flex-1 overflow-auto focus:outline-none" tabIndex={-1} id="main-content">
             {children}
           </main>
         </div>
       </div>
     </SidebarProvider>
   );
-}
+});
