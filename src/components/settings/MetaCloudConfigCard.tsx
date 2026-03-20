@@ -246,8 +246,8 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            <strong>Importante:</strong> O Access Token deve ser configurado como secret no ambiente 
-            (<code className="bg-amber-100 px-1 rounded">META_WA_ACCESS_TOKEN</code>). 
+            <strong>Importante:</strong> O Access Token deve ser configurado como secret no ambiente
+            (<code className="bg-amber-100 px-1 rounded">META_WA_ACCESS_TOKEN</code>).
             Não será armazenado no banco de dados por segurança.
           </AlertDescription>
         </Alert>
@@ -264,13 +264,13 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
               onCheckedChange={setTestMode}
             />
           </div>
-          
+
           {testMode && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 No modo teste, apenas números na whitelist abaixo receberão mensagens via Cloud API.
               </p>
-              
+
               {/* Whitelist Management */}
               <div className="space-y-2">
                 <Label className="text-sm">Whitelist (números E.164)</Label>
@@ -290,7 +290,7 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 {whitelist.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {whitelist.map((number) => (

@@ -20,14 +20,14 @@ export const NotificationBell = memo(function NotificationBell() {
   const { data: systemNotifications } = useSystemNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
-  
+
   // Para admin: mostra notificações de respostas de usuários
   // Para usuários: mostra notificações de respostas de admin
   const displayedTicketNotifications = isSuperAdmin ? adminTicketNotifications : ticketNotifications;
   const ticketUnreadCount = isSuperAdmin ? unreadCount?.adminTickets : unreadCount?.tickets;
-  
+
   const totalUnread = (ticketUnreadCount || 0) + (unreadCount?.updates || 0);
-  
+
   const handleTicketClick = (notification: any) => {
     if (!notification.is_read) {
       markAsRead.mutate({ type: 'ticket', id: notification.id });
@@ -39,7 +39,7 @@ export const NotificationBell = memo(function NotificationBell() {
       navigate(`/settings/support?ticket=${notification.ticket_id}`);
     }
   };
-  
+
   const handleNotificationClick = (notification: any) => {
     if (!notification.is_read) {
       markAsRead.mutate({ type: 'notification', id: notification.id });
@@ -52,7 +52,7 @@ export const NotificationBell = memo(function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative mr-2">
           <Bell className="h-5 w-5 text-muted-foreground" />
           {totalUnread > 0 && (
-            <Badge 
+            <Badge
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-destructive text-destructive-foreground"
             >
               {totalUnread > 99 ? '99+' : totalUnread}
@@ -65,9 +65,9 @@ export const NotificationBell = memo(function NotificationBell() {
           <div className="border-b px-3 py-2 flex items-center justify-between">
             <h4 className="font-semibold text-sm">Notificações</h4>
             {totalUnread > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-7 text-xs"
                 onClick={() => markAllAsRead.mutate('all')}
               >
@@ -76,7 +76,7 @@ export const NotificationBell = memo(function NotificationBell() {
               </Button>
             )}
           </div>
-          
+
           <TabsList className="w-full grid grid-cols-2 rounded-none border-b">
             <TabsTrigger value="tickets" className="text-xs relative">
               Tickets
@@ -95,7 +95,7 @@ export const NotificationBell = memo(function NotificationBell() {
               ) : null}
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="tickets" className="m-0">
             <ScrollArea className="h-[300px]">
               {displayedTicketNotifications && displayedTicketNotifications.length > 0 ? (
@@ -137,7 +137,7 @@ export const NotificationBell = memo(function NotificationBell() {
               )}
             </ScrollArea>
           </TabsContent>
-          
+
           <TabsContent value="updates" className="m-0">
             <ScrollArea className="h-[300px]">
               {systemNotifications && systemNotifications.length > 0 ? (

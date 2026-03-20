@@ -27,15 +27,15 @@ interface ImportResult {
  */
 function normalizePhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
-  
+
   if (cleaned.length === 13 && cleaned.startsWith('55')) {
     return `+${cleaned}`;
   }
-  
+
   if (cleaned.length === 11) {
     return `+55${cleaned}`;
   }
-  
+
   throw new Error('Telefone deve ter 13 dígitos (DDIDDDNÚMERO) ou 11 dígitos (DDDNÚMERO)');
 }
 
@@ -54,7 +54,7 @@ function parseDate(dateInput?: string | number): string | null {
       date = new Date(excelEpoch.getTime() + dateInput * 86400000);
     } else {
       const dateStr = String(dateInput).trim();
-      
+
       // DD/MM/YYYY ou DD-MM-YYYY
       const ddmmyyyyMatch = dateStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
       if (ddmmyyyyMatch) {
@@ -96,7 +96,7 @@ function parseDate(dateInput?: string | number): string | null {
  */
 function parseStatus(status?: string): boolean {
   if (!status) return true; // Padrão: ativo
-  
+
   const normalized = status.toLowerCase().trim();
   if (normalized === 'ativo' || normalized === 'true' || normalized === '1') {
     return true;
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
     // Obter o token de autorização do header
     const authHeader = req.headers.get('Authorization');
     console.log('Auth header presente:', !!authHeader);
-    
+
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Token de autenticação não fornecido' }),

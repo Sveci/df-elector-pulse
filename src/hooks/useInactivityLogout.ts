@@ -9,10 +9,10 @@ const ACTIVITY_UPDATE_INTERVAL = 60 * 1000; // Atualizar DB a cada 1 min
 export const useInactivityLogout = () => {
   const { isAuthenticated, logout } = useAuth();
   const { updateLastActivity } = useActiveSessions();
-  
+
   const [showWarning, setShowWarning] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(60);
-  
+
   const lastActivityRef = useRef<number>(Date.now());
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,7 +43,7 @@ export const useInactivityLogout = () => {
   const startCountdown = useCallback(() => {
     setShowWarning(true);
     setSecondsRemaining(60);
-    
+
     countdownRef.current = setInterval(() => {
       setSecondsRemaining(prev => {
         if (prev <= 1) {
@@ -100,7 +100,7 @@ export const useInactivityLogout = () => {
     const handleActivity = () => {
       // Throttle para evitar múltiplas chamadas
       if (throttleTimeout) return;
-      
+
       throttleTimeout = setTimeout(() => {
         throttleTimeout = null;
       }, 1000);

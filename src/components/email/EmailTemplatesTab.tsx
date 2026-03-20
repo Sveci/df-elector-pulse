@@ -59,7 +59,7 @@ export function EmailTemplatesTab({ searchTerm }: EmailTemplatesTabProps) {
   const seedTemplates = useSeedEmailTemplates();
   const resetTenantTemplate = useResetTenantTemplate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   let activeTenant: any = null;
   let isSuperAdmin = false;
   try {

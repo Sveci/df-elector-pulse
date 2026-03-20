@@ -52,6 +52,21 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Webhook Secret Validation ────────────────────────────────────
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const url = new URL(req.url);
+      const token = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
+      if (token !== webhookSecret) {
+        console.warn("[smsdev-webhook] Unauthorized request - invalid secret");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // ── End Webhook Secret ───────────────────────────────────────────
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -59,19 +74,19 @@ Deno.serve(async (req) => {
     // Parse request body - SMSDEV may send as form-urlencoded or JSON
     let body: SMSDEVWebhookPayload;
     const contentType = req.headers.get("content-type") || "";
-    
+
     if (contentType.includes("application/x-www-form-urlencoded")) {
       const formData = await req.formData();
       body = Object.fromEntries(formData.entries()) as unknown as SMSDEVWebhookPayload;
     } else {
       body = await req.json();
     }
-    
+
     console.log("[smsdev-webhook] Received webhook:", JSON.stringify(body));
 
     // Extract message ID from multiple possible fields
     const messageId = body.id || body.msg_id || body.message_id;
-    
+
     if (!messageId) {
       console.log("[smsdev-webhook] No message ID found in payload");
       return new Response(
@@ -89,7 +104,7 @@ Deno.serve(async (req) => {
     } else {
       rawStatus = body.situacao || body.status || body.codigo || body.code;
     }
-    
+
     if (!rawStatus) {
       console.log("[smsdev-webhook] No status found in payload");
       return new Response(
@@ -101,7 +116,7 @@ Deno.serve(async (req) => {
     // Map SMSDEV status to our internal status
     const normalizedStatus = rawStatus.toString().toUpperCase();
     const mappedStatus = STATUS_MAP[normalizedStatus] || STATUS_MAP[rawStatus] || "pending";
-    
+
     console.log(`[smsdev-webhook] Processing message ${messageId}: ${rawStatus} -> ${mappedStatus}`);
 
     // Build update data
@@ -121,7 +136,7 @@ Deno.serve(async (req) => {
       }
     } else if (mappedStatus === "failed") {
       // Extract error description from multiple possible fields
-      const errorDescription = body.descricao || body.description || 
+      const errorDescription = body.descricao || body.description ||
         `Falha no envio (código: ${rawStatus})`;
       updateData.error_message = errorDescription;
     }
@@ -148,8 +163,8 @@ Deno.serve(async (req) => {
     console.log(`[smsdev-webhook] Message ${messageId} updated to ${mappedStatus}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message_id: messageId,
         status: mappedStatus,
         updated: data?.length || 0

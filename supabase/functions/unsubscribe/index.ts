@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       generateHtmlPage(
-        "Descadastro Confirmado", 
+        "Descadastro Confirmado",
         `${contact.nome}, você foi descadastrado(a) com sucesso e não receberá mais nossas comunicações.`,
         true
       ),

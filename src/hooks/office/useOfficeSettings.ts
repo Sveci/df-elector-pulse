@@ -12,7 +12,7 @@ export function useOfficeSettings() {
 
 export function useUpdateOfficeSettings() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (updates: Partial<OfficeSettings>) =>
       updateSettings(updates),

@@ -11,10 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import {
-  Loader2, 
-  CheckCircle2, 
+  Loader2,
+  CheckCircle2,
   AlertCircle,
-  ClipboardList 
+  ClipboardList
 } from "lucide-react";
 import { useSurvey, useSurveyQuestions, useSubmitSurveyResponse } from "@/hooks/surveys/useSurveys";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,10 +69,10 @@ export default function SurveyPublicForm() {
   useEffect(() => {
     const fetchReferrer = async () => {
       if (!refToken) return;
-      
+
       const { data } = await supabase
         .rpc("get_leader_by_affiliate_token", { _token: refToken });
-      
+
       if (data && data.length > 0) {
         setReferrerLeaderId(data[0].id);
       }
@@ -98,9 +98,9 @@ export default function SurveyPublicForm() {
 
       // Check if it's a leader
       const { data: leaderData } = await supabase
-        .rpc("get_leader_by_phone_or_email", { 
-          _phone: normalizedPhone, 
-          _email: registration.email 
+        .rpc("get_leader_by_phone_or_email", {
+          _phone: normalizedPhone,
+          _email: registration.email
         });
 
       if (leaderData) {
@@ -142,7 +142,7 @@ export default function SurveyPublicForm() {
     // Validate required questions
     const requiredQuestions = questions?.filter(q => q.obrigatoria) || [];
     const missingAnswers = requiredQuestions.filter(q => !answers[q.id]);
-    
+
     if (missingAnswers.length > 0) {
       toast.error("Por favor, responda todas as perguntas obrigatórias");
       return;
@@ -274,11 +274,11 @@ export default function SurveyPublicForm() {
                 <LocationSelect
                   value={registration.cidadeId}
                   localidadeValue={registration.localidade}
-                  onLocationChange={({ cidadeId, localidade }) => 
-                    setRegistration({ 
-                      ...registration, 
-                      cidadeId: cidadeId || "", 
-                      localidade: localidade || "" 
+                  onLocationChange={({ cidadeId, localidade }) =>
+                    setRegistration({
+                      ...registration,
+                      cidadeId: cidadeId || "",
+                      localidade: localidade || ""
                     })
                   }
                   required
@@ -288,12 +288,12 @@ export default function SurveyPublicForm() {
                   <Checkbox
                     id="lgpd"
                     checked={registration.lgpdConsent}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       setRegistration({ ...registration, lgpdConsent: checked as boolean })
                     }
                   />
                   <Label htmlFor="lgpd" className="text-sm leading-relaxed">
-                    Concordo com o tratamento dos meus dados pessoais conforme a LGPD para 
+                    Concordo com o tratamento dos meus dados pessoais conforme a LGPD para
                     fins de pesquisa e comunicação.
                   </Label>
                 </div>
@@ -313,7 +313,7 @@ export default function SurveyPublicForm() {
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground">
-                  Olá, <strong>{registration.nome.split(" ")[0]}</strong>! 
+                  Olá, <strong>{registration.nome.split(" ")[0]}</strong>!
                   Responda as perguntas abaixo. Sua opinião é muito importante.
                 </p>
               </CardContent>
@@ -422,9 +422,9 @@ export default function SurveyPublicForm() {
               </Card>
             ))}
 
-            <Button 
-              onClick={handleSubmitAnswers} 
-              className="w-full" 
+            <Button
+              onClick={handleSubmitAnswers}
+              className="w-full"
               size="lg"
               disabled={isSubmitting}
             >

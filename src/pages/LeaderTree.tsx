@@ -7,9 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  useCoordinators, 
-  useLeaderTree, 
+import {
+  useCoordinators,
+  useLeaderTree,
   useDemoteCoordinator,
   useSearchLeaders,
   LeaderSearchResult
@@ -114,15 +114,15 @@ export default function LeaderTree() {
   // Original coordinator filter (when not searching)
   const filteredCoordinators = coordinators?.filter((coordinator) => {
     if (!searchTerm.trim()) return true;
-    
+
     const search = normalizeString(searchTerm.trim());
     const searchDigits = searchTerm.replace(/\D/g, "");
-    
+
     const matchesName = normalizeString(coordinator.nome_completo || "").includes(search);
     const matchesEmail = (coordinator.email || "").toLowerCase().includes(search);
-    const matchesPhone = searchDigits.length >= 4 && 
+    const matchesPhone = searchDigits.length >= 4 &&
       coordinator.telefone?.replace(/\D/g, "").includes(searchDigits);
-    
+
     return matchesName || matchesEmail || matchesPhone;
   });
 
@@ -280,7 +280,7 @@ export default function LeaderTree() {
                       })}
                     </div>
                   )}
-                  
+
                   {/* Líderes encontrados */}
                   {searchedLeaders.length > 0 && (
                     <div className="space-y-2">
@@ -312,8 +312,8 @@ export default function LeaderTree() {
                 <div className="flex flex-col items-center justify-center h-32 text-muted-foreground p-4">
                   <Search className="h-8 w-8 mb-2 opacity-50" />
                   <p className="text-sm text-center">Nenhum líder encontrado</p>
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     size="sm"
                     onClick={() => setSearchTerm("")}
                   >
@@ -324,8 +324,8 @@ export default function LeaderTree() {
                 <div className="flex flex-col items-center justify-center h-32 text-muted-foreground p-4">
                   <Crown className="h-8 w-8 mb-2 opacity-50" />
                   <p className="text-sm text-center">Nenhum coordenador cadastrado</p>
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     className="mt-2"
                     onClick={() => setShowPromoteDialog(true)}
                   >
@@ -422,7 +422,7 @@ export default function LeaderTree() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDemote}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

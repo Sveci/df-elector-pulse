@@ -23,7 +23,7 @@ export function AddToCalendarButton({ event, className }: AddToCalendarButtonPro
     try {
       // Criar datas de início e fim (duração padrão de 2 horas)
       const { startDate, endDate } = createEventDates(event.date, event.time, 2);
-      
+
       // Preparar dados do evento para o calendário
       const calendarEvent: CalendarEventData = {
         title: event.name,
@@ -34,15 +34,15 @@ export function AddToCalendarButton({ event, className }: AddToCalendarButtonPro
         endDate,
         uid: event.slug ? `evento-${event.slug}@eleitor360.ai` : undefined,
       };
-      
+
       // Gerar nome do arquivo
-      const filename = event.slug 
-        ? `evento-${event.slug}` 
+      const filename = event.slug
+        ? `evento-${event.slug}`
         : `evento-${event.date}`;
-      
+
       // Fazer download do arquivo .ics
       downloadCalendarEvent(calendarEvent, filename);
-      
+
       toast({
         title: "Evento salvo!",
         description: "O arquivo do calendário foi baixado. Abra-o para adicionar ao seu calendário.",

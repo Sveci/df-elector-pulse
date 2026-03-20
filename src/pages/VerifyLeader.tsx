@@ -42,7 +42,7 @@ export default function VerifyLeader() {
           const verificationResult = data as unknown as VerificationResult;
           console.log("[VerifyLeader] Resultado da verificação:", verificationResult);
           setResult(verificationResult);
-          
+
           // Após verificação bem-sucedida, chamar edge function para enviar links de afiliado
           if (verificationResult.success && !verificationResult.already_verified && verificationResult.leader_id) {
             console.log("[VerifyLeader] Líder verificado! Chamando send-leader-affiliate-links para:", verificationResult.leader_id);

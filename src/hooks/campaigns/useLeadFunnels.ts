@@ -70,7 +70,7 @@ export function useLeadFunnelBySlug(slug: string | undefined) {
     queryKey: ['lead_funnel', slug],
     queryFn: async () => {
       if (!slug) return null;
-      
+
       const { data, error } = await supabase
         .from('lead_funnels')
         .select('*')
@@ -95,7 +95,7 @@ export function useCreateFunnel() {
       if (!slug) {
         const { data: slugData, error: slugError } = await supabase
           .rpc('generate_funnel_slug', { base_name: data.nome });
-        
+
         if (slugError) throw slugError;
         slug = slugData;
       }
@@ -169,7 +169,7 @@ export function useDuplicateFunnel() {
       // Generate new slug
       const { data: slug, error: slugError } = await supabase
         .rpc('generate_funnel_slug', { base_name: funnel.nome + ' (Cópia)' });
-      
+
       if (slugError) throw slugError;
 
       const { data: newFunnel, error } = await supabase
@@ -249,9 +249,9 @@ export function useIncrementFunnelMetric() {
   return useMutation({
     mutationFn: async ({ funnelId, metric }: { funnelId: string; metric: 'views' | 'leads' | 'downloads' }) => {
       const { error } = await supabase
-        .rpc('increment_funnel_metric', { 
-          _funnel_id: funnelId, 
-          _metric: metric 
+        .rpc('increment_funnel_metric', {
+          _funnel_id: funnelId,
+          _metric: metric
         });
 
       if (error) throw error;

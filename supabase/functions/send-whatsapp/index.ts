@@ -74,23 +74,23 @@ async function generateMessageVariation(
   variables: Record<string, string>
 ): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  
+
   const filledMessage = replaceTemplateVariables(baseMessage, variables);
-  
+
   if (!LOVABLE_API_KEY) {
     console.log("[send-whatsapp] LOVABLE_API_KEY não configurada, usando template original");
     return filledMessage;
   }
-  
+
   try {
     const nome = variables.nome || variables.name || "Amigo(a)";
     const codigo = variables.codigo || variables.code || "";
-    
+
     // Extract URLs/links from the message to preserve them exactly
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const urls = filledMessage.match(urlRegex) || [];
     const urlPlaceholders = urls.map((url, i) => `[[URL_${i}]]`);
-    
+
     let messageForAI = filledMessage;
     urls.forEach((url, i) => {
       messageForAI = messageForAI.replace(url, urlPlaceholders[i]);
@@ -117,7 +117,7 @@ REGRAS OBRIGATÓRIAS:
 Gere UMA variação criativa mantendo a essência. Responda APENAS com a mensagem, sem explicações:`;
 
     console.log("[send-whatsapp] Gerando variação com IA...");
-    
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -139,7 +139,7 @@ Gere UMA variação criativa mantendo a essência. Responda APENAS com a mensage
 
     const data = await response.json();
     const variation = data.choices?.[0]?.message?.content?.trim();
-    
+
     if (variation && variation.length > 20) {
       // Restore original URLs back into the variation
       let finalVariation = variation;
@@ -149,7 +149,7 @@ Gere UMA variação criativa mantendo a essência. Responda APENAS com a mensage
       console.log("[send-whatsapp] Variação gerada com IA com sucesso");
       return finalVariation;
     }
-    
+
     console.log("[send-whatsapp] Variação vazia ou muito curta, usando original");
     return filledMessage;
   } catch (error) {
@@ -237,7 +237,7 @@ async function sendViaZapi(
   }
 
   const zapiUrl = `https://api.z-api.io/instances/${settings.zapi_instance_id}/token/${settings.zapi_token}/send-text`;
-  
+
   const response = await fetch(zapiUrl, {
     method: "POST",
     headers: {
@@ -251,17 +251,17 @@ async function sendViaZapi(
   });
 
   const data = await response.json();
-  
+
   if (!response.ok) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: data.error || data.message || "Erro ao enviar via Z-API",
       providerUsed: 'zapi'
     };
   }
 
-  return { 
-    success: true, 
+  return {
+    success: true,
     messageId: data.zapiMessageId || data.messageId,
     providerUsed: 'zapi'
   };
@@ -274,18 +274,18 @@ async function sendViaMetaCloud(
   metaTemplate?: MetaTemplatePayload
 ): Promise<SendResult> {
   const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-  
+
   if (!accessToken) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: "META_WA_ACCESS_TOKEN não está configurado nos secrets",
       providerUsed: 'meta_cloud'
     };
   }
 
   if (!settings.meta_cloud_phone_number_id) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: "Phone Number ID não configurado",
       providerUsed: 'meta_cloud'
     };
@@ -337,19 +337,19 @@ async function sendViaMetaCloud(
   });
 
   const data = await response.json();
-  
+
   console.log("[send-whatsapp] Meta Cloud API response:", JSON.stringify(data));
 
   if (!response.ok) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: data.error?.message || "Erro ao enviar via Meta Cloud API",
       providerUsed: 'meta_cloud'
     };
   }
 
-  return { 
-    success: true, 
+  return {
+    success: true,
     messageId: data.messages?.[0]?.id,
     providerUsed: 'meta_cloud'
   };
@@ -357,13 +357,13 @@ async function sendViaMetaCloud(
 
 function isPhoneInWhitelist(phone: string, whitelist: string[] | null): boolean {
   if (!whitelist || whitelist.length === 0) return false;
-  
+
   const cleanPhone = phone.replace(/\D/g, "");
-  
+
   return whitelist.some(whitelistedPhone => {
     const cleanWhitelisted = whitelistedPhone.replace(/\D/g, "");
-    return cleanPhone === cleanWhitelisted || 
-           cleanPhone.endsWith(cleanWhitelisted) || 
+    return cleanPhone === cleanWhitelisted ||
+           cleanPhone.endsWith(cleanWhitelisted) ||
            cleanWhitelisted.endsWith(cleanPhone);
   });
 }
@@ -380,7 +380,7 @@ async function resolveTenantId(
   // 2. Try to resolve from phone → contact → tenant_id
   if (phone) {
     const cleanPhone = phone.replace(/\D/g, "");
-    let phoneVariants = [cleanPhone];
+    const phoneVariants = [cleanPhone];
     if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
       phoneVariants.push("55" + cleanPhone);
     }
@@ -504,19 +504,19 @@ Deno.serve(async (req) => {
 
     // ============ DETERMINE PROVIDER ============
     let activeProvider: 'zapi' | 'meta_cloud' = (providerOverride || typedSettings.whatsapp_provider_active || 'zapi') as 'zapi' | 'meta_cloud';
-    
+
     // If legacy dialog360 value, fall back to zapi
     if ((activeProvider as string) === 'dialog360') {
       activeProvider = 'zapi';
     }
-    
+
     if (activeProvider === 'meta_cloud') {
       if (!typedSettings.meta_cloud_enabled) {
         console.log("[send-whatsapp] Meta Cloud disabled, falling back to Z-API");
         activeProvider = 'zapi';
       }
     }
-    
+
     if (activeProvider === 'zapi') {
       if (!typedSettings.zapi_enabled) {
         return new Response(
@@ -532,10 +532,10 @@ Deno.serve(async (req) => {
     if (activeProvider === 'meta_cloud' && typedSettings.meta_cloud_test_mode) {
       const cleanPhone = phone.replace(/\D/g, "");
       const isWhitelisted = isPhoneInWhitelist(cleanPhone, typedSettings.meta_cloud_whitelist);
-      
+
       if (!isWhitelisted) {
         console.log(`[send-whatsapp] Phone ${cleanPhone.substring(0, 6)}... not in whitelist, test mode active`);
-        
+
         if (typedSettings.meta_cloud_fallback_enabled && typedSettings.zapi_enabled) {
           console.log("[send-whatsapp] Using Z-API as fallback (test mode restriction)");
           activeProvider = 'zapi';
@@ -552,22 +552,22 @@ Deno.serve(async (req) => {
     // ============ CHECK AUTO MESSAGE CATEGORY ============
     const VERIFICATION_TEMPLATES = ['verificacao-cadastro', 'verificacao-codigo', 'verificacao-confirmada', 'verificacao-sms-fallback', 'link-indicacao-sms-fallback'];
     const isVerificationTemplate = templateSlug && VERIFICATION_TEMPLATES.includes(templateSlug);
-    
+
     let effectiveBypass = bypassAutoCheck || false;
     if (isVerificationTemplate && !effectiveBypass) {
       let verSettingsQuery = supabase
         .from("integrations_settings")
         .select("verification_method");
       if (tenantId) verSettingsQuery = verSettingsQuery.eq("tenant_id", tenantId);
-      
+
       const { data: verSettings } = await verSettingsQuery.limit(1).single();
-      
+
       if (verSettings?.verification_method === 'whatsapp_consent') {
         effectiveBypass = true;
         console.log(`[send-whatsapp] Auto-bypassing check for verification template '${templateSlug}' (verification_method=whatsapp_consent)`);
       }
     }
-    
+
     if (templateSlug && !effectiveBypass) {
       const settingColumn = TEMPLATE_SETTINGS_MAP[templateSlug];
       if (settingColumn) {
@@ -575,8 +575,8 @@ Deno.serve(async (req) => {
         if (isEnabled === false) {
           console.log(`[send-whatsapp] Auto message '${templateSlug}' is disabled`);
           return new Response(
-            JSON.stringify({ 
-              success: false, 
+            JSON.stringify({
+              success: false,
               error: `Mensagem automática '${templateSlug}' está desabilitada`,
               disabled: true
             }),
@@ -600,7 +600,7 @@ Deno.serve(async (req) => {
 
     if (templateSlug) {
       console.log(`[send-whatsapp] Loading template: ${templateSlug}`);
-      
+
       let templateQuery = supabase
         .from("whatsapp_templates")
         .select("mensagem, is_active")
@@ -629,7 +629,7 @@ Deno.serve(async (req) => {
       if (ANTI_SPAM_TEMPLATES.includes(templateSlug) && variables) {
         finalMessage = await generateMessageVariation(template.mensagem, variables);
       } else {
-        finalMessage = variables 
+        finalMessage = variables
           ? replaceTemplateVariables(template.mensagem, variables)
           : template.mensagem;
       }
@@ -670,10 +670,10 @@ Deno.serve(async (req) => {
 
     // ============ SEND MESSAGE ============
     let result: SendResult;
-    
+
     if (activeProvider === 'meta_cloud') {
       result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate);
-      
+
       // Fallback to Z-API if Meta Cloud fails and fallback is enabled
       if (!result.success && typedSettings.meta_cloud_fallback_enabled && typedSettings.zapi_enabled) {
         console.log(`[send-whatsapp] Meta Cloud failed: ${result.error}, trying Z-API fallback`);
@@ -711,8 +711,8 @@ Deno.serve(async (req) => {
 
     if (!result.success) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: result.error,
           providerUsed: result.providerUsed
         }),
@@ -724,9 +724,9 @@ Deno.serve(async (req) => {
     if (imageUrl && result.success && activeProvider === 'zapi') {
       console.log(`[send-whatsapp] Sending image: ${imageUrl}`);
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       const zapiImageUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-image`;
-      
+
       try {
         await fetch(zapiImageUrl, {
           method: "POST",
@@ -745,8 +745,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         messageId: result.messageId,
         providerUsed: result.providerUsed,
         recordId: messageRecord?.id

@@ -19,11 +19,11 @@ interface MapAnalysisPanelProps {
   totalConnections: number;
 }
 
-export function MapAnalysisPanel({ 
-  cities, 
-  totalLeaders, 
+export function MapAnalysisPanel({
+  cities,
+  totalLeaders,
   totalContacts,
-  totalConnections 
+  totalConnections
 }: MapAnalysisPanelProps) {
   const { isDemoMode } = useDemoMask();
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -111,7 +111,7 @@ export function MapAnalysisPanel({
       .trim();
 
     const lines = doc.splitTextToSize(plainText, 180);
-    
+
     for (const line of lines) {
       if (yPos > 280) {
         doc.addPage();
@@ -153,7 +153,7 @@ export function MapAnalysisPanel({
 
       const regioesSemLideres = cities.filter(c => c.leaders_count === 0 && c.contacts_count > 0);
       const regioesSemCobertura = cities.filter(c => c.leaders_count === 0 && c.contacts_count === 0);
-      
+
       const mediaContatos = totalLeaders > 0 ? Math.round(totalContacts / totalLeaders) : 0;
       const regioesAbaixoMedia = regioesComDados.filter(r => r.contatos < mediaContatos && r.contatos > 0);
 
@@ -227,7 +227,7 @@ Seja direto, use dados específicos dos números fornecidos, e priorize recomend
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        
+
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
@@ -285,9 +285,9 @@ Seja direto, use dados específicos dos números fornecidos, e priorize recomend
           </CardTitle>
           <div className="flex items-center gap-2">
             {analysis && !isLoading && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={downloadPdf}
                 className="gap-2"
               >
@@ -295,9 +295,9 @@ Seja direto, use dados específicos dos números fornecidos, e priorize recomend
                 PDF
               </Button>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={generateAnalysis}
               disabled={isLoading}
               className="gap-2"
@@ -350,9 +350,9 @@ Seja direto, use dados específicos dos números fornecidos, e priorize recomend
           <div className="text-center py-6 text-destructive">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
             <p className="text-sm">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={generateAnalysis}
               className="mt-3"
             >

@@ -45,7 +45,7 @@ const calculateTrend = (lastActivity: string | null, points: number): "up" | "do
     const daysSinceActivity = Math.floor(
       (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     if (daysSinceActivity <= 15 && points > 0) {
       return "up";
     } else if (daysSinceActivity > 30) {
@@ -69,7 +69,7 @@ export function useLeadersRanking(options?: UseLeadersRankingOptions) {
         .rpc("get_leaders_ranking_count", {
           p_region: region && region !== 'all' ? region : null
         });
-      
+
       if (countError) throw countError;
 
       // Buscar dados paginados
@@ -79,7 +79,7 @@ export function useLeadersRanking(options?: UseLeadersRankingOptions) {
           p_offset: offset,
           p_region: region && region !== 'all' ? region : null
         });
-      
+
       if (error) throw error;
 
       // Processar dados
@@ -106,7 +106,7 @@ export function useLeadersRanking(options?: UseLeadersRankingOptions) {
       if (period && period !== 'all' && period !== 'current') {
         const dateFrom = getDateFilter(period);
         if (dateFrom) {
-          rankings = rankings.filter(r => 
+          rankings = rankings.filter(r =>
             r.lastActivity && new Date(r.lastActivity) >= new Date(dateFrom)
           );
         }

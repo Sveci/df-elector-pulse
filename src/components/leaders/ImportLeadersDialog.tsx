@@ -21,7 +21,7 @@ export function ImportLeadersDialog() {
   const [parsedData, setParsedData] = useState<LeaderImportRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [importResult, setImportResult] = useState<any>(null);
-  
+
   const importMutation = useImportLeaders();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +31,7 @@ export function ImportLeadersDialog() {
     // Validar extensão
     const validExtensions = ['.xlsx', '.xls'];
     const fileExtension = selectedFile.name.toLowerCase().slice(selectedFile.name.lastIndexOf('.'));
-    
+
     if (!validExtensions.includes(fileExtension)) {
       setValidationErrors(['Por favor, selecione um arquivo Excel (.xlsx ou .xls)']);
       return;
@@ -63,7 +63,7 @@ export function ImportLeadersDialog() {
     try {
       const result = await importMutation.mutateAsync(parsedData);
       setImportResult(result);
-      
+
       // Se não houver erros, limpar e fechar após 2 segundos
       if (result.errors.length === 0) {
         setTimeout(() => {
@@ -108,9 +108,9 @@ export function ImportLeadersDialog() {
             <FileSpreadsheet className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>Baixe o modelo de planilha para preencher os dados corretamente</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={downloadTemplate}
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -238,7 +238,7 @@ export function ImportLeadersDialog() {
               {importResult ? 'Fechar' : 'Cancelar'}
             </Button>
             {parsedData.length > 0 && !importResult && (
-              <Button 
+              <Button
                 onClick={handleImport}
                 disabled={importMutation.isPending || validationErrors.length > 0}
               >

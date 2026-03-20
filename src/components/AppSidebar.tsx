@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOrganization } from "@/hooks/useOrganization";
 import { useDemoMask } from "@/contexts/DemoModeContext";
-import { 
+import {
   LayoutDashboard, Users, UserCheck, Calendar, Target, FolderKanban, Bot, Settings, Shield,
   Building, LogOut, UserPlus, List, History as HistoryIcon, MessageSquare, Mail, HelpCircle,
   Ticket, Map, ClipboardList, Smartphone, GitBranch, Clock, CalendarDays, Globe,
@@ -138,15 +138,15 @@ export const AppSidebar = memo(function AppSidebar() {
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
   }, [location.pathname, isMobile, setOpenMobile]);
-  
+
   const renderMenuItem = (item: MenuItem | SubMenuItem) => {
     const active = currentPath === item.url;
 
     const content = (
       <SidebarMenuButton asChild isActive={active}>
-        <NavLink 
-          to={item.url} 
-          end 
+        <NavLink
+          to={item.url}
+          end
           className={`flex items-center ${isCollapsed ? 'justify-center px-2.5 py-3' : 'px-3 py-2'} rounded-lg text-sm font-medium transition-colors w-full`}
         >
           <item.icon className={`${isCollapsed ? 'h-6 w-6' : 'h-5 w-5'} shrink-0`} />
@@ -315,7 +315,7 @@ export const AppSidebar = memo(function AppSidebar() {
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button 
+                <button
                   onClick={() => logout()}
                   className="text-red-400 hover:bg-red-500/10 w-full flex items-center justify-center py-3 rounded-lg text-sm font-medium transition-colors"
                 >
@@ -325,7 +325,7 @@ export const AppSidebar = memo(function AppSidebar() {
               <TooltipContent side="right" className="font-medium">Sair</TooltipContent>
             </Tooltip>
           ) : (
-            <button 
+            <button
               onClick={() => logout()}
               className="text-red-400 hover:bg-red-500/10 w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors"
             >

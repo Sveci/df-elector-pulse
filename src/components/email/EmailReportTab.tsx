@@ -19,12 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  Mail, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  Search, 
+import {
+  Mail,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Search,
   Download,
   TrendingUp,
   TrendingDown,
@@ -50,7 +50,7 @@ export function EmailReportTab() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: templates, isLoading: templatesLoading } = useEmailTemplates();
-  
+
   const { data: reportData, isLoading: reportLoading } = useEmailReport({
     templateId: selectedTemplateId || undefined,
     status: statusFilter,
@@ -63,7 +63,7 @@ export function EmailReportTab() {
     selectedTemplateId || undefined
   );
 
-  const selectedTemplate = useMemo(() => 
+  const selectedTemplate = useMemo(() =>
     templates?.find(t => t.id === selectedTemplateId),
     [templates, selectedTemplateId]
   );
@@ -74,7 +74,7 @@ export function EmailReportTab() {
     return reportData.slice(start, start + ITEMS_PER_PAGE);
   }, [reportData, currentPage]);
 
-  const totalPages = useMemo(() => 
+  const totalPages = useMemo(() =>
     Math.ceil((reportData?.length || 0) / ITEMS_PER_PAGE),
     [reportData]
   );
@@ -112,8 +112,8 @@ export function EmailReportTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Template *</Label>
-              <Select 
-                value={selectedTemplateId} 
+              <Select
+                value={selectedTemplateId}
                 onValueChange={(v) => {
                   setSelectedTemplateId(v);
                   setCurrentPage(1);
@@ -338,7 +338,7 @@ export function EmailReportTab() {
                             </div>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {item.sent_at 
+                            {item.sent_at
                               ? format(new Date(item.sent_at), "dd/MM/yy HH:mm", { locale: ptBR })
                               : format(new Date(item.created_at), "dd/MM/yy HH:mm", { locale: ptBR })
                             }

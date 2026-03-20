@@ -117,7 +117,7 @@ export function useEmailReport(filters: EmailReportFilters) {
       // Apply search filter client-side
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        return transformedData.filter(item => 
+        return transformedData.filter(item =>
           item.to_email?.toLowerCase().includes(searchLower) ||
           item.to_name?.toLowerCase().includes(searchLower) ||
           item.leader_nome?.toLowerCase().includes(searchLower) ||

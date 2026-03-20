@@ -203,9 +203,9 @@ export function SMSDetailsDialog({ message, open, onOpenChange }: SMSDetailsDial
                   <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
                     <Timer className="h-4 w-4" />
                     <span>
-                      Próxima tentativa {formatDistanceToNow(new Date(message.next_retry_at), { 
-                        addSuffix: true, 
-                        locale: ptBR 
+                      Próxima tentativa {formatDistanceToNow(new Date(message.next_retry_at), {
+                        addSuffix: true,
+                        locale: ptBR
                       })}
                     </span>
                   </div>
@@ -234,8 +234,8 @@ export function SMSDetailsDialog({ message, open, onOpenChange }: SMSDetailsDial
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {message.retry_history.map((entry, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="flex items-center justify-between text-xs bg-muted p-2 rounded"
                     >
                       <div className="flex items-center gap-2">

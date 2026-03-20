@@ -21,14 +21,14 @@ type VerificationMethod = 'link' | 'whatsapp_consent' | 'whatsapp_meta_cloud';
 export function VerificationSettingsCard() {
   const { data: settings, isLoading } = useIntegrationsSettings();
   const updateSettings = useUpdateIntegrationsSettings();
-  
+
   const { data: zapiStatus, isLoading: isCheckingZapi } = useZapiConnectionStatus(
     settings?.zapi_instance_id ?? null,
     settings?.zapi_token ?? null,
     settings?.zapi_client_token ?? null,
     settings?.zapi_enabled ?? false
   );
-  
+
   const [verificationMethod, setVerificationMethod] = useState<VerificationMethod>('link');
   const [verificationWaEnabled, setVerificationWaEnabled] = useState(false);
   const [verificationWaTestMode, setVerificationWaTestMode] = useState(true);
@@ -37,7 +37,7 @@ export function VerificationSettingsCard() {
   const [verificationWaZapiPhone, setVerificationWaZapiPhone] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isFetchingMetaPhone, setIsFetchingMetaPhone] = useState(false);
-  
+
   const isFallbackActive = settings?.verification_fallback_active ?? false;
   const isZapiConnected = zapiStatus?.connected ?? false;
   const isMetaCloudMethod = verificationMethod === 'whatsapp_meta_cloud';
@@ -62,7 +62,7 @@ export function VerificationSettingsCard() {
         setIsFetchingMetaPhone(true);
         try {
           const { data, error } = await supabase.functions.invoke('test-meta-cloud-connection', {
-            body: { 
+            body: {
               phoneNumberId: settings.meta_cloud_phone_number_id,
               apiVersion: settings.meta_cloud_api_version || 'v21.0'
             }
@@ -161,7 +161,7 @@ export function VerificationSettingsCard() {
           </div>
           <div className="flex items-center gap-3">
             {getActiveBadge()}
-            
+
             {settings?.zapi_enabled && (
               <div className="flex items-center gap-1.5 text-xs">
                 {isCheckingZapi ? (
@@ -191,7 +191,7 @@ export function VerificationSettingsCard() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {/* Toggle Master */}
         <div className="flex items-center justify-between py-3 border-b">
           <div>
@@ -200,19 +200,19 @@ export function VerificationSettingsCard() {
               Permite confirmar cadastro respondendo "SIM" no WhatsApp
             </p>
           </div>
-          <Switch 
+          <Switch
             checked={verificationWaEnabled}
             onCheckedChange={setVerificationWaEnabled}
           />
         </div>
-        
+
         {verificationWaEnabled && (
           <>
             {/* Método de Verificação */}
             <div className="space-y-3">
               <Label>Método de Verificação Ativo</Label>
-              <RadioGroup 
-                value={verificationMethod} 
+              <RadioGroup
+                value={verificationMethod}
                 onValueChange={(v) => setVerificationMethod(v as VerificationMethod)}
               >
                 <div className="flex items-center space-x-2">
@@ -239,8 +239,8 @@ export function VerificationSettingsCard() {
               {isAnyWhatsAppMethod && (
                 <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2 border border-border/50">
                   <strong>Fallback automático:</strong>{" "}
-                  {isMetaCloudMethod 
-                    ? "Cloud API → Z-API → SMS" 
+                  {isMetaCloudMethod
+                    ? "Cloud API → Z-API → SMS"
                     : "Z-API → SMS"
                   }
                 </div>
@@ -257,12 +257,12 @@ export function VerificationSettingsCard() {
                       Apenas admins e telefones na whitelist podem usar verificação WhatsApp
                     </p>
                   </div>
-                  <Switch 
+                  <Switch
                     checked={verificationWaTestMode}
                     onCheckedChange={setVerificationWaTestMode}
                   />
                 </div>
-                
+
                 {/* Whitelist (se modo teste) */}
                 {verificationWaTestMode && (
                   <div className="space-y-2">

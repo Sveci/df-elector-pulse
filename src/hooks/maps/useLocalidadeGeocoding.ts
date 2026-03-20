@@ -98,7 +98,7 @@ async function fetchMunicipiosByUF(uf: string): Promise<Map<string, GeocodedLoca
     const geoResponse = await fetch(
       `https://servicodados.ibge.gov.br/api/v3/malhas/estados/${uf}?formato=application/vnd.geo+json&qualidade=minima&intrarregiao=municipio`
     );
-    
+
     const idToCoord = new Map<string, { lat: number; lng: number }>();
     if (geoResponse.ok) {
       const geoJson = await geoResponse.json();
@@ -119,7 +119,7 @@ async function fetchMunicipiosByUF(uf: string): Promise<Map<string, GeocodedLoca
       if (!munNome) continue;
 
       const normalized = normalizeName(munNome);
-      
+
       // Priority 1: Known coordinates (most accurate)
       const known = KNOWN_CITIES[normalized];
       if (known) {

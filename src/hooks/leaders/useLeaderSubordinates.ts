@@ -59,7 +59,7 @@ export function useLeadersSubordinatesCounts(leaderIds: string[]) {
     queryKey: ["leaders_subordinates_counts", leaderIds],
     queryFn: async (): Promise<Record<string, number>> => {
       if (!leaderIds.length) return {};
-      
+
       const { data, error } = await supabase
         .from("lideres")
         .select("parent_leader_id")
@@ -67,16 +67,16 @@ export function useLeadersSubordinatesCounts(leaderIds: string[]) {
         .eq("is_active", true);
 
       if (error) throw error;
-      
+
       const counts: Record<string, number> = {};
       leaderIds.forEach(id => counts[id] = 0);
-      
+
       data?.forEach(item => {
         if (item.parent_leader_id) {
           counts[item.parent_leader_id] = (counts[item.parent_leader_id] || 0) + 1;
         }
       });
-      
+
       return counts;
     },
     enabled: leaderIds.length > 0,

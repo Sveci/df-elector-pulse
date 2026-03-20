@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     // Use Apify actor to scrape followers
     const actorId = "scraping_solutions~instagram-scraper-followers-following-no-cookies";
     const encodedActorId = actorId.replace("~", "~");
-    
+
     const actorInput = {
       usernames: [username],
       resultsType: "followers",

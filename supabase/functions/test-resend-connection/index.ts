@@ -22,7 +22,7 @@ serve(async (req) => {
     }
 
     console.log('Testing Resend connection...');
-    
+
     // Test the API key by making a request to the Resend API
     // We'll try to get API keys info (lightweight endpoint)
     const response = await fetch('https://api.resend.com/api-keys', {
@@ -57,8 +57,8 @@ serve(async (req) => {
       if (response.status === 401 || response.status === 403 || (data.message && data.message.includes('restricted'))) {
         console.log('Resend API key is valid but restricted - connection successful');
         return new Response(
-          JSON.stringify({ 
-            success: true, 
+          JSON.stringify({
+            success: true,
             connected: true,
             message: 'API Key válida (restrita para envio de emails)'
           }),
@@ -68,10 +68,10 @@ serve(async (req) => {
 
       console.error('Resend API error:', data);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: data.message || 'API Key inválida',
-          connected: false 
+          connected: false
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -80,8 +80,8 @@ serve(async (req) => {
     console.log('Resend connection successful');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         connected: true,
         message: 'Conexão com Resend estabelecida com sucesso'
       }),
@@ -91,10 +91,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error testing Resend connection:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: (error as Error).message || 'Erro desconhecido',
-        connected: false 
+        connected: false
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

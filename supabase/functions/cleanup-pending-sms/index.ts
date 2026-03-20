@@ -43,10 +43,10 @@ serve(async (req) => {
 
     if (!orphanedMessages || orphanedMessages.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           message: "Nenhuma mensagem órfã encontrada",
-          processed: 0 
+          processed: 0
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -54,7 +54,7 @@ serve(async (req) => {
 
     // Mark all orphaned messages as failed
     const orphanedIds = orphanedMessages.map(m => m.id);
-    
+
     const { error: updateError } = await supabase
       .from("sms_messages")
       .update({

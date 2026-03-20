@@ -103,7 +103,7 @@ IMPORTANTE: Retorne APENAS o JSON array, sem markdown, sem code blocks, sem text
     if (!analysisResponse.ok) {
       const errText = await analysisResponse.text();
       console.error("[kb-process] AI analysis error:", errText);
-      
+
       // Fallback: simple chunking by paragraphs
       const chunks = simpleChunk(content);
       await saveChunks(supabase, document_id, tenant_id, chunks);

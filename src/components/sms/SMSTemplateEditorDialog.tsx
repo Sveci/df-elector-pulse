@@ -61,9 +61,9 @@ export function SMSTemplateEditorDialog({
   const { data: templates, refetch } = useSMSTemplates();
   const updateTemplate = useUpdateSMSTemplate();
   const createTemplate = useCreateSMSTemplate();
-  
+
   const [detectedVariables, setDetectedVariables] = useState<string[]>([]);
-  
+
   const template = templates?.find((t) => t.id === templateId);
   const isEditing = !!templateId;
 

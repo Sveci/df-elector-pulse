@@ -56,8 +56,8 @@ export function VerificationSummaryCard() {
     return null;
   }
 
-  const verificationRate = stats.total > 0 
-    ? Math.round((stats.verified / stats.total) * 100) 
+  const verificationRate = stats.total > 0
+    ? Math.round((stats.verified / stats.total) * 100)
     : 0;
 
   return (
@@ -81,7 +81,7 @@ export function VerificationSummaryCard() {
               </p>
             </div>
           </div>
-          
+
           <Link to="/sms">
             <Button size="sm" className="gap-2 bg-amber-600 hover:bg-amber-700">
               <MessageSquare className="h-4 w-4" />

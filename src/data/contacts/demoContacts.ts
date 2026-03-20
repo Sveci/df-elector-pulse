@@ -65,7 +65,7 @@ const FUNNEL_NAMES = [
 ];
 
 function seededRandom(seed: number): number {
-  let x = Math.sin(seed) * 10000;
+  const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 

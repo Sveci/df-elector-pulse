@@ -19,8 +19,8 @@ export const InactivityWarning = () => {
   return (
     <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-right-5 fade-in duration-300">
       <Card className={`w-80 shadow-lg border-2 ${
-        isUrgent 
-          ? 'border-destructive bg-destructive/10' 
+        isUrgent
+          ? 'border-destructive bg-destructive/10'
           : 'border-amber-500 bg-amber-500/10'
       }`}>
         <CardContent className="p-4">
@@ -32,7 +32,7 @@ export const InactivityWarning = () => {
                 isUrgent ? 'text-destructive' : 'text-amber-600'
               }`} />
             </div>
-            
+
             <div className="flex-1 space-y-3">
               <div>
                 <h4 className="font-semibold text-sm">Sessão inativa</h4>
@@ -45,8 +45,8 @@ export const InactivityWarning = () => {
                   {formatTime(secondsRemaining)}
                 </p>
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={continueSession}
                 size="sm"
                 className="w-full"

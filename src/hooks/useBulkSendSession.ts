@@ -22,7 +22,7 @@ const EMAIL_SESSION_KEY = "email_bulk_session";
 
 export function useBulkSendSession(channel: "whatsapp" | "email") {
   const sessionKey = channel === "whatsapp" ? WHATSAPP_SESSION_KEY : EMAIL_SESSION_KEY;
-  
+
   const [pendingSession, setPendingSession] = useState<BulkSendSession | null>(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
 

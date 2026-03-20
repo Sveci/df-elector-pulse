@@ -11,7 +11,7 @@ serve(async (req) => {
 
   try {
     const { photo_url, visit_id, minutes_id } = await req.json();
-    
+
     if (!photo_url || !minutes_id) {
       return new Response(JSON.stringify({ error: "photo_url and minutes_id are required" }), {
         status: 400,
@@ -56,7 +56,7 @@ serve(async (req) => {
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, tente novamente em alguns segundos." }), {
           status: 429,
@@ -69,7 +69,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
+
       return new Response(JSON.stringify({ error: "Erro ao transcrever imagem" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

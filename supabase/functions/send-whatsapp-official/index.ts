@@ -128,7 +128,7 @@ serve(async (req) => {
     const isSuccess = !responseText.startsWith('ERRO') && !responseText.includes('erro');
 
     // Log the message to whatsapp_messages table for history
-    const templateMessage = template === 'bemvindo1' 
+    const templateMessage = template === 'bemvindo1'
       ? `[API Oficial] Boas-vindas enviada para ${nome}`
       : `[API Oficial] Verificação enviada para ${nome}`;
 
@@ -167,10 +167,10 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'Message sent successfully',
-        apiResponse: responseText 
+        apiResponse: responseText
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

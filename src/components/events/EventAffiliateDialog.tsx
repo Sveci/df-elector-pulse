@@ -106,12 +106,12 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
 
   const handleDownloadQR = () => {
     if (!qrCodeUrl) return;
-    
+
     const link = document.createElement("a");
     link.download = `qr-evento-${event.slug}.png`;
     link.href = qrCodeUrl;
     link.click();
-    
+
     toast({
       title: "QR Code baixado!",
       description: "O QR Code foi salvo no seu dispositivo."
@@ -151,7 +151,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       pdf.setFont("helvetica", "bold");
       pdf.text(`Links do Evento: ${event.name}`, margin, yPosition);
       yPosition += 10;
-      
+
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       pdf.text(`Total de líderes: ${leaders.length}`, margin, yPosition);
@@ -161,7 +161,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       for (let i = 0; i < leaders.length; i++) {
         const leader = leaders[i];
         const url = generateEventAffiliateUrl(event.slug, leader.affiliate_token!, tenantDomain);
-        
+
         // Verificar se precisa de nova página
         if (yPosition > pageHeight - 80) {
           pdf.addPage();
@@ -182,13 +182,13 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
         pdf.setFontSize(12);
         pdf.setFont("helvetica", "bold");
         pdf.text(`Líder: ${leader.nome_completo}`, textX, yPosition + 5);
-        
+
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         if (leader.cidade) {
           pdf.text(`Cidade: ${leader.cidade.nome}`, textX, yPosition + 12);
         }
-        
+
         pdf.setFontSize(8);
         pdf.setTextColor(100);
         pdf.text(url, textX, yPosition + 20, { maxWidth: pageWidth - textX - margin });
@@ -206,7 +206,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
 
       // Download
       pdf.save(`links-lideres-${event.slug}.pdf`);
-      
+
       toast({
         title: "PDF gerado!",
         description: `PDF com links de ${leaders.length} líderes foi baixado.`
@@ -254,7 +254,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       pdf.setFont("helvetica", "bold");
       pdf.text(`Links do Evento: ${event.name}`, margin, yPosition);
       yPosition += 10;
-      
+
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       pdf.text(`Total de coordenadores: ${coordinators.length}`, margin, yPosition);
@@ -263,7 +263,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       for (let i = 0; i < coordinators.length; i++) {
         const coordinator = coordinators[i];
         const url = generateEventAffiliateUrl(event.slug, coordinator.affiliate_token!, tenantDomain);
-        
+
         if (yPosition > pageHeight - 80) {
           pdf.addPage();
           yPosition = margin;
@@ -280,13 +280,13 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
         pdf.setFontSize(12);
         pdf.setFont("helvetica", "bold");
         pdf.text(`Coordenador: ${coordinator.nome_completo}`, textX, yPosition + 5);
-        
+
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         if (coordinator.cidade) {
           pdf.text(`Cidade: ${coordinator.cidade.nome}`, textX, yPosition + 12);
         }
-        
+
         pdf.setFontSize(8);
         pdf.setTextColor(100);
         pdf.text(url, textX, yPosition + 20, { maxWidth: pageWidth - textX - margin });
@@ -302,7 +302,7 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
       }
 
       pdf.save(`links-coordenadores-${event.slug}.pdf`);
-      
+
       toast({
         title: "PDF gerado!",
         description: `PDF com links de ${coordinators.length} coordenadores foi baixado.`
@@ -336,15 +336,15 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
         <div className="space-y-6">
           <div>
             <p className="text-sm text-muted-foreground mb-4">
-              Selecione o líder que receberá o link personalizado para o evento <strong>{event.name}</strong>. 
+              Selecione o líder que receberá o link personalizado para o evento <strong>{event.name}</strong>.
               As inscrições feitas através deste link serão atribuídas ao líder selecionado.
             </p>
           </div>
 
           <div className="flex gap-2">
-            <Button 
-              onClick={handleGeneratePdfForAll} 
-              variant="outline" 
+            <Button
+              onClick={handleGeneratePdfForAll}
+              variant="outline"
               className="flex-1"
               disabled={isGeneratingPdf}
             >
@@ -354,9 +354,9 @@ export function EventAffiliateDialog({ event, open, onOpenChange }: EventAffilia
           </div>
 
           <div className="flex gap-2">
-            <Button 
-              onClick={handleGeneratePdfForCoordinators} 
-              variant="outline" 
+            <Button
+              onClick={handleGeneratePdfForCoordinators}
+              variant="outline"
               className="flex-1"
               disabled={isGeneratingCoordinatorsPdf}
             >

@@ -1,12 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
-import { 
-  Building2, 
-  Users, 
-  Bot, 
-  CreditCard, 
-  Palette, 
+import {
+  Building2,
+  Users,
+  Bot,
+  CreditCard,
+  Palette,
   Shield,
   Plug,
   ChevronRight,
@@ -204,10 +204,10 @@ const Settings = () => {
         {visibleSections.map((section) => {
           const Icon = section.icon;
           const content = (
-            <Card 
+            <Card
               className={`transition-all ${
-                section.available 
-                  ? "hover:shadow-md hover:border-primary-300 cursor-pointer" 
+                section.available
+                  ? "hover:shadow-md hover:border-primary-300 cursor-pointer"
                   : "opacity-60 cursor-not-allowed"
               }`}
             >
@@ -215,8 +215,8 @@ const Settings = () => {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      section.available 
-                        ? "bg-primary-100 text-primary-600" 
+                      section.available
+                        ? "bg-primary-100 text-primary-600"
                         : "bg-gray-100 text-gray-400"
                     }`}>
                       <Icon className="h-5 w-5" />

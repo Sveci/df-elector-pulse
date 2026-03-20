@@ -35,12 +35,12 @@ export default function AffiliateFormSettings() {
   const updateSettings = useMutation({
     mutationFn: async (updates: { affiliate_form_cover_url?: string | null; affiliate_form_logo_url?: string | null }) => {
       if (!settings?.id) throw new Error("Settings not found");
-      
+
       const { error } = await supabase
         .from("app_settings")
         .update(updates)
         .eq("id", settings.id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,11 +132,11 @@ export default function AffiliateFormSettings() {
 
   const handleRemoveCover = async () => {
     if (!settings?.affiliate_form_cover_url) return;
-    
+
     try {
       const urlParts = settings.affiliate_form_cover_url.split("/");
       const fileName = urlParts[urlParts.length - 1];
-      
+
       await supabase.storage.from("event-covers").remove([fileName]);
       await updateSettings.mutateAsync({ affiliate_form_cover_url: null });
       toast.success("Imagem de capa removida!");
@@ -148,11 +148,11 @@ export default function AffiliateFormSettings() {
 
   const handleRemoveLogo = async () => {
     if (!settings?.affiliate_form_logo_url) return;
-    
+
     try {
       const urlParts = settings.affiliate_form_logo_url.split("/");
       const fileName = urlParts[urlParts.length - 1];
-      
+
       await supabase.storage.from("event-covers").remove([fileName]);
       await updateSettings.mutateAsync({ affiliate_form_logo_url: null });
       toast.success("Logo removida! Será usada a logo padrão.");
@@ -203,8 +203,8 @@ export default function AffiliateFormSettings() {
           <CardContent className="space-y-4">
             {settings?.affiliate_form_cover_url ? (
               <div className="relative">
-                <img 
-                  src={settings.affiliate_form_cover_url} 
+                <img
+                  src={settings.affiliate_form_cover_url}
                   alt="Capa do formulário"
                   className="w-full h-48 object-cover rounded-lg border"
                 />
@@ -276,8 +276,8 @@ export default function AffiliateFormSettings() {
               {/* Preview */}
               <div className="w-32 h-32 bg-muted rounded-lg border flex items-center justify-center p-4">
                 {settings?.affiliate_form_logo_url ? (
-                  <img 
-                    src={settings.affiliate_form_logo_url} 
+                  <img
+                    src={settings.affiliate_form_logo_url}
                     alt="Logo do formulário"
                     className="max-w-full max-h-full object-contain"
                   />
@@ -285,7 +285,7 @@ export default function AffiliateFormSettings() {
                   <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
                 )}
               </div>
-              
+
               <div className="flex-1 space-y-3">
                 {settings?.affiliate_form_logo_url ? (
                   <div className="flex items-center gap-2 text-sm text-green-600">
@@ -316,7 +316,7 @@ export default function AffiliateFormSettings() {
                       disabled={isUploadingLogo}
                     />
                   </Label>
-                  
+
                   {settings?.affiliate_form_logo_url && (
                     <Button
                       variant="outline"
@@ -328,7 +328,7 @@ export default function AffiliateFormSettings() {
                     </Button>
                   )}
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground">
                   PNG com transparência recomendado (máx. 2MB)
                 </p>

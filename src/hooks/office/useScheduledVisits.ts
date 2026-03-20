@@ -81,7 +81,7 @@ export function useScheduledVisitsByDate(date: Date) {
 // Buscar visitas agendadas para hoje (para Queue)
 export function useScheduledVisitsToday() {
   const today = new Date();
-  
+
   return useQuery({
     queryKey: ["scheduled-visits-today"],
     queryFn: async () => {
@@ -127,7 +127,7 @@ export function useCreateScheduledVisit() {
 
       // 2. Criar ou buscar contato
       let contactId: string;
-      
+
       const { data: existingContact } = await supabase
         .from("office_contacts")
         .select("id")
@@ -156,7 +156,7 @@ export function useCreateScheduledVisit() {
       // 3. Gerar protocolo
       const { data: protocolData, error: protocolError } = await supabase
         .rpc("generate_office_protocol");
-      
+
       if (protocolError) throw protocolError;
 
       // 4. Criar visita agendada
@@ -195,21 +195,21 @@ export function useCreateScheduledVisit() {
 // Função para normalizar telefone
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/\D/g, "");
-  
+
   if (clean.startsWith("55")) {
     clean = clean.substring(2);
   }
-  
+
   if (clean.length === 10 && clean.startsWith("61")) {
     clean = "61" + "9" + clean.substring(2);
   }
-  
+
   if (clean.length === 9) {
     clean = "61" + clean;
   } else if (clean.length === 8) {
     clean = "61" + "9" + clean;
   }
-  
+
   return "+55" + clean;
 }
 

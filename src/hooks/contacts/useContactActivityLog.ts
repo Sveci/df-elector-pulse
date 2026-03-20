@@ -38,14 +38,14 @@ export function useContactActivityLog(contactId: string | undefined) {
 
       // Buscar nomes dos usuários que realizaram as ações
       const userIds = [...new Set(activities.filter(a => a.action_by).map(a => a.action_by))];
-      
+
       let usersMap = new Map<string, string>();
       if (userIds.length > 0) {
         const { data: users } = await supabase
           .from("users")
           .select("id, name")
           .in("id", userIds);
-        
+
         if (users) {
           usersMap = new Map(users.map(u => [u.id, u.name]));
         }

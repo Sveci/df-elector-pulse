@@ -21,7 +21,7 @@ interface RescheduleVisitDialogProps {
 
 export function RescheduleVisitDialog({ visit, open, onOpenChange, onReschedule }: RescheduleVisitDialogProps) {
   const [date, setDate] = useState<Date>();
-  
+
   const handleReschedule = () => {
     if (date && visit) {
       onReschedule(visit.id, date);
@@ -29,7 +29,7 @@ export function RescheduleVisitDialog({ visit, open, onOpenChange, onReschedule 
       onOpenChange(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -39,7 +39,7 @@ export function RescheduleVisitDialog({ visit, open, onOpenChange, onReschedule 
             Selecione a nova data para a reunião de {visit?.contact?.nome}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex flex-col items-center py-6">
           <Calendar
             mode="single"
@@ -51,12 +51,12 @@ export function RescheduleVisitDialog({ visit, open, onOpenChange, onReschedule 
             initialFocus
           />
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={handleReschedule}
             disabled={!date}
           >

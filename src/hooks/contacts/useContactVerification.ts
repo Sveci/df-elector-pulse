@@ -29,7 +29,7 @@ export async function sendVerificationSMS({
 }: SendVerificationSMSParams): Promise<boolean> {
   try {
     console.log("Sending verification SMS to:", contactPhone);
-    
+
     const { data, error } = await supabase.functions.invoke("send-sms", {
       body: {
         phone: contactPhone,
@@ -179,7 +179,7 @@ export async function resendVerificationCode(contactId: string): Promise<boolean
     if (!verificationCode) {
       const { data: newCode } = await supabase.rpc("generate_verification_code");
       verificationCode = newCode;
-      
+
       await supabase
         .from("office_contacts")
         .update({ verification_code: verificationCode })
@@ -242,7 +242,7 @@ export async function resendVerificationSMS(contactId: string): Promise<boolean>
     if (!verificationCode) {
       const { data: newCode } = await supabase.rpc("generate_verification_code");
       verificationCode = newCode;
-      
+
       await supabase
         .from("office_contacts")
         .update({ verification_code: verificationCode })

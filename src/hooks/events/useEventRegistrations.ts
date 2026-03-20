@@ -8,7 +8,7 @@ export function useEventRegistrations(eventId?: string) {
     queryKey: ["event_registrations", eventId],
     queryFn: async () => {
       if (!eventId) return [];
-      
+
       const { data, error } = await supabase
         .from("event_registrations")
         .select(`
@@ -17,7 +17,7 @@ export function useEventRegistrations(eventId?: string) {
         `)
         .eq("event_id", eventId)
         .order("created_at", { ascending: false });
-      
+
       if (error) throw error;
       return data;
     },
@@ -62,14 +62,14 @@ export function useCreateRegistration() {
       });
 
       if (error) throw error;
-      
+
       // RPC now returns id, created_at, and qr_code directly
       const resultRow = Array.isArray(result) ? result[0] : result;
       if (!resultRow) throw new Error("Erro ao criar inscrição");
-      
+
       // Type assertion since types.ts may not be updated yet
       const row = resultRow as { id: string; created_at: string; qr_code: string };
-      
+
       return {
         id: row.id,
         qr_code: row.qr_code,
@@ -97,7 +97,7 @@ export function useUpdateCheckIn() {
     mutationFn: async ({ id, checked_in }: { id: string; checked_in: boolean }) => {
       const { data, error } = await supabase
         .from("event_registrations")
-        .update({ 
+        .update({
           checked_in,
           checked_in_at: checked_in ? new Date().toISOString() : null
         })

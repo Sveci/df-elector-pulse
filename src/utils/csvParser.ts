@@ -8,7 +8,7 @@ export function parseCSV<T = Record<string, string>>(
   requiredFields: string[]
 ): ParsedCSV<T> {
   const lines = csvContent.split('\n').filter(line => line.trim());
-  
+
   if (lines.length === 0) {
     return {
       data: [],
@@ -18,7 +18,7 @@ export function parseCSV<T = Record<string, string>>(
 
   // Parse header
   const header = lines[0].split(',').map(h => h.trim());
-  
+
   // Verificar campos obrigatórios
   const missingFields = requiredFields.filter(field => !header.includes(field));
   if (missingFields.length > 0) {
@@ -40,7 +40,7 @@ export function parseCSV<T = Record<string, string>>(
     if (!line) continue;
 
     const values = line.split(',').map(v => v.trim());
-    
+
     if (values.length !== header.length) {
       errors.push({
         row: i + 1,
@@ -70,14 +70,14 @@ export function downloadCSV(filename: string, content: string) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute('href', url);
   link.setAttribute('download', filename);
   link.style.visibility = 'hidden';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   URL.revokeObjectURL(url);
 }

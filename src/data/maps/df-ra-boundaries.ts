@@ -21,32 +21,32 @@ function generatePolygon(
   const points: [number, number][] = [];
   const kmPerDegreeLat = 111.32;
   const kmPerDegreeLng = 111.32 * Math.cos(centerLat * (Math.PI / 180));
-  
+
   // Generate seed for consistent randomness based on coordinates
   const seed = Math.abs(centerLat * 1000 + centerLng * 100);
   const pseudoRandom = (i: number) => {
     const x = Math.sin(seed + i * 127.1) * 43758.5453;
     return x - Math.floor(x);
   };
-  
+
   for (let i = 0; i < vertices; i++) {
     const baseAngle = (2 * Math.PI * i) / vertices;
     // Add slight angle variation for irregular shape
     const angleVariation = (pseudoRandom(i) - 0.5) * 0.3;
     const angle = baseAngle + angleVariation;
-    
+
     // Vary the radius for each vertex
     const radiusVariation = 1 + (pseudoRandom(i + vertices) - 0.5) * irregularity * 2;
     const r = radiusKm * radiusVariation;
-    
+
     const latOffset = (r * Math.sin(angle)) / kmPerDegreeLat;
     const lngOffset = (r * Math.cos(angle)) / kmPerDegreeLng;
     points.push([centerLat + latOffset, centerLng + lngOffset]);
   }
-  
+
   // Close the polygon
   points.push(points[0]);
-  
+
   return points;
 }
 
@@ -67,7 +67,7 @@ const raData: Array<{
   { codigo_ra: "RA-16", nome: "Lago Sul", lat: -15.83, lng: -47.82, radius: 4.5, vertices: 9 },
   { codigo_ra: "RA-24", nome: "Park Way", lat: -15.88, lng: -47.96, radius: 5, vertices: 8 },
   { codigo_ra: "RA-27", nome: "Jardim Botânico", lat: -15.87, lng: -47.79, radius: 4, vertices: 8 },
-  
+
   // Medium RAs (30-100 km²)
   { codigo_ra: "RA-02", nome: "Gama", lat: -16.0163, lng: -48.0564, radius: 4, vertices: 9 },
   { codigo_ra: "RA-03", nome: "Taguatinga", lat: -15.8363, lng: -48.0514, radius: 3.5, vertices: 8 },
@@ -80,7 +80,7 @@ const raData: Array<{
   { codigo_ra: "RA-18", nome: "Lago Norte", lat: -15.73, lng: -47.84, radius: 3.5, vertices: 8 },
   { codigo_ra: "RA-26", nome: "Sobradinho II", lat: -15.635, lng: -47.83, radius: 3.5, vertices: 8 },
   { codigo_ra: "RA-31", nome: "Fercal", lat: -15.58, lng: -47.9, radius: 4, vertices: 8 },
-  
+
   // Small-Medium RAs (10-30 km²)
   { codigo_ra: "RA-10", nome: "Guará", lat: -15.8144, lng: -47.9719, radius: 2.5, vertices: 8 },
   { codigo_ra: "RA-15", nome: "Recanto das Emas", lat: -15.9089, lng: -48.0603, radius: 2.5, vertices: 8 },
@@ -92,7 +92,7 @@ const raData: Array<{
   { codigo_ra: "RA-32", nome: "Sol Nascente/Pôr do Sol", lat: -15.795, lng: -48.115, radius: 3, vertices: 9 },
   { codigo_ra: "RA-33", nome: "Arniqueira", lat: -15.835, lng: -48.0, radius: 2, vertices: 7 },
   { codigo_ra: "RA-34", nome: "Arapoanga", lat: -15.6027, lng: -47.6324, radius: 2, vertices: 7 },
-  
+
   // Small RAs (<10 km²)
   { codigo_ra: "RA-08", nome: "Núcleo Bandeirante", lat: -15.8711, lng: -47.9727, radius: 1.5, vertices: 7 },
   { codigo_ra: "RA-11", nome: "Cruzeiro", lat: -15.79, lng: -47.93, radius: 1.8, vertices: 7 },
@@ -130,7 +130,7 @@ export function getRACenter(codigoRA: string): [number, number] | null {
 export function getRAZoomLevel(codigoRA: string): number {
   const ra = raData.find((r) => r.codigo_ra === codigoRA);
   if (!ra) return 13;
-  
+
   // Zoom based on RA radius
   if (ra.radius >= 5) return 11;      // Large RAs
   if (ra.radius >= 3) return 12;      // Medium RAs

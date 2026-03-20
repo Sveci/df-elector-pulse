@@ -81,7 +81,7 @@ serve(async (req) => {
     // Enviar SMS para cada líder pendente
     for (const leader of pendingLeaders) {
       const linkIndicacao = `${baseUrl}/cadastro/${leader.affiliate_token}`;
-      
+
       try {
         const { error: sendError } = await supabase.functions.invoke("send-sms", {
           body: {
@@ -95,28 +95,28 @@ serve(async (req) => {
         });
 
         if (sendError) {
-          results.push({ 
-            nome: leader.nome_completo, 
-            phone: leader.telefone, 
-            success: false, 
-            error: sendError.message 
+          results.push({
+            nome: leader.nome_completo,
+            phone: leader.telefone,
+            success: false,
+            error: sendError.message
           });
         } else {
-          results.push({ 
-            nome: leader.nome_completo, 
-            phone: leader.telefone, 
-            success: true 
+          results.push({
+            nome: leader.nome_completo,
+            phone: leader.telefone,
+            success: true
           });
         }
 
         // Delay de 3 segundos entre envios para evitar bloqueio
         await new Promise((resolve) => setTimeout(resolve, 3000));
       } catch (err) {
-        results.push({ 
-          nome: leader.nome_completo, 
-          phone: leader.telefone, 
-          success: false, 
-          error: String(err) 
+        results.push({
+          nome: leader.nome_completo,
+          phone: leader.telefone,
+          success: false,
+          error: String(err)
         });
       }
     }

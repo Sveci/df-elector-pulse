@@ -56,15 +56,15 @@ export function useLeaderCommunications(leaderId: string | undefined, leaderPhon
     queryKey: ["leader_whatsapp", leaderId, leaderPhone],
     queryFn: async (): Promise<LeaderWhatsAppMessage[]> => {
       if (!leaderId && !leaderPhone) return [];
-      
+
       // Tentar primeiro por leader_id (nas mensagens novas)
       // Nota: whatsapp_messages não tem leader_id, então vamos buscar por telefone
       if (!leaderPhone) return [];
-      
+
       // Normalizar telefone para formato E.164
       const normalizedPhone = leaderPhone.replace(/\D/g, '');
       const phoneSuffix = normalizedPhone.slice(-8); // Últimos 8 dígitos para matching
-      
+
       const { data, error } = await supabase
         .from("whatsapp_messages")
         .select("*")
@@ -83,7 +83,7 @@ export function useLeaderCommunications(leaderId: string | undefined, leaderPhon
     queryKey: ["leader_emails", leaderId, leaderEmail],
     queryFn: async (): Promise<LeaderEmailLog[]> => {
       if (!leaderId && !leaderEmail) return [];
-      
+
       // Tentar primeiro por leader_id
       if (leaderId) {
         const { data: byLeaderId, error: leaderError } = await supabase
@@ -96,13 +96,13 @@ export function useLeaderCommunications(leaderId: string | undefined, leaderPhon
         if (leaderError) {
           console.error("Error fetching emails by leader_id:", leaderError);
         }
-        
+
         // Se encontrou por leader_id, retorna
         if (byLeaderId && byLeaderId.length > 0) {
           return byLeaderId;
         }
       }
-      
+
       // Fallback: buscar por email address
       if (leaderEmail) {
         const { data: byEmail, error: emailError } = await supabase
@@ -116,10 +116,10 @@ export function useLeaderCommunications(leaderId: string | undefined, leaderPhon
           console.error("Error fetching emails by email address:", emailError);
           return [];
         }
-        
+
         return byEmail || [];
       }
-      
+
       return [];
     },
     enabled: !!(leaderId || leaderEmail),
@@ -130,10 +130,10 @@ export function useLeaderCommunications(leaderId: string | undefined, leaderPhon
     queryKey: ["leader_sms", leaderId, leaderPhone],
     queryFn: async (): Promise<LeaderSMSMessage[]> => {
       if (!leaderPhone) return [];
-      
+
       const normalizedPhone = leaderPhone.replace(/\D/g, '');
       const phoneSuffix = normalizedPhone.slice(-8);
-      
+
       const { data, error } = await supabase
         .from("sms_messages")
         .select("*")

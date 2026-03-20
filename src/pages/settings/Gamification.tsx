@@ -41,7 +41,7 @@ export default function Gamification() {
   const queryClient = useQueryClient();
   const { data: settings, isLoading } = useGamificationSettings();
   const { restartTutorial } = useTutorial("gamification", gamificationTutorialSteps);
-  
+
   const [limiteEventosDia, setLimiteEventosDia] = useState(0);
   const [pontosFormSubmitted, setPontosFormSubmitted] = useState(1);
   const [pontosAceitaReuniao, setPontosAceitaReuniao] = useState(3);
@@ -70,7 +70,7 @@ export default function Gamification() {
   const handleLevelChange = (index: number, field: 'min' | 'max', value: string) => {
     const numValue = parseInt(value) || 0;
     const newLevels = [...levels];
-    
+
     if (field === 'max') {
       newLevels[index].max = numValue;
       // Auto-ajustar min do próximo nível
@@ -82,7 +82,7 @@ export default function Gamification() {
       // Auto-ajustar max do nível anterior
       newLevels[index - 1].max = numValue - 1;
     }
-    
+
     setLevels(newLevels);
   };
 
@@ -102,7 +102,7 @@ export default function Gamification() {
 
   const handleSave = async () => {
     if (!validateLevels()) return;
-    
+
     setIsSaving(true);
     try {
       // Buscar ID sem usar .single() para evitar erro
@@ -141,7 +141,7 @@ export default function Gamification() {
       queryClient.invalidateQueries({ queryKey: ["leader_levels"] });
       queryClient.invalidateQueries({ queryKey: ["gamification_settings"] });
       queryClient.invalidateQueries({ queryKey: ["office_settings"] });
-      
+
       toast.success("Configurações de gamificação salvas com sucesso!");
     } catch (error: any) {
       console.error("Erro ao salvar:", error);
@@ -279,7 +279,7 @@ export default function Gamification() {
                     <span className="text-2xl">{level.icon}</span>
                     <span className="font-semibold">{level.name}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Label className="whitespace-nowrap">De:</Label>
                     <Input
@@ -291,7 +291,7 @@ export default function Gamification() {
                       disabled={index === 0}
                     />
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Label className="whitespace-nowrap">Até:</Label>
                     {level.max === null ? (
@@ -308,9 +308,9 @@ export default function Gamification() {
                       />
                     )}
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground">
-                    {level.max === null 
+                    {level.max === null
                       ? `${level.min}+ pontos`
                       : `${level.min} - ${level.max} pontos`
                     }
@@ -326,10 +326,10 @@ export default function Gamification() {
             <div className="flex items-center gap-1 h-8">
               {levels.map((level, index) => {
                 const prevMax = index > 0 ? (levels[index - 1].max ?? 0) : -1;
-                const width = level.max === null 
-                  ? 20 
+                const width = level.max === null
+                  ? 20
                   : Math.min(30, Math.max(10, ((level.max - level.min + 1) / 10) * 10));
-                
+
                 return (
                   <div
                     key={level.name}

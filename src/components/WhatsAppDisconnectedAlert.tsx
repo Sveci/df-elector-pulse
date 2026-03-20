@@ -12,7 +12,7 @@ function StatusDot({ connected, label, tooltip }: { connected: boolean; label: s
         <TooltipTrigger asChild>
           <Link
             to="/settings/integrations"
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium 
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium
                        hover:opacity-80 transition-opacity"
           >
             <span className="relative flex h-2 w-2 shrink-0">

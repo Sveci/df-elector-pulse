@@ -22,19 +22,19 @@ export interface ActiveSession {
 const getOrCreateSessionId = (): string => {
   const storageKey = 'active_session_id';
   let sessionId = sessionStorage.getItem(storageKey);
-  
+
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     sessionStorage.setItem(storageKey, sessionId);
   }
-  
+
   return sessionId;
 };
 
 // Detectar informações do dispositivo/navegador
 const getDeviceInfo = () => {
   const userAgent = navigator.userAgent;
-  
+
   // Detectar browser
   let browser = 'Desconhecido';
   if (userAgent.includes('Firefox')) browser = 'Firefox';
@@ -42,7 +42,7 @@ const getDeviceInfo = () => {
   else if (userAgent.includes('Chrome')) browser = 'Chrome';
   else if (userAgent.includes('Safari')) browser = 'Safari';
   else if (userAgent.includes('Opera')) browser = 'Opera';
-  
+
   // Detectar OS
   let os = 'Desconhecido';
   if (userAgent.includes('Windows')) os = 'Windows';
@@ -50,12 +50,12 @@ const getDeviceInfo = () => {
   else if (userAgent.includes('Linux')) os = 'Linux';
   else if (userAgent.includes('Android')) os = 'Android';
   else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
-  
+
   // Detectar tipo de dispositivo
   let deviceType = 'Desktop';
   if (/Mobi|Android/i.test(userAgent)) deviceType = 'Mobile';
   else if (/Tablet|iPad/i.test(userAgent)) deviceType = 'Tablet';
-  
+
   return {
     browser,
     os,
@@ -74,10 +74,10 @@ export const useActiveSessions = () => {
   // Registrar sessão atual
   const registerSession = useCallback(async () => {
     if (!user?.id) return null;
-    
+
     const sessionId = getOrCreateSessionId();
     const { browser, os, deviceInfo } = getDeviceInfo();
-    
+
     try {
       // Verificar se sessão já existe
       const { data: existingSession } = await supabase
@@ -85,42 +85,42 @@ export const useActiveSessions = () => {
         .select('*')
         .eq('session_id', sessionId)
         .maybeSingle();
-      
+
       if (existingSession) {
         // Atualizar última atividade
         await supabase
           .from('active_sessions')
-          .update({ 
+          .update({
             last_activity: new Date().toISOString(),
-            is_current: true 
+            is_current: true
           })
           .eq('session_id', sessionId);
-        
+
         setCurrentSessionId(sessionId);
         return existingSession;
       }
-      
+
       // Buscar sessões existentes do usuário
       const { data: existingSessions } = await supabase
         .from('active_sessions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
-      
+
       // Se há outras sessões, marcar a mais antiga para logout em 5 minutos
       if (existingSessions && existingSessions.length > 0) {
         const oldestSession = existingSessions[0];
         const forceLogoutTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-        
+
         await supabase
           .from('active_sessions')
-          .update({ 
+          .update({
             force_logout_at: forceLogoutTime,
             force_logout_reason: 'Nova sessão iniciada em outro dispositivo'
           })
           .eq('id', oldestSession.id);
       }
-      
+
       // Criar nova sessão
       const { data: newSession, error } = await supabase
         .from('active_sessions')
@@ -134,12 +134,12 @@ export const useActiveSessions = () => {
         })
         .select()
         .single();
-      
+
       if (error) {
         console.error('Erro ao registrar sessão:', error);
         return null;
       }
-      
+
       setCurrentSessionId(sessionId);
       return newSession;
     } catch (error) {
@@ -151,7 +151,7 @@ export const useActiveSessions = () => {
   // Buscar sessões ativas
   const fetchSessions = useCallback(async () => {
     if (!user?.id) return;
-    
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -159,17 +159,17 @@ export const useActiveSessions = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Marcar sessão atual
       const sessionsWithCurrent = (data || []).map(session => ({
         ...session,
         is_current: session.session_id === getOrCreateSessionId()
       }));
-      
+
       setSessions(sessionsWithCurrent as ActiveSession[]);
-      
+
       // Verificar se a sessão atual tem force_logout_at
       const currentSession = sessionsWithCurrent.find(s => s.is_current);
       if (currentSession?.force_logout_at) {
@@ -190,12 +190,12 @@ export const useActiveSessions = () => {
         .from('active_sessions')
         .delete()
         .eq('session_id', sessionId);
-      
+
       if (error) throw error;
-      
+
       // Atualizar lista local
       setSessions(prev => prev.filter(s => s.session_id !== sessionId));
-      
+
       return true;
     } catch (error) {
       console.error('Erro ao encerrar sessão:', error);
@@ -212,7 +212,7 @@ export const useActiveSessions = () => {
   // Atualizar última atividade
   const updateLastActivity = useCallback(async () => {
     const sessionId = getOrCreateSessionId();
-    
+
     try {
       await supabase
         .from('active_sessions')
@@ -232,9 +232,9 @@ export const useActiveSessions = () => {
   // Configurar Realtime listener
   useEffect(() => {
     if (!user?.id) return;
-    
+
     const sessionId = getOrCreateSessionId();
-    
+
     const channel = supabase
       .channel('active-sessions-changes')
       .on(
@@ -247,7 +247,7 @@ export const useActiveSessions = () => {
         },
         (payload) => {
           console.log('Session change:', payload);
-          
+
           // Se a sessão atual foi atualizada com force_logout_at
           if (payload.eventType === 'UPDATE') {
             const updatedSession = payload.new as ActiveSession;
@@ -256,7 +256,7 @@ export const useActiveSessions = () => {
               setForceLogoutReason(updatedSession.force_logout_reason || null);
             }
           }
-          
+
           // Se uma sessão foi deletada (a outra aba saiu), verificar se devemos limpar o warning
           if (payload.eventType === 'DELETE') {
             const deletedSession = payload.old as ActiveSession;
@@ -274,13 +274,13 @@ export const useActiveSessions = () => {
                 });
             }
           }
-          
+
           // Atualizar lista de sessões
           fetchSessions();
         }
       )
       .subscribe();
-    
+
     return () => {
       supabase.removeChannel(channel);
     };

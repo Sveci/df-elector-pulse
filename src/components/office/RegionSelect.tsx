@@ -129,11 +129,11 @@ export function RegionSelect({
     return (
       <div className="space-y-3">
         {showLabel && <Label>{label}{required && " *"}</Label>}
-        
+
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerTrigger asChild>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full justify-between font-normal"
               disabled={disabled}
             >
@@ -159,7 +159,7 @@ export function RegionSelect({
                     {value === city.id && <Check className="h-4 w-4 text-primary" />}
                   </div>
                 ))}
-                
+
                 {entornoCities.length > 0 && (
                   <>
                     <div className="my-2 border-t" />
@@ -183,9 +183,9 @@ export function RegionSelect({
           <DrawerContent>
             <DrawerHeader className="border-b">
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="h-8 w-8"
                   onClick={handleBackFromEntorno}
                 >
@@ -218,10 +218,10 @@ export function RegionSelect({
   return (
     <div className="space-y-3">
       {showLabel && <Label>{label}{required && " *"}</Label>}
-      
-      <Select 
-        value={mainSelectValue || ""} 
-        onValueChange={handleMainSelectChange} 
+
+      <Select
+        value={mainSelectValue || ""}
+        onValueChange={handleMainSelectChange}
         disabled={disabled}
       >
         <SelectTrigger>
@@ -233,7 +233,7 @@ export function RegionSelect({
               {city.nome} ({city.codigo_ra})
             </SelectItem>
           ))}
-          
+
           {entornoCities.length > 0 && (
             <>
               <div className="my-1 border-t" />
@@ -251,8 +251,8 @@ export function RegionSelect({
       {showEntornoSelect && entornoCities.length > 0 && (
         <div className="space-y-2">
           {showLabel && <Label className="text-sm text-muted-foreground">Qual cidade do Entorno?{required && " *"}</Label>}
-          <Select 
-            value={selectedEntornoId} 
+          <Select
+            value={selectedEntornoId}
             onValueChange={handleEntornoSelectChange}
             disabled={disabled}
           >

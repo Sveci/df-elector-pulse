@@ -257,7 +257,7 @@ export default function CoordinatorVerifyLeader() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 w-full">
                   <p className="font-semibold mb-1">📱 Importante!</p>
                   <p>
-                    Após enviar "{state.keyword} {state.leader.verification_code}" do número cadastrado, 
+                    Após enviar "{state.keyword} {state.leader.verification_code}" do número cadastrado,
                     o apoiador receberá automaticamente seu link de indicação.
                   </p>
                 </div>

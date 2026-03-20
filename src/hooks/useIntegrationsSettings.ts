@@ -39,7 +39,7 @@ interface IntegrationsSettings {
   meta_cloud_api_version: string;
   meta_cloud_fallback_enabled: boolean;
   meta_cloud_phone: string | null;
-  
+
   // Controles de mensagens automáticas de WhatsApp
   wa_auto_verificacao_enabled: boolean;
   wa_auto_captacao_enabled: boolean;
@@ -105,7 +105,7 @@ interface UpdateIntegrationsDTO {
   meta_cloud_api_version?: string;
   meta_cloud_fallback_enabled?: boolean;
   meta_cloud_phone?: string | null;
-  
+
   // Controles de mensagens automáticas de WhatsApp
   wa_auto_verificacao_enabled?: boolean;
   wa_auto_captacao_enabled?: boolean;
@@ -133,20 +133,20 @@ interface UpdateIntegrationsDTO {
 
 export function useIntegrationsSettings() {
   const tenantId = useTenantId();
-  
+
   return useQuery({
     queryKey: ["integrations_settings", tenantId],
     queryFn: async () => {
       let query = supabase
         .from("integrations_settings")
         .select("*");
-      
+
       if (tenantId) {
         query = query.eq("tenant_id", tenantId);
       }
-      
+
       const { data, error } = await query.limit(1).maybeSingle();
-      
+
       if (error) throw error;
       if (!data) {
         // Auto-create default row - inherit global SMS config from existing tenant
@@ -169,7 +169,7 @@ export function useIntegrationsSettings() {
             disparopro_token: globalRef.disparopro_token,
           } : {}),
         };
-        
+
         const { data: newRow, error: insertError } = await supabase
           .from("integrations_settings")
           .insert(insertData)
@@ -195,15 +195,15 @@ export function useUpdateIntegrationsSettings() {
       let query = supabase
         .from("integrations_settings")
         .select("id");
-      
+
       if (tenantId) query = query.eq("tenant_id", tenantId);
-      
+
       const { data: existing } = await query.limit(1).maybeSingle();
 
       if (!existing) {
         const insertData: any = { ...updates };
         if (tenantId) insertData.tenant_id = tenantId;
-        
+
         const { data: newRow, error: insertErr } = await supabase
           .from("integrations_settings")
           .insert(insertData)
@@ -251,7 +251,7 @@ export function useTestZapiConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data.data;
     },
     onSuccess: (data) => {
@@ -290,7 +290,7 @@ export function useTestSmsdevConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data.data;
     },
     onSuccess: (data) => {
@@ -320,7 +320,7 @@ export function useTestSmsbaratoConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data.data;
     },
     onSuccess: (data) => {
@@ -346,7 +346,7 @@ export function useTestSmsdevWebhook() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: (data) => {
@@ -373,7 +373,7 @@ export function useTestDisparoproConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data.data;
     },
     onSuccess: (data) => {
@@ -403,7 +403,7 @@ export function useTestMetaCloudConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data.data;
     },
     onSuccess: (data) => {

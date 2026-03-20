@@ -7,7 +7,7 @@ export interface EventDetailedReport {
   totalCheckins: number;
   totalAbsent: number;
   conversionRate: number;
-  
+
   // Origem geográfica
   citiesBreakdown: {
     cityId: string | null;
@@ -17,14 +17,14 @@ export interface EventDetailedReport {
     absents: number;
     conversionRate: number;
   }[];
-  
+
   // Perfil dos participantes
   profileBreakdown: {
     contacts: number;
     leaders: number;
     coordinators: number;
   };
-  
+
   // Recorrência
   recurrenceStats: {
     firstTimers: number;
@@ -37,7 +37,7 @@ export interface EventDetailedReport {
       eventNames: string[];
     }[];
   };
-  
+
   // Lista detalhada
   registrations: {
     id: string;
@@ -124,11 +124,11 @@ export function useEventDetailedReport(eventId: string | null) {
       const leadersByEmail = new Map<string, { id: string; is_coordinator: boolean; parent_leader_id: string | null }>();
       const leadersByPhone = new Map<string, { id: string; is_coordinator: boolean; parent_leader_id: string | null }>();
       const leadersById = new Map<string, { nome_completo: string; is_coordinator: boolean }>();
-      
+
       leaders?.forEach(l => {
-        leadersById.set(l.id, { 
-          nome_completo: l.nome_completo, 
-          is_coordinator: l.is_coordinator || false 
+        leadersById.set(l.id, {
+          nome_completo: l.nome_completo,
+          is_coordinator: l.is_coordinator || false
         });
         if (l.email) {
           leadersByEmail.set(l.email.toLowerCase(), { id: l.id, is_coordinator: l.is_coordinator || false, parent_leader_id: l.parent_leader_id });
@@ -143,7 +143,7 @@ export function useEventDetailedReport(eventId: string | null) {
 
       // Buscar todas as inscrições de todos os eventos para calcular recorrência
       const emails = registrations.map(r => r.email.toLowerCase()).filter(Boolean);
-      
+
       const { data: allRegistrations } = await supabase
         .from('event_registrations')
         .select('email, event_id, events!inner(id, name)')
@@ -182,7 +182,7 @@ export function useEventDetailedReport(eventId: string | null) {
         if (match) {
           matchedLeaderId = match.id;
           profileType = match.is_coordinator ? 'coordinator' : 'leader';
-          
+
           // Buscar líder superior
           if (match.parent_leader_id) {
             parentLeaderId = match.parent_leader_id;
@@ -226,11 +226,11 @@ export function useEventDetailedReport(eventId: string | null) {
       processedRegistrations.forEach(reg => {
         const cityKey = reg.cityId || 'unknown';
         const cityName = reg.cityName || 'Não informada';
-        
+
         if (!citiesMap.has(cityKey)) {
           citiesMap.set(cityKey, { cityId: reg.cityId, cityName, registrations: 0, checkins: 0 });
         }
-        
+
         const city = citiesMap.get(cityKey)!;
         city.registrations++;
         if (reg.checkedIn) city.checkins++;

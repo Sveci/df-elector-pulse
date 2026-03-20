@@ -13,7 +13,7 @@ const priorityConfig: Record<string, { label: string; className: string }> = {
 
 export function TicketPriorityBadge({ prioridade }: TicketPriorityBadgeProps) {
   const config = priorityConfig[prioridade] || priorityConfig.media;
-  
+
   return (
     <Badge variant="secondary" className={config.className}>
       {config.label}

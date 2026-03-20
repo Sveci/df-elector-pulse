@@ -55,19 +55,19 @@ interface ChatbotRequest {
 
 // Dynamic function implementations
 const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promise<string>> = {
-  
+
   // Mostra estatísticas da árvore do líder
   minha_arvore: async (supabase, leader) => {
     const { data, error } = await supabase.rpc("get_leader_tree_stats", {
       _leader_id: leader.id
     });
-    
+
     const { data: leaderInfo } = await supabase
       .from("lideres")
       .select("parent_leader_id")
       .eq("id", leader.id)
       .single();
-    
+
     let parentLeader = null;
     if (leaderInfo?.parent_leader_id) {
       const { data: parentData } = await supabase
@@ -78,30 +78,30 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
         .single();
       parentLeader = parentData;
     }
-    
+
     if (error || !data || data.length === 0) {
       return `Olá ${leader.nome_completo.split(" ")[0]}! 🌳\n\nSua rede ainda está começando. Compartilhe seu link de indicação para que novas pessoas se cadastrem!`;
     }
-    
+
     const stats = data[0];
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! 🌳\n\n`;
     response += `*Sua Rede de Lideranças*\n\n`;
-    
+
     if (parentLeader) {
       response += `👆 *Seu Líder Superior:*\n`;
       response += `   ${parentLeader.nome_completo}\n`;
       response += `   📋 ${parentLeader.cadastros} cadastros | ⭐ ${parentLeader.pontuacao_total} pts\n\n`;
     }
-    
+
     response += `👥 Líderes na sua árvore: ${stats.total_leaders || 0}\n`;
     response += `📋 Total de cadastros: ${stats.total_cadastros || 0}\n`;
     response += `⭐ Pontuação total: ${stats.total_pontos || 0}\n`;
     response += `📊 Subordinados diretos: ${stats.direct_subordinates || 0}\n`;
-    
+
     if (stats.top_subordinate_name) {
       response += `\n🏆 *Top líder*: ${stats.top_subordinate_name} (${stats.top_subordinate_cadastros} cadastros)`;
     }
-    
+
     response += `\n\nContinue crescendo! 🚀`;
     return response;
   },
@@ -115,11 +115,11 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(10);
-    
+
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! 📋\n\n`;
     response += `*Seus Cadastros*\n`;
     response += `Total: ${leader.cadastros}\n\n`;
-    
+
     if (!contatos || contatos.length === 0) {
       response += `Você ainda não tem cadastros. Compartilhe seu link de indicação para que novas pessoas se cadastrem através dele!`;
     } else {
@@ -131,7 +131,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
         if (cidade?.nome) response += `   📍 ${cidade.nome}\n`;
       });
     }
-    
+
     return response;
   },
 
@@ -140,7 +140,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     let nivel = "Bronze 🥉";
     let proximoNivel = "Prata";
     let pontosProximo = 11 - pontos;
-    
+
     if (pontos >= 51) {
       nivel = "Diamante 💎";
       proximoNivel = "";
@@ -154,19 +154,19 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       proximoNivel = "Ouro";
       pontosProximo = 31 - pontos;
     }
-    
+
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! ⭐\n\n`;
     response += `*Sua Pontuação*\n\n`;
     response += `🏆 Nível: ${nivel}\n`;
     response += `⭐ Pontos: ${pontos}\n`;
     response += `📋 Cadastros: ${leader.cadastros}\n`;
-    
+
     if (proximoNivel) {
       response += `\n📈 Faltam ${pontosProximo} pontos para ${proximoNivel}!`;
     } else {
       response += `\n🎉 Parabéns! Você está no nível máximo!`;
     }
-    
+
     return response;
   },
 
@@ -174,30 +174,30 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     const { data, error } = await supabase.rpc("get_leader_ranking_position", {
       _leader_id: leader.id
     });
-    
+
     if (error || !data || data.length === 0) {
       return `Olá ${leader.nome_completo.split(" ")[0]}! Não consegui buscar sua posição no ranking.`;
     }
-    
+
     const ranking = data[0];
     let emoji = "📊";
     if (ranking.ranking_position === 1) emoji = "🥇";
     else if (ranking.ranking_position === 2) emoji = "🥈";
     else if (ranking.ranking_position === 3) emoji = "🥉";
     else if (ranking.ranking_position <= 10) emoji = "🏆";
-    
+
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! ${emoji}\n\n`;
     response += `*Seu Ranking*\n\n`;
     response += `📍 Posição: ${ranking.ranking_position}º de ${ranking.total_leaders}\n`;
     response += `⭐ Pontuação: ${ranking.pontuacao}\n`;
     response += `📈 Você está no top ${(100 - (ranking.percentile || 0)).toFixed(0)}%\n`;
-    
+
     if (ranking.ranking_position > 1) {
       response += `\n💪 Continue indicando para subir no ranking!`;
     } else {
       response += `\n🎉 Você é o líder #1! Parabéns!`;
     }
-    
+
     return response;
   },
 
@@ -209,10 +209,10 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       .eq("is_active", true)
       .order("pontuacao_total", { ascending: false })
       .limit(10);
-    
+
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! 👥\n\n`;
     response += `*Sua Equipe Direta*\n\n`;
-    
+
     if (!subordinados || subordinados.length === 0) {
       response += `Você não tem líderes subordinados ainda.\n`;
       response += `Convide pessoas para fazer parte da sua equipe!`;
@@ -222,7 +222,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
         response += `   📋 ${s.cadastros} cadastros | ⭐ ${s.pontuacao_total} pts\n`;
       });
     }
-    
+
     return response;
   },
 
@@ -232,7 +232,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       .select("id", { count: "exact", head: true })
       .eq("parent_leader_id", leader.id)
       .eq("is_active", true);
-    
+
     const { data: subordinadosDiretos, error } = await supabase
       .from("lideres")
       .select("nome_completo, telefone, created_at")
@@ -241,10 +241,10 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       .eq("is_verified", false)
       .order("created_at", { ascending: false })
       .limit(15);
-    
+
     let response = `Olá ${leader.nome_completo.split(" ")[0]}! ⏳\n\n`;
     response += `*Líderes Pendentes de Verificação*\n\n`;
-    
+
     if (!totalSubordinados || totalSubordinados === 0) {
       response += `📭 Você ainda não tem subordinados na sua rede.\n`;
       response += `\n💡 Comece a indicar líderes para expandir sua árvore! 🌱`;
@@ -262,7 +262,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
       });
       response += `\n💡 Entre em contato para que completem a verificação!`;
     }
-    
+
     return response;
   },
 
@@ -277,7 +277,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     response += `⏳ *PENDENTES* - Ver subordinados não verificados\n`;
     response += `❓ *AJUDA* - Ver esta lista\n`;
     response += `\nOu digite sua pergunta e tentarei ajudar! 😊`;
-    
+
     return response;
   }
 };
@@ -292,7 +292,7 @@ async function sendResponseToUser(
   phone: string,
   message: string
 ): Promise<boolean> {
-  const useMetaCloud = provider === 'meta_cloud' || 
+  const useMetaCloud = provider === 'meta_cloud' ||
     (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
 
   if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
@@ -305,14 +305,14 @@ async function sendResponseToUser(
       );
     }
   }
-  
+
   if (integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
     return await sendWhatsAppMessage(
       integrationSettings.zapi_instance_id, integrationSettings.zapi_token,
       integrationSettings.zapi_client_token, phone, message
     );
   }
-  
+
   return false;
 }
 
@@ -344,7 +344,7 @@ async function handleRegistrationStep(
   if (state === "awaiting_confirmation") {
     const positiveResponses = ["SIM", "S", "QUERO", "CLARO", "PODE SER", "ACEITO", "BORA", "VAMOS", "OK", "PODE", "CADASTRAR", "EU QUERO"];
     const isPositive = positiveResponses.some(r => normalizedInputClean === r || normalizedInputClean.startsWith(r + " "));
-    
+
     if (isPositive) {
       const msg = "Ótimo! Vamos fazer seu cadastro rapidinho! 📝\n\nPor favor, me diga seu *nome completo*:";
       await sendResponseToUser(supabase, intSettings, provider, phone, msg);
@@ -368,7 +368,7 @@ async function handleRegistrationStep(
       await logRegistration(supabase, phone, userMessage, msg, "registration_retry_name", tenantId, startTime);
       return { success: true, responseType: "registration_retry_name" };
     }
-    
+
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_name: userMessage, registration_state: "collecting_email" }).eq("id", session.id);
     const msg = `Obrigado, *${userMessage.split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
@@ -381,7 +381,7 @@ async function handleRegistrationStep(
     let email: string | null = null;
     const skipWords = ["PULAR", "NAO", "NAO TENHO", "NADA", "PULA", "SEM"];
     const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
-    
+
     if (!isSkip) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(userMessage.trim())) {
@@ -392,9 +392,9 @@ async function handleRegistrationStep(
       }
       email = userMessage.trim().toLowerCase();
     }
-    
+
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_email: email, registration_state: "collecting_city" }).eq("id", session.id);
-    
+
     const { data: cities } = await supabase
       .from("office_cities")
       .select("nome")
@@ -402,13 +402,13 @@ async function handleRegistrationStep(
       .eq("status", "active")
       .order("nome")
       .limit(30);
-    
+
     let msg = `${email ? "E-mail registrado!" : "Tudo bem, sem problemas!"} 👍\n\nAgora, em qual *cidade* você mora?`;
     if (cities && cities.length > 0) {
       msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
       msg += `\n\nDigite o nome da sua cidade:`;
     }
-    
+
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logRegistration(supabase, phone, userMessage, msg, "registration_email_collected", tenantId, startTime);
     return { success: true, responseType: "registration_email_collected" };
@@ -432,15 +432,15 @@ async function handleRegistrationStep(
       .limit(1)
       .maybeSingle();
 
-    await supabase.from("whatsapp_chatbot_sessions").update({ 
-      collected_city: userMessage.trim(), 
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      collected_city: userMessage.trim(),
       registration_state: "completed",
       registration_completed_at: new Date().toISOString()
     }).eq("id", session.id);
 
     // Create/update contact in office_contacts
     const phoneNorm = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
-    
+
     // Search without tenant filter due to global unique constraint on telefone_norm
     const { data: existingContact } = await supabase
       .from("office_contacts")
@@ -449,12 +449,12 @@ async function handleRegistrationStep(
       .maybeSingle();
 
     if (existingContact) {
-      const updateData: any = { 
-        nome: session.collected_name, 
-        source_type: "whatsapp", 
-        is_active: true, 
-        opted_out_at: null, 
-        opt_out_reason: null, 
+      const updateData: any = {
+        nome: session.collected_name,
+        source_type: "whatsapp",
+        is_active: true,
+        opted_out_at: null,
+        opt_out_reason: null,
         opt_out_channel: null,
         // Always update city fields: use matched city or store as text
         cidade_id: matchedCity?.id || null,
@@ -491,10 +491,10 @@ async function handleRegistrationStep(
       `${session.collected_email ? `📧 E-mail: ${session.collected_email}\n` : ""}` +
       `📍 Cidade: ${cityName}\n\n` +
       `Obrigado, ${firstName}! Agora você receberá informações e novidades que podem te ajudar. 😊`;
-    
+
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logRegistration(supabase, phone, userMessage, msg, "registration_completed", tenantId, startTime);
-    
+
     console.log(`[whatsapp-chatbot] Registration completed for ${phone}: ${session.collected_name}`);
     return { success: true, responseType: "registration_completed" };
   }
@@ -518,7 +518,7 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
-  
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -565,7 +565,7 @@ Deno.serve(async (req) => {
     // =====================================================
     // SESSION TRACKING & REGISTRATION FLOW
     // =====================================================
-    
+
     // Upsert session to track first_message_at
     const { data: existingSession } = await supabase
       .from("whatsapp_chatbot_sessions")
@@ -590,7 +590,7 @@ Deno.serve(async (req) => {
         supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
       );
       if (regResult) {
-        return new Response(JSON.stringify(regResult), 
+        return new Response(JSON.stringify(regResult),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
@@ -600,7 +600,7 @@ Deno.serve(async (req) => {
       .from("whatsapp_chatbot_config")
       .select("*");
     if (tenantId) configQuery = configQuery.eq("tenant_id", tenantId);
-    
+
     const { data: config } = await configQuery.limit(1).single();
 
     const chatbotConfig = config as ChatbotConfig | null;
@@ -747,7 +747,7 @@ Deno.serve(async (req) => {
     for (const kw of activeKeywords) {
       const keywordNorm = normalizeTextForMatch(kw.keyword);
       const aliasesNorm = (kw.aliases || []).map(normalizeTextForMatch);
-      
+
       if (isKeywordMatch(messageForKeywordMatch, keywordNorm, aliasesNorm, isCommandLikeMessage)) {
         matchedKeyword = kw;
         break;
@@ -819,7 +819,7 @@ Deno.serve(async (req) => {
       );
     } else {
       responseType = "fallback";
-      responseMessage = chatbotConfig.fallback_message || 
+      responseMessage = chatbotConfig.fallback_message ||
         `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Digite AJUDA para ver os comandos disponíveis.`;
     }
 
@@ -830,7 +830,7 @@ Deno.serve(async (req) => {
     if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
     const { data: integrationSettings } = await intSettingsQuery.limit(1).single();
 
-    const useMetaCloud = provider === 'meta_cloud' || 
+    const useMetaCloud = provider === 'meta_cloud' ||
       (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
 
     let messageSent = false;
@@ -886,21 +886,21 @@ Deno.serve(async (req) => {
     if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
       const firstMsgTime = new Date(session.first_message_at).getTime();
       const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
-      
+
       if (minutesSinceFirst >= 30) {
         console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
-        
+
         const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
-        
+
         // Send the registration invite
         await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
-        
+
         // Update session state
         await supabase
           .from("whatsapp_chatbot_sessions")
           .update({ registration_state: "awaiting_confirmation", registration_asked_at: new Date().toISOString() })
           .eq("id", session.id);
-        
+
         // Log
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
@@ -912,8 +912,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         responseType,
         keywordMatched: matchedKeyword?.keyword || null
       }),
@@ -968,16 +968,16 @@ function isKeywordMatch(
 // Normalize phone number
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/[^0-9]/g, "");
-  
+
   if (clean.startsWith("55") && clean.length > 11) {
     clean = clean.substring(2);
   }
-  
+
   // Add 9 if missing for Brasília
   if (clean.length === 10 && clean.startsWith("61")) {
     clean = "61" + "9" + clean.substring(2);
   }
-  
+
   return "+55" + clean;
 }
 
@@ -991,15 +991,15 @@ async function sendWhatsAppMessage(
 ): Promise<boolean> {
   const cleanPhone = phone.replace(/[^0-9]/g, "");
   const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
-  
-  const headers: Record<string, string> = { 
-    "Content-Type": "application/json" 
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
   };
-  
+
   if (clientToken) {
     headers["Client-Token"] = clientToken;
   }
-  
+
   try {
     const response = await fetch(zapiUrl, {
       method: "POST",
@@ -1009,7 +1009,7 @@ async function sendWhatsAppMessage(
         message: message
       })
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[whatsapp-chatbot] Z-API error:", errorText);
@@ -1039,7 +1039,7 @@ async function sendWhatsAppMessageMetaCloud(
   }
 
   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
-  
+
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -1055,13 +1055,13 @@ async function sendWhatsAppMessageMetaCloud(
         text: { body: message },
       }),
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[whatsapp-chatbot] Meta Cloud API error:", errorText);
       return false;
     }
-    
+
     const result = await response.json();
     const wamid = result.messages?.[0]?.id;
     console.log("[whatsapp-chatbot] Message sent successfully via Meta Cloud API:", wamid);
@@ -1281,25 +1281,25 @@ function responseIsOutOfScope(answer: string): boolean {
 // Check if KB chunks actually contain the specific topic the user asked about
 function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[]): boolean {
   if (!rankedChunks.length) return true;
-  
+
   // Extract specific identifiers from user message (numbers, acronyms+numbers, proper nouns)
   const specificPatterns = userMessage.match(/\b(?:PEC|PL|PLP|PDL|MPV|EC)\s*\d+[\w\/]*/gi) || [];
   const numberPatterns = userMessage.match(/\b\d{2,}\b/g) || [];
   const allSpecifics = [...specificPatterns, ...numberPatterns];
-  
+
   if (allSpecifics.length === 0) return false; // No specific identifiers to check
-  
+
   // Check if any top KB chunk actually contains the specific identifier
   const topChunks = rankedChunks.slice(0, 3);
   const chunksText = topChunks.map(c => normalizeForKb(c.content)).join(" ");
-  
+
   for (const specific of allSpecifics) {
     const normalizedSpecific = normalizeForKb(specific);
     if (chunksText.includes(normalizedSpecific)) {
       return false; // Found specific match in KB
     }
   }
-  
+
   console.log(`[whatsapp-chatbot] KB lacks specific answer for: ${allSpecifics.join(", ")}`);
   return true; // KB has generic content but not the specific topic
 }
@@ -1366,8 +1366,8 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
 
     // Detect out-of-scope or NO_RESULT responses
     const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
-    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") || 
-        cleanAnswer.startsWith("FORA_DO_ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || 
+    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") ||
+        cleanAnswer.startsWith("FORA_DO_ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") ||
         answer.length < 15) {
       console.log("[whatsapp-chatbot] Perplexity: out of scope or no result");
       return null;
@@ -1457,7 +1457,7 @@ async function generateAIResponse(
   let kbContext = "";
   let kbSources: string[] = [];
   let kbRankedChunks: RankedKBChunk[] = [];
-  
+
   if (supabase && tenantId) {
     const kb = await searchKnowledgeBase(supabase, userMessage, tenantId);
     kbContext = kb.context;
@@ -1491,7 +1491,7 @@ Responda com foco institucional, sem mencionar dados internos de liderança ou g
     ? `\n\nBASE DE CONHECIMENTO (INFORMAÇÕES VERIFICADAS - USE OBRIGATORIAMENTE):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nREGRA ABSOLUTA: As informações acima são VERIFICADAS e CONFIÁVEIS. Você DEVE usá-las para responder. Se a resposta está na base de conhecimento acima, responda com base nela. NUNCA diga que "não tem a informação" se ela aparece no texto acima. Cite a fonte no formato (Fonte: Nome do Documento).`
     : "";
 
-  const scopeRestriction = orgScope 
+  const scopeRestriction = orgScope
     ? `\nREGRA DE ESCOPO ABSOLUTA: Você é o assistente exclusivo do gabinete de ${orgScope}. Você SOMENTE pode responder perguntas que sejam diretamente relacionadas a ${orgScope}, ao mandato parlamentar, projetos de lei, ações políticas, eventos, legislação ou temas que envolvam ${orgScope}. Se a pergunta NÃO tem relação com ${orgScope} ou com o mandato, responda EXATAMENTE: "Desculpe, só posso responder sobre assuntos relacionados ao mandato de ${orgScope}. 😊 Posso ajudar com algo nesse tema?"`
     : "";
 
@@ -1545,7 +1545,7 @@ REGRAS OBRIGATÓRIAS:
 
     // Check if KB actually has specific info for this query
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
-    
+
     // If AI correctly rejected as out-of-scope, return as-is (do NOT send to Perplexity)
     if (responseIsOutOfScope(aiAnswer)) {
       console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope, returning as-is");

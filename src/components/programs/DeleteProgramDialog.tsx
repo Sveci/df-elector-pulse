@@ -36,7 +36,7 @@ export const DeleteProgramDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir Programa</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir o programa "{programName}"? 
+            Tem certeza que deseja excluir o programa "{programName}"?
             Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>

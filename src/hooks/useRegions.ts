@@ -11,13 +11,13 @@ export function useRegions(tipo?: OfficeCityType) {
         .select('*')
         .eq('status', 'active')
         .order('nome');
-      
+
       if (tipo) {
         query = query.eq('tipo', tipo);
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) throw error;
       return data;
     }

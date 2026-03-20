@@ -192,9 +192,9 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
         transition={{ duration: 0.3 }}
       >
         <Card className={`border-2 ${
-          isRunning ? "border-primary/40 bg-primary/5" : 
+          isRunning ? "border-primary/40 bg-primary/5" :
           isProcessing ? "border-amber-500/40 bg-amber-50" :
-          isCompleted ? "border-green-500/30 bg-green-50" : 
+          isCompleted ? "border-green-500/30 bg-green-50" :
           "border-destructive/30 bg-destructive/5"
         }`}>
           <CardContent className="pt-4 pb-4 space-y-3">
@@ -217,9 +217,9 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
                   <XCircle className="h-5 w-5 text-destructive" />
                 )}
                 <span className="font-semibold text-sm">
-                  {isRunning ? "Coletando menções em tempo real..." : 
+                  {isRunning ? "Coletando menções em tempo real..." :
                    isProcessing ? "Processando menções com IA..." :
-                   isCompleted ? "Coleta e processamento concluídos!" : 
+                   isCompleted ? "Coleta e processamento concluídos!" :
                    "Erro na coleta"}
                 </span>
               </div>
@@ -289,7 +289,7 @@ export function CollectionProgressPanel({ jobId: externalJobId, entityId, onComp
               >
                 <Brain className="h-4 w-4 flex-shrink-0" />
                 <span>
-                  Analisando sentimento, categorias e temas com IA... 
+                  Analisando sentimento, categorias e temas com IA...
                   {analysisPct > 0 && <strong className="ml-1">{analysisPct}%</strong>}
                 </span>
               </motion.div>

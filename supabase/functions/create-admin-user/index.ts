@@ -23,7 +23,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     // ========== AUTHENTICATION CHECK ==========
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -35,14 +35,14 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
+
     // Create a client to verify the user
     const supabaseAuth = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
     const { data: { user: callingUser }, error: authError } = await supabaseAuth.auth.getUser(token);
-    
+
     if (authError || !callingUser) {
       console.error('[create-admin-user] Invalid token:', authError);
       return new Response(
@@ -69,7 +69,7 @@ serve(async (req) => {
 
     console.log(`[create-admin-user] Authorized user ${callingUser.email} with role ${userRole.role}`);
     // ========== END AUTHENTICATION CHECK ==========
-    
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -157,7 +157,7 @@ serve(async (req) => {
     let emailSent = false;
     try {
       console.log('Sending welcome email to:', email);
-      
+
       const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
         method: 'POST',
         headers: {
@@ -171,7 +171,7 @@ serve(async (req) => {
           variables: templateVariables
         })
       });
-      
+
       const emailResult = await emailResponse.json();
       console.log('Email response:', emailResult);
       emailSent = emailResponse.ok;
@@ -184,7 +184,7 @@ serve(async (req) => {
     if (phone) {
       try {
         console.log('Sending welcome WhatsApp to:', phone);
-        
+
         const whatsappResponse = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
           method: 'POST',
           headers: {
@@ -197,7 +197,7 @@ serve(async (req) => {
             variables: templateVariables
           })
         });
-        
+
         const whatsappResult = await whatsappResponse.json();
         console.log('WhatsApp response:', whatsappResult);
         whatsappSent = whatsappResponse.ok;
@@ -207,8 +207,8 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         user: authData.user,
         profile,
         notifications: {

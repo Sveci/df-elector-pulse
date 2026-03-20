@@ -31,21 +31,21 @@ export function useEventStats() {
 
       const totalEvents = events?.length || 0;
       const activeEvents = events?.filter(e => e.status === 'active').length || 0;
-      
+
       const totalRegistrations = events?.reduce((sum, e) => sum + (e.registrations_count || 0), 0) || 0;
       const totalCheckins = events?.reduce((sum, e) => sum + (e.checkedin_count || 0), 0) || 0;
-      const overallConversionRate = totalRegistrations > 0 
-        ? (totalCheckins / totalRegistrations) * 100 
+      const overallConversionRate = totalRegistrations > 0
+        ? (totalCheckins / totalRegistrations) * 100
         : 0;
 
       const totalCapacity = events?.reduce((sum, e) => sum + (e.capacity || 0), 0) || 0;
-      const averageCapacityUtilization = totalCapacity > 0 
-        ? (totalRegistrations / totalCapacity) * 100 
+      const averageCapacityUtilization = totalCapacity > 0
+        ? (totalRegistrations / totalCapacity) * 100
         : 0;
 
       const mostPopularEvent = events?.reduce((max, event) => {
         const registrations = event.registrations_count || 0;
-        return registrations > (max?.registrations || 0) 
+        return registrations > (max?.registrations || 0)
           ? { name: event.name, registrations }
           : max;
       }, null as { name: string; registrations: number } | null);
@@ -54,7 +54,7 @@ export function useEventStats() {
         const registrations = event.registrations_count || 0;
         const checkins = event.checkedin_count || 0;
         const rate = registrations > 0 ? (checkins / registrations) * 100 : 0;
-        return rate > (best?.rate || 0) 
+        return rate > (best?.rate || 0)
           ? { name: event.name, rate }
           : best;
       }, null as { name: string; rate: number } | null);

@@ -29,7 +29,7 @@ const Support = () => {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const { restartTutorial } = useTutorial("support", supportTutorialSteps);
-  
+
   const { data: tickets, isLoading } = useSupportTickets();
 
   // Abrir modal automaticamente se tiver ticket na URL
@@ -82,8 +82,8 @@ const Support = () => {
         ) : tickets && tickets.length > 0 ? (
           <div className="space-y-3">
             {tickets.map((ticket) => (
-              <Card 
-                key={ticket.id} 
+              <Card
+                key={ticket.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleTicketClick(ticket.id)}
               >
@@ -131,11 +131,11 @@ const Support = () => {
           </Card>
         )}
 
-        <CreateTicketDialog 
-          open={createDialogOpen} 
-          onOpenChange={setCreateDialogOpen} 
+        <CreateTicketDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
         />
-        
+
         <TicketDetailsDialog
           ticketId={selectedTicketId}
           open={detailsDialogOpen}

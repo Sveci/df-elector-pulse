@@ -198,7 +198,7 @@ export default function CoordinatorMaterials() {
                       <Clock className="h-3 w-3" /> Reservado
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-end justify-between gap-4">
                      <div className="flex flex-col gap-1.5">
                        <div className="flex items-center gap-1.5 text-xs">

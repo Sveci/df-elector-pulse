@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Users, UserCheck, Clock, Percent } from "lucide-react";
 import { useCoordinatorsCadastrosStats } from "@/hooks/reports/useCoordinatorsCadastrosStats";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--muted-foreground))", "hsl(var(--destructive))", "hsl(var(--secondary))"];
 
@@ -22,8 +22,8 @@ export function CoordinatorsReportTab() {
     { totalCadastros: 0, verificados: 0, pendentes: 0 }
   ) || { totalCadastros: 0, verificados: 0, pendentes: 0 };
 
-  const taxaGeralVerificacao = totals.totalCadastros > 0 
-    ? (totals.verificados / totals.totalCadastros) * 100 
+  const taxaGeralVerificacao = totals.totalCadastros > 0
+    ? (totals.verificados / totals.totalCadastros) * 100
     : 0;
 
   const top10Coordinators = coordinators?.slice(0, 10).map(coord => ({

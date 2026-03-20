@@ -23,9 +23,9 @@ export function useRegistrationByQR(qrCode: string) {
     queryFn: async (): Promise<RegistrationByQR | null> => {
       const { data, error } = await supabase
         .rpc("get_registration_by_qr", { _qr_code: qrCode });
-      
+
       if (error) throw error;
-      
+
       // RPC returns an array, get the first result
       if (data && data.length > 0) {
         return data[0] as RegistrationByQR;
@@ -43,14 +43,14 @@ export function useUpdateCheckInByQR() {
   return useMutation({
     mutationFn: async ({ qrCode, checked_in }: { qrCode: string; checked_in: boolean }) => {
       const { data, error } = await supabase
-        .rpc("checkin_event_by_qr", { 
-          _qr_code: qrCode, 
-          _checked_in: checked_in 
+        .rpc("checkin_event_by_qr", {
+          _qr_code: qrCode,
+          _checked_in: checked_in
         });
 
       if (error) throw error;
       if (!data) throw new Error("Check-in failed");
-      
+
       return { success: true, checked_in };
     },
     onSuccess: (data, variables) => {

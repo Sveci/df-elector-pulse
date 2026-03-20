@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Save,
+  Plus,
+  Trash2,
   GripVertical,
   Eye,
   Loader2,
@@ -19,12 +19,12 @@ import {
   Sparkles
 } from "lucide-react";
 import { AIQuestionsGeneratorDialog } from "@/components/surveys/AIQuestionsGeneratorDialog";
-import { 
-  useSurvey, 
-  useSurveyQuestions, 
-  useUpdateSurvey, 
+import {
+  useSurvey,
+  useSurveyQuestions,
+  useUpdateSurvey,
   useSaveQuestions,
-  type SurveyQuestion 
+  type SurveyQuestion
 } from "@/hooks/surveys/useSurveys";
 import {
   Select,
@@ -60,12 +60,12 @@ const questionTypeLabels: Record<QuestionType, string> = {
 export default function SurveyEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const { data: survey, isLoading: loadingSurvey } = useSurvey(id);
   const { data: existingQuestions, isLoading: loadingQuestions } = useSurveyQuestions(id);
   const updateSurvey = useUpdateSurvey();
   const saveQuestions = useSaveQuestions();
-  
+
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [status, setStatus] = useState<string>("draft");
@@ -162,7 +162,7 @@ export default function SurveyEditor() {
 
   const handleSave = async () => {
     if (!id) return;
-    
+
     // Validate questions
     const invalidQuestions = questions.filter(q => !q.pergunta.trim());
     if (invalidQuestions.length > 0) {
@@ -325,7 +325,7 @@ export default function SurveyEditor() {
                           {index + 1}
                         </Badge>
                       </div>
-                      
+
                       <div className="flex-1 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="md:col-span-2 space-y-2">
@@ -338,8 +338,8 @@ export default function SurveyEditor() {
                           </div>
                           <div className="space-y-2">
                             <Label>Tipo</Label>
-                            <Select 
-                              value={question.tipo} 
+                            <Select
+                              value={question.tipo}
                               onValueChange={(v: QuestionType) => updateQuestion(index, { tipo: v })}
                             >
                               <SelectTrigger>
@@ -366,8 +366,8 @@ export default function SurveyEditor() {
                                   placeholder={`Opção ${optIndex + 1}`}
                                 />
                                 {question.opcoes.length > 2 && (
-                                  <Button 
-                                    variant="ghost" 
+                                  <Button
+                                    variant="ghost"
                                     size="icon"
                                     onClick={() => removeOption(index, optIndex)}
                                   >
@@ -376,8 +376,8 @@ export default function SurveyEditor() {
                                 )}
                               </div>
                             ))}
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => addOption(index)}
                             >
@@ -395,8 +395,8 @@ export default function SurveyEditor() {
                             />
                             <Label className="text-sm text-muted-foreground">Obrigatória</Label>
                           </div>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             className="text-destructive hover:text-destructive"
                             onClick={() => removeQuestion(index)}

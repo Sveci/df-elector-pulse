@@ -29,7 +29,7 @@ export function getCategoryColor(category: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "_");
-  
+
   return DEFAULT_CATEGORY_COLORS[normalized] || "bg-gray-500";
 }
 

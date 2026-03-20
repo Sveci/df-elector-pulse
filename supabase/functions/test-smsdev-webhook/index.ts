@@ -37,9 +37,9 @@ Deno.serve(async (req) => {
     if (!messages || messages.length === 0) {
       console.log('[test-smsdev-webhook] No SMS messages found for testing');
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Nenhuma mensagem SMS encontrada para testar. Envie pelo menos uma mensagem primeiro.' 
+        JSON.stringify({
+          success: false,
+          error: 'Nenhuma mensagem SMS encontrada para testar. Envie pelo menos uma mensagem primeiro.'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -73,10 +73,10 @@ Deno.serve(async (req) => {
 
     if (!webhookResponse.ok || !webhookResult.success) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: webhookResult.error || 'Webhook retornou erro',
-          details: webhookResult 
+          details: webhookResult
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     }
 
     const statusChanged = updatedMessage.status !== originalStatus;
-    console.log('[test-smsdev-webhook] Test complete. Status changed:', statusChanged, 
+    console.log('[test-smsdev-webhook] Test complete. Status changed:', statusChanged,
       'From:', originalStatus, 'To:', updatedMessage.status);
 
     // 4. Restore original status if it was changed
@@ -111,8 +111,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'Webhook funcionando corretamente!',
         details: {
           message_id: testMessage.message_id,

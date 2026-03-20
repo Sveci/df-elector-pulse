@@ -22,7 +22,7 @@ export function useIdentifyGenders() {
 
       const BATCH_SIZE = 20; // Processar 20 nomes por vez para evitar respostas truncadas
       const batches = [];
-      
+
       for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
         batches.push(contacts.slice(i, i + BATCH_SIZE));
       }
@@ -33,7 +33,7 @@ export function useIdentifyGenders() {
       // 2. Processar cada lote
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
-        
+
         console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} names`);
 
         const response = await fetch(FUNCTION_URL, {
@@ -65,7 +65,7 @@ export function useIdentifyGenders() {
         }
 
         totalProcessed += results.length;
-        
+
         // Aguardar 2 segundos entre lotes para evitar rate limiting
         if (batchIndex < batches.length - 1) {
           console.log("Waiting 2 seconds before next batch...");
@@ -73,9 +73,9 @@ export function useIdentifyGenders() {
         }
       }
 
-      return { 
-        processed: totalProcessed, 
-        message: `${totalProcessed} contato(s) atualizado(s) com sucesso!` 
+      return {
+        processed: totalProcessed,
+        message: `${totalProcessed} contato(s) atualizado(s) com sucesso!`
       };
     },
     onSuccess: (data) => {

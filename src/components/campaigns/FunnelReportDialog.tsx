@@ -53,8 +53,8 @@ export function FunnelReportDialog({ open, onOpenChange, funnel }: FunnelReportD
     enabled: open,
   });
 
-  const conversionRate = funnel.views_count > 0 
-    ? ((funnel.leads_count / funnel.views_count) * 100).toFixed(1) 
+  const conversionRate = funnel.views_count > 0
+    ? ((funnel.leads_count / funnel.views_count) * 100).toFixed(1)
     : '0';
 
   const downloadRate = funnel.leads_count > 0
@@ -121,7 +121,7 @@ export function FunnelReportDialog({ open, onOpenChange, funnel }: FunnelReportD
               <div className="flex items-center gap-3">
                 <div className="w-20 text-xs text-muted-foreground">Visitas</div>
                 <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-blue-500 h-full flex items-center justify-end pr-2 text-xs text-white font-medium"
                     style={{ width: '100%' }}
                   >
@@ -132,7 +132,7 @@ export function FunnelReportDialog({ open, onOpenChange, funnel }: FunnelReportD
               <div className="flex items-center gap-3">
                 <div className="w-20 text-xs text-muted-foreground">Leads</div>
                 <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-green-500 h-full flex items-center justify-end pr-2 text-xs text-white font-medium"
                     style={{ width: `${funnel.views_count > 0 ? (funnel.leads_count / funnel.views_count) * 100 : 0}%`, minWidth: funnel.leads_count > 0 ? '40px' : '0' }}
                   >
@@ -144,7 +144,7 @@ export function FunnelReportDialog({ open, onOpenChange, funnel }: FunnelReportD
               <div className="flex items-center gap-3">
                 <div className="w-20 text-xs text-muted-foreground">Downloads</div>
                 <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-purple-500 h-full flex items-center justify-end pr-2 text-xs text-white font-medium"
                     style={{ width: `${funnel.views_count > 0 ? (funnel.downloads_count / funnel.views_count) * 100 : 0}%`, minWidth: funnel.downloads_count > 0 ? '40px' : '0' }}
                   >

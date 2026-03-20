@@ -82,9 +82,9 @@ const Login = () => {
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
         {/* Logo */}
-        <img 
-          src={logo} 
-          alt="Eleitor 360.ai" 
+        <img
+          src={logo}
+          alt="Eleitor 360.ai"
           className="h-28 md:h-36 object-contain mb-14 drop-shadow-[0_0_40px_rgba(240,229,0,0.12)]"
         />
 
@@ -144,11 +144,11 @@ const Login = () => {
           </div>
 
           {/* Login button */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full h-12 rounded-xl text-base font-bold shadow-lg transition-all"
-            style={{ 
-              background: '#F0E500', 
+            style={{
+              background: '#F0E500',
               color: '#2A2D35',
               boxShadow: '0 4px 24px rgba(240, 229, 0, 0.25)'
             }}

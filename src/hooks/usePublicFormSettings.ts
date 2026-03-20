@@ -23,7 +23,7 @@ export function usePublicFormSettings() {
         .rpc("get_public_form_settings");
 
       if (error) throw error;
-      
+
       // RPC returns array, get first result
       if (!data || data.length === 0) return null;
       return data[0] as PublicFormSettings;

@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "@/hooks/useTenantId";
 import { toast } from "sonner";
-import { 
-  Send, 
-  User, 
-  Users, 
-  MessageSquare, 
+import {
+  Send,
+  User,
+  Users,
+  MessageSquare,
   ShieldCheck,
   Loader2,
   AlertCircle,
@@ -131,7 +131,7 @@ export function WhatsAppOfficialApiTab() {
   // Filter leaders for tree based on template
   const filteredTreeLeaders = useMemo(() => {
     if (!leadersWithTrees) return [];
-    
+
     if (selectedTemplate === 'confirmar1') {
       // Only show leaders with unverified subordinates
       return leadersWithTrees.filter(l => l.unverified_in_tree > 0);
@@ -147,8 +147,8 @@ export function WhatsAppOfficialApiTab() {
     }
     if (recipientType === 'tree' && selectedLeader) {
       const leader = selectedLeader as LeaderWithTreeCount;
-      return selectedTemplate === 'confirmar1' 
-        ? leader.unverified_in_tree 
+      return selectedTemplate === 'confirmar1'
+        ? leader.unverified_in_tree
         : leader.total_in_tree;
     }
     return 0;
@@ -219,10 +219,10 @@ export function WhatsAppOfficialApiTab() {
         recipients = [selectedLeader as Leader];
       } else {
         // Fetch tree recipients
-        const rpcName = selectedTemplate === 'confirmar1' 
+        const rpcName = selectedTemplate === 'confirmar1'
           ? 'get_unverified_leaders_in_tree_whatsapp'
           : 'get_leaders_in_tree_whatsapp';
-        
+
         const { data, error } = await supabase.rpc(rpcName, { leader_id: selectedLeader.id });
         if (error) throw error;
         recipients = data as Leader[];
@@ -326,7 +326,7 @@ export function WhatsAppOfficialApiTab() {
       <Alert>
         <MessageSquare className="h-4 w-4" />
         <AlertDescription>
-          Envie mensagens via API Oficial do WhatsApp (Meta) usando templates pré-aprovados. 
+          Envie mensagens via API Oficial do WhatsApp (Meta) usando templates pré-aprovados.
           Esta opção é mais confiável e tem menor risco de bloqueio.
           {settings?.meta_cloud_test_mode && (
             <span className="block mt-1 text-amber-600 dark:text-amber-400 font-medium">
@@ -442,7 +442,7 @@ export function WhatsAppOfficialApiTab() {
                     setSelectedLeader(null);
                   }}
                 />
-                
+
                 {isSearching && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -510,7 +510,7 @@ export function WhatsAppOfficialApiTab() {
                           <div className="flex items-center justify-between gap-4 w-full">
                             <span>{leader.nome_completo}</span>
                             <span className="text-xs text-muted-foreground">
-                              {selectedTemplate === 'confirmar1' 
+                              {selectedTemplate === 'confirmar1'
                                 ? `${leader.unverified_in_tree} não verificados`
                                 : `${leader.total_in_tree} liderados`
                               }
@@ -524,7 +524,7 @@ export function WhatsAppOfficialApiTab() {
 
                 {filteredTreeLeaders.length === 0 && !isLoadingTrees && (
                   <p className="text-sm text-muted-foreground">
-                    {selectedTemplate === 'confirmar1' 
+                    {selectedTemplate === 'confirmar1'
                       ? "Nenhum líder com subordinados não verificados encontrado."
                       : "Nenhum líder com subordinados encontrado."
                     }
@@ -564,8 +564,8 @@ export function WhatsAppOfficialApiTab() {
               )}
             </div>
 
-            <Button 
-              onClick={handleSend} 
+            <Button
+              onClick={handleSend}
               disabled={!canSend}
               size="lg"
               className="w-full sm:w-auto"

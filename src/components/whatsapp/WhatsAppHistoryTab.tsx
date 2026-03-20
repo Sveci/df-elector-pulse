@@ -92,7 +92,7 @@ export function WhatsAppHistoryTab() {
 
     messages.forEach((msg) => {
       const normalizedPhone = normalizePhoneForGrouping(msg.phone);
-      
+
       if (!groups[normalizedPhone]) {
         groups[normalizedPhone] = {
           phone: msg.phone, // Keep original phone for display
@@ -103,12 +103,12 @@ export function WhatsAppHistoryTab() {
         };
       }
       groups[normalizedPhone].messages.push(msg);
-      
+
       // Update contact name if we find one (prefer non-null)
       if (!groups[normalizedPhone].contactName && msg.contact?.nome) {
         groups[normalizedPhone].contactName = msg.contact.nome;
       }
-      
+
       // Update latest message time if this message is newer
       if (new Date(msg.created_at) > new Date(groups[normalizedPhone].latestMessageAt)) {
         groups[normalizedPhone].latestMessageAt = msg.created_at;
@@ -122,7 +122,7 @@ export function WhatsAppHistoryTab() {
       .sort((a, b) => new Date(b.latestMessageAt).getTime() - new Date(a.latestMessageAt).getTime())
       .map(group => ({
         ...group,
-        messages: group.messages.sort((a, b) => 
+        messages: group.messages.sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ),
       }));

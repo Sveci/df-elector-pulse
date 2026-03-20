@@ -230,14 +230,14 @@ serve(async (req) => {
 
   try {
     const { surveyType, config, demographics } = await req.json();
-    
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const systemPrompt = getSystemPrompt(surveyType, config);
-    
+
     const userPrompt = `Gere as perguntas da pesquisa conforme as especificações. 
     
 Retorne APENAS o array JSON de perguntas, sem explicações ou texto adicional.
@@ -272,7 +272,7 @@ Comece a numeração (ordem) a partir de ${(demographics?.length || 0) + 1}, poi
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
+
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       throw new Error("Erro ao comunicar com o serviço de IA");

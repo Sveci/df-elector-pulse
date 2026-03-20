@@ -61,7 +61,7 @@ function toIsoTimestamp(value: TimestampLike | undefined, fallbackIso?: string) 
 }
 
 // Extrai o UUID de um externalId que pode ter formato:
-// - "uuid" (antigo) 
+// - "uuid" (antigo)
 // - "uuid_timestamp" (novo, quando recriado após invalidação)
 function extractLeaderId(externalId: string): string {
   // Se contém underscore, pega apenas a primeira parte (o UUID)
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     // Extrair dados da estrutura real do PassKit
     const eventType = payload.event;
     const passData = payload.pass;
-    
+
     if (!passData) {
       console.log("Payload sem dados de pass");
       return new Response(
@@ -107,10 +107,10 @@ Deno.serve(async (req) => {
     const memberId = passData.id; // PassKit member ID
     const metadata = passData.metadata;
     const recordData = passData.recordData || {};
-    
+
     // Extrair o UUID puro do externalId (remove timestamp se existir)
     const leaderId = externalIdRaw ? extractLeaderId(externalIdRaw) : null;
-    
+
     // Verificar status de instalação no recordData
     const universalStatus = recordData["universal.status"];
 
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
 
     if (!leaderId) {
       console.log("ExternalId não encontrado no payload, tentando buscar pelo memberId...");
-      
+
       if (memberId) {
         const { data: leader } = await supabase
           .from("lideres")
@@ -134,14 +134,14 @@ Deno.serve(async (req) => {
         if (leader) {
           console.log(`Líder encontrado pelo memberId: ${leader.id}`);
           await processEvent(supabase, eventType, leader.id, memberId, metadata, universalStatus);
-          
+
           return new Response(
             JSON.stringify({ success: true, message: "Evento processado via memberId" }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
       }
-      
+
       console.log("Não foi possível identificar o líder");
       return new Response(
         JSON.stringify({ success: false, error: "LeaderId não encontrado no externalId" }),
@@ -181,7 +181,7 @@ async function processEvent(
   const baseUpdate: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  
+
   if (memberId) {
     baseUpdate.passkit_member_id = memberId;
   }

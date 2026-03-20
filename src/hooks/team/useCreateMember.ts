@@ -35,7 +35,7 @@ export function useCreateMember() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
-      
+
       const notifications = result?.notifications;
       if (notifications?.emailSent && notifications?.whatsappSent) {
         toast.success("Membro adicionado! Credenciais enviadas por email e WhatsApp.");

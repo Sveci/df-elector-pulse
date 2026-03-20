@@ -73,7 +73,7 @@ export async function sendMeetingCancelledSMS(visit: VisitForNotification): Prom
 }
 
 export async function sendMeetingRescheduledSMS(
-  visit: VisitForNotification, 
+  visit: VisitForNotification,
   newDate: Date
 ): Promise<SendSMSResult> {
   try {

@@ -32,9 +32,9 @@ export default function LeadCaptureLanding() {
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const [localidade, setLocalidade] = useState("");
   const locationConfig = useTenantLocationConfig();
-  
+
   const { data: funnel, isLoading, error } = useLeadFunnelBySlug(slug);
-  
+
   const incrementMetric = useIncrementFunnelMetric();
 
   // Get UTM params
@@ -52,14 +52,14 @@ export default function LeadCaptureLanding() {
         try {
           // Increment view count
           await incrementMetric.mutateAsync({ funnelId: funnel.id, metric: 'views' });
-          
+
           // Ensure session_id exists
           let sessionId = sessionStorage.getItem('session_id');
           if (!sessionId) {
             sessionId = crypto.randomUUID();
             sessionStorage.setItem('session_id', sessionId);
           }
-          
+
           // Track in page_views with proper error handling
           const { error: pageViewError } = await supabase.from('page_views').insert({
             page_type: 'captacao',
@@ -129,7 +129,7 @@ export default function LeadCaptureLanding() {
 
   const onSubmit = async (data: any) => {
     if (!funnel) return;
-    
+
     setIsSubmitting(true);
 
     try {
@@ -145,7 +145,7 @@ export default function LeadCaptureLanding() {
 
       // Check if phone/email belongs to a leader - don't create contact for leaders
       let contactData: { id: string } | null = null;
-      
+
       const { data: existingLeader } = await supabase
         .from('lideres')
         .select('id')
@@ -181,7 +181,7 @@ export default function LeadCaptureLanding() {
       if (contactData?.id) {
         // Store contact_id in sessionStorage for download tracking
         sessionStorage.setItem(`captacao_contact_${funnel.id}`, contactData.id);
-        
+
         const { error: pageViewError } = await supabase.from('contact_page_views').insert({
           contact_id: contactData.id,
           page_type: 'captacao',
@@ -192,7 +192,7 @@ export default function LeadCaptureLanding() {
           utm_campaign: utmParams.utm_campaign,
           utm_content: utmParams.utm_content,
         });
-        
+
         if (pageViewError) {
           console.error('Error recording contact page view:', pageViewError);
         }
@@ -210,7 +210,7 @@ export default function LeadCaptureLanding() {
             .select('id, total_cadastros')
             .eq('utm_campaign', utmParams.utm_campaign)
             .maybeSingle();
-          
+
           if (findError) {
             console.error('Error finding campaign:', findError);
           } else if (campaignData) {
@@ -218,7 +218,7 @@ export default function LeadCaptureLanding() {
               .from('campaigns')
               .update({ total_cadastros: (campaignData.total_cadastros || 0) + 1 })
               .eq('id', campaignData.id);
-            
+
             if (updateError) {
               console.error('Error incrementing campaign cadastros:', updateError);
             } else {
@@ -341,9 +341,9 @@ export default function LeadCaptureLanding() {
       // Fetch file from edge function
       const response = await fetch(downloadUrl);
       if (!response.ok) throw new Error('Failed to fetch file');
-      
+
       const blob = await response.blob();
-      
+
       // Get filename from Content-Disposition header or use default
       const contentDisposition = response.headers.get('Content-Disposition');
       let fileName = `${funnel.lead_magnet_nome}.pdf`;
@@ -351,7 +351,7 @@ export default function LeadCaptureLanding() {
         const match = contentDisposition.match(/filename="(.+)"/);
         if (match) fileName = match[1];
       }
-      
+
       // Create download link
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -410,7 +410,7 @@ export default function LeadCaptureLanding() {
         {/* Cover with logo */}
         <div className="h-56 md:h-64 relative overflow-hidden">
           {/* Background - image or default gradient */}
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10"
             style={funnel.cover_url ? {
               backgroundImage: `url(${funnel.cover_url})`,
@@ -418,15 +418,15 @@ export default function LeadCaptureLanding() {
               backgroundPosition: 'center',
             } : undefined}
           />
-          
+
         {/* Fade overlay - same as events page */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {funnel.logo_url && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
-              <img 
-                src={funnel.logo_url} 
-                alt="Logo" 
+              <img
+                src={funnel.logo_url}
+                alt="Logo"
                 className="h-16 md:h-20 w-auto bg-white/90 rounded-xl p-2 shadow-lg"
               />
             </div>
@@ -450,8 +450,8 @@ export default function LeadCaptureLanding() {
 
           <div className="space-y-4">
             {/* Download Button */}
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="w-full text-lg py-6"
               style={{ backgroundColor: funnel.cor_botao }}
               onClick={handleDownload}
@@ -462,9 +462,9 @@ export default function LeadCaptureLanding() {
 
             {/* Additional CTA */}
             {funnel.cta_adicional_texto && funnel.cta_adicional_url && (
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <Button
+                variant="outline"
+                size="lg"
                 className="w-full"
                 onClick={() => window.open(funnel.cta_adicional_url!, '_blank')}
               >
@@ -499,7 +499,7 @@ export default function LeadCaptureLanding() {
       {/* Cover with title, subtitle, and logo inside */}
       <div className="h-72 md:h-96 lg:h-[28rem] relative overflow-hidden">
         {/* Background - image or default gradient */}
-        <div 
+        <div
           className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10"
           style={funnel.cover_url ? {
             backgroundImage: `url(${funnel.cover_url})`,
@@ -507,21 +507,21 @@ export default function LeadCaptureLanding() {
             backgroundPosition: 'center',
           } : undefined}
         />
-        
+
         {/* Fade overlay - same as events page */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {/* Logo at top */}
         {funnel.logo_url && (
           <div className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-10">
-            <img 
-              src={funnel.logo_url} 
-              alt="Logo" 
+            <img
+              src={funnel.logo_url}
+              alt="Logo"
               className="h-14 md:h-16 w-auto bg-white/90 rounded-xl p-2 shadow-lg"
             />
           </div>
         )}
-        
+
         {/* Title and subtitle at bottom of cover - same as events page */}
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-10">
           <div className="max-w-lg mx-auto text-center">
@@ -633,9 +633,9 @@ export default function LeadCaptureLanding() {
               )}
             />
 
-            <Button 
-              type="submit" 
-              size="lg" 
+            <Button
+              type="submit"
+              size="lg"
               className="w-full text-lg py-6"
               style={{ backgroundColor: funnel.cor_botao }}
               disabled={isSubmitting}

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Users, Calendar } from "lucide-react";
@@ -18,7 +19,7 @@ const GENDER_COLORS = {
   Masculino: "hsl(221, 83%, 53%)",
 };
 
-export const ProfileStats = ({ data }: ProfileStatsProps) => {
+export const ProfileStats = memo(({ data }: ProfileStatsProps) => {
   const { m } = useDemoMask();
   const genderData = data.genero.map((item) => ({
     name: item.label,
@@ -50,9 +51,9 @@ export const ProfileStats = ({ data }: ProfileStatsProps) => {
                 dataKey="value"
               >
                 {genderData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={GENDER_COLORS[entry.name as keyof typeof GENDER_COLORS]} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={GENDER_COLORS[entry.name as keyof typeof GENDER_COLORS]}
                   />
                 ))}
               </Pie>
@@ -82,4 +83,6 @@ export const ProfileStats = ({ data }: ProfileStatsProps) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+ProfileStats.displayName = "ProfileStats";

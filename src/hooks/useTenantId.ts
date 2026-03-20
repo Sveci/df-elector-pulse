@@ -5,10 +5,7 @@ import { useTenantContext } from "@/contexts/TenantContext";
  * Used to filter queries and pass tenant_id to mutations.
  */
 export function useTenantId(): string | null {
-  try {
-    const { activeTenant } = useTenantContext();
-    return activeTenant?.id || null;
-  } catch {
-    return null;
-  }
+  // Hook must be called unconditionally — never inside try/catch
+  const ctx = useTenantContext();
+  return ctx?.activeTenant?.id ?? null;
 }

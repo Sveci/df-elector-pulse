@@ -23,11 +23,11 @@ import { CaptacaoTab } from "@/components/campaigns/CaptacaoTab";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import JSZip from "jszip";
-import { 
-  Target, 
-  Plus, 
-  ExternalLink, 
-  Copy, 
+import {
+  Target,
+  Plus,
+  ExternalLink,
+  Copy,
   QrCode,
   BarChart3,
   Users,
@@ -134,17 +134,17 @@ const Campaigns = () => {
   } | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState<'single' | 'all' | 'batch' | null>(null);
   const [generatingLeaderId, setGeneratingLeaderId] = useState<string | null>(null);
-  
+
   // Estados para busca e paginação na aba Líderes
   const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
   const [leaderCurrentPage, setLeaderCurrentPage] = useState(1);
   const leadersPerPage = 10;
-  
+
   const { toast } = useToast();
   const { restartTutorial } = useTutorial("campaigns", campaignsTutorialSteps);
   const { isDemoMode, m } = useDemoMask();
   const queryClient = useQueryClient();
-  
+
   const { data: events = [] } = useEvents();
   const activeEvents = events.filter(e => e.status === 'active');
 
@@ -170,9 +170,9 @@ const Campaigns = () => {
         .from('campaigns')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Para cada campanha, buscar métricas
       const campaignsWithMetrics = await Promise.all((data || []).map(async (campaign: any) => {
         let pageViews = 0;
@@ -213,7 +213,7 @@ const Campaigns = () => {
           eventSlug: campaign.event_slug,
           funnelSlug: campaign.funnel_slug,
           funnelId: campaign.funnel_id,
-          link: campaign.funnel_slug 
+          link: campaign.funnel_slug
             ? generateFunnelCampaignUrl(
                 campaign.funnel_slug,
                 campaign.utm_source,
@@ -221,7 +221,7 @@ const Campaigns = () => {
                 campaign.utm_campaign,
                 tenantDomain
               )
-            : campaign.event_slug 
+            : campaign.event_slug
             ? generateEventCampaignUrl(
                 campaign.event_slug,
                 campaign.utm_source,
@@ -259,7 +259,7 @@ const Campaigns = () => {
       console.log('[DEBUG Query v5] ========================================');
       console.log('[DEBUG Query v5] Iniciando busca de líderes com batching...');
       console.log('[DEBUG Query v5] Timestamp:', new Date().toISOString());
-      
+
       const allLeaders: any[] = [];
       const pageSize = 1000;
       let page = 0;
@@ -299,16 +299,16 @@ const Campaigns = () => {
 
       console.log(`[DEBUG Query v5] Total de líderes carregados: ${allLeaders.length}`);
       console.log(`[DEBUG Query v5] Busca concluída em ${Date.now() - startTime}ms`);
-      
+
       // Debug: verificar amostra de nomes
-      console.log('[DEBUG Query v5] Amostra de nomes carregados:', 
+      console.log('[DEBUG Query v5] Amostra de nomes carregados:',
         allLeaders.slice(0, 10).map(l => l.nome_completo));
-      
+
       // Debug: verificar se "Giselle de Andrade Garcia" está na lista
-      const giselleTest = allLeaders.find(l => 
+      const giselleTest = allLeaders.find(l =>
         l.nome_completo?.toLowerCase().includes('giselle de andrade garcia'));
       console.log('[DEBUG Query v5] Giselle de Andrade Garcia encontrada:', !!giselleTest, giselleTest?.id);
-      
+
       console.log('[DEBUG Query v5] ========================================');
 
       return allLeaders.map(leader => ({
@@ -317,8 +317,8 @@ const Campaigns = () => {
         leaderEmail: leader.email || '',
         leaderPhone: leader.telefone || '',
         affiliateToken: leader.affiliate_token!,
-        cityName: leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade 
-          ? (leader.cidade as { nome: string }).nome 
+        cityName: leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade
+          ? (leader.cidade as { nome: string }).nome
           : null,
         link: generateLeaderReferralUrl(leader.affiliate_token!, tenantDomain),
         registrations: leader.cadastros,
@@ -341,31 +341,31 @@ const Campaigns = () => {
     }
     console.log(`[DEBUG Filter] Total líderes carregados: ${leaderLinks.length}`);
     console.log(`[DEBUG Filter] Termo de busca: "${leaderSearchTerm}"`);
-    
+
     if (!leaderSearchTerm.trim()) return leaderLinks;
-    
+
     const search = normalizeString(leaderSearchTerm.trim());
     const searchDigits = leaderSearchTerm.replace(/\D/g, "");
-    
+
     console.log(`[DEBUG] Busca normalizada: "${search}"`);
-    
+
     const filtered = leaderLinks.filter((leader) => {
       const normalizedName = normalizeString(leader.leaderName || "");
-      
+
       // Busca normalizada (sem acentos)
       const matchesNormalized = normalizedName.includes(search);
-      
+
       // Fallback: busca exata (lowercase apenas, preserva acentos)
       const matchesExact = (leader.leaderName || "").toLowerCase()
         .includes(leaderSearchTerm.trim().toLowerCase());
-      
+
       const matchesEmail = (leader.leaderEmail || "").toLowerCase().includes(search);
-      const matchesPhone = searchDigits.length >= 4 && 
+      const matchesPhone = searchDigits.length >= 4 &&
         leader.leaderPhone?.replace(/\D/g, "").includes(searchDigits);
-      
+
       return matchesNormalized || matchesExact || matchesEmail || matchesPhone;
     });
-    
+
     console.log(`[DEBUG Filter] Resultados encontrados: ${filtered.length}`);
     return filtered;
   }, [leaderLinks, leaderSearchTerm, isLoadingLeaders, isLeadersError, leadersError]);
@@ -401,7 +401,7 @@ const Campaigns = () => {
       });
       return;
     }
-    
+
     if (newCampaign.targetType === 'funnel' && !newCampaign.funnelId) {
       toast({
         title: "Campos obrigatórios",
@@ -410,7 +410,7 @@ const Campaigns = () => {
       });
       return;
     }
-    
+
     if (!newCampaign.utmSource || !newCampaign.utmCampaign) {
       toast({
         title: "Campos obrigatórios",
@@ -513,7 +513,7 @@ const Campaigns = () => {
     link.download = `${filename}.svg`;
     link.href = qrCode;
     link.click();
-    
+
     toast({
       title: "QR Code baixado!",
       description: "Arquivo salvo como SVG."
@@ -524,46 +524,46 @@ const Campaigns = () => {
   const generateSingleLeaderPdf = async (leader: typeof leaderLinks[0]) => {
     setGeneratingPdf('single');
     setGeneratingLeaderId(leader.id);
-    
+
     try {
       const pdf = new jsPDF();
       const qrDataUrl = await QRCode.toDataURL(leader.link, { width: 400, margin: 1 });
-      
+
       // Header
       pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
       pdf.text("Link de Cadastro", 105, 30, { align: "center" });
-      
+
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "normal");
       pdf.text(leader.leaderName, 105, 45, { align: "center" });
-      
+
       if (leader.cityName) {
         pdf.setFontSize(12);
         pdf.setTextColor(100);
         pdf.text(leader.cityName, 105, 55, { align: "center" });
       }
-      
+
       // QR Code
       pdf.addImage(qrDataUrl, "PNG", 55, 70, 100, 100);
-      
+
       // Link clicável
       pdf.setFontSize(10);
       pdf.setTextColor(0, 102, 204);
       pdf.textWithLink(leader.link, 105, 185, { align: "center", url: leader.link });
-      
+
       // Instruções
       pdf.setFontSize(11);
       pdf.setTextColor(80);
       pdf.text("Escaneie o QR Code ou acesse o link acima para se cadastrar", 105, 200, { align: "center" });
-      
+
       // Rodapé
       pdf.setFontSize(9);
       pdf.setTextColor(150);
       pdf.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 105, 280, { align: "center" });
-      
+
       pdf.save(`link-cadastro-${leader.leaderName.toLowerCase().replace(/\s+/g, '-')}.pdf`);
-      
+
       toast({
         title: "PDF gerado!",
         description: `PDF de ${leader.leaderName} baixado com sucesso.`
@@ -584,36 +584,36 @@ const Campaigns = () => {
   // Função para gerar PDF consolidado com todos os líderes
   const generateAllLeadersPdf = async () => {
     if (leaderLinks.length === 0) return;
-    
+
     setGeneratingPdf('all');
-    
+
     try {
       const pdf = new jsPDF();
-      
+
       // Capa
       pdf.setFontSize(24);
       pdf.setFont("helvetica", "bold");
       pdf.text("Links de Cadastro", 105, 60, { align: "center" });
-      
+
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "normal");
       pdf.text("Lideranças", 105, 75, { align: "center" });
-      
+
       pdf.setFontSize(12);
       pdf.setTextColor(100);
       pdf.text(`${leaderLinks.length} líderes`, 105, 90, { align: "center" });
       pdf.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 105, 100, { align: "center" });
-      
+
       // Líderes
       const leadersPerPage = 3;
       for (let i = 0; i < leaderLinks.length; i++) {
         const leader = leaderLinks[i];
         const positionOnPage = i % leadersPerPage;
-        
+
         if (i > 0 && positionOnPage === 0) {
           pdf.addPage();
         }
-        
+
         if (i === 0 || positionOnPage === 0) {
           if (i > 0) {
             // Header em cada página
@@ -622,37 +622,37 @@ const Campaigns = () => {
             pdf.text("Links de Cadastro - Lideranças", 20, 15);
           }
         }
-        
+
         const yOffset = i === 0 ? 140 : 30 + (positionOnPage * 85);
-        
+
         // QR Code
         const qrDataUrl = await QRCode.toDataURL(leader.link, { width: 200, margin: 1 });
         pdf.addImage(qrDataUrl, "PNG", 20, yOffset, 50, 50);
-        
+
         // Info do líder
         pdf.setFontSize(14);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(0);
         pdf.text(leader.leaderName, 80, yOffset + 15);
-        
+
         if (leader.cityName) {
           pdf.setFontSize(11);
           pdf.setFont("helvetica", "normal");
           pdf.setTextColor(100);
           pdf.text(leader.cityName, 80, yOffset + 25);
         }
-        
+
         // Link clicável
         pdf.setFontSize(9);
         pdf.setTextColor(0, 102, 204);
         pdf.textWithLink(leader.link, 80, yOffset + 40, { url: leader.link });
-        
+
         // Linha separadora
         if (positionOnPage < leadersPerPage - 1 && i < leaderLinks.length - 1) {
           pdf.setDrawColor(200);
           pdf.line(20, yOffset + 75, 190, yOffset + 75);
         }
-        
+
         // Número da página
         pdf.setFontSize(9);
         pdf.setTextColor(150);
@@ -660,9 +660,9 @@ const Campaigns = () => {
         const totalPages = Math.ceil(leaderLinks.length / leadersPerPage) + 1; // +1 para capa
         pdf.text(`Página ${pageNumber + 1} de ${totalPages}`, 105, 285, { align: "center" });
       }
-      
+
       pdf.save(`links-lideres-consolidado-${format(new Date(), "yyyy-MM-dd")}.pdf`);
-      
+
       toast({
         title: "PDF consolidado gerado!",
         description: `PDF com ${leaderLinks.length} líderes baixado com sucesso.`
@@ -682,55 +682,55 @@ const Campaigns = () => {
   // Função para gerar PDFs individuais em lote (ZIP)
   const generateBatchPdfs = async () => {
     if (leaderLinks.length === 0) return;
-    
+
     setGeneratingPdf('batch');
-    
+
     try {
       const zip = new JSZip();
-      
+
       for (const leader of leaderLinks) {
         const pdf = new jsPDF();
         const qrDataUrl = await QRCode.toDataURL(leader.link, { width: 400, margin: 1 });
-        
+
         // Header
         pdf.setFontSize(20);
         pdf.setFont("helvetica", "bold");
         pdf.text("Link de Cadastro", 105, 30, { align: "center" });
-        
+
         pdf.setFontSize(16);
         pdf.setFont("helvetica", "normal");
         pdf.text(leader.leaderName, 105, 45, { align: "center" });
-        
+
         if (leader.cityName) {
           pdf.setFontSize(12);
           pdf.setTextColor(100);
           pdf.text(leader.cityName, 105, 55, { align: "center" });
         }
-        
+
         // QR Code
         pdf.addImage(qrDataUrl, "PNG", 55, 70, 100, 100);
-        
+
         // Link clicável
         pdf.setFontSize(10);
         pdf.setTextColor(0, 102, 204);
         pdf.textWithLink(leader.link, 105, 185, { align: "center", url: leader.link });
-        
+
         // Instruções
         pdf.setFontSize(11);
         pdf.setTextColor(80);
         pdf.text("Escaneie o QR Code ou acesse o link acima para se cadastrar", 105, 200, { align: "center" });
-        
+
         // Rodapé
         pdf.setFontSize(9);
         pdf.setTextColor(150);
         pdf.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 105, 280, { align: "center" });
-        
+
         // Adicionar ao ZIP
         const pdfBlob = pdf.output('blob');
         const fileName = `link-cadastro-${leader.leaderName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
         zip.file(fileName, pdfBlob);
       }
-      
+
       // Gerar e baixar o ZIP
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
@@ -739,7 +739,7 @@ const Campaigns = () => {
       link.download = `links-lideres-individuais-${format(new Date(), "yyyy-MM-dd")}.zip`;
       link.click();
       URL.revokeObjectURL(url);
-      
+
       toast({
         title: "ZIP gerado!",
         description: `${leaderLinks.length} PDFs individuais compactados e baixados.`
@@ -817,7 +817,7 @@ const Campaigns = () => {
                 <DialogHeader>
                   <DialogTitle>Criar Nova Campanha</DialogTitle>
                 </DialogHeader>
-                <CreateCampaignForm 
+                <CreateCampaignForm
                   newCampaign={newCampaign}
                   setNewCampaign={setNewCampaign}
                   onSubmit={handleCreateCampaign}
@@ -924,7 +924,7 @@ const Campaigns = () => {
                               <ExternalLink className="h-4 w-4" />
                             </Button>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
                             <Button
                               variant="outline"
@@ -935,21 +935,21 @@ const Campaigns = () => {
                               <QrCode className="h-4 w-4 mr-2" />
                               Baixar QR
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => {
-                                setSelectedCampaign({ 
-                                  utmCampaign: campaign.utmCampaign, 
-                                  name: campaign.name 
+                                setSelectedCampaign({
+                                  utmCampaign: campaign.utmCampaign,
+                                  name: campaign.name
                                 });
                                 setReportDialogOpen(true);
                               }}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => {
                                 setEditingCampaign({
@@ -1007,7 +1007,7 @@ const Campaigns = () => {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingLeaders ? 'animate-spin' : ''}`} />
                   Atualizar Lista
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   onClick={generateAllLeadersPdf}
@@ -1020,7 +1020,7 @@ const Campaigns = () => {
                   )}
                   PDF Consolidado ({filteredLeaderLinks.length})
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   onClick={generateBatchPdfs}
@@ -1040,7 +1040,7 @@ const Campaigns = () => {
               {paginatedLeaders.length === 0 ? (
                 <Card className="card-default">
                   <CardContent className="p-6 text-center text-muted-foreground">
-                    {leaderSearchTerm 
+                    {leaderSearchTerm
                       ? "Nenhum líder encontrado para esta busca."
                       : "Nenhum líder com token de afiliado encontrado."
                     }
@@ -1122,7 +1122,7 @@ const Campaigns = () => {
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
                             </div>
-                            
+
                             <div className="flex space-x-2">
                               {leader.leaderPhone && (
                                 <Button
@@ -1241,8 +1241,8 @@ const Campaigns = () => {
 
                 <div>
                   <Label htmlFor="editUtmSource">UTM Source *</Label>
-                  <Select 
-                    value={editingCampaign.utmSource} 
+                  <Select
+                    value={editingCampaign.utmSource}
                     onValueChange={(value) => setEditingCampaign({ ...editingCampaign, utmSource: value })}
                   >
                     <SelectTrigger>
@@ -1263,8 +1263,8 @@ const Campaigns = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="editUtmMedium">UTM Medium</Label>
-                    <Select 
-                      value={editingCampaign.utmMedium} 
+                    <Select
+                      value={editingCampaign.utmMedium}
                       onValueChange={(value) => setEditingCampaign({ ...editingCampaign, utmMedium: value })}
                     >
                       <SelectTrigger>
@@ -1281,7 +1281,7 @@ const Campaigns = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="editUtmCampaign">UTM Campaign *</Label>
                     <Input
@@ -1325,9 +1325,9 @@ const Campaigns = () => {
 const AttributionReport = () => {
   const { isDemoMode, m } = useDemoMask();
   const { data: stats, isLoading, refetch } = useAttributionStats();
-  
+
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
-  
+
   const getSourceIcon = (sourceType: string) => {
     switch (sourceType) {
       case 'leader': return <UserCheck className="h-4 w-4" />;
@@ -1470,17 +1470,17 @@ const AttributionReport = () => {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="monthLabel" className="text-xs" />
                   <YAxis className="text-xs" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="hsl(var(--primary))" 
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
                     name="Cadastros"
@@ -1524,8 +1524,8 @@ const AttributionReport = () => {
                   {stats.sourceBreakdown.map((item, index) => (
                     <div key={item.source} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
+                        <div
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
                         <span className="text-muted-foreground">{item.source}</span>
@@ -1622,16 +1622,16 @@ const AttributionReport = () => {
                   <BarChart data={stats.cityDistribution.slice(0, 8)} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis type="number" className="text-xs" />
-                    <YAxis 
-                      dataKey="city" 
-                      type="category" 
-                      width={100} 
+                    <YAxis
+                      dataKey="city"
+                      type="category"
+                      width={100}
                       className="text-xs"
                       tick={{ fontSize: 11 }}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}
@@ -1699,9 +1699,9 @@ const AttributionReport = () => {
 };
 
 // Componente para criar nova campanha
-const CreateCampaignForm = ({ 
-  newCampaign, 
-  setNewCampaign, 
+const CreateCampaignForm = ({
+  newCampaign,
+  setNewCampaign,
   onSubmit,
   activeEvents,
   activeFunnels
@@ -1717,10 +1717,10 @@ const CreateCampaignForm = ({
       {/* Seletor de tipo de destino */}
       <div>
         <Label htmlFor="targetType">Tipo de Destino *</Label>
-        <Select 
-          value={newCampaign.targetType} 
-          onValueChange={(value: "event" | "funnel") => setNewCampaign({ 
-            ...newCampaign, 
+        <Select
+          value={newCampaign.targetType}
+          onValueChange={(value: "event" | "funnel") => setNewCampaign({
+            ...newCampaign,
             targetType: value,
             eventId: "",
             eventSlug: "",
@@ -1745,12 +1745,12 @@ const CreateCampaignForm = ({
           {newCampaign.targetType === 'event' ? (
             <>
               <Label htmlFor="event">Evento *</Label>
-              <Select 
-                value={newCampaign.eventId} 
+              <Select
+                value={newCampaign.eventId}
                 onValueChange={(eventId) => {
                   const event = activeEvents.find(e => e.id === eventId);
-                  setNewCampaign({ 
-                    ...newCampaign, 
+                  setNewCampaign({
+                    ...newCampaign,
                     eventId,
                     eventSlug: event?.slug || '',
                     name: event?.name || ''
@@ -1776,12 +1776,12 @@ const CreateCampaignForm = ({
           ) : (
             <>
               <Label htmlFor="funnel">Funil de Captação *</Label>
-              <Select 
-                value={newCampaign.funnelId} 
+              <Select
+                value={newCampaign.funnelId}
                 onValueChange={(funnelId) => {
                   const funnel = activeFunnels.find(f => f.id === funnelId);
-                  setNewCampaign({ 
-                    ...newCampaign, 
+                  setNewCampaign({
+                    ...newCampaign,
                     funnelId,
                     funnelSlug: funnel?.slug || '',
                     name: funnel?.nome || ''
@@ -1806,11 +1806,11 @@ const CreateCampaignForm = ({
             </>
           )}
         </div>
-        
+
         <div>
           <Label htmlFor="utmSource">UTM Source *</Label>
-          <Select 
-            value={newCampaign.utmSource} 
+          <Select
+            value={newCampaign.utmSource}
             onValueChange={(value) => setNewCampaign({ ...newCampaign, utmSource: value })}
           >
             <SelectTrigger>
@@ -1832,8 +1832,8 @@ const CreateCampaignForm = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="utmMedium">UTM Medium</Label>
-          <Select 
-            value={newCampaign.utmMedium} 
+          <Select
+            value={newCampaign.utmMedium}
             onValueChange={(value) => setNewCampaign({ ...newCampaign, utmMedium: value })}
           >
             <SelectTrigger>
@@ -1850,7 +1850,7 @@ const CreateCampaignForm = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
           <Label htmlFor="utmCampaign">UTM Campaign *</Label>
           <Input

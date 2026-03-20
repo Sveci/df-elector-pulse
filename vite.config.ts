@@ -19,6 +19,13 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
+      // Security headers for local development
+      headers: {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+      },
     },
     plugins: [
       react(),
@@ -26,10 +33,10 @@ export default defineConfig(({ mode }) => {
       mode === "development" && componentTagger(),
       // Gzip + Brotli compression for production
       mode === "production" &&
-        compression({ algorithms: ["gzip"], exclude: [/\.(png|jpg|webp|svg|gif)$/] }),
+        compression({ algorithm: "gzip", exclude: [/\.(png|jpg|webp|svg|gif)$/] }),
       mode === "production" &&
         compression({
-          algorithms: ["brotliCompress"],
+          algorithm: "brotliCompress",
           exclude: [/\.(png|jpg|webp|svg|gif)$/],
         }),
     ].filter(Boolean),

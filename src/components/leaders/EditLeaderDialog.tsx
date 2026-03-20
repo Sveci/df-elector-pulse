@@ -27,12 +27,12 @@ import { LocationSelect } from "@/components/office/LocationSelect";
 import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { Pencil, Loader2 } from "lucide-react";
 import { useUpdateLeader } from "@/hooks/leaders/useUpdateLeader";
-import { 
-  MaskedDateInput, 
-  formatDateBR, 
-  parseDateBR, 
-  isValidDateBR, 
-  isNotFutureDate 
+import {
+  MaskedDateInput,
+  formatDateBR,
+  parseDateBR,
+  isValidDateBR,
+  isNotFutureDate
 } from "@/components/ui/masked-date-input";
 
 const formSchema = z.object({
@@ -76,7 +76,7 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
         is_active: leader.is_active,
       },
     });
-  
+
     // Atualizar valores quando o líder mudar
     useEffect(() => {
       if (open) {
@@ -97,12 +97,12 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
 
   const onSubmit = (data: FormData) => {
     updateLeader(
-      { 
-        id: leader.id, 
+      {
+        id: leader.id,
         data: {
           ...data,
           localidade: localidade || undefined,
-        } as UpdateLeaderDTO 
+        } as UpdateLeaderDTO
       },
       {
         onSuccess: () => {
@@ -151,10 +151,10 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Email (Opcional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="joao.silva@exemplo.com" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="joao.silva@exemplo.com"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -169,8 +169,8 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Telefone (Opcional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="5561999999999" 
+                    <Input
+                      placeholder="5561999999999"
                       {...field}
                       maxLength={13}
                     />
@@ -232,8 +232,8 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Instagram (Opcional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="@usuario" 
+                    <Input
+                      placeholder="@usuario"
                       {...field}
                     />
                   </FormControl>
@@ -249,7 +249,7 @@ export function EditLeaderDialog({ leader, children }: EditLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Observação (Opcional)</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Informações adicionais sobre o líder..."
                       {...field}
                       rows={3}

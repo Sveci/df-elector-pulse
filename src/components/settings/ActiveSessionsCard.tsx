@@ -14,9 +14,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { 
-  Monitor, 
-  Smartphone, 
+import {
+  Monitor,
+  Smartphone,
   Tablet,
   Loader2,
   LogOut,
@@ -89,21 +89,21 @@ const SessionItem = ({ session, onTerminate, isTerminating }: SessionItemProps) 
               Login: {format(new Date(session.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </span>
             <span>
-              Última atividade: {formatDistanceToNow(new Date(session.last_activity), { 
-                addSuffix: true, 
-                locale: ptBR 
+              Última atividade: {formatDistanceToNow(new Date(session.last_activity), {
+                addSuffix: true,
+                locale: ptBR
               })}
             </span>
           </div>
         </div>
       </div>
-      
+
       {!session.is_current && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
               disabled={terminating || isTerminating}
             >
@@ -118,7 +118,7 @@ const SessionItem = ({ session, onTerminate, isTerminating }: SessionItemProps) 
             <AlertDialogHeader>
               <AlertDialogTitle>Encerrar sessão?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta ação irá desconectar o dispositivo "{session.browser} no {session.os}". 
+                Esta ação irá desconectar o dispositivo "{session.browser} no {session.os}".
                 O usuário precisará fazer login novamente nesse dispositivo.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -136,11 +136,11 @@ const SessionItem = ({ session, onTerminate, isTerminating }: SessionItemProps) 
 };
 
 export const ActiveSessionsCard = () => {
-  const { 
-    sessions, 
-    isLoading, 
-    fetchSessions, 
-    terminateSession 
+  const {
+    sessions,
+    isLoading,
+    fetchSessions,
+    terminateSession
   } = useActiveSessions();
   const [isTerminating, setIsTerminating] = useState(false);
 
@@ -169,9 +169,9 @@ export const ActiveSessionsCard = () => {
               Dispositivos conectados à sua conta ({sessions.length} {sessions.length === 1 ? 'sessão' : 'sessões'})
             </CardDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleRefresh}
             disabled={isLoading}
           >

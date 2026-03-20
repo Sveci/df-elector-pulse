@@ -23,45 +23,45 @@ const ROLE_ACCESS: Record<string, { pages: string[], settings: string[] }> = {
 
 export function useUserRole() {
   const { user } = useAuth();
-  
+
   const role = user?.role as AppRole | undefined;
-  
+
   const isAdmin = role === 'admin' || role === 'super_admin';
   const isSuperAdmin = role === 'super_admin';
   const isAtendente = role === 'atendente';
   const isCheckinOperator = role === 'checkin_operator';
-  
+
   const canAccessPage = (page: string): boolean => {
     if (!role) return false;
     if (role === 'super_admin') return true; // Super admin tem acesso total
-    
+
     const access = ROLE_ACCESS[role];
     if (!access) return false;
-    
+
     return access.pages.includes(page);
   };
-  
+
   const canAccessSetting = (setting: string): boolean => {
     if (!role) return false;
     if (role === 'super_admin') return true; // Super admin tem acesso total
-    
+
     const access = ROLE_ACCESS[role];
     if (!access) return false;
-    
+
     return access.settings.includes(setting);
   };
-  
+
   const canAccess = (allowedRoles: AppRole[]): boolean => {
     if (!role) return false;
     if (role === 'super_admin') return true;
     return allowedRoles.includes(role);
   };
-  
-  return { 
-    role, 
-    isAdmin, 
+
+  return {
+    role,
+    isAdmin,
     isSuperAdmin,
-    isAtendente, 
+    isAtendente,
     isCheckinOperator,
     canAccess,
     canAccessPage,

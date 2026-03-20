@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     // ========== AUTHENTICATION CHECK ==========
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
@@ -27,13 +27,13 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
+
     const supabaseAuth = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
     const { data: { user: callingUser }, error: authError } = await supabaseAuth.auth.getUser(token);
-    
+
     if (authError || !callingUser) {
       console.error('[delete-user] Invalid token:', authError);
       return new Response(

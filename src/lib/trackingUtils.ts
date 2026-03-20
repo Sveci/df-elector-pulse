@@ -9,8 +9,8 @@ declare global {
 /**
  * Track a Lead event in Facebook Pixel
  */
-export function trackLead(params?: { 
-  content_name?: string; 
+export function trackLead(params?: {
+  content_name?: string;
   value?: number;
   currency?: string;
 }) {

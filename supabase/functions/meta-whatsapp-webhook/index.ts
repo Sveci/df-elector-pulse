@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VERIFY_TOKEN = "LOVABLE_META_WEBHOOK_2024";
+const VERIFY_TOKEN = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN") || "LOVABLE_META_WEBHOOK_2024";
 
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/\D/g, "");
@@ -19,20 +19,20 @@ function normalizePhone(phone: string): string {
 // Resolve tenant_id from the phone_number_id in the webhook payload
 async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: string): Promise<string | null> {
   if (!phoneNumberId) return null;
-  
+
   const { data } = await supabase
     .from('integrations_settings')
     .select('tenant_id')
     .eq('meta_cloud_phone_number_id', phoneNumberId)
     .limit(1)
     .single();
-  
+
   return data?.tenant_id || null;
 }
 
 async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null) {
   const accessToken = Deno.env.get('META_WA_ACCESS_TOKEN');
-  
+
   if (!accessToken) {
     console.error('[Meta Webhook] META_WA_ACCESS_TOKEN not configured');
     return { success: false, error: 'META_WA_ACCESS_TOKEN not configured' };
@@ -410,7 +410,7 @@ async function sendMenuMessage(supabase: any, phone: string, municipio: string |
 
 serve(async (req) => {
   const url = new URL(req.url);
-  
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -455,7 +455,7 @@ serve(async (req) => {
           if (change.field !== 'messages') continue;
 
           const value = change.value;
-          
+
           // Resolve tenant from phone_number_id in the webhook metadata
           const webhookPhoneNumberId = value?.metadata?.phone_number_id;
           const tenantId = await resolveTenantFromPhoneNumberId(supabase, webhookPhoneNumberId);
@@ -468,14 +468,14 @@ serve(async (req) => {
               const messageId = message.id;
               const timestamp = message.timestamp;
               const messageType = message.type;
-              
+
               let messageText = '';
               if (messageType === 'text') {
                 messageText = message.text?.body || '';
               } else if (messageType === 'button') {
                 messageText = message.button?.text || '';
               } else if (messageType === 'interactive') {
-                messageText = message.interactive?.button_reply?.title || 
+                messageText = message.interactive?.button_reply?.title ||
                               message.interactive?.list_reply?.title || '';
               }
 
@@ -514,7 +514,7 @@ serve(async (req) => {
                 .eq('telefone_norm', normalizedPhone)
                 .limit(1);
               if (tenantId) contactQuery = contactQuery.eq('tenant_id', tenantId);
-              
+
               const { data: contact } = await contactQuery.single();
 
               // Clean message for keyword matching
@@ -537,8 +537,8 @@ serve(async (req) => {
                       opt_out_channel: 'whatsapp',
                     })
                     .eq('id', contact.id);
-                  
-                  await sendMetaCloudMessage(supabase, normalizedPhone, 
+
+                  await sendMetaCloudMessage(supabase, normalizedPhone,
                     `Você foi removido(a) da nossa lista. Para voltar a receber mensagens, envie VOLTAR.`,
                     tenantId
                   );
@@ -557,7 +557,7 @@ serve(async (req) => {
                     opt_out_channel: null,
                   })
                   .eq('id', contact.id);
-                
+
                 await sendMetaCloudMessage(supabase, normalizedPhone,
                   `Você foi adicionado(a) novamente à nossa lista. Bem-vindo(a) de volta!`,
                   tenantId
@@ -767,7 +767,7 @@ serve(async (req) => {
 
                   try {
                     await sendMetaCloudMessage(supabase, normalizedPhone, consentMessage, tenantId);
-                    
+
                     await supabase
                       .from('contact_verifications')
                       .update({ consent_question_sent_at: new Date().toISOString() })
@@ -805,7 +805,7 @@ serve(async (req) => {
                   .not('registration_state', 'is', null)
                   .limit(1)
                   .maybeSingle();
-                
+
                 if (regSession?.registration_state) {
                   inRegistrationFlow = true;
                   console.log(`[Meta Webhook] User ${from} is in registration flow (state: ${regSession.registration_state}), forwarding to chatbot`);
@@ -934,12 +934,12 @@ serve(async (req) => {
 
               if (settings?.verification_wa_enabled) {
                 const keyword = settings.verification_wa_keyword?.toUpperCase() || 'CONFIRMAR';
-                
+
                 if (cleanMessage === keyword || cleanMessage.startsWith(keyword + ' ')) {
                   if (cleanMessage === keyword) {
                     console.log('[Meta Webhook] Bare keyword detected without token from:', from);
                     handledAsVerification = true;
-                    
+
                     let verQuery = supabase
                       .from('contact_verifications')
                       .select('*')

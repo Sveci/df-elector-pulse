@@ -21,12 +21,12 @@ interface ContactSearchResult {
 export function useSearchContactsByPhone(phone: string) {
   // Remove tudo que não for dígito
   const digitsOnly = phone.replace(/\D/g, "");
-  
+
   return useQuery({
     queryKey: ["contacts-search-phone", digitsOnly],
     queryFn: async (): Promise<ContactSearchResult[]> => {
       if (digitsOnly.length < 3) return [];
-      
+
       // Buscar contatos e líderes em paralelo
       const [contactsResult, leadersResult] = await Promise.all([
         // Buscar contatos
@@ -37,7 +37,7 @@ export function useSearchContactsByPhone(phone: string) {
           .eq("is_active", true)
           .order("nome")
           .limit(10),
-        
+
         // Buscar líderes
         supabase
           .from("lideres")
@@ -55,22 +55,22 @@ export function useSearchContactsByPhone(phone: string) {
           .order("nome_completo")
           .limit(10)
       ]);
-      
+
       const contacts = contactsResult.data || [];
       const leaders = leadersResult.data || [];
-      
+
       if (contactsResult.error) {
         console.error("Erro ao buscar contatos:", contactsResult.error);
       }
-      
+
       if (leadersResult.error) {
         console.error("Erro ao buscar líderes:", leadersResult.error);
       }
-      
+
       // Buscar o último líder de cada contato baseado nas visitas
       const contactIds = contacts.map(c => c.id);
-      let lastLeaderByContact: Record<string, { id: string; nome_completo: string }> = {};
-      
+      const lastLeaderByContact: Record<string, { id: string; nome_completo: string }> = {};
+
       if (contactIds.length > 0) {
         const { data: visits } = await supabase
           .from("office_visits")
@@ -78,7 +78,7 @@ export function useSearchContactsByPhone(phone: string) {
           .in("contact_id", contactIds)
           .not("leader_id", "is", null)
           .order("created_at", { ascending: false });
-        
+
         if (visits) {
           for (const visit of visits) {
             if (visit.contact_id && !lastLeaderByContact[visit.contact_id] && visit.leader) {
@@ -87,7 +87,7 @@ export function useSearchContactsByPhone(phone: string) {
           }
         }
       }
-      
+
       // Mapear contatos
       const contactResults: ContactSearchResult[] = contacts.map(contact => ({
         ...contact,
@@ -95,15 +95,15 @@ export function useSearchContactsByPhone(phone: string) {
         last_leader: lastLeaderByContact[contact.id] || null,
         source: 'contact' as const,
       }));
-      
+
       // Mapear líderes para o formato de contato (usando coordenador como "last_leader")
       const leaderResults: ContactSearchResult[] = leaders.map(leader => {
         // parent_leader pode vir como array (devido ao join) ou null
         const parentLeaderData = leader.parent_leader;
-        const parentLeader = Array.isArray(parentLeaderData) 
+        const parentLeader = Array.isArray(parentLeaderData)
           ? parentLeaderData[0] as { id: string; nome_completo: string } | undefined
           : parentLeaderData as { id: string; nome_completo: string } | null;
-        
+
         return {
           id: leader.id,
           nome: leader.nome_completo,
@@ -115,11 +115,11 @@ export function useSearchContactsByPhone(phone: string) {
           source: 'leader' as const,
         };
       });
-      
+
       // Combinar resultados, removendo duplicatas (priorizar líderes sobre contatos)
       const leaderIds = new Set(leaderResults.map(l => l.id));
       const uniqueContacts = contactResults.filter(c => !leaderIds.has(c.id));
-      
+
       return [...leaderResults, ...uniqueContacts];
     },
     enabled: digitsOnly.length >= 3,

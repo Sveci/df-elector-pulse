@@ -27,7 +27,7 @@ async function getDeputadoNome(): Promise<string> {
     .select("nome, cargo")
     .limit(1)
     .single();
-  
+
   if (data?.cargo && data?.nome) {
     return `${data.cargo} ${data.nome}`;
   }
@@ -75,7 +75,7 @@ async function sendWhatsAppTemplate(
  */
 export async function sendVisitFormLink(visit: VisitData): Promise<{ success: boolean; error?: string }> {
   const formLink = generateVisitFormUrl(visit.id);
-  
+
   const variables = {
     nome: visit.contact.nome,
     protocolo: visit.protocolo,
@@ -83,7 +83,7 @@ export async function sendVisitFormLink(visit: VisitData): Promise<{ success: bo
   };
 
   console.log(`[WhatsApp] Enviando link do formulário para ${visit.contact.nome}`);
-  
+
   return sendWhatsAppTemplate(
     visit.contact.telefone_norm,
     "visita-link-formulario",
@@ -98,7 +98,7 @@ export async function sendVisitFormLink(visit: VisitData): Promise<{ success: bo
  */
 export async function sendMeetingCancelledNotification(visit: VisitData): Promise<{ success: boolean; error?: string }> {
   const deputadoNome = await getDeputadoNome();
-  
+
   const variables = {
     nome: visit.contact.nome,
     protocolo: visit.protocolo,
@@ -106,7 +106,7 @@ export async function sendMeetingCancelledNotification(visit: VisitData): Promis
   };
 
   console.log(`[WhatsApp] Enviando notificação de cancelamento para ${visit.contact.nome}`);
-  
+
   return sendWhatsAppTemplate(
     visit.contact.telefone_norm,
     "visita-reuniao-cancelada",
@@ -125,7 +125,7 @@ export async function sendMeetingRescheduledNotification(
 ): Promise<{ success: boolean; error?: string }> {
   const deputadoNome = await getDeputadoNome();
   const formattedDate = format(newDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  
+
   const variables = {
     nome: visit.contact.nome,
     protocolo: visit.protocolo,
@@ -134,7 +134,7 @@ export async function sendMeetingRescheduledNotification(
   };
 
   console.log(`[WhatsApp] Enviando notificação de reagendamento para ${visit.contact.nome}`);
-  
+
   return sendWhatsAppTemplate(
     visit.contact.telefone_norm,
     "visita-reuniao-reagendada",

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -23,7 +24,7 @@ const COLORS = [
   "hsl(220, 14%, 96%)",  // gray-100
 ];
 
-export const RankingChart = ({ title, data, icon }: RankingChartProps) => {
+export const RankingChart = memo(({ title, data, icon }: RankingChartProps) => {
   return (
     <Card className="card-default">
       <CardHeader>
@@ -38,9 +39,9 @@ export const RankingChart = ({ title, data, icon }: RankingChartProps) => {
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={90} style={{ fontSize: '12px' }} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'white', 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'white',
                 border: '1px solid hsl(220, 13%, 91%)',
                 borderRadius: '8px'
               }}
@@ -57,4 +58,6 @@ export const RankingChart = ({ title, data, icon }: RankingChartProps) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+RankingChart.displayName = "RankingChart";

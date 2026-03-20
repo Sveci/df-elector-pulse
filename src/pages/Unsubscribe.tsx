@@ -49,7 +49,7 @@ export default function Unsubscribe() {
         }
 
         setContactName(result.nome || "");
-        
+
         if (result.already_unsubscribed) {
           setStatus("already_unsubscribed");
         } else {

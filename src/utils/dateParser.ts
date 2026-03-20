@@ -25,7 +25,7 @@ export function parseDate(dateInput: string | number | Date): string | null {
     // Se for string
     else {
       const dateStr = String(dateInput).trim();
-      
+
       // Tenta diversos formatos
       // DD/MM/YYYY ou DD-MM-YYYY
       const ddmmyyyyMatch = dateStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);

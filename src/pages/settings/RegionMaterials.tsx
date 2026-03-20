@@ -93,7 +93,7 @@ const RegionMaterials = () => {
 
   const handleSubmit = async () => {
     if (!materialName.trim()) return;
-    
+
     setIsUploading(true);
     try {
       let materialUrl = editingMaterial?.material_url || "";

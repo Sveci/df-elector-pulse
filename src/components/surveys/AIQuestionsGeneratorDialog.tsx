@@ -37,13 +37,13 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type SurveyType = 
-  | "intencao_voto" 
-  | "rejeicao" 
-  | "avaliacao_governo" 
-  | "recall" 
-  | "clima_opiniao" 
-  | "diagnostico_territorial" 
+type SurveyType =
+  | "intencao_voto"
+  | "rejeicao"
+  | "avaliacao_governo"
+  | "recall"
+  | "clima_opiniao"
+  | "diagnostico_territorial"
   | "personalizada";
 
 interface GeneratedQuestion {
@@ -193,29 +193,29 @@ export function AIQuestionsGeneratorDialog({
     incluirEspontanea: true,
     incluirEstimulada: true,
     incluirSegundoTurno: false,
-    
+
     // Rejeição
     candidatosRejeicao: "",
     partidosRejeicao: "",
     nivelDetalhamento: "basico",
-    
+
     // Avaliação de Governo
     esfera: "",
     areasAvaliar: [] as string[],
     incluirComparativo: false,
-    
+
     // Recall
     politicosRecall: "",
     tipoRecall: "nome",
-    
+
     // Clima de Opinião
     temasClima: [] as string[],
     formatoClima: "lista",
-    
+
     // Diagnóstico Territorial
     regioesFoco: "",
     focoTerritorial: "presenca",
-    
+
     // Personalizada
     objetivoPersonalizado: "",
   });
@@ -232,8 +232,8 @@ export function AIQuestionsGeneratorDialog({
   };
 
   const handleDemographicToggle = (id: string) => {
-    setSelectedDemographics(prev => 
-      prev.includes(id) 
+    setSelectedDemographics(prev =>
+      prev.includes(id)
         ? prev.filter(d => d !== id)
         : [...prev, id]
     );
@@ -259,7 +259,7 @@ export function AIQuestionsGeneratorDialog({
 
   const generateQuestions = async () => {
     if (!selectedType) return;
-    
+
     setIsGenerating(true);
     setStreamingContent("");
     setGeneratedQuestions([]);
@@ -300,7 +300,7 @@ export function AIQuestionsGeneratorDialog({
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        
+
         let newlineIndex: number;
         while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
           const line = buffer.slice(0, newlineIndex).trim();
@@ -384,7 +384,7 @@ export function AIQuestionsGeneratorDialog({
 
   const canProceedStep2 = () => {
     if (!selectedType) return false;
-    
+
     switch (selectedType) {
       case "intencao_voto":
         return !!config.cargo;
@@ -459,7 +459,7 @@ export function AIQuestionsGeneratorDialog({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Candidatos/Pré-candidatos (opcional)</Label>
               <Textarea
@@ -523,7 +523,7 @@ export function AIQuestionsGeneratorDialog({
                 rows={2}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Partidos a Avaliar (opcional)</Label>
               <Textarea
@@ -766,8 +766,8 @@ export function AIQuestionsGeneratorDialog({
               </div>
             </div>
 
-            <Button 
-              onClick={generateQuestions} 
+            <Button
+              onClick={generateQuestions}
               className="w-full"
               size="lg"
             >
@@ -927,7 +927,7 @@ export function AIQuestionsGeneratorDialog({
             <ArrowLeft className="h-4 w-4 mr-2" />
             {step === 1 ? "Cancelar" : "Voltar"}
           </Button>
-          
+
           {step < 4 && (
             <Button
               onClick={() => setStep(step + 1)}

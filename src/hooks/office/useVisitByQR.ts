@@ -19,9 +19,9 @@ export function useVisitByQR(qrCode: string) {
     queryFn: async (): Promise<VisitByQR | null> => {
       const { data, error } = await supabase
         .rpc("get_visit_by_qr", { _qr_code: qrCode });
-      
+
       if (error) throw error;
-      
+
       // RPC returns an array, get the first result
       if (data && data.length > 0) {
         return data[0] as VisitByQR;

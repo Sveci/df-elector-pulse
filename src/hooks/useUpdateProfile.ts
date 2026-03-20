@@ -11,7 +11,7 @@ interface ProfileUpdate {
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProfileUpdate }) => {
       const { data: profile, error } = await supabase
@@ -20,7 +20,7 @@ export function useUpdateProfile() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return profile;
     },
@@ -58,13 +58,13 @@ export function useProfile(userId: string | undefined) {
     queryKey: ["profile", userId],
     queryFn: async () => {
       if (!userId) return null;
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },

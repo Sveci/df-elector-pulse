@@ -13,7 +13,7 @@ export function useUpdateVisitCheckIn() {
 
       if (error) throw error;
       if (!data) throw new Error("Check-in failed - visit not found or invalid status");
-      
+
       return { success: true };
     },
     onSuccess: (_, qrCode) => {
@@ -37,7 +37,7 @@ export function useUpdateVisitCheckInById() {
     mutationFn: async ({ id, checked_in }: { id: string; checked_in: boolean }) => {
       const { data, error } = await supabase
         .from("office_visits")
-        .update({ 
+        .update({
           checked_in,
           checked_in_at: checked_in ? new Date().toISOString() : null,
           status: checked_in ? 'CHECKED_IN' : 'FORM_SUBMITTED'
@@ -45,7 +45,7 @@ export function useUpdateVisitCheckInById() {
         .eq("id", id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },

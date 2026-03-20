@@ -14,7 +14,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
   const config = statusConfig[status] || statusConfig.aberto;
-  
+
   return (
     <Badge variant="secondary" className={config.className}>
       {config.label}

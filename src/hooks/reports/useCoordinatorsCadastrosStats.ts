@@ -33,8 +33,8 @@ export function useCoordinatorsCadastrosStats() {
         pendentes: number;
       }) => ({
         ...item,
-        taxa_verificacao: item.total_cadastros > 0 
-          ? (item.verificados / item.total_cadastros) * 100 
+        taxa_verificacao: item.total_cadastros > 0
+          ? (item.verificados / item.total_cadastros) * 100
           : 0,
       }));
     },

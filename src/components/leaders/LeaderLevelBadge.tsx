@@ -1,14 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { 
-  useLeaderLevels, 
-  getLeaderLevel as getDynamicLevel, 
+import {
+  useLeaderLevels,
+  getLeaderLevel as getDynamicLevel,
   getNextLevel as getDynamicNextLevel,
   getProgressToNextLevel as getDynamicProgress,
   getPointsToNextLevel as getDynamicPointsToNext,
   DEFAULT_LEVELS,
-  type LeaderLevel 
+  type LeaderLevel
 } from "@/hooks/leaders/useLeaderLevels";
 
 // Re-export for backward compatibility
@@ -39,9 +39,9 @@ interface LeaderLevelBadgeProps {
   levels?: LeaderLevel[];
 }
 
-export function LeaderLevelBadge({ 
-  points, 
-  showIcon = true, 
+export function LeaderLevelBadge({
+  points,
+  showIcon = true,
   size = 'md',
   className,
   levels
@@ -49,15 +49,15 @@ export function LeaderLevelBadge({
   const { data: dynamicLevels } = useLeaderLevels();
   const activeLevels = levels || dynamicLevels || DEFAULT_LEVELS;
   const level = getDynamicLevel(points, activeLevels);
-  
+
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
     md: 'text-sm px-2.5 py-1',
     lg: 'text-base px-3 py-1.5'
   };
-  
+
   return (
-    <Badge 
+    <Badge
       className={cn(
         level.bgClass,
         level.colorClass,
@@ -82,8 +82,8 @@ interface LeaderLevelProgressProps {
   levels?: LeaderLevel[];
 }
 
-export function LeaderLevelProgress({ 
-  points, 
+export function LeaderLevelProgress({
+  points,
   showLabel = true,
   className,
   levels
@@ -94,7 +94,7 @@ export function LeaderLevelProgress({
   const nextLevel = getDynamicNextLevel(points, activeLevels);
   const progress = getDynamicProgress(points, activeLevels);
   const pointsNeeded = getDynamicPointsToNext(points, activeLevels);
-  
+
   return (
     <div className={cn("space-y-1", className)}>
       {showLabel && (
@@ -107,8 +107,8 @@ export function LeaderLevelProgress({
           )}
         </div>
       )}
-      <Progress 
-        value={progress} 
+      <Progress
+        value={progress}
         className="h-2"
       />
     </div>

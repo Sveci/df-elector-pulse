@@ -48,18 +48,18 @@ export default function History() {
   const { data: visits, isLoading } = useOfficeVisits();
   const [selectedVisit, setSelectedVisit] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  
+
   const { restartTutorial } = useTutorial("office-history", historyTutorialSteps);
-  
+
   // Filtrar apenas visitas finalizadas
   const finishedStatuses = ["MEETING_COMPLETED", "CANCELLED"];
   const finishedVisits = visits?.filter((v) => finishedStatuses.includes(v.status)) || [];
-  
+
   const handleViewDetails = (visit: any) => {
     setSelectedVisit(visit);
     setDialogOpen(true);
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -67,7 +67,7 @@ export default function History() {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-6">
       <TutorialOverlay page="office-history" />
@@ -80,7 +80,7 @@ export default function History() {
         </div>
         <TutorialButton onClick={restartTutorial} />
       </div>
-      
+
       <Card data-tutorial="history-table">
         <CardHeader>
           <CardTitle>Visitas Finalizadas</CardTitle>
@@ -162,7 +162,7 @@ export default function History() {
           </Table>
         </CardContent>
       </Card>
-      
+
       {selectedVisit && (
         <VisitDetailsDialog
           visit={selectedVisit}

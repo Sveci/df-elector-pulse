@@ -72,12 +72,12 @@ export default function DispatchRegionMaterials() {
   const [progress, setProgress] = useState({ current: 0, total: 0, smsOk: 0, emailOk: 0, smsFail: 0, emailFail: 0 });
   const [isComplete, setIsComplete] = useState(false);
 
-  const activeMaterials = useMemo(() => 
-    regionMaterials?.filter(m => m.is_active) || [], 
+  const activeMaterials = useMemo(() =>
+    regionMaterials?.filter(m => m.is_active) || [],
     [regionMaterials]
   );
-  const materialCityIds = useMemo(() => 
-    activeMaterials.map(m => m.city_id), 
+  const materialCityIds = useMemo(() =>
+    activeMaterials.map(m => m.city_id),
     [activeMaterials]
   );
 

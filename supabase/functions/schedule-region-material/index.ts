@@ -129,7 +129,7 @@ serve(async (req) => {
       const { data: shortenResult, error: shortenError } = await supabase.functions.invoke("shorten-url", {
         body: { url: material.material_url },
       });
-      
+
       if (!shortenError && shortenResult?.shortUrl) {
         shortenedUrl = shortenResult.shortUrl;
         console.log(`[schedule-region-material] URL shortened: ${shortenedUrl}`);

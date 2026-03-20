@@ -129,10 +129,10 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="joao.silva@exemplo.com" 
-                      {...field} 
+                    <Input
+                      type="email"
+                      placeholder="joao.silva@exemplo.com"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -147,8 +147,8 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="5561999999999" 
+                    <Input
+                      placeholder="5561999999999"
                       {...field}
                       maxLength={13}
                     />
@@ -232,8 +232,8 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Instagram</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="@usuario" 
+                    <Input
+                      placeholder="@usuario"
                       {...field}
                     />
                   </FormControl>
@@ -249,7 +249,7 @@ export function AddLeaderDialog({ children }: AddLeaderDialogProps) {
                 <FormItem>
                   <FormLabel>Observação (Opcional)</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Informações adicionais sobre o líder..."
                       {...field}
                       rows={3}

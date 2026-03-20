@@ -133,9 +133,9 @@ const Messaging = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  
+
   const { restartTutorial } = useTutorial("messaging", messagingTutorialSteps);
-  
+
   const filteredContacts = mockContacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || contact.phone.includes(searchTerm);
     const matchesFilter = filterStatus === "all" || filterStatus === "unread" && contact.unread > 0 || filterStatus === "online" && contact.status === "online";
@@ -182,7 +182,7 @@ const Messaging = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Search */}
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -216,7 +216,7 @@ const Messaging = () => {
                     </Avatar>
                     <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${getStatusColor(contact.status)}`} />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-gray-900 truncate">
@@ -264,7 +264,7 @@ const Messaging = () => {
                 <p className="text-sm text-gray-500">{selectedContact.phone}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Select defaultValue="aberto">
                 <SelectTrigger className="w-40">
@@ -440,7 +440,7 @@ const Messaging = () => {
             </Card>
 
             {/* Automation */}
-            
+
 
             {/* Sequences */}
             <Card>

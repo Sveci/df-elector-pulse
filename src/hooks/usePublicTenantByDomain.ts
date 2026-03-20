@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Funciona com:
  * 1. Domínio customizado direto (custom_domain no banco)
  * 2. Proxy reverso via Cloudflare Worker (hostname real do tenant)
- * 
+ *
  * O Cloudflare Worker faz proxy transparente, então o hostname do browser
  * já é o domínio do tenant — basta fazer lookup direto.
  */

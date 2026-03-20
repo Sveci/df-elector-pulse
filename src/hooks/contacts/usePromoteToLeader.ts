@@ -42,7 +42,7 @@ export function usePromoteToLeader() {
         is_verified: boolean;
         error_message: string | null;
       } | null;
-      
+
       if (!registrationResult) {
         throw new Error("Erro ao processar promoção a líder");
       }

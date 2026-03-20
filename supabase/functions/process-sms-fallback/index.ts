@@ -37,19 +37,19 @@ function normalizePhone(phone: string): string {
 // Determinar tipo de mensagem SMS
 function determineMessageType(message: string): MessageType {
   const lowerMessage = message.toLowerCase();
-  
+
   // Verificar se é mensagem de link de indicação
-  if (lowerMessage.includes('link de indicacao') || lowerMessage.includes('link de indicação') || 
+  if (lowerMessage.includes('link de indicacao') || lowerMessage.includes('link de indicação') ||
       message.includes('/cadastro/')) {
     return 'affiliate_link';
   }
-  
+
   // Verificar se é mensagem de verificação
   if (lowerMessage.includes('verificar-lider') || lowerMessage.includes('verificar-contato') ||
       lowerMessage.includes('código') || lowerMessage.includes('codigo')) {
     return 'verification';
   }
-  
+
   return null;
 }
 
@@ -65,7 +65,7 @@ function extractVerificationCode(message: string): string | null {
     // Padrão 4: Código alfanumérico isolado de 5-6 caracteres (excluindo palavras comuns)
     /\b([A-Z0-9]{5,6})\b/,
   ];
-  
+
   for (const pattern of patterns) {
     const match = message.match(pattern);
     if (match && match[1]) {
@@ -77,7 +77,7 @@ function extractVerificationCode(message: string): string | null {
       }
     }
   }
-  
+
   console.log(`[process-sms-fallback] No verification code found in message`);
   return null;
 }
@@ -91,29 +91,29 @@ function extractAffiliateLink(message: string): { url: string; token: string } |
     // URL encurtada ou alternativa
     /(https?:\/\/[^\s]+)/i,
   ];
-  
+
   // Tentar extrair URL com token
   const fullUrlMatch = message.match(patterns[0]);
   if (fullUrlMatch && fullUrlMatch[1] && fullUrlMatch[2]) {
     console.log(`[process-sms-fallback] Extracted affiliate link: ${fullUrlMatch[1]}, token: ${fullUrlMatch[2]}`);
     return { url: fullUrlMatch[1], token: fullUrlMatch[2] };
   }
-  
+
   // Tentar extrair qualquer URL
   const anyUrlMatch = message.match(patterns[1]);
   if (anyUrlMatch && anyUrlMatch[1]) {
     console.log(`[process-sms-fallback] Extracted URL (no token): ${anyUrlMatch[1]}`);
     return { url: anyUrlMatch[1], token: '' };
   }
-  
+
   console.log(`[process-sms-fallback] No affiliate link found in message`);
   return null;
 }
 
 // Buscar contato ou líder NÃO VERIFICADO associado ao telefone
 async function findUnverifiedRecipient(
-  supabaseUrl: string, 
-  supabaseServiceKey: string, 
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   phone: string
 ): Promise<{
   type: 'contact' | 'leader' | null;
@@ -123,9 +123,9 @@ async function findUnverifiedRecipient(
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const cleanPhone = normalizePhone(phone);
   const last9Digits = cleanPhone.slice(-9);
-  
+
   console.log(`[process-sms-fallback] Searching for UNVERIFIED recipient with phone: ${phone}, last9: ${last9Digits}`);
-  
+
   // Buscar em office_contacts pelo telefone normalizado
   const { data: contactData, error: contactError } = await supabase
     .from('office_contacts')
@@ -134,16 +134,16 @@ async function findUnverifiedRecipient(
     .or(`telefone_norm.ilike.%${last9Digits}`)
     .limit(1)
     .maybeSingle();
-  
+
   if (contactError) {
     console.error(`[process-sms-fallback] Error searching contacts:`, contactError);
   }
-  
+
   if (contactData) {
     console.log(`[process-sms-fallback] ✓ Found unverified contact: ${contactData.nome} (${contactData.id})`);
     return { type: 'contact', id: contactData.id, name: contactData.nome };
   }
-  
+
   // Buscar em lideres pelo telefone
   const { data: leaderData, error: leaderError } = await supabase
     .from('lideres')
@@ -153,24 +153,24 @@ async function findUnverifiedRecipient(
     .or(`telefone.ilike.%${last9Digits}`)
     .limit(1)
     .maybeSingle();
-  
+
   if (leaderError) {
     console.error(`[process-sms-fallback] Error searching leaders:`, leaderError);
   }
-  
+
   if (leaderData) {
     console.log(`[process-sms-fallback] ✓ Found unverified leader: ${leaderData.nome_completo} (${leaderData.id})`);
     return { type: 'leader', id: leaderData.id, name: leaderData.nome_completo };
   }
-  
+
   console.log(`[process-sms-fallback] ✗ No unverified contact/leader found for phone ${phone}`);
   return { type: null, id: null, name: null };
 }
 
 // Buscar líder pelo telefone (para mensagens de link de indicação - pode ser verificado)
 async function findLeaderByPhone(
-  supabaseUrl: string, 
-  supabaseServiceKey: string, 
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   phone: string
 ): Promise<{
   id: string | null;
@@ -180,9 +180,9 @@ async function findLeaderByPhone(
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const cleanPhone = normalizePhone(phone);
   const last9Digits = cleanPhone.slice(-9);
-  
+
   console.log(`[process-sms-fallback] Searching for leader (any status) with phone: ${phone}, last9: ${last9Digits}`);
-  
+
   const { data: leaderData, error: leaderError } = await supabase
     .from('lideres')
     .select('id, nome_completo, telefone, affiliate_token')
@@ -190,20 +190,20 @@ async function findLeaderByPhone(
     .or(`telefone.ilike.%${last9Digits}`)
     .limit(1)
     .maybeSingle();
-  
+
   if (leaderError) {
     console.error(`[process-sms-fallback] Error searching leader:`, leaderError);
   }
-  
+
   if (leaderData) {
     console.log(`[process-sms-fallback] ✓ Found leader: ${leaderData.nome_completo} (${leaderData.id}), token: ${leaderData.affiliate_token}`);
-    return { 
-      id: leaderData.id, 
-      name: leaderData.nome_completo, 
-      affiliateToken: leaderData.affiliate_token 
+    return {
+      id: leaderData.id,
+      name: leaderData.nome_completo,
+      affiliateToken: leaderData.affiliate_token
     };
   }
-  
+
   console.log(`[process-sms-fallback] ✗ No leader found for phone ${phone}`);
   return { id: null, name: null, affiliateToken: null };
 }
@@ -217,7 +217,7 @@ async function sendVerificationWhatsApp(
   contactId: string | null
 ): Promise<{ success: boolean; error?: string }> {
   console.log(`[process-sms-fallback] Sending VERIFICATION WhatsApp to ${phone}, name: ${name}, code: ${code}`);
-  
+
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
       method: 'POST',
@@ -232,14 +232,14 @@ async function sendVerificationWhatsApp(
         contactId,
       }),
     });
-    
+
     const data = await response.json();
     console.log(`[process-sms-fallback] WhatsApp verification response:`, JSON.stringify(data));
-    
+
     if (!response.ok) {
       return { success: false, error: data.error || `HTTP ${response.status}` };
     }
-    
+
     return { success: data.success === true, error: data.error };
   } catch (error) {
     console.error(`[process-sms-fallback] WhatsApp exception:`, error);
@@ -255,7 +255,7 @@ async function sendAffiliateLinkWhatsApp(
   affiliateLink: string
 ): Promise<{ success: boolean; error?: string }> {
   console.log(`[process-sms-fallback] Sending AFFILIATE LINK WhatsApp to ${phone}, name: ${name}, link: ${affiliateLink}`);
-  
+
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
       method: 'POST',
@@ -269,14 +269,14 @@ async function sendAffiliateLinkWhatsApp(
         },
       }),
     });
-    
+
     const data = await response.json();
     console.log(`[process-sms-fallback] WhatsApp affiliate response:`, JSON.stringify(data));
-    
+
     if (!response.ok) {
       return { success: false, error: data.error || `HTTP ${response.status}` };
     }
-    
+
     return { success: data.success === true, error: data.error };
   } catch (error) {
     console.error(`[process-sms-fallback] WhatsApp exception:`, error);
@@ -340,7 +340,7 @@ Deno.serve(async (req) => {
     }
 
     const typedSettings = settings as IntegrationSettings;
-    
+
     if (!typedSettings.zapi_enabled) {
       console.log("[process-sms-fallback] Z-API not enabled, skipping");
       return new Response(
@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
+
     if (!typedSettings.wa_auto_sms_fallback_enabled) {
       console.log("[process-sms-fallback] WhatsApp SMS fallback not enabled");
       return new Response(
@@ -371,7 +371,7 @@ Deno.serve(async (req) => {
       .or(
         // Mensagens de verificação com 6+ tentativas
         "and(retry_count.gte.6,or(message.ilike.%verificar-lider%,message.ilike.%verificar-contato%,message.ilike.%codigo%))," +
-        // Mensagens de link de indicação com 3+ tentativas  
+        // Mensagens de link de indicação com 3+ tentativas
         "and(retry_count.gte.3,or(message.ilike.%link de indicacao%,message.ilike.%/cadastro/%))"
       )
       .order("created_at", { ascending: true })
@@ -388,10 +388,10 @@ Deno.serve(async (req) => {
     if (!failedMessages || failedMessages.length === 0) {
       console.log("[process-sms-fallback] No failed messages pending fallback");
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          processed: 0, 
-          message: "Nenhuma mensagem pendente de fallback" 
+        JSON.stringify({
+          success: true,
+          processed: 0,
+          message: "Nenhuma mensagem pendente de fallback"
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -413,43 +413,43 @@ Deno.serve(async (req) => {
     // 3. Processar cada mensagem com lock otimista
     for (const msg of failedMessages as SMSMessage[]) {
       console.log(`\n[process-sms-fallback] Attempting to lock message ${msg.id}`);
-      
+
       // LOCK OTIMISTA: Tentar atualizar status para 'processing_fallback'
       // Se outra instância já pegou esta mensagem, o update não afetará nenhuma linha
       const { data: lockResult, error: lockError } = await supabase
         .from("sms_messages")
-        .update({ 
+        .update({
           status: "processing_fallback",
           updated_at: new Date().toISOString()
         })
         .eq("id", msg.id)
         .eq("status", "failed") // Só atualiza se ainda estiver 'failed'
         .select("id");
-      
+
       if (lockError) {
         console.error(`[process-sms-fallback] Lock error for ${msg.id}:`, lockError);
         results.skipped++;
         results.details.push({ id: msg.id, phone: msg.phone, type: 'unknown', result: 'lock_error' });
         continue;
       }
-      
+
       if (!lockResult || lockResult.length === 0) {
         console.log(`[process-sms-fallback] ⚡ Message ${msg.id} already being processed by another instance, skipping`);
         results.skipped++;
         results.details.push({ id: msg.id, phone: msg.phone, type: 'unknown', result: 'already_locked' });
         continue;
       }
-      
+
       console.log(`[process-sms-fallback] ✓ Lock acquired for message ${msg.id}`);
-      
+
       results.processed++;
       console.log(`[process-sms-fallback] Processing message ${msg.id} (${results.processed}/${failedMessages.length})`);
       console.log(`[process-sms-fallback] Phone: ${msg.phone}, retry_count: ${msg.retry_count}`);
       console.log(`[process-sms-fallback] Message: ${msg.message.substring(0, 100)}...`);
-      
+
       const messageType = determineMessageType(msg.message);
       console.log(`[process-sms-fallback] Message type: ${messageType}`);
-      
+
       // Verificar se atende os critérios de retry para o tipo
       if (messageType === 'verification' && msg.retry_count < 6) {
         console.log(`[process-sms-fallback] Skipping verification message - only ${msg.retry_count} retries (need 6+)`);
@@ -457,37 +457,37 @@ Deno.serve(async (req) => {
         results.details.push({ id: msg.id, phone: msg.phone, type: 'verification', result: 'skipped_low_retry' });
         continue;
       }
-      
+
       if (messageType === 'affiliate_link' && msg.retry_count < 3) {
         console.log(`[process-sms-fallback] Skipping affiliate link message - only ${msg.retry_count} retries (need 3+)`);
         results.skipped++;
         results.details.push({ id: msg.id, phone: msg.phone, type: 'affiliate_link', result: 'skipped_low_retry' });
         continue;
       }
-      
+
       let whatsappResult: { success: boolean; error?: string } = { success: false, error: 'Unknown type' };
       let fallbackMessage = '';
-      
+
       if (messageType === 'verification') {
         // PROCESSAR VERIFICAÇÃO
         const verificationCode = extractVerificationCode(msg.message);
-        
+
         if (!verificationCode) {
           console.log(`[process-sms-fallback] ✗ No verification code found`);
           results.no_data++;
           results.details.push({ id: msg.id, phone: msg.phone, type: 'verification', result: 'no_code' });
           continue;
         }
-        
+
         const recipient = await findUnverifiedRecipient(supabaseUrl, supabaseServiceKey, msg.phone);
-        
+
         if (!recipient.type || !recipient.id) {
           console.log(`[process-sms-fallback] ✗ No unverified recipient found`);
           results.no_data++;
           results.details.push({ id: msg.id, phone: msg.phone, type: 'verification', result: 'no_recipient' });
           continue;
         }
-        
+
         whatsappResult = await sendVerificationWhatsApp(
           supabaseUrl,
           msg.phone,
@@ -495,57 +495,57 @@ Deno.serve(async (req) => {
           verificationCode,
           recipient.type === 'contact' ? recipient.id : null
         );
-        
+
         fallbackMessage = `Após ${msg.retry_count} tentativas SMS, código de verificação enviado via WhatsApp`;
-        
+
         if (whatsappResult.success) {
           results.verification_success++;
         } else {
           results.verification_failed++;
         }
-        
+
       } else if (messageType === 'affiliate_link') {
         // PROCESSAR LINK DE INDICAÇÃO
         const affiliateData = extractAffiliateLink(msg.message);
-        
+
         if (!affiliateData) {
           console.log(`[process-sms-fallback] ✗ No affiliate link found`);
           results.no_data++;
           results.details.push({ id: msg.id, phone: msg.phone, type: 'affiliate_link', result: 'no_link' });
           continue;
         }
-        
+
         const leader = await findLeaderByPhone(supabaseUrl, supabaseServiceKey, msg.phone);
-        
+
         if (!leader.id) {
           console.log(`[process-sms-fallback] ✗ No leader found for phone`);
           results.no_data++;
           results.details.push({ id: msg.id, phone: msg.phone, type: 'affiliate_link', result: 'no_leader' });
           continue;
         }
-        
+
         whatsappResult = await sendAffiliateLinkWhatsApp(
           supabaseUrl,
           msg.phone,
           leader.name || 'Líder',
           affiliateData.url
         );
-        
+
         fallbackMessage = `Após ${msg.retry_count} tentativas SMS, link de indicação enviado via WhatsApp`;
-        
+
         if (whatsappResult.success) {
           results.affiliate_success++;
         } else {
           results.affiliate_failed++;
         }
-        
+
       } else {
         console.log(`[process-sms-fallback] ✗ Unknown message type, skipping`);
         results.skipped++;
         results.details.push({ id: msg.id, phone: msg.phone, type: 'unknown', result: 'skipped' });
         continue;
       }
-      
+
       // Atualizar status da mensagem SMS
       if (whatsappResult.success) {
         const { error: updateError } = await supabase
@@ -556,11 +556,11 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", msg.id);
-        
+
         if (updateError) {
           console.error(`[process-sms-fallback] Error updating message ${msg.id}:`, updateError);
         }
-        
+
         results.details.push({ id: msg.id, phone: msg.phone, type: messageType || 'unknown', result: 'fallback_sent' });
         console.log(`[process-sms-fallback] ✓ WhatsApp fallback sent for ${msg.id}`);
       } else {
@@ -573,15 +573,15 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", msg.id);
-        
+
         if (revertError) {
           console.error(`[process-sms-fallback] Error reverting status for ${msg.id}:`, revertError);
         }
-        
+
         results.details.push({ id: msg.id, phone: msg.phone, type: messageType || 'unknown', result: `failed: ${whatsappResult.error}` });
         console.log(`[process-sms-fallback] ✗ WhatsApp fallback failed for ${msg.id}: ${whatsappResult.error}, status reverted to 'failed'`);
       }
-      
+
       // Delay entre mensagens para evitar rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
     }

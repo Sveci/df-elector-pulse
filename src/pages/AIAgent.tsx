@@ -17,13 +17,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Bot, 
-  Send, 
-  User, 
-  Plus, 
-  Trash2, 
-  MessageSquare, 
+import {
+  Bot,
+  Send,
+  User,
+  Plus,
+  Trash2,
+  MessageSquare,
   MoreVertical,
   Loader2,
   Sparkles,
@@ -95,7 +95,7 @@ const AIAgent = () => {
   const isMobile = useIsMobile();
   const { restartTutorial } = useTutorial("ai-agent", aiAgentTutorialSteps);
   const { activeTenant } = useTenantContext();
-  
+
   const {
     conversations,
     currentConversationId,
@@ -118,7 +118,7 @@ const AIAgent = () => {
   const [initialized, setInitialized] = useState(false);
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -244,7 +244,7 @@ const AIAgent = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             messages: apiMessages,
             conversationId: currentConversationId,
             userName: user?.name || ''
@@ -262,24 +262,24 @@ const AIAgent = () => {
 
       if (reader) {
         let done = false;
-        
+
         while (!done) {
           const { value, done: streamDone } = await reader.read();
           done = streamDone;
-          
+
           if (value) {
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
-            
+
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 if (data === '[DONE]') continue;
-                
+
                 try {
                   const parsed = JSON.parse(data);
                   const content = parsed.choices?.[0]?.delta?.content;
-                  
+
                   if (content) {
                     aiContent += content;
                   }
@@ -298,7 +298,7 @@ const AIAgent = () => {
           content: aiContent,
           timestamp: new Date(),
         };
-        
+
         setLocalMessages(prev => [...prev, aiMessage]);
         setIsTyping(false);
 
@@ -309,9 +309,9 @@ const AIAgent = () => {
     } catch (error) {
       console.error('Error calling AI:', error);
       setIsTyping(false);
-      
+
       const errorContent = "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
-      
+
       setLocalMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -416,8 +416,8 @@ const AIAgent = () => {
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv.id)}
                   className={`group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors overflow-hidden ${
-                    conv.id === currentConversationId 
-                      ? 'bg-primary/10 text-primary' 
+                    conv.id === currentConversationId
+                      ? 'bg-primary/10 text-primary'
                       : 'hover:bg-muted'
                   }`}
                 >
@@ -434,7 +434,7 @@ const AIAgent = () => {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <p 
+                      <p
                         className="text-sm font-medium truncate max-w-full cursor-text"
                         onDoubleClick={(e) => handleStartEditing(e, conv)}
                         title="Duplo-clique para renomear"
@@ -484,8 +484,8 @@ const AIAgent = () => {
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv.id)}
                     className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer overflow-hidden ${
-                      conv.id === currentConversationId 
-                        ? 'bg-primary/10 text-primary' 
+                      conv.id === currentConversationId
+                        ? 'bg-primary/10 text-primary'
                         : 'hover:bg-muted'
                     }`}
                   >
@@ -502,7 +502,7 @@ const AIAgent = () => {
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
-                        <p 
+                        <p
                           className="text-sm font-medium truncate max-w-full cursor-text"
                           onDoubleClick={(e) => handleStartEditing(e, conv)}
                           title="Duplo-clique para renomear"
@@ -581,7 +581,7 @@ const AIAgent = () => {
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  
+
                   <div className={`flex flex-col gap-1 max-w-xl ${message.role === "user" ? "items-end" : "items-start"}`}>
                     <Card className={`p-3 ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"}`}>
                       {message.role === "assistant" ? (
@@ -667,7 +667,7 @@ const AIAgent = () => {
                           {message.content}
                         </div>
                       )}
-                      
+
                       {message.files && message.files.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {message.files.map((file, idx) => (
@@ -687,7 +687,7 @@ const AIAgent = () => {
                         </div>
                       )}
                     </Card>
-                    
+
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
                         {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -767,7 +767,7 @@ const AIAgent = () => {
                 ))}
               </div>
             )}
-            
+
             <div className="flex gap-2">
               <input
                 type="file"

@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Building2, 
-  Camera, 
-  Save, 
+import {
+  Building2,
+  Camera,
+  Save,
   Globe,
   Instagram,
   Facebook,
@@ -46,7 +46,7 @@ const Organization = () => {
   const updateOrganization = useUpdateOrganization();
   const { isDemoMode, m } = useDemoMask();
   const { restartTutorial } = useTutorial("organization", organizationTutorialSteps);
-  
+
   const [nome, setNome] = useState("");
   const [nomePlataforma, setNomePlataforma] = useState("");
   const [cargo, setCargo] = useState("");
@@ -379,8 +379,8 @@ const Organization = () => {
         <Separator />
 
         <div className="flex justify-end">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={updateOrganization.isPending}
             className="min-w-32"
           >

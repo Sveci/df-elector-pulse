@@ -57,9 +57,9 @@ serve(async (req) => {
       .order("snapshot_date", { ascending: true });
 
     if (!analyses?.length) {
-      return new Response(JSON.stringify({ 
-        success: true, insights: [], 
-        message: "Sem dados suficientes para gerar insights." 
+      return new Response(JSON.stringify({
+        success: true, insights: [],
+        message: "Sem dados suficientes para gerar insights."
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -71,11 +71,11 @@ serve(async (req) => {
     const negative = analyses.filter(a => a.sentiment === "negativo").length;
     const neutral = analyses.filter(a => a.sentiment === "neutro").length;
     const avgScore = analyses.reduce((s, a) => s + (a.sentiment_score || 0), 0) / total;
-    
+
     const topicCounts: Record<string, number> = {};
     const categoryCounts: Record<string, number> = {};
     const emotionCounts: Record<string, number> = {};
-    
+
     for (const a of analyses) {
       for (const t of (a.topics || [])) topicCounts[t] = (topicCounts[t] || 0) + 1;
       if (a.category) categoryCounts[a.category] = (categoryCounts[a.category] || 0) + 1;

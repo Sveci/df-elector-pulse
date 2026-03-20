@@ -121,7 +121,7 @@ export function useMarkLeaderVerifiedManually() {
     mutationFn: async (leaderId: string) => {
       // Buscar o usuário logado para registrar quem verificou
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase.rpc("mark_leader_verified_manually", {
         _leader_id: leaderId,
         _verified_by: user?.id || null,
@@ -131,7 +131,7 @@ export function useMarkLeaderVerifiedManually() {
 
       // Após verificação bem-sucedida, chamar edge function para enviar links de afiliado
       console.log("[useMarkLeaderVerifiedManually] Calling send-leader-affiliate-links for leader:", leaderId);
-      
+
       const { error: sendError } = await supabase.functions.invoke("send-leader-affiliate-links", {
         body: { leader_id: leaderId },
       });

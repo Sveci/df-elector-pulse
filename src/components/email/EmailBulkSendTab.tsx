@@ -69,7 +69,7 @@ export function EmailBulkSendTab() {
   const [selectedEvent, setSelectedEvent] = useState("");
   const [selectedFunnel, setSelectedFunnel] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  
+
   // Estados para controle de lotes
   const [batchSize, setBatchSize] = useState("20");
   const [isSending, setIsSending] = useState(false);
@@ -78,7 +78,7 @@ export function EmailBulkSendTab() {
   const [totalBatches, setTotalBatches] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const continueResolve = useRef<(() => void) | null>(null);
-  
+
   // Função para continuar envio após pausa
   const handleContinue = () => {
     if (continueResolve.current) {
@@ -87,12 +87,12 @@ export function EmailBulkSendTab() {
     }
     setIsPaused(false);
   };
-  
+
   // Estados para evento/funil/pesquisa DESTINO (para preencher variáveis)
   const [targetEventId, setTargetEventId] = useState("");
   const [targetFunnelId, setTargetFunnelId] = useState("");
   const [targetSurveyId, setTargetSurveyId] = useState("");
-  
+
   // Estados para envio individual
   const [singleContactSearch, setSingleContactSearch] = useState("");
   const [selectedSingleContact, setSelectedSingleContact] = useState<{id: string; nome: string; email: string} | null>(null);
@@ -118,7 +118,7 @@ export function EmailBulkSendTab() {
     dismissDialog,
     getPendingCount,
   } = useBulkSendSession("email");
-  
+
   // Estado para controle de retomada
   const [isResuming, setIsResuming] = useState(false);
 
@@ -361,11 +361,11 @@ export function EmailBulkSendTab() {
           if (error) throw error;
           if (data && data.length > 0) { allData.push(...data); hasMore = data.length === pageSize; page++; } else { hasMore = false; }
         }
-        return allData.map(r => ({ 
-          id: r.contact_id || r.id, 
-          name: r.nome, 
-          email: r.email, 
-          type: "contact" as const 
+        return allData.map(r => ({
+          id: r.contact_id || r.id,
+          name: r.nome,
+          email: r.email,
+          type: "contact" as const
         }));
       }
 
@@ -427,12 +427,12 @@ export function EmailBulkSendTab() {
           if (error) throw error;
           if (data && data.length > 0) { allData.push(...data); hasMore = data.length === pageSize; page++; } else { hasMore = false; }
         }
-        return allData.map(l => ({ 
-          id: l.id, 
-          name: l.nome_completo, 
-          email: l.email!, 
-          type: "leader" as const, 
-          verificationCode: l.verification_code 
+        return allData.map(l => ({
+          id: l.id,
+          name: l.nome_completo,
+          email: l.email!,
+          type: "leader" as const,
+          verificationCode: l.verification_code
         }));
       }
 
@@ -456,12 +456,12 @@ export function EmailBulkSendTab() {
           if (error) throw error;
           if (data && data.length > 0) { allData.push(...data); hasMore = data.length === pageSize; page++; } else { hasMore = false; }
         }
-        return allData.map(c => ({ 
-          id: c.id, 
-          name: c.nome, 
-          email: c.email!, 
-          type: "contact" as const, 
-          verificationCode: c.verification_code 
+        return allData.map(c => ({
+          id: c.id,
+          name: c.nome,
+          email: c.email!,
+          type: "contact" as const,
+          verificationCode: c.verification_code
         }));
       }
 
@@ -478,18 +478,18 @@ export function EmailBulkSendTab() {
           if (error) throw error;
           if (data && data.length > 0) { allData.push(...(data as typeof allData)); hasMore = data.length === pageSize; page++; } else { hasMore = false; }
         }
-        return allData.map(l => ({ 
-          id: l.id, 
-          name: l.nome_completo, 
-          email: l.email!, 
-          type: "leader" as const, 
-          verificationCode: l.verification_code 
+        return allData.map(l => ({
+          id: l.id,
+          name: l.nome_completo,
+          email: l.email!,
+          type: "leader" as const,
+          verificationCode: l.verification_code
         }));
       }
 
       return [];
     },
-    enabled: recipientType === "all_contacts" || 
+    enabled: recipientType === "all_contacts" ||
              recipientType === "leaders" ||
              recipientType === "unverified_leaders" ||
              recipientType === "unverified_contacts" ||
@@ -523,23 +523,23 @@ export function EmailBulkSendTab() {
   // Filter templates based on recipient type
   const filteredTemplates = useMemo(() => {
     if (!templates) return [];
-    
+
     // Para tipos de validação, só mostrar o template de validação
     if (recipientType === "unverified_leaders" || recipientType === "unverified_contacts" || recipientType === "coordinator_tree") {
       return templates.filter(t => t.slug === VERIFICATION_TEMPLATE);
     }
-    
+
     if (recipientType === "leaders" || recipientType === "single_leader") {
       return templates.filter(t => CONVITE_TEMPLATES_LEADERS.includes(t.slug));
     }
-    
+
     return templates.filter(t => CONVITE_TEMPLATES_CONTACTS.includes(t.slug));
   }, [templates, recipientType]);
 
-  const canSend = 
-    selectedTemplate && 
-    recipients && 
-    recipients.length > 0 && 
+  const canSend =
+    selectedTemplate &&
+    recipients &&
+    recipients.length > 0 &&
     confirmed &&
     !isSending &&
     (!isEventInviteTemplate || targetEventId) &&
@@ -579,15 +579,15 @@ export function EmailBulkSendTab() {
 
       // Para templates de verificação, gerar código se necessário e link de verificação
       let verificationCode = (r as { verificationCode?: string | null }).verificationCode;
-      
+
       if (isVerificationTemplate) {
         // Determinar se é líder ou contato
         const isLeader = r.type === "leader";
-        
+
         // Gerar código se não existir
         if (!verificationCode) {
           verificationCode = generateVerificationCode();
-          
+
           // Salvar código no banco
           if (isLeader) {
             await supabase
@@ -601,12 +601,12 @@ export function EmailBulkSendTab() {
               .eq("id", r.id);
           }
         }
-        
+
         // Gerar link de verificação baseado no tipo
         const linkVerificacao = isLeader
           ? `${baseUrl}/verificar-lider/${verificationCode}`
           : generateVerificationUrl(verificationCode);
-        
+
         variables.link_verificacao = linkVerificacao;
         variables.deputado_nome = organization?.nome || "Deputado";
         variables.lider_nome = r.name; // Adiciona lider_nome que o template pode usar
@@ -620,7 +620,7 @@ export function EmailBulkSendTab() {
         variables.evento_endereco = targetEvent.address || "";
         variables.evento_descricao = targetEvent.description || "";
         variables.link_inscricao = `${baseUrl}/eventos/${targetEvent.slug}`;
-        
+
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken) {
           variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, affiliateToken);
@@ -636,7 +636,7 @@ export function EmailBulkSendTab() {
       if (isSurveyInviteTemplate && targetSurvey) {
         variables.pesquisa_titulo = targetSurvey.titulo;
         variables.link_pesquisa = `${baseUrl}/pesquisa/${targetSurvey.slug}`;
-        
+
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken && selectedTemplate === "lideranca-pesquisa-link") {
           const linkPesquisaAfiliado = generateSurveyAffiliateUrl(targetSurvey.slug, affiliateToken);
@@ -655,14 +655,14 @@ export function EmailBulkSendTab() {
 
       if (isLeaderAffiliateLinkTemplate && (recipientType === "leaders" || recipientType === "single_leader")) {
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
-        
+
         if (affiliateToken && selectedTemplate === "lideranca-reuniao-link") {
           const linkReuniaoAfiliado = generateAffiliateUrl(affiliateToken);
           variables.deputado_nome = organization?.nome || "Deputado";
           variables.link_reuniao_afiliado = linkReuniaoAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkReuniaoAfiliado)}`;
         }
-        
+
         if (affiliateToken && selectedTemplate === "lideranca-cadastro-link") {
           const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
           variables.link_cadastro_afiliado = linkCadastroAfiliado;
@@ -738,7 +738,7 @@ export function EmailBulkSendTab() {
               successCount++;
               // Marcar como enviado para persistência
               markSent(recipient.to);
-              
+
               // Atualizar verification_sent_at para templates de validação
               if (isVerificationTemplate) {
                 if (recipient.recipientType === "leader") {
@@ -810,7 +810,7 @@ export function EmailBulkSendTab() {
       dismissDialog();
     }
   };
-  
+
   const handleDiscardSession = () => {
     clearSession();
     setIsResuming(false);
@@ -827,7 +827,7 @@ export function EmailBulkSendTab() {
           onDismiss={dismissDialog}
         />
       )}
-      
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Configuration */}
         <Card>
@@ -879,7 +879,7 @@ export function EmailBulkSendTab() {
                   setSingleContactSearch("");
                   setCoordinatorSearch("");
                   setSelectedCoordinator(null);
-                  
+
                   // Auto-selecionar template de validação para tipos de validação
                   if (v === "unverified_leaders" || v === "unverified_contacts" || v === "coordinator_tree") {
                     setSelectedTemplate(VERIFICATION_TEMPLATE);
@@ -930,7 +930,7 @@ export function EmailBulkSendTab() {
                     Todas as Lideranças
                   </Label>
                 </div>
-                
+
                 {/* Separador visual */}
                 <div className="border-t my-2 pt-2">
                   <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mb-2">
@@ -938,7 +938,7 @@ export function EmailBulkSendTab() {
                     Validação de Cadastro
                   </span>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="unverified_leaders" id="unverified_leaders" />
                   <Label htmlFor="unverified_leaders" className="flex items-center gap-2 cursor-pointer">
@@ -1142,8 +1142,8 @@ export function EmailBulkSendTab() {
             {/* Template Selection */}
             <div className="space-y-2">
               <Label>Template de Email</Label>
-              <Select 
-                value={selectedTemplate} 
+              <Select
+                value={selectedTemplate}
                 onValueChange={(v) => {
                   setSelectedTemplate(v);
                   setTargetEventId("");
@@ -1402,7 +1402,7 @@ export function EmailBulkSendTab() {
                   ) : (
                     <Send className="h-4 w-4 mr-2" />
                   )}
-                  {isResuming && pendingSession 
+                  {isResuming && pendingSession
                     ? `Retomar envio (${getPendingCount()} pendentes)`
                     : `Enviar ${recipients?.length || 0} Emails`
                   }
@@ -1426,11 +1426,11 @@ export function EmailBulkSendTab() {
                         {sendProgress.current} de {sendProgress.total} emails
                       </span>
                     </div>
-                    <Progress 
-                      value={(sendProgress.current / sendProgress.total) * 100} 
+                    <Progress
+                      value={(sendProgress.current / sendProgress.total) * 100}
                       className="h-2"
                     />
-                    
+
                     {isPaused && (
                       <Alert className="bg-amber-50 border-amber-200">
                         <AlertDescription className="flex items-center justify-between">

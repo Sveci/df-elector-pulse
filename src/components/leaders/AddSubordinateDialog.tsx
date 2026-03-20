@@ -14,16 +14,16 @@ interface AddSubordinateDialogProps {
   parentLevel: number;
 }
 
-export function AddSubordinateDialog({ 
-  open, 
-  onOpenChange, 
-  parentId, 
+export function AddSubordinateDialog({
+  open,
+  onOpenChange,
+  parentId,
   parentName,
-  parentLevel 
+  parentLevel
 }: AddSubordinateDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedLeaderId, setSelectedLeaderId] = useState<string | null>(null);
-  
+
   const { data: searchResults, isLoading } = useSearchLeaders(open ? search : "");
   const setParentLeader = useSetParentLeader();
 
@@ -32,10 +32,10 @@ export function AddSubordinateDialog({
 
   const handleAdd = async () => {
     if (!selectedLeaderId) return;
-    
-    await setParentLeader.mutateAsync({ 
-      leaderId: selectedLeaderId, 
-      parentId 
+
+    await setParentLeader.mutateAsync({
+      leaderId: selectedLeaderId,
+      parentId
     });
     setSelectedLeaderId(null);
     setSearch("");
@@ -140,8 +140,8 @@ export function AddSubordinateDialog({
               <Button variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleAdd} 
+              <Button
+                onClick={handleAdd}
                 disabled={!selectedLeaderId || setParentLeader.isPending}
                 className="gap-2"
               >

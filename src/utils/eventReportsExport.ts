@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { EventDetailedReport } from "@/hooks/reports/useEventDetailedReport";
@@ -96,7 +96,7 @@ export function exportReportsToPdf(data: {
   doc.setFontSize(18);
   doc.text("Relatório de Eventos", 14, yPos);
   yPos += 8;
-  
+
   doc.setFontSize(10);
   doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, yPos);
   yPos += 15;
@@ -105,7 +105,7 @@ export function exportReportsToPdf(data: {
   doc.setFontSize(14);
   doc.text("Métricas Principais", 14, yPos);
   yPos += 8;
-  
+
   doc.setFontSize(10);
   const kpis = [
     `Total de Eventos: ${data.stats.totalEvents}`,
@@ -127,7 +127,7 @@ export function exportReportsToPdf(data: {
   doc.setFontSize(14);
   doc.text("Top 5 Eventos (Por Inscrições)", 14, yPos);
   yPos += 8;
-  
+
   doc.setFontSize(9);
   const topEvents = data.events
     .sort((a, b) => (b.registrations_count || 0) - (a.registrations_count || 0))
@@ -137,15 +137,15 @@ export function exportReportsToPdf(data: {
     const rate = event.registrations_count > 0
       ? ((event.checkedin_count || 0) / event.registrations_count * 100).toFixed(1)
       : 0;
-    
+
     const text = `${idx + 1}. ${event.name} - ${format(new Date(event.date + "T00:00:00"), "dd/MM/yyyy")}`;
     doc.text(text, 14, yPos);
     yPos += 5;
-    
+
     const details = `   Inscrições: ${event.registrations_count || 0} | Check-ins: ${event.checkedin_count || 0} | Taxa: ${rate}%`;
     doc.text(details, 14, yPos);
     yPos += 7;
-    
+
     if (yPos > 270) {
       doc.addPage();
       yPos = 20;
@@ -163,7 +163,7 @@ export function exportReportsToPdf(data: {
   doc.setFontSize(14);
   doc.text("Top 5 Líderes por Inscrições", 14, yPos);
   yPos += 8;
-  
+
   doc.setFontSize(9);
   const topLeaders = data.leadersRanking.slice(0, 5);
 
@@ -171,11 +171,11 @@ export function exportReportsToPdf(data: {
     const text = `${idx + 1}. ${leader.leaderName} - ${leader.cityName || "N/A"}`;
     doc.text(text, 14, yPos);
     yPos += 5;
-    
+
     const details = `   Inscrições: ${leader.registrations} | Check-ins: ${leader.checkins} | Taxa: ${leader.conversionRate.toFixed(1)}%`;
     doc.text(details, 14, yPos);
     yPos += 7;
-    
+
     if (yPos > 270) {
       doc.addPage();
       yPos = 20;

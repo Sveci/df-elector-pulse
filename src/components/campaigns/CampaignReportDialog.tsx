@@ -124,7 +124,7 @@ export default function CampaignReportDialog({
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
+
       return (data || []).map((contact: any) => ({
         id: contact.id,
         nome: contact.nome,
@@ -155,8 +155,8 @@ export default function CampaignReportDialog({
 
   const totalRegistrations = allRegistrations.length;
   const totalCheckins = allRegistrations.filter(r => r.checked_in === true).length;
-  const conversionRate = pageViews > 0 
-    ? ((totalRegistrations / pageViews) * 100).toFixed(1) 
+  const conversionRate = pageViews > 0
+    ? ((totalRegistrations / pageViews) * 100).toFixed(1)
     : "0.0";
 
   return (
@@ -234,7 +234,7 @@ export default function CampaignReportDialog({
           <div className="bg-muted px-4 py-3 rounded-t-lg">
             <h3 className="font-semibold">Cadastrados ({m.number(totalRegistrations, "camp_reg")})</h3>
           </div>
-          
+
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">
               Carregando...

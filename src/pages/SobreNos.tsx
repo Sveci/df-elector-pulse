@@ -52,8 +52,8 @@ const SobreNos = () => {
             variants={fadeUp} custom={2}
             className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
           >
-            Somos a plataforma que une inteligência artificial, dados e estratégia 
-            para aproximar mandatários de seus eleitores de forma organizada, 
+            Somos a plataforma que une inteligência artificial, dados e estratégia
+            para aproximar mandatários de seus eleitores de forma organizada,
             eficiente e transparente.
           </motion.p>
         </div>
@@ -238,7 +238,7 @@ const SobreNos = () => {
               Pronto para transformar seu mandato?
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-              Junte-se a centenas de gabinetes que já utilizam a plataforma mais completa 
+              Junte-se a centenas de gabinetes que já utilizam a plataforma mais completa
               de gestão política com inteligência artificial do Brasil.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

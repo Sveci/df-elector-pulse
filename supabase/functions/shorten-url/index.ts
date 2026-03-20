@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (existingUrl) {
       console.log("shorten-url: URL already exists with code:", existingUrl.code);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           code: existingUrl.code,
           shortUrl: `${PRODUCTION_URL}/s/${existingUrl.code}`,
           isNew: false
@@ -90,12 +90,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       console.log("shorten-url: Successfully created short URL with code:", code);
-      
+
       // Build the short URL usando constante de produção
       const shortUrl = `${PRODUCTION_URL}/s/${code}`;
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           code,
           shortUrl,
           isNew: true

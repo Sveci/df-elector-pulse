@@ -8,13 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -31,13 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Bot, 
-  MessageSquare, 
-  Settings, 
-  Plus, 
-  Pencil, 
-  Trash2, 
+import {
+  Bot,
+  MessageSquare,
+  Settings,
+  Plus,
+  Pencil,
+  Trash2,
   History,
   Zap,
   Brain,
@@ -374,7 +374,7 @@ const WhatsAppChatbot = () => {
                         <TableCell>
                           <Switch
                             checked={kw.is_active}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               updateKeyword.mutate({ id: kw.id, is_active: checked })
                             }
                           />
@@ -620,7 +620,7 @@ const WhatsAppChatbot = () => {
               <Label>Tipo de Resposta *</Label>
               <Select
                 value={keywordForm.response_type}
-                onValueChange={(value: "static" | "dynamic" | "ai") => 
+                onValueChange={(value: "static" | "dynamic" | "ai") =>
                   setKeywordForm({ ...keywordForm, response_type: value })
                 }
               >
@@ -711,9 +711,9 @@ const WhatsAppChatbot = () => {
             <Button variant="outline" onClick={() => setKeywordDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleSaveKeyword}
-              disabled={!keywordForm.keyword || 
+              disabled={!keywordForm.keyword ||
                 (keywordForm.response_type === "static" && !keywordForm.static_response) ||
                 (keywordForm.response_type === "dynamic" && !keywordForm.dynamic_function)
               }

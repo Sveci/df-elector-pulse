@@ -76,8 +76,8 @@ const TrackingSettings = () => {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Todas as configurações são aplicadas automaticamente em todas as páginas do sistema, 
-          incluindo páginas públicas de cadastro. Eventos de Lead são disparados automaticamente 
+          Todas as configurações são aplicadas automaticamente em todas as páginas do sistema,
+          incluindo páginas públicas de cadastro. Eventos de Lead são disparados automaticamente
           em inscrições de eventos, indicações e formulários.
         </AlertDescription>
       </Alert>
@@ -130,7 +130,7 @@ const TrackingSettings = () => {
                 className="font-mono text-sm"
               />
               <p className="text-sm text-muted-foreground">
-                Opcional: Cole o código JavaScript completo do Pixel para configuração avançada. 
+                Opcional: Cole o código JavaScript completo do Pixel para configuração avançada.
                 Se preenchido, será usado no lugar do Pixel ID acima.
               </p>
             </div>
@@ -161,8 +161,8 @@ const TrackingSettings = () => {
           </CardContent>
         </Card>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full"
           disabled={updateSettings.isPending}
         >

@@ -17,10 +17,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  Lock, 
-  Shield, 
-  Trash2, 
+import {
+  Lock,
+  Shield,
+  Trash2,
   Eye,
   EyeOff,
   Loader2,
@@ -92,7 +92,7 @@ const Privacy = () => {
 
   const passwordStrength = (password: string) => {
     if (!password) return { strength: 0, label: "", color: "" };
-    
+
     let strength = 0;
     if (password.length >= 6) strength++;
     if (password.length >= 8) strength++;

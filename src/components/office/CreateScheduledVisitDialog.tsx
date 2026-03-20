@@ -110,7 +110,7 @@ export function CreateScheduledVisitDialog({ open, onOpenChange, initialDate }: 
 
       // Enviar SMS automaticamente
       setSendingSms(true);
-      
+
       const formattedDate = format(date, "dd/MM/yyyy", { locale: ptBR });
       const formattedTime = time;
       // SEMPRE usa URL de produção (via função dedicada - enviado externamente via SMS)

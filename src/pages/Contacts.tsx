@@ -455,7 +455,7 @@ const Contacts = () => {
   };
 
   // Filtros
-  const filteredContacts = effectiveContacts.filter((contact) => {
+  const filteredContacts = useMemo(() => effectiveContacts.filter((contact) => {
     const searchDigits = searchTerm.replace(/\D/g, "");
     const matchesSearch =
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -507,11 +507,14 @@ const Contacts = () => {
     }
 
     return matchesSearch && matchesRegion && matchesSource && matchesStatus;
-  });
+  }), [effectiveContacts, searchTerm, selectedRegion, sourceFilter, selectedEventId, specificEventContactIds, eventParticipantIds, selectedLeaderId, selectedCampaignId, effectivePromotedIds, statusFilter]);
 
-  const pendingVerificationCount = effectiveContacts.filter((c) => c.requiresVerification && !c.is_verified).length;
+  const pendingVerificationCount = useMemo(
+    () => effectiveContacts.filter((c) => c.requiresVerification && !c.is_verified).length,
+    [effectiveContacts]
+  );
 
-  const verificationFilteredContacts = filteredContacts.filter((contact) => {
+  const verificationFilteredContacts = useMemo(() => filteredContacts.filter((contact) => {
     if (verificationFilter === "all") return true;
     if (verificationFilter === "verified") return contact.is_verified === true;
     if (verificationFilter === "sms_not_sent")
@@ -520,12 +523,17 @@ const Contacts = () => {
       return contact.requiresVerification && !contact.is_verified && contact.verification_sent_at;
     if (verificationFilter === "not_required") return !contact.requiresVerification;
     return true;
-  });
+  }), [filteredContacts, verificationFilter]);
 
-  const totalPages = Math.ceil(verificationFilteredContacts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedContacts = verificationFilteredContacts.slice(startIndex, endIndex);
+  const totalPages = useMemo(
+    () => Math.ceil(verificationFilteredContacts.length / ITEMS_PER_PAGE),
+    [verificationFilteredContacts.length]
+  );
+  const paginatedContacts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return verificationFilteredContacts.slice(startIndex, endIndex);
+  }, [verificationFilteredContacts, currentPage]);
 
   const { data: allRegions = [] } = useRegions();
 
@@ -806,8 +814,8 @@ const Contacts = () => {
       {/* Info da Paginação */}
       <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Mostrando <strong className="text-foreground">{startIndex + 1}</strong>-
-          <strong className="text-foreground">{Math.min(endIndex, verificationFilteredContacts.length)}</strong> de{" "}
+          Mostrando <strong className="text-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong>-
+          <strong className="text-foreground">{Math.min(currentPage * ITEMS_PER_PAGE, verificationFilteredContacts.length)}</strong> de{" "}
           <strong className="text-foreground">{verificationFilteredContacts.length}</strong>
         </span>
         <span>

@@ -27,15 +27,15 @@ export function LeaderAutocomplete({
 }: LeaderAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  
+
   // Remove city filter when searching to allow finding leaders from any city
   const { data: leadersResult, isLoading, isError, refetch } = useOfficeLeaders({
     cidade_id: search ? undefined : cityId,
     search: search || undefined
   });
-  
+
   const leaders = leadersResult?.data || [];
-  
+
   // Busca separada do líder selecionado quando não está na lista filtrada
   const { data: selectedLeaderData } = useQuery({
     queryKey: ["leader_by_id", value],
@@ -52,12 +52,12 @@ export function LeaderAutocomplete({
     enabled: !!value,
     staleTime: 5 * 60 * 1000, // Cache por 5 minutos
   });
-  
+
   const selectedLeader = useMemo(() => {
     // Primeiro tenta encontrar na lista filtrada
     const fromList = leaders.find((leader) => leader.id === value);
     if (fromList) return fromList;
-    
+
     // Se não encontrou, usa os dados da busca separada
     if (selectedLeaderData) {
       return {
@@ -66,10 +66,10 @@ export function LeaderAutocomplete({
         cidade: selectedLeaderData.cidade
       };
     }
-    
+
     return undefined;
   }, [leaders, value, selectedLeaderData]);
-  
+
   // Lista de líderes para exibir no dropdown - inclui o líder selecionado se não estiver na lista filtrada
   const displayedLeaders = useMemo(() => {
     if (selectedLeaderData && !leaders.find(l => l.id === selectedLeaderData.id)) {
@@ -84,10 +84,10 @@ export function LeaderAutocomplete({
     }
     return leaders;
   }, [leaders, selectedLeaderData]);
-  
+
   const hasLeaders = displayedLeaders.length > 0;
   const isDisabled = disabled || (!cityId && !allowAllLeaders);
-  
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

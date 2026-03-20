@@ -90,7 +90,7 @@ export function useLeaderTree(coordinatorId: string | null) {
 // Build tree structure from flat list
 function buildTree(nodes: LeaderTreeNode[], rootId: string): LeaderTreeNode | null {
   const nodeMap = new Map<string, LeaderTreeNode>();
-  
+
   // Create a map of all nodes
   nodes.forEach(node => {
     nodeMap.set(node.id, { ...node, children: [] });
@@ -340,12 +340,12 @@ export function useMoveLeaderBranch() {
       });
 
       if (error) throw error;
-      
+
       // A função agora retorna boolean
       if (!data) {
         throw new Error("Erro ao mover líder");
       }
-      
+
       return { success: true };
     },
     onSuccess: () => {
@@ -378,13 +378,13 @@ export function usePromoteToCoordinatorWithSubordinates() {
       });
 
       if (error) throw error;
-      
+
       const result = data as { success: boolean; error?: string; message?: string; subordinates_moved?: number };
-      
+
       if (!result.success) {
         throw new Error(result.error || "Erro ao promover líder");
       }
-      
+
       return result;
     },
     onSuccess: (data) => {

@@ -48,10 +48,10 @@ MaskedDateInput.displayName = "MaskedDateInput";
  */
 export function parseDateBR(dateBR: string): string | null {
   if (!dateBR || dateBR.length !== 10) return null;
-  
+
   const [day, month, year] = dateBR.split("/");
   if (!day || !month || !year) return null;
-  
+
   return `${year}-${month}-${day}`;
 }
 
@@ -60,10 +60,10 @@ export function parseDateBR(dateBR: string): string | null {
  */
 export function formatDateBR(dateISO: string): string {
   if (!dateISO || dateISO.length < 10) return "";
-  
+
   const [year, month, day] = dateISO.slice(0, 10).split("-");
   if (!day || !month || !year) return "";
-  
+
   return `${day}/${month}/${year}`;
 }
 
@@ -72,17 +72,17 @@ export function formatDateBR(dateISO: string): string {
  */
 export function isValidDateBR(dateBR: string): boolean {
   if (!dateBR || dateBR.length !== 10) return false;
-  
+
   const [dayStr, monthStr, yearStr] = dateBR.split("/");
   const day = parseInt(dayStr, 10);
   const month = parseInt(monthStr, 10);
   const year = parseInt(yearStr, 10);
-  
+
   if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
   if (month < 1 || month > 12) return false;
   if (day < 1 || day > 31) return false;
   if (year < 1900 || year > new Date().getFullYear()) return false;
-  
+
   // Verifica se a data é válida criando um Date e comparando
   const date = new Date(year, month - 1, day);
   return (
@@ -97,14 +97,14 @@ export function isValidDateBR(dateBR: string): boolean {
  */
 export function isNotFutureDate(dateBR: string): boolean {
   if (!isValidDateBR(dateBR)) return false;
-  
+
   const [dayStr, monthStr, yearStr] = dateBR.split("/");
   const date = new Date(
     parseInt(yearStr, 10),
     parseInt(monthStr, 10) - 1,
     parseInt(dayStr, 10)
   );
-  
+
   return date <= new Date();
 }
 

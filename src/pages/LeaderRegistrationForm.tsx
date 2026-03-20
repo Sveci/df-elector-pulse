@@ -1,15 +1,15 @@
 /**
  * LeaderRegistrationForm - Formulário de cadastro de líder via link de afiliado
- * 
+ *
  * IMPORTANTE: Este formulário envia SMS de VERIFICAÇÃO (verificacao-lider-sms)
  * O link de indicação SÓ é enviado APÓS o líder confirmar o cadastro em /verificar-lider/:codigo
- * 
+ *
  * Fluxo correto:
  * 1. Líder se cadastra via este formulário
  * 2. Sistema envia SMS com link de VERIFICAÇÃO (verificacao-lider-sms)
  * 3. Líder clica no link de verificação
  * 4. Sistema marca como verificado e envia SMS com link de INDICAÇÃO (lider-cadastro-confirmado-sms)
- * 
+ *
  * @version 2.0.0 - Corrigido fluxo de verificação (19/12/2025)
  */
 import { useState } from "react";
@@ -87,14 +87,14 @@ export default function LeaderRegistrationForm() {
     queryKey: ["leader_by_token", leaderToken],
     queryFn: async () => {
       if (!leaderToken) return null;
-      
+
       // Usar função RPC SECURITY DEFINER para buscar líder (bypassa RLS para usuários públicos)
       const { data, error } = await supabase
         .rpc("get_leader_by_affiliate_token", { _token: leaderToken });
-      
+
       if (error) throw error;
       if (!data || data.length === 0) return null;
-      
+
       // Mapear para estrutura esperada pelo componente
       return {
         id: data[0].id,
@@ -115,7 +115,7 @@ export default function LeaderRegistrationForm() {
         .select("id, nome")
         .eq("status", "active")
         .order("nome");
-      
+
       if (error) throw error;
       return data;
     }
@@ -186,7 +186,7 @@ export default function LeaderRegistrationForm() {
       }
 
       const leaderResult = result?.[0];
-      
+
       // Se não retornou resultado, erro genérico
       if (!leaderResult) {
         throw new Error("Erro ao processar cadastro. Tente novamente.");
@@ -232,7 +232,7 @@ export default function LeaderRegistrationForm() {
         const verificationLink = generateLeaderVerificationUrl(leaderResult.verification_code);
 
         // Verificar se deve usar WhatsApp ou SMS para verificação
-        const shouldUseWhatsApp = 
+        const shouldUseWhatsApp =
           (verificationSettings?.verification_method === 'whatsapp_consent' ||
            verificationSettings?.verification_method === 'whatsapp_meta_cloud') &&
           verificationSettings?.verification_wa_enabled === true;
@@ -242,11 +242,11 @@ export default function LeaderRegistrationForm() {
         if (shouldUseWhatsApp && verificationSettings?.verification_wa_test_mode) {
           const whitelist = verificationSettings?.verification_wa_whitelist || [];
           // Normalizar números da whitelist para comparação
-          const normalizedWhitelist = whitelist.map((p: string) => 
+          const normalizedWhitelist = whitelist.map((p: string) =>
             p.replace(/\D/g, '').replace(/^55/, '')
           );
           const phoneToCheck = telefone_norm.replace(/\D/g, '').replace(/^55/, '');
-          phoneInWhitelist = normalizedWhitelist.some((wp: string) => 
+          phoneInWhitelist = normalizedWhitelist.some((wp: string) =>
             wp.endsWith(phoneToCheck.slice(-8)) || phoneToCheck.endsWith(wp.slice(-8))
           );
           console.log(`[LeaderRegistrationForm] Test mode: phone ${telefone_norm} in whitelist: ${phoneInWhitelist}`, {
@@ -292,12 +292,12 @@ export default function LeaderRegistrationForm() {
             // Fallback para manter a UI utilizável (embora o backend valide pelo token de contact_verifications)
             setVerificationCode(leaderResult.verification_code);
           }
-          
+
           // NÃO atualiza verification_sent_at ainda - será atualizado quando o user enviar a mensagem
         } else {
           // USAR SMS: Fluxo padrão
           console.log(`[LeaderRegistrationForm v${FORM_VERSION}] Usando verificação via SMS`);
-          
+
           // DEBUG: Identificar versão do código - CRÍTICO para debug
           console.log(`[LeaderRegistrationForm v${FORM_VERSION}] Dados SMS:`, {
             phone: telefone_norm,
@@ -319,9 +319,9 @@ export default function LeaderRegistrationForm() {
               },
             },
           });
-          
+
           console.log(`[LeaderRegistrationForm v${FORM_VERSION}] Resultado SMS:`, smsResult);
-          
+
           if (smsResult.error) {
             console.error(`[LeaderRegistrationForm v${FORM_VERSION}] ERRO ao enviar SMS:`, smsResult.error);
           }
@@ -334,7 +334,7 @@ export default function LeaderRegistrationForm() {
 
         // Tracking
         trackLead({ content_name: "leader_registration_promotion" });
-        pushToDataLayer("new_leader_registered", { 
+        pushToDataLayer("new_leader_registered", {
           source: "leader_referral",
           referring_leader_id: leader.id,
           new_leader_id: leaderResult.leader_id
@@ -346,7 +346,7 @@ export default function LeaderRegistrationForm() {
       setIsSuccess(true);
     } catch (error: any) {
       console.error("Erro ao cadastrar:", error);
-      
+
       // Verificar se o erro contém informação de duplicidade (fallback)
       const errorMessage = error?.message?.toLowerCase() || '';
       if (errorMessage.includes('already') || errorMessage.includes('duplicate') || error?.code === '23505') {
@@ -355,7 +355,7 @@ export default function LeaderRegistrationForm() {
         toast.info("Você já é um apoiador cadastrado!");
         return;
       }
-      
+
       toast.error(error?.message || "Erro ao realizar cadastro. Tente novamente.");
     } finally {
       setIsSubmitting(false);
@@ -415,7 +415,7 @@ export default function LeaderRegistrationForm() {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Você Já Está Cadastrado!</h2>
                 <p className="text-muted-foreground mb-4">
-                  Identificamos que você já foi indicado por <strong>{originalLeaderName}</strong>. 
+                  Identificamos que você já foi indicado por <strong>{originalLeaderName}</strong>.
                   Seu cadastro continua válido!
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
@@ -429,7 +429,7 @@ export default function LeaderRegistrationForm() {
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Limite de Hierarquia Atingido</h2>
                 <p className="text-muted-foreground mb-4">
-                  Não é possível adicionar mais níveis na estrutura de apoiadores. 
+                  Não é possível adicionar mais níveis na estrutura de apoiadores.
                   Entre em contato com a equipe para mais informações.
                 </p>
               </>
@@ -443,7 +443,7 @@ export default function LeaderRegistrationForm() {
                   )}
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">Falta Apenas uma Etapa!</h2>
-                
+
                 {useWhatsAppVerification ? (
                   <>
                     <p className="text-muted-foreground mb-4">
@@ -471,7 +471,7 @@ export default function LeaderRegistrationForm() {
                 ) : (
                   <>
                     <p className="text-muted-foreground mb-4">
-                      Enviamos um <strong>SMS de verificação</strong> para seu celular. 
+                      Enviamos um <strong>SMS de verificação</strong> para seu celular.
                       Clique no link para confirmar seu cadastro e receber seu link exclusivo de indicação.
                     </p>
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
@@ -480,7 +480,7 @@ export default function LeaderRegistrationForm() {
                     </div>
                   </>
                 )}
-                
+
                 <p className="text-sm text-muted-foreground mt-4">
                   Indicado por: <strong>{leader.nome_completo}</strong>
                 </p>
@@ -502,8 +502,8 @@ export default function LeaderRegistrationForm() {
     );
   }
 
-  const cityName = leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade 
-    ? (leader.cidade as { nome: string }).nome 
+  const cityName = leader.cidade && typeof leader.cidade === 'object' && 'nome' in leader.cidade
+    ? (leader.cidade as { nome: string }).nome
     : null;
 
   return (
@@ -512,23 +512,23 @@ export default function LeaderRegistrationForm() {
       <div className="relative h-56 md:h-72 w-full overflow-hidden">
         {/* Background image or gradient */}
         {settings?.affiliate_form_cover_url ? (
-          <img 
-            src={settings.affiliate_form_cover_url} 
+          <img
+            src={settings.affiliate_form_cover_url}
             alt="Capa"
             className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60" />
         )}
-        
+
         {/* Fade effect - gradient from bottom to top */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {/* Centered Logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <img 
-            src={settings?.affiliate_form_logo_url || logo} 
-            alt="Logo" 
+          <img
+            src={settings?.affiliate_form_logo_url || logo}
+            alt="Logo"
             className="h-20 md:h-24 drop-shadow-lg object-contain"
           />
         </div>
@@ -649,9 +649,9 @@ export default function LeaderRegistrationForm() {
                     <FormItem>
                       <FormLabel>Endereço Completo *</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Rua, número, complemento, bairro, CEP" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Rua, número, complemento, bairro, CEP"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -672,7 +672,7 @@ export default function LeaderRegistrationForm() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-normal">
-                          Concordo com os termos de uso e política de privacidade (LGPD). 
+                          Concordo com os termos de uso e política de privacidade (LGPD).
                           Autorizo o armazenamento e uso dos meus dados para contato.
                         </FormLabel>
                         <FormMessage />

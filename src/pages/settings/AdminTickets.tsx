@@ -55,9 +55,9 @@ const AdminTickets = () => {
   const [prioridadeFilter, setPrioridadeFilter] = useState("all");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  
+
   const { restartTutorial } = useTutorial("admin-tickets", adminTicketsTutorialSteps);
-  
+
   const { data: isSuperAdmin, isLoading: isCheckingAdmin } = useIsSuperAdmin();
   const { data: tickets, isLoading } = useAllTickets();
   const { data: stats } = useTicketStats();
@@ -104,13 +104,13 @@ const AdminTickets = () => {
   };
 
   const filteredTickets = tickets?.filter((ticket) => {
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       ticket.protocolo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.assunto.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
     const matchesPrioridade = prioridadeFilter === "all" || ticket.prioridade === prioridadeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPrioridade;
   });
 
@@ -251,8 +251,8 @@ const AdminTickets = () => {
         ) : filteredTickets && filteredTickets.length > 0 ? (
           <div data-tutorial="admin-tickets-list" className="space-y-3">
             {filteredTickets.map((ticket) => (
-              <Card 
-                key={ticket.id} 
+              <Card
+                key={ticket.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleTicketClick(ticket.id)}
               >

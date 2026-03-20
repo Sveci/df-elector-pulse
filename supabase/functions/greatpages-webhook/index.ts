@@ -26,34 +26,34 @@ interface GreatPagesPayload {
 // Normalizar telefone para formato E.164
 function normalizePhoneE164(phone: string): string {
   let cleanPhone = phone.replace(/\D/g, "");
-  
+
   // Se já tem +55, remove para processar
   if (cleanPhone.startsWith("55") && cleanPhone.length === 13) {
     return `+${cleanPhone}`;
   }
-  
+
   // Corrige erros comuns do formato 5506
   if (cleanPhone.length === 12 && cleanPhone.startsWith("5506")) {
     cleanPhone = "61" + cleanPhone.slice(4);
   }
-  
+
   // Adiciona 9 se faltando (Brasília)
   if (cleanPhone.length === 10 && cleanPhone.startsWith("61")) {
     cleanPhone = "61" + "9" + cleanPhone.slice(2);
   }
-  
+
   // Adiciona DDD 61 se for só o número
   if (cleanPhone.length === 9) {
     cleanPhone = "61" + cleanPhone;
   } else if (cleanPhone.length === 8) {
     cleanPhone = "61" + "9" + cleanPhone;
   }
-  
+
   // Retorna no formato E.164
   if (cleanPhone.length === 11) {
     return `+55${cleanPhone}`;
   }
-  
+
   // Se não conseguiu normalizar, retorna o original com +55
   return `+55${cleanPhone}`;
 }
@@ -71,7 +71,7 @@ function findValue(payload: GreatPagesPayload, variants: string[]): string | nul
       return payload[variant] as string;
     }
   }
-  
+
   // Depois, tentar match normalizado (case-insensitive, sem underscores)
   const normalizedVariants = variants.map(normalizeKey);
   for (const [key, value] of Object.entries(payload)) {
@@ -79,7 +79,7 @@ function findValue(payload: GreatPagesPayload, variants: string[]): string | nul
       return value;
     }
   }
-  
+
   return null;
 }
 
@@ -116,23 +116,23 @@ function extractBirthDate(payload: GreatPagesPayload): string | null {
   ];
   const rawDate = findValue(payload, variants);
   if (!rawDate) return null;
-  
+
   // Tentar parsear diferentes formatos de data
   const cleanDate = rawDate.trim();
-  
+
   // Formato DD/MM/YYYY ou DD-MM-YYYY
   const brMatch = cleanDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (brMatch) {
     const [, day, month, year] = brMatch;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
-  
+
   // Formato YYYY-MM-DD (ISO)
   const isoMatch = cleanDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     return cleanDate;
   }
-  
+
   // Formato DD/MM/YY
   const shortYearMatch = cleanDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
   if (shortYearMatch) {
@@ -140,7 +140,7 @@ function extractBirthDate(payload: GreatPagesPayload): string | null {
     const fullYear = parseInt(year) > 50 ? `19${year}` : `20${year}`;
     return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
-  
+
   console.log(`[greatpages-webhook] Formato de data não reconhecido: ${rawDate}`);
   return null;
 }
@@ -164,13 +164,13 @@ function extractPageUrl(payload: GreatPagesPayload): string | null {
 // Parsear payload baseado no Content-Type
 async function parsePayload(req: Request): Promise<GreatPagesPayload> {
   const contentType = req.headers.get("content-type") || "";
-  
+
   // JSON
   if (contentType.includes("application/json")) {
     console.log("[greatpages-webhook] Parseando como JSON");
     return await req.json();
   }
-  
+
   // Form URL Encoded (formato padrão do GreatPages)
   if (contentType.includes("application/x-www-form-urlencoded")) {
     console.log("[greatpages-webhook] Parseando como x-www-form-urlencoded");
@@ -178,7 +178,7 @@ async function parsePayload(req: Request): Promise<GreatPagesPayload> {
     console.log("[greatpages-webhook] Raw text:", text);
     return Object.fromEntries(new URLSearchParams(text));
   }
-  
+
   // Multipart form data
   if (contentType.includes("multipart/form-data")) {
     console.log("[greatpages-webhook] Parseando como multipart/form-data");
@@ -191,12 +191,12 @@ async function parsePayload(req: Request): Promise<GreatPagesPayload> {
     });
     return payload;
   }
-  
+
   // Fallback: tentar JSON primeiro, depois URL encoded
   console.log("[greatpages-webhook] Content-Type não reconhecido, tentando fallback");
   const text = await req.text();
   console.log("[greatpages-webhook] Raw text:", text);
-  
+
   try {
     return JSON.parse(text);
   } catch {
@@ -236,9 +236,9 @@ Deno.serve(async (req) => {
           cidade: "Brasília",
         },
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   }
@@ -251,6 +251,21 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Webhook Secret Validation ────────────────────────────────────
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const url = new URL(req.url);
+      const token = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
+      if (token !== webhookSecret) {
+        console.warn("[greatpages-webhook] Unauthorized request - invalid secret");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // ── End Webhook Secret ───────────────────────────────────────────
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -258,7 +273,7 @@ Deno.serve(async (req) => {
     // Obter tenant_id do query param (obrigatório)
     const url = new URL(req.url);
     const tenant_id = url.searchParams.get("tenant_id");
-    
+
     if (!tenant_id) {
       console.error("[greatpages-webhook] tenant_id não informado na URL");
       return new Response(
@@ -294,7 +309,7 @@ Deno.serve(async (req) => {
 
     // Parse payload baseado no Content-Type
     const payload = await parsePayload(req);
-    
+
     console.log("[greatpages-webhook] Payload parseado:", JSON.stringify(payload));
     console.log("[greatpages-webhook] Chaves recebidas:", Object.keys(payload).join(", "));
 
@@ -322,15 +337,15 @@ Deno.serve(async (req) => {
     const birthDate = extractBirthDate(payload);
     const utmParams = extractUtmParams(payload);
     const pageUrl = extractPageUrl(payload);
-    
+
     console.log(`[greatpages-webhook] Dados extraídos: nome=${nome}, email=${email}, phone=${phone}, cidade=${cityName}, nascimento=${birthDate}, url=${pageUrl}`);
-    
+
     // Validar campos obrigatórios
     if (!nome) {
       console.error("[greatpages-webhook] Nome é obrigatório. Chaves recebidas:", Object.keys(payload));
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: "Nome é obrigatório",
           campos_recebidos: Object.keys(payload),
           dica: "Use um dos campos: nome, name, nome_completo, Nome_Completo"
@@ -338,12 +353,12 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
+
     if (!phone && !email) {
       console.error("[greatpages-webhook] Telefone ou email é obrigatório");
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: "Telefone ou email é obrigatório",
           campos_recebidos: Object.keys(payload),
           dica: "Use: telefone, phone, whatsapp, celular OU email, e-mail"
@@ -354,13 +369,13 @@ Deno.serve(async (req) => {
 
     // Normalizar telefone
     const telefone_norm = phone ? normalizePhoneE164(phone) : null;
-    
+
     console.log(`[greatpages-webhook] Telefone normalizado: ${telefone_norm}`);
 
     // Buscar cidade_id se informada (tenta match em office_cities)
     let cidade_id: string | null = null;
-    let localidade: string | null = cityName || null;
-    
+    const localidade: string | null = cityName || null;
+
     if (cityName) {
       const { data: cityData } = await supabase
         .from("office_cities")
@@ -369,7 +384,7 @@ Deno.serve(async (req) => {
         .ilike("nome", `%${cityName}%`)
         .limit(1)
         .maybeSingle();
-      
+
       if (cityData) {
         cidade_id = cityData.id;
         console.log(`[greatpages-webhook] Cidade encontrada em office_cities: ${cityName} -> ${cidade_id}`);
@@ -381,7 +396,7 @@ Deno.serve(async (req) => {
 
     // Verificar se é líder existente
     let existingLeader = null;
-    
+
     if (telefone_norm) {
       const { data: leaderByPhone } = await supabase
         .from("lideres")
@@ -390,12 +405,12 @@ Deno.serve(async (req) => {
         .or(`telefone.eq.${telefone_norm},telefone.ilike.%${telefone_norm.slice(-8)}%`)
         .limit(1)
         .maybeSingle();
-      
+
       if (leaderByPhone) {
         existingLeader = leaderByPhone;
       }
     }
-    
+
     if (!existingLeader && email) {
       const { data: leaderByEmail } = await supabase
         .from("lideres")
@@ -404,7 +419,7 @@ Deno.serve(async (req) => {
         .ilike("email", email)
         .limit(1)
         .maybeSingle();
-      
+
       if (leaderByEmail) {
         existingLeader = leaderByEmail;
       }
@@ -413,11 +428,11 @@ Deno.serve(async (req) => {
     // Se é líder existente, atualizar dados faltantes
     if (existingLeader) {
       console.log(`[greatpages-webhook] Líder encontrado: ${existingLeader.nome_completo} (${existingLeader.id})`);
-      
+
       const updateData: Record<string, unknown> = {
         last_activity: new Date().toISOString(),
       };
-      
+
       // Atualizar apenas campos faltantes
       if (!existingLeader.email && email) {
         updateData.email = email;
@@ -428,14 +443,14 @@ Deno.serve(async (req) => {
       if (!existingLeader.cidade_id && cidade_id) {
         updateData.cidade_id = cidade_id;
       }
-      
+
       await supabase
         .from("lideres")
         .update(updateData)
         .eq("id", existingLeader.id);
-      
+
       console.log(`[greatpages-webhook] Líder atualizado: ${existingLeader.id}`);
-      
+
       // Registrar página acessada para líder (se tiver URL)
       if (pageUrl) {
         await supabase.from("contact_page_views").insert({
@@ -451,7 +466,7 @@ Deno.serve(async (req) => {
         });
         console.log(`[greatpages-webhook] Page view registrada para líder: ${pageUrl}`);
       }
-      
+
       // Atualizar log do webhook
       if (webhookLogId) {
         await supabase.from("webhook_logs").update({
@@ -463,8 +478,8 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           type: "leader_updated",
           leaderId: existingLeader.id,
           message: `Líder ${existingLeader.nome_completo} atualizado com sucesso`
@@ -475,7 +490,7 @@ Deno.serve(async (req) => {
 
     // Não é líder - verificar se contato já existe
     let existingContact = null;
-    
+
     if (telefone_norm) {
       const { data: contactByPhone } = await supabase
         .from("office_contacts")
@@ -483,12 +498,12 @@ Deno.serve(async (req) => {
         .eq("telefone_norm", telefone_norm)
         .limit(1)
         .maybeSingle();
-      
+
       if (contactByPhone) {
         existingContact = contactByPhone;
       }
     }
-    
+
     if (!existingContact && email) {
       const { data: contactByEmail } = await supabase
         .from("office_contacts")
@@ -496,7 +511,7 @@ Deno.serve(async (req) => {
         .ilike("email", email)
         .limit(1)
         .maybeSingle();
-      
+
       if (contactByEmail) {
         existingContact = contactByEmail;
       }
@@ -507,27 +522,27 @@ Deno.serve(async (req) => {
     if (existingContact) {
       // Contato já existe - atualizar dados faltantes
       console.log(`[greatpages-webhook] Contato existente encontrado: ${existingContact.nome} (${existingContact.id})`);
-      
+
       const updateData: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
-      
+
       if (!existingContact.email && email) {
         updateData.email = email;
       }
       if (!existingContact.telefone_norm && telefone_norm) {
         updateData.telefone_norm = telefone_norm;
       }
-      
+
       await supabase
         .from("office_contacts")
         .update(updateData)
         .eq("id", existingContact.id);
-      
+
       contactId = existingContact.id;
-      
+
       console.log(`[greatpages-webhook] Contato atualizado: ${contactId}`);
-      
+
       // Registrar página acessada para contato existente (se tiver URL)
       if (pageUrl) {
         await supabase.from("contact_page_views").insert({
@@ -543,7 +558,7 @@ Deno.serve(async (req) => {
         });
         console.log(`[greatpages-webhook] Page view registrada para contato existente: ${pageUrl}`);
       }
-      
+
       // Atualizar log do webhook
       if (webhookLogId) {
         await supabase.from("webhook_logs").update({
@@ -555,8 +570,8 @@ Deno.serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           type: "contact_updated",
           contactId: contactId,
           message: `Contato ${existingContact.nome} atualizado com sucesso`
@@ -567,7 +582,7 @@ Deno.serve(async (req) => {
 
     // Criar novo contato com source_type='webhook'
     console.log(`[greatpages-webhook] Criando novo contato: ${nome}`);
-    
+
     const { data: newContact, error: insertError } = await supabase
       .from("office_contacts")
       .insert({
@@ -644,8 +659,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         type: "contact_created",
         contactId: contactId,
         message: `Contato ${nome} criado com sucesso`
@@ -656,8 +671,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("[greatpages-webhook] Erro:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: (error as Error).message || "Erro interno",
         dica: "Verifique se o formato do payload está correto (JSON ou form-urlencoded)"
       }),

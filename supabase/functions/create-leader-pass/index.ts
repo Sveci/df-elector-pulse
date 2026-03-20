@@ -301,7 +301,7 @@ serve(async (req) => {
       const bronzeMax = officeSettings?.nivel_bronze_max ?? 10;
       const prataMax = officeSettings?.nivel_prata_max ?? 30;
       const ouroMax = officeSettings?.nivel_ouro_max ?? 50;
-      
+
       if (pontos <= bronzeMax) return { nome: "Bronze", icone: "🥉" };
       if (pontos <= prataMax) return { nome: "Prata", icone: "🥈" };
       if (pontos <= ouroMax) return { nome: "Ouro", icone: "🥇" };
@@ -310,7 +310,7 @@ serve(async (req) => {
 
     // Gerar URL do link de afiliado - usando URL base principal do sistema
     const siteBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
-    const affiliateUrl = leader.affiliate_token 
+    const affiliateUrl = leader.affiliate_token
       ? `${siteBaseUrl}/affiliate/${leader.affiliate_token}`
       : "";
 
@@ -398,7 +398,7 @@ serve(async (req) => {
 
     // Chamar a API do PassKit para criar o membro
     console.log(`[create-leader-pass] Chamando POST ${passkitBaseUrl}/members/member`);
-    let passkitResponse = await fetch(`${passkitBaseUrl}/members/member`, {
+    const passkitResponse = await fetch(`${passkitBaseUrl}/members/member`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${passkitToken}`,
@@ -480,23 +480,23 @@ serve(async (req) => {
         console.log("[create-leader-pass] Membro existente encontrado:", existingMember.id);
 
         // Verificar se o membro está invalidado
-        const memberStatus = existingMember.universalStatus || 
-                             existingMember.status || 
+        const memberStatus = existingMember.universalStatus ||
+                             existingMember.status ||
                              (existingMember.recordData && existingMember.recordData["universal.status"]);
-        
+
         console.log("[create-leader-pass] Status do membro existente:", memberStatus);
-        
+
         // Se está invalidado, criar um NOVO membro com externalId diferente
         if (memberStatus === "PASS_INVALIDATED" || memberStatus === "3" || memberStatus === 3) {
           console.log("[create-leader-pass] Membro anterior estava INVALIDADO, criando novo...");
-          
+
           // Usar um novo externalId com timestamp para criar membro fresco
           const newExternalId = `${leader.id}_${Date.now()}`;
           const newPassData = {
             ...passData,
             externalId: newExternalId,
           };
-          
+
           console.log(`[create-leader-pass] Criando novo membro com externalId: ${newExternalId}`);
           const newMemberResponse = await fetch(`${passkitBaseUrl}/members/member`, {
             method: "POST",
@@ -506,21 +506,21 @@ serve(async (req) => {
             },
             body: JSON.stringify(newPassData),
           });
-          
+
           if (newMemberResponse.ok) {
             const newResult = await newMemberResponse.json();
             console.log("[create-leader-pass] Novo membro criado:", newResult.id);
-            
+
             // Salvar novo ID e limpar invalidação
             await supabase
               .from("lideres")
-              .update({ 
+              .update({
                 passkit_member_id: newResult.id,
                 passkit_invalidated_at: null,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", leaderId);
-            
+
             return new Response(
               JSON.stringify({
                 success: true,
@@ -578,18 +578,18 @@ serve(async (req) => {
         if (!updateResponse.ok) {
           const updateError = await updateResponse.text();
           console.error("[create-leader-pass] Erro ao atualizar:", updateResponse.status, updateError);
-          
+
           // Verificar se o erro é de membro invalidado
           if (updateError.includes("cannot update invalided member") || updateError.includes("invalidated")) {
             console.log("[create-leader-pass] Membro invalidado detectado via erro PUT, tentando criar novo...");
-            
+
             // Criar novo membro com externalId diferente
             const newExternalId = `${leader.id}_${Date.now()}`;
             const newPassData = {
               ...passData,
               externalId: newExternalId,
             };
-            
+
             const newMemberResponse = await fetch(`${passkitBaseUrl}/members/member`, {
               method: "POST",
               headers: {
@@ -598,19 +598,19 @@ serve(async (req) => {
               },
               body: JSON.stringify(newPassData),
             });
-            
+
             if (newMemberResponse.ok) {
               const newResult = await newMemberResponse.json();
-              
+
               await supabase
                 .from("lideres")
-                .update({ 
+                .update({
                   passkit_member_id: newResult.id,
                   passkit_invalidated_at: null,
                   updated_at: new Date().toISOString(),
                 })
                 .eq("id", leaderId);
-              
+
               return new Response(
                 JSON.stringify({
                   success: true,
@@ -666,10 +666,10 @@ serve(async (req) => {
     if (!passkitResponse.ok) {
       const errorText = await passkitResponse.text();
       console.error("[create-leader-pass] Erro PassKit:", passkitResponse.status, errorText);
-      
+
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: "Erro ao criar passe no PassKit. Verifique suas credenciais e configurações.",
           details: errorText
         }),
@@ -700,8 +700,8 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data: {
           passId: result.id,
           passUrl: result.url || result.passUrl || `https://pub2.pskt.io/${result.id}`,

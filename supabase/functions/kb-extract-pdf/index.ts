@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
     // For vision-extracted text, be more lenient - if AI returned something with real words, trust it
     const isAcceptable = extractedText && extractedText.length >= 50 && (
-      finalQuality.usable || 
+      finalQuality.usable ||
       (extractionMethod === "pdf_vision" && finalQuality.wordCount >= 20 && finalQuality.readableRatio > 0.5)
     );
 

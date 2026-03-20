@@ -4,20 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Users, 
-  BarChart3, 
+import {
+  ArrowLeft,
+  Users,
+  BarChart3,
   Brain,
   Loader2,
   AlertCircle,
   Download,
   RefreshCw
 } from "lucide-react";
-import { 
-  useSurvey, 
-  useSurveyQuestions, 
-  useSurveyResponses 
+import {
+  useSurvey,
+  useSurveyQuestions,
+  useSurveyResponses
 } from "@/hooks/surveys/useSurveys";
 import { SurveyResponsesTable } from "@/components/surveys/SurveyResponsesTable";
 import { SurveyResultsCharts } from "@/components/surveys/SurveyResultsCharts";
@@ -32,7 +32,7 @@ export default function SurveyResults() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isDemoMode } = useDemoMode();
-  
+
   // Use "demo-" prefix as definitive check to avoid race condition with async isDemoMode
   const isDemo = !!id?.startsWith("demo-");
 
@@ -157,21 +157,21 @@ export default function SurveyResults() {
         </TabsList>
 
         <TabsContent value="charts">
-          <SurveyResultsCharts 
-            questions={questions || []} 
-            responses={responses || []} 
+          <SurveyResultsCharts
+            questions={questions || []}
+            responses={responses || []}
           />
         </TabsContent>
 
         <TabsContent value="responses">
-          <SurveyResponsesTable 
-            responses={responses || []} 
+          <SurveyResponsesTable
+            responses={responses || []}
             questions={questions || []}
           />
         </TabsContent>
 
         <TabsContent value="ai">
-          <SurveyAIAnalysisPanel 
+          <SurveyAIAnalysisPanel
             survey={survey}
             questions={questions || []}
             responses={responses || []}

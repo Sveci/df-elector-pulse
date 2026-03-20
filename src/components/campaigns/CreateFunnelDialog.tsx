@@ -32,12 +32,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  LeadFunnel, 
+import {
+  LeadFunnel,
   CreateFunnelData,
-  useCreateFunnel, 
+  useCreateFunnel,
   useUpdateFunnel,
-  uploadFunnelAsset 
+  uploadFunnelAsset
 } from "@/hooks/campaigns/useLeadFunnels";
 import { toast } from "@/hooks/use-toast";
 
@@ -247,7 +247,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
 
       if (suggestions) {
         const fieldsToFill = new Set<string>();
-        
+
         if (suggestions.nome) {
           form.setValue('nome', suggestions.nome);
           fieldsToFill.add('nome');
@@ -306,7 +306,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
 
   const onSubmit = async (data: FormData) => {
     setIsUploading(true);
-    
+
     try {
       // Handle cover URL - check for removal first
       let cover_url: string | null = removeCover ? null : (editFunnel?.cover_url || null);
@@ -403,8 +403,8 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
     <div className="relative">
       {children}
       {aiFilledFields.has(fieldName) && (
-        <Badge 
-          variant="secondary" 
+        <Badge
+          variant="secondary"
           className="absolute -top-2 right-0 text-[10px] bg-violet-100 text-violet-700 hover:bg-violet-100"
         >
           <Sparkles className="h-3 w-3 mr-1" />
@@ -439,7 +439,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                   <h4 className="font-medium mb-3 flex items-center gap-2">
                     🎁 Isca Digital
                   </h4>
-                  
+
                   {/* File Upload */}
                   <div className="mb-4">
                     <Label>Arquivo do Material *</Label>
@@ -473,9 +473,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                               PDF, XLS, XLSX, CSV (máx. 20MB)
                             </p>
                           </div>
-                          <input 
-                            type="file" 
-                            className="hidden" 
+                          <input
+                            type="file"
+                            className="hidden"
                             accept={ACCEPTED_FILE_TYPES}
                             onChange={(e) => handleMaterialChange(e.target.files?.[0] || null)}
                           />
@@ -508,7 +508,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                   )}
 
                   {/* Lead Magnet Name */}
-                  {renderFieldWithAiBadge('lead_magnet_nome', 
+                  {renderFieldWithAiBadge('lead_magnet_nome',
                     <FormField
                       control={form.control}
                       name="lead_magnet_nome"
@@ -532,9 +532,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       <FormItem className="mt-3">
                         <FormLabel>URL de Download (opcional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="https://... (deixe vazio se fez upload acima)" 
-                            {...field} 
+                          <Input
+                            placeholder="https://... (deixe vazio se fez upload acima)"
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>
@@ -578,9 +578,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       </FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
-                          <Input 
-                            placeholder="ex: guia-marketing-digital" 
-                            {...field} 
+                          <Input
+                            placeholder="ex: guia-marketing-digital"
+                            {...field}
                             onChange={(e) => {
                               const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
                               field.onChange(value);
@@ -625,9 +625,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       <FormItem>
                         <FormLabel>Descrição</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Descrição interna do funil..."
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -638,7 +638,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
 
                 <div className="border-t pt-4">
                   <h4 className="font-medium mb-3">📝 Campos do Formulário</h4>
-                  
+
                   <FormField
                     control={form.control}
                     name="campos_form"
@@ -707,9 +707,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                   <div className="mt-2">
                     {coverPreview ? (
                       <div className="relative">
-                        <img 
-                          src={coverPreview} 
-                          alt="Cover preview" 
+                        <img
+                          src={coverPreview}
+                          alt="Cover preview"
                           className="w-full h-40 object-cover rounded-lg"
                         />
                         <Button
@@ -729,9 +729,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                           <p className="text-sm text-muted-foreground">Clique para enviar imagem de capa</p>
                           <p className="text-xs text-muted-foreground">PNG, JPG (recomendado: 1200x630)</p>
                         </div>
-                        <input 
-                          type="file" 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          className="hidden"
                           accept="image/*"
                           onChange={(e) => handleFileChange('cover', e.target.files?.[0] || null)}
                         />
@@ -746,9 +746,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                   <div className="mt-2">
                     {logoPreview ? (
                       <div className="relative inline-block">
-                        <img 
-                          src={logoPreview} 
-                          alt="Logo preview" 
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
                           className="h-20 w-auto object-contain bg-white rounded-lg p-2 shadow"
                         />
                         <Button
@@ -767,9 +767,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                           <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
                           <p className="text-xs text-muted-foreground">Upload logo</p>
                         </div>
-                        <input 
-                          type="file" 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          className="hidden"
                           accept="image/*"
                           onChange={(e) => handleFileChange('logo', e.target.files?.[0] || null)}
                         />
@@ -805,9 +805,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       <FormItem>
                         <FormLabel>Subtítulo</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Ex: Aprenda as estratégias que os maiores vendedores usam..."
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -844,8 +844,8 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                             key={color.value}
                             type="button"
                             className={`w-8 h-8 rounded-full transition-all ${color.class} ${
-                              field.value === color.value 
-                                ? 'ring-2 ring-offset-2 ring-primary' 
+                              field.value === color.value
+                                ? 'ring-2 ring-offset-2 ring-primary'
                                 : 'hover:scale-110'
                             }`}
                             onClick={() => field.onChange(color.value)}
@@ -888,9 +888,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       <FormItem>
                         <FormLabel>Subtítulo</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Ex: Clique no botão abaixo para baixar seu material"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -917,7 +917,7 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
 
                 <div className="border-t pt-4">
                   <h4 className="font-medium mb-3">🔗 CTA Adicional (opcional)</h4>
-                  
+
                   <FormField
                     control={form.control}
                     name="cta_adicional_texto"
@@ -939,9 +939,9 @@ export function CreateFunnelDialog({ open, onOpenChange, editFunnel }: CreateFun
                       <FormItem className="mt-3">
                         <FormLabel>URL do Botão</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="https://calendly.com/seu-link" 
-                            {...field} 
+                          <Input
+                            placeholder="https://calendly.com/seu-link"
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>

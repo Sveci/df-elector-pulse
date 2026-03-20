@@ -14,7 +14,7 @@ interface PromoteToCoordinatorDialogProps {
 export function PromoteToCoordinatorDialog({ open, onOpenChange }: PromoteToCoordinatorDialogProps) {
   const [search, setSearch] = useState("");
   const [selectedLeaderId, setSelectedLeaderId] = useState<string | null>(null);
-  
+
   const { data: searchResults, isLoading } = useSearchLeaders(open ? search : "");
   const promoteToCoordinator = usePromoteToCoordinator();
 
@@ -23,7 +23,7 @@ export function PromoteToCoordinatorDialog({ open, onOpenChange }: PromoteToCoor
 
   const handlePromote = async () => {
     if (!selectedLeaderId) return;
-    
+
     await promoteToCoordinator.mutateAsync(selectedLeaderId);
     setSelectedLeaderId(null);
     setSearch("");
@@ -109,8 +109,8 @@ export function PromoteToCoordinatorDialog({ open, onOpenChange }: PromoteToCoor
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handlePromote} 
+          <Button
+            onClick={handlePromote}
             disabled={!selectedLeaderId || promoteToCoordinator.isPending}
             className="gap-2"
           >

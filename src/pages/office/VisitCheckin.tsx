@@ -67,7 +67,7 @@ export default function VisitCheckin() {
                 <p className="font-medium">{visit.contact_nome}</p>
               </div>
             </div>
-            
+
             {visit.checked_in_at && (
               <div className="flex items-center gap-3">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -123,14 +123,14 @@ export default function VisitCheckin() {
           </div>
 
           <div className="flex gap-3">
-            <Button 
-              onClick={() => navigate("/office/queue")} 
-              variant="outline" 
+            <Button
+              onClick={() => navigate("/office/queue")}
+              variant="outline"
               className="flex-1"
             >
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleCheckIn}
               disabled={updateCheckIn.isPending}
               className="flex-1"

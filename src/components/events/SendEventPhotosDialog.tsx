@@ -45,7 +45,7 @@ export function SendEventPhotosDialog({ open, onOpenChange, event }: SendEventPh
       setSendEmail(true);
       setShowConfirmation(false);
       setSendResult(null);
-      
+
       // Get accurate checked-in count
       getCheckedInCount(event.id).then(count => {
         setCheckedInCount(count);
@@ -110,12 +110,12 @@ export function SendEventPhotosDialog({ open, onOpenChange, event }: SendEventPh
               Fotos enviadas!
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
               <Camera className="h-8 w-8 text-green-600" />
             </div>
-            
+
             <div className="space-y-2">
               <p className="text-lg font-medium">
                 Envio realizado com sucesso!
@@ -196,14 +196,14 @@ export function SendEventPhotosDialog({ open, onOpenChange, event }: SendEventPh
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowConfirmation(false)}
               disabled={isLoading}
             >
               Voltar
             </Button>
-            <Button 
+            <Button
               onClick={handleSend}
               disabled={isLoading}
             >
@@ -267,7 +267,7 @@ export function SendEventPhotosDialog({ open, onOpenChange, event }: SendEventPh
           {/* Channel selection */}
           <div className="space-y-3">
             <Label>Canais de envio</Label>
-            
+
             <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <Checkbox
                 id="sendSms"
@@ -336,7 +336,7 @@ export function SendEventPhotosDialog({ open, onOpenChange, event }: SendEventPh
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={handleContinue}
             disabled={!isValidUrl(photoUrl) || (!sendSms && !sendEmail) || checkedInCount === 0}
           >

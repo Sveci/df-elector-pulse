@@ -26,7 +26,7 @@ const generateTrackingCode = (eventId: string, eventName: string) => {
     .toUpperCase()
     .replace(/[^A-Z]/g, '');
   const eventIdShort = eventId.substring(0, 8).toUpperCase();
-  
+
   return `${eventPrefix}${eventIdShort}${random}${timestamp.substring(0, 4).toUpperCase()}`;
 };
 
@@ -63,7 +63,7 @@ const EventQRCode = ({ event }: EventQRCodeProps) => {
     try {
       const eventIdShort = event.id.substring(0, 8);
       const filename = `qr-evento-${eventIdShort}-${trackingCode}`;
-      
+
       // Gerar QR code em alta definição
       const qrDataURL = await QRCode.toDataURL(eventURL, {
         width: 1024,
@@ -117,17 +117,17 @@ const EventQRCode = ({ event }: EventQRCodeProps) => {
               {trackingCode}
             </Badge>
           </div>
-          
+
           {eventQR && (
             <div className="bg-white p-3 rounded-lg border text-center">
-              <img 
-                src={eventQR} 
-                alt="QR Code do Evento" 
+              <img
+                src={eventQR}
+                alt="QR Code do Evento"
                 className="w-24 h-24 mx-auto"
               />
             </div>
           )}
-          
+
           <Button
             variant="outline"
             size="sm"

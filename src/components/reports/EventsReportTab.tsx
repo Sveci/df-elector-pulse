@@ -26,7 +26,7 @@ export function EventsReportTab() {
         .from('events')
         .select('created_by_coordinator_id')
         .not('created_by_coordinator_id', 'is', null);
-      
+
       const uniqueIds = [...new Set(data?.map(e => e.created_by_coordinator_id).filter(Boolean) as string[])];
       if (uniqueIds.length === 0) return [];
 
@@ -35,7 +35,7 @@ export function EventsReportTab() {
         .select('id, nome_completo')
         .in('id', uniqueIds)
         .order('nome_completo');
-      
+
       return leaders || [];
     }
   });
@@ -48,7 +48,7 @@ export function EventsReportTab() {
         .from('events')
         .select('id, name, date, created_by_coordinator_id')
         .order('date', { ascending: false });
-      
+
       if (coordinatorFilter === "admin") {
         query = query.is('created_by_coordinator_id', null);
       } else if (coordinatorFilter !== "all") {
@@ -72,11 +72,11 @@ export function EventsReportTab() {
       const { count: totalEvents } = await supabase
         .from('events')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: totalRegistrations } = await supabase
         .from('event_registrations')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: totalCheckins } = await supabase
         .from('event_registrations')
         .select('*', { count: 'exact', head: true })
@@ -104,8 +104,8 @@ export function EventsReportTab() {
         });
       }
 
-      const conversionRate = (totalRegistrations || 0) > 0 
-        ? ((totalCheckins || 0) / (totalRegistrations || 1)) * 100 
+      const conversionRate = (totalRegistrations || 0) > 0
+        ? ((totalCheckins || 0) / (totalRegistrations || 1)) * 100
         : 0;
 
       return {
@@ -181,7 +181,7 @@ export function EventsReportTab() {
         ...(topEvents?.map(e => [e.name, e.inscricoes, e.checkins]) || [])
       ];
 
-      import('xlsx').then(XLSX => {
+      import('@/lib/xlsx-compat').then(XLSX => {
         const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Eventos');
@@ -197,8 +197,8 @@ export function EventsReportTab() {
         <div className="flex flex-wrap gap-3">
           {/* Filtro por coordenador criador */}
           {coordinatorCreators && coordinatorCreators.length > 0 && (
-            <Select 
-              value={coordinatorFilter} 
+            <Select
+              value={coordinatorFilter}
               onValueChange={(val) => {
                 setCoordinatorFilter(val);
                 setSelectedEventId(null);
@@ -222,8 +222,8 @@ export function EventsReportTab() {
             </Select>
           )}
 
-          <Select 
-            value={selectedEventId || "all"} 
+          <Select
+            value={selectedEventId || "all"}
             onValueChange={(val) => setSelectedEventId(val === "all" ? null : val)}
           >
             <SelectTrigger className="w-[280px]">
@@ -275,9 +275,9 @@ export function EventsReportTab() {
       {selectedEventId ? (
         // Relatório Detalhado do Evento
         eventReport && (
-          <EventDetailedReportPanel 
-            report={eventReport} 
-            eventName={selectedEvent?.name || ''} 
+          <EventDetailedReportPanel
+            report={eventReport}
+            eventName={selectedEvent?.name || ''}
             isLoading={isLoadingReport}
             coordinatorName={
               selectedEvent?.created_by_coordinator_id

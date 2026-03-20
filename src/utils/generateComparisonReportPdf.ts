@@ -72,7 +72,7 @@ export function generateComparisonPdf(comparisonData: ComparisonEntity[], analys
 
   // ── Section 1: Entity Summary ──
   y = sectionTitle(doc, y, "Resumo das Entidades");
-  
+
   // Table header
   const cols = [14, 55, 80, 100, 120, 140, 165];
   doc.setFillColor(...PRIMARY);

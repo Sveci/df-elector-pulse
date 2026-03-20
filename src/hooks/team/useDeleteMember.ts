@@ -8,7 +8,7 @@ export function useDeleteMember() {
   return useMutation({
     mutationFn: async (userId: string) => {
       console.log('[useDeleteMember] Excluindo usuário:', userId);
-      
+
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
@@ -17,7 +17,7 @@ export function useDeleteMember() {
         console.error('[useDeleteMember] Erro:', error);
         throw error;
       }
-      
+
       return data;
     },
     onSuccess: () => {

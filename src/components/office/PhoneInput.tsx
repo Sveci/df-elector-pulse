@@ -9,12 +9,12 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
   ({ value, onChange, onValueChange, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let val = e.target.value.replace(/\D/g, "");
-      
+
       // Limitar a 11 dígitos (DDD + 9 dígitos)
       if (val.length > 11) {
         val = val.slice(0, 11);
       }
-      
+
       // Formatar: (XX) XXXXX-XXXX
       let formatted = "";
       if (val.length > 0) {
@@ -31,12 +31,12 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
           formatted += val;
         }
       }
-      
+
       e.target.value = formatted;
       onChange?.(e);
       onValueChange?.(formatted);
     };
-    
+
     return (
       <Input
         ref={ref}

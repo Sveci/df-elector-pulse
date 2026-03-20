@@ -25,7 +25,7 @@ serve(async (req) => {
 
     // First, check connection status
     const statusUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/status`;
-    
+
     console.log("[get-zapi-qrcode] Calling Z-API status endpoint:", statusUrl);
 
     const statusResponse = await fetch(statusUrl, {
@@ -40,7 +40,7 @@ serve(async (req) => {
     console.log("[get-zapi-qrcode] Status response:", JSON.stringify(statusData));
 
     // Check if already connected
-    const isConnected = statusData.connected === true || 
+    const isConnected = statusData.connected === true ||
                         statusData.status === "connected" ||
                         statusData.smartphoneConnected === true;
 
@@ -54,9 +54,9 @@ serve(async (req) => {
 
     // If disconnected, get QR Code
     console.log("[get-zapi-qrcode] WhatsApp disconnected, fetching QR Code...");
-    
+
     const qrUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/qr-code/image`;
-    
+
     const qrResponse = await fetch(qrUrl, {
       method: "GET",
       headers: {
@@ -71,18 +71,18 @@ serve(async (req) => {
     if (!qrResponse.ok || !qrData.value) {
       console.error("[get-zapi-qrcode] Failed to get QR Code:", qrData);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           connected: false,
-          error: qrData.error || "Não foi possível obter o QR Code. Verifique as credenciais." 
+          error: qrData.error || "Não foi possível obter o QR Code. Verifique as credenciais."
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         connected: false,
         qrcode: qrData.value // Base64 image
       }),

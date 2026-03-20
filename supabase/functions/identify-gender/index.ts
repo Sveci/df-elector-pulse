@@ -56,38 +56,38 @@ ${names.map((n: any) => `{"id": "${n.id}", "nome": "${n.nome}"}`).join('\n')}`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Erro Lovable AI:", response.status, errorText);
-      
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       if (response.status === 402) {
         return new Response(
           JSON.stringify({ error: "Créditos insuficientes. Entre em contato com o suporte." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       throw new Error(`Erro na API: ${response.status}`);
     }
 
     const aiResponse = await response.json();
     const content = aiResponse.choices[0].message.content;
-    
+
     console.log("AI Response:", content);
-    
+
     // Extrair JSON da resposta (pode vir com markdown ```json```)
-    let jsonMatch = content.match(/\[[\s\S]*\]/);
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.error("Resposta sem JSON válido:", content);
       throw new Error("Resposta da IA não contém JSON válido");
     }
-    
+
     let jsonStr = jsonMatch[0];
-    
+
     // Tentar fazer parse, se falhar tentar reparar JSON truncado
     let genderResults;
     try {
@@ -108,7 +108,7 @@ ${names.map((n: any) => `{"id": "${n.id}", "nome": "${n.nome}"}`).join('\n')}`;
         throw new Error("JSON irrecuperável");
       }
     }
-    
+
     console.log(`Successfully identified ${genderResults.length} genders`);
 
     return new Response(
@@ -119,8 +119,8 @@ ${names.map((n: any) => `{"id": "${n.id}", "nome": "${n.nome}"}`).join('\n')}`;
   } catch (error) {
     console.error("Erro na função identify-gender:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Erro desconhecido"
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

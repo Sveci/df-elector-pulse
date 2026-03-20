@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  ClipboardList, 
-  Users, 
-  BarChart3, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  ClipboardList,
+  Users,
+  BarChart3,
+  Edit,
+  Trash2,
   ExternalLink,
   Link2,
   Eye
@@ -87,7 +87,7 @@ export default function Surveys() {
   const { isDemoMode } = useDemoMask();
 
   const surveys = isDemoMode ? [...DEMO_SURVEYS, ...(dbSurveys || [])] : dbSurveys;
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -238,7 +238,7 @@ export default function Surveys() {
               <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Nenhuma pesquisa encontrada</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== "all" 
+                {searchTerm || statusFilter !== "all"
                   ? "Tente ajustar os filtros de busca"
                   : "Crie sua primeira pesquisa eleitoral"}
               </p>
@@ -268,7 +268,7 @@ export default function Surveys() {
                     <span className="text-muted-foreground">Respostas</span>
                     <span className="font-medium">{survey.total_respostas}</span>
                   </div>
-                  
+
                   {survey.data_inicio && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Período</span>
@@ -280,16 +280,16 @@ export default function Surveys() {
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => navigate(`/surveys/${survey.id}/edit`)}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Editar
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => navigate(`/surveys/${survey.id}/results`)}
                     >
@@ -298,16 +298,16 @@ export default function Surveys() {
                     </Button>
                     {survey.status === "active" && (
                       <>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleOpenLeaderLinks(survey)}
                         >
                           <Link2 className="h-4 w-4 mr-1" />
                           Links
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => window.open(`/pesquisa/${survey.slug}`, "_blank")}
                         >
@@ -316,8 +316,8 @@ export default function Surveys() {
                         </Button>
                       </>
                     )}
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="text-destructive hover:text-destructive"
                       onClick={() => handleDelete(survey)}
@@ -332,8 +332,8 @@ export default function Surveys() {
         )}
       </div>
 
-      <CreateSurveyDialog 
-        open={createDialogOpen} 
+      <CreateSurveyDialog
+        open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={(survey) => navigate(`/surveys/${survey.id}/edit`)}
       />
@@ -351,13 +351,13 @@ export default function Surveys() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir pesquisa</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a pesquisa "{surveyToDelete?.titulo}"? 
+              Tem certeza que deseja excluir a pesquisa "{surveyToDelete?.titulo}"?
               Esta ação não pode ser desfeita e todas as respostas serão perdidas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

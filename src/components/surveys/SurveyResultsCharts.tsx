@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -41,7 +41,7 @@ export function SurveyResultsCharts({ questions, responses }: SurveyResultsChart
     if (question.tipo === "multipla_escolha" && question.opcoes) {
       const counts: Record<string, number> = {};
       question.opcoes.forEach(opt => counts[opt] = 0);
-      
+
       questionResponses.forEach(response => {
         if (counts[response] !== undefined) {
           counts[response]++;
@@ -78,7 +78,7 @@ export function SurveyResultsCharts({ questions, responses }: SurveyResultsChart
     if (question.tipo === "nps") {
       const counts: Record<number, number> = {};
       for (let i = 0; i <= 10; i++) counts[i] = 0;
-      
+
       questionResponses.forEach(response => {
         const num = parseInt(String(response));
         if (num >= 0 && num <= 10) counts[num]++;
@@ -123,9 +123,9 @@ export function SurveyResultsCharts({ questions, responses }: SurveyResultsChart
     <div className="space-y-6">
       {questions.map((question, index) => {
         const stats = getQuestionStats(question);
-        const totalResponses = responses.filter(r => 
-          r.respostas[question.id] !== undefined && 
-          r.respostas[question.id] !== null && 
+        const totalResponses = responses.filter(r =>
+          r.respostas[question.id] !== undefined &&
+          r.respostas[question.id] !== null &&
           r.respostas[question.id] !== ""
         ).length;
 
@@ -227,9 +227,9 @@ export function SurveyResultsCharts({ questions, responses }: SurveyResultsChart
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar 
-                          dataKey="value" 
-                          fill="hsl(var(--primary))" 
+                        <Bar
+                          dataKey="value"
+                          fill="hsl(var(--primary))"
                           radius={[4, 4, 0, 0]}
                         />
                       </BarChart>
@@ -238,7 +238,7 @@ export function SurveyResultsCharts({ questions, responses }: SurveyResultsChart
                 </div>
               )}
 
-              {(question.tipo === "texto_curto" || question.tipo === "texto_longo") && 
+              {(question.tipo === "texto_curto" || question.tipo === "texto_longo") &&
                typeof stats === "object" && "textResponses" in stats && (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {stats.textResponses.length === 0 ? (

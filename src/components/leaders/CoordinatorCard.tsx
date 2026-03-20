@@ -3,11 +3,11 @@ import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Coordinator } from "@/hooks/leaders/useLeaderTree";
 
@@ -18,18 +18,18 @@ interface CoordinatorCardProps {
   onDemote: () => void;
 }
 
-export function CoordinatorCard({ 
-  coordinator, 
-  isSelected, 
+export function CoordinatorCard({
+  coordinator,
+  isSelected,
   onSelect,
-  onDemote 
+  onDemote
 }: CoordinatorCardProps) {
   const { m } = useDemoMask();
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-all ${
-        isSelected 
-          ? "ring-2 ring-primary border-primary bg-primary/5" 
+        isSelected
+          ? "ring-2 ring-primary border-primary bg-primary/5"
           : "hover:border-primary/50 hover:shadow-sm"
       }`}
     >
@@ -46,7 +46,7 @@ export function CoordinatorCard({
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -61,10 +61,10 @@ export function CoordinatorCard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
+
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={onSelect}
             >

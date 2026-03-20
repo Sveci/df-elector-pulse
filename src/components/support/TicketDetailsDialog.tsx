@@ -24,22 +24,22 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
   const { data, isLoading } = useTicketDetails(ticketId);
   const addMessage = useAddTicketMessage();
   const updateStatus = useUpdateTicketStatus();
-  
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !ticketId) return;
-    
+
     try {
       await addMessage.mutateAsync({
         ticket_id: ticketId,
         mensagem: newMessage,
         is_admin_response: isAdmin,
       });
-      
+
       // Se é admin e o ticket não está resolvido/fechado, marcar como respondido
       if (isAdmin && data?.ticket.status !== 'resolvido' && data?.ticket.status !== 'fechado' && data?.ticket.status !== 'respondido') {
         await updateStatus.mutateAsync({ ticketId, status: 'respondido' });
       }
-      
+
       setNewMessage("");
       toast({
         title: "Mensagem enviada",
@@ -56,7 +56,7 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
 
   const handleCloseTicket = async () => {
     if (!ticketId) return;
-    
+
     try {
       await updateStatus.mutateAsync({ ticketId, status: 'fechado' });
       toast({
@@ -80,7 +80,7 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
         <DialogHeader>
           <DialogTitle>Detalhes do Ticket</DialogTitle>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -109,7 +109,7 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                 Criado em {format(new Date(data.ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
               </p>
             </div>
-            
+
             {/* Messages */}
             <div className="flex-1 min-h-0">
               <h4 className="text-sm font-medium mb-2">Mensagens</h4>
@@ -126,8 +126,8 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                         className={`flex gap-2 ${msg.is_admin_response ? 'flex-row-reverse' : ''}`}
                       >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          msg.is_admin_response 
-                            ? 'bg-primary/10 text-primary' 
+                          msg.is_admin_response
+                            ? 'bg-primary/10 text-primary'
                             : 'bg-muted text-muted-foreground'
                         }`}>
                           {msg.is_admin_response ? (
@@ -138,8 +138,8 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                         </div>
                         <div className={`flex-1 max-w-[80%] ${msg.is_admin_response ? 'text-right' : ''}`}>
                           <div className={`inline-block rounded-lg px-3 py-2 text-sm ${
-                            msg.is_admin_response 
-                              ? 'bg-primary text-primary-foreground' 
+                            msg.is_admin_response
+                              ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
                           }`}>
                             <p className="whitespace-pre-wrap">{msg.mensagem}</p>
@@ -154,7 +154,7 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                 )}
               </ScrollArea>
             </div>
-            
+
             {/* New Message */}
             {data.ticket.status !== 'fechado' && data.ticket.status !== 'resolvido' && (
               <div className="mt-4 flex gap-2">
@@ -165,8 +165,8 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                   rows={2}
                   className="flex-1"
                 />
-                <Button 
-                  onClick={handleSendMessage} 
+                <Button
+                  onClick={handleSendMessage}
                   disabled={!newMessage.trim() || addMessage.isPending}
                   size="icon"
                   className="h-auto"
@@ -179,12 +179,12 @@ export function TicketDetailsDialog({ ticketId, open, onOpenChange, isAdmin = fa
                 </Button>
               </div>
             )}
-            
+
             {/* Admin Close Ticket Button */}
             {isAdmin && data.ticket.status !== 'fechado' && (
               <div className="mt-4 pt-4 border-t flex justify-end">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   onClick={handleCloseTicket}
                   disabled={updateStatus.isPending}

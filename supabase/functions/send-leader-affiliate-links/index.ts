@@ -20,7 +20,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Auth: require valid JWT ────────────────────────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // ── End Auth ──────────────────────────────────────────────────────
+
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -51,7 +72,7 @@ Deno.serve(async (req) => {
     // If leader_ids array provided, process in background and return immediately
     if (leaderIds && leaderIds.length > 0) {
       console.log(`[send-leader-affiliate-links] Starting background batch of ${leaderIds.length} leaders`);
-      
+
       const backgroundTask = async () => {
         let successCount = 0;
         let errorCount = 0;
@@ -129,7 +150,7 @@ async function processLeader(
 
   // Check for both 'whatsapp_consent' (new flow) and 'whatsapp' (legacy flow)
   const isWhatsAppVerification = leader.verification_method === 'whatsapp_consent' || leader.verification_method === 'whatsapp';
-  
+
   console.log(`[processLeader] Processing: ${leader.nome_completo} (${leader.id})`);
   console.log(`[processLeader] verification_method=${leader.verification_method}, isWhatsAppVerification=${isWhatsAppVerification}`);
   console.log(`[processLeader] skipSMS=${skipSMS}, skipEmail=${skipEmail}, skipWhatsApp=${skipWhatsApp}`);

@@ -16,7 +16,7 @@ serve(async (req) => {
     const url = new URL(req.url);
     const funnelId = url.searchParams.get('funnel_id');
     const contactId = url.searchParams.get('contact_id');
-    
+
     if (!funnelId) {
       return new Response(JSON.stringify({ error: "funnel_id is required" }), {
         status: 400,
@@ -81,9 +81,9 @@ serve(async (req) => {
     // Fetch the file from storage and return it directly
     const fileUrl = funnel.lead_magnet_url.trim();
     console.log(`Fetching file from: ${fileUrl}`);
-    
+
     const fileResponse = await fetch(fileUrl);
-    
+
     if (!fileResponse.ok) {
       console.error(`Failed to fetch file: ${fileResponse.status} ${fileResponse.statusText}`);
       return new Response(JSON.stringify({ error: "Failed to fetch file" }), {
@@ -95,11 +95,11 @@ serve(async (req) => {
     // Get file content and content type
     const fileBuffer = await fileResponse.arrayBuffer();
     const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream';
-    
+
     // Extract filename from URL or use lead magnet name
     const urlParts = fileUrl.split('/');
     let fileName = decodeURIComponent(urlParts[urlParts.length - 1]);
-    
+
     // Clean up filename - use lead_magnet_nome if available
     if (funnel.lead_magnet_nome) {
       const extension = fileName.split('.').pop() || 'pdf';
@@ -121,8 +121,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in download-material:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Erro desconhecido"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

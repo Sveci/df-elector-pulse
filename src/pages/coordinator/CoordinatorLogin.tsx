@@ -82,7 +82,7 @@ export default function CoordinatorLogin() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required />
-              
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
@@ -93,7 +93,7 @@ export default function CoordinatorLogin() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required />
-              
+
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

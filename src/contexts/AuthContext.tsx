@@ -34,37 +34,37 @@ interface AuthProviderProps {
 const getOrCreateSessionId = (): string => {
   const storageKey = 'active_session_id';
   let sessionId = sessionStorage.getItem(storageKey);
-  
+
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     sessionStorage.setItem(storageKey, sessionId);
   }
-  
+
   return sessionId;
 };
 
 // Detectar informações do dispositivo/navegador
 const getDeviceInfo = () => {
   const userAgent = navigator.userAgent;
-  
+
   let browser = 'Desconhecido';
   if (userAgent.includes('Firefox')) browser = 'Firefox';
   else if (userAgent.includes('Edg')) browser = 'Edge';
   else if (userAgent.includes('Chrome')) browser = 'Chrome';
   else if (userAgent.includes('Safari')) browser = 'Safari';
   else if (userAgent.includes('Opera')) browser = 'Opera';
-  
+
   let os = 'Desconhecido';
   if (userAgent.includes('Windows')) os = 'Windows';
   else if (userAgent.includes('Mac')) os = 'macOS';
   else if (userAgent.includes('Linux')) os = 'Linux';
   else if (userAgent.includes('Android')) os = 'Android';
   else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
-  
+
   let deviceType = 'Desktop';
   if (/Mobi|Android/i.test(userAgent)) deviceType = 'Mobile';
   else if (/Tablet|iPad/i.test(userAgent)) deviceType = 'Tablet';
-  
+
   return { browser, os, deviceInfo: `${deviceType} - ${browser} no ${os}` };
 };
 
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const registerSession = useCallback(async (userId: string) => {
     const sessionId = getOrCreateSessionId();
     const { browser, os, deviceInfo } = getDeviceInfo();
-    
+
     try {
       // Verificar se sessão já existe
       const { data: existingSession } = await supabase
@@ -89,40 +89,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .select('*')
         .eq('session_id', sessionId)
         .maybeSingle();
-      
+
       if (existingSession) {
         // Atualizar última atividade
         await supabase
           .from('active_sessions')
-          .update({ 
+          .update({
             last_activity: new Date().toISOString(),
-            is_current: true 
+            is_current: true
           })
           .eq('session_id', sessionId);
         return;
       }
-      
+
       // Buscar sessões existentes do usuário
       const { data: existingSessions } = await supabase
         .from('active_sessions')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
-      
+
       // Se há outras sessões, marcar a mais antiga para logout em 5 minutos
       if (existingSessions && existingSessions.length > 0) {
         const oldestSession = existingSessions[0];
         const forceLogoutTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-        
+
         await supabase
           .from('active_sessions')
-          .update({ 
+          .update({
             force_logout_at: forceLogoutTime,
             force_logout_reason: 'Nova sessão iniciada em outro dispositivo'
           })
           .eq('id', oldestSession.id);
       }
-      
+
       // Criar nova sessão
       await supabase
         .from('active_sessions')
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       (event, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
-        
+
         if (session?.user) {
           // Defer profile fetch to avoid blocking
           setTimeout(async () => {
@@ -249,7 +249,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -268,7 +268,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (data.user) {
         // Registrar sessão após login bem-sucedido
         await registerSession(data.user.id);
-        
+
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo de volta!`
@@ -292,10 +292,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
     setIsLoading(true);
-    
+
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -343,14 +343,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       // Encerrar sessão no banco antes do logout
       await terminateSession();
-      
+
       await supabase.auth.signOut();
-      
+
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso."
       });
-      
+
       navigate("/login");
     } catch (error) {
       console.error('Logout error:', error);
@@ -365,7 +365,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const resetPasswordForEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const redirectUrl = `${window.location.origin}/reset-password`;
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
       });
@@ -383,8 +383,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.updateUser({ 
-        password: newPassword 
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
       });
 
       if (error) {

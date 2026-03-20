@@ -251,8 +251,8 @@ const Comparison = () => {
     const exactMatch = radarScores.find((rs: any) => rs.entity_name === principal.nome);
     if (exactMatch) return exactMatch;
     const lowerName = principal.nome.toLowerCase();
-    return radarScores.find((rs: any) => 
-      rs.entity_name?.toLowerCase().includes(lowerName) || 
+    return radarScores.find((rs: any) =>
+      rs.entity_name?.toLowerCase().includes(lowerName) ||
       lowerName.includes(rs.entity_name?.toLowerCase())
     ) || radarScores[0];
   };

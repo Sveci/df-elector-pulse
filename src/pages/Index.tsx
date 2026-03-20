@@ -716,7 +716,7 @@ const Index = () => {
             <div className="lg:col-span-2 space-y-4">
               <img src={logo} alt="Eleitor 360.ai" className="h-8 w-auto" />
               <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
-                A plataforma mais completa de gestão política com inteligência artificial. 
+                A plataforma mais completa de gestão política com inteligência artificial.
                 Transforme dados em votos e relacionamentos em resultados.
               </p>
               <div className="flex items-center gap-3 pt-2">

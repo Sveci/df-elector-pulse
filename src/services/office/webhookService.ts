@@ -52,24 +52,24 @@ export async function sendVisitNotification(
 
   if (integration?.zapi_enabled) {
     console.log("[Webhook] Z-API habilitado, enviando via template");
-    
+
     const variables = {
       nome: payload.nome,
       protocolo: payload.protocolo || "",
       form_link: payload.form_link
     };
-    
+
     const result = await sendViaZapiTemplate(
-      visitId, 
-      payload.whatsapp, 
+      visitId,
+      payload.whatsapp,
       "visita-link-formulario",
       variables
     );
-    
+
     if (result.success) {
       return { success: true };
     }
-    
+
     console.warn("[Webhook] Falha no Z-API, usando webhook genérico como fallback");
   }
 
@@ -80,7 +80,7 @@ export async function sendVisitNotification(
     .maybeSingle();
 
   const webhookUrl = settings?.webhook_url || "https://webhook.escaladigital.ai/webhook/gabinete/envio-formulario";
-  
+
   return postWebhook(visitId, payload, webhookUrl);
 }
 
@@ -94,14 +94,14 @@ export async function postWebhook(
 ): Promise<{ success: boolean; status?: number; error?: string }> {
   let lastError: string = "";
   let lastStatus: number | undefined;
-  
+
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       console.log(`[Webhook] Tentativa ${attempt + 1}/${MAX_RETRIES} para visita ${visitId}`);
-      
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT);
-      
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -110,13 +110,13 @@ export async function postWebhook(
         body: JSON.stringify(payload),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeout);
       lastStatus = response.status;
-      
+
       if (response.ok) {
         console.log(`[Webhook] Sucesso na tentativa ${attempt + 1}`);
-        
+
         // Atualizar status no banco
         await supabase
           .from("office_visits")
@@ -126,13 +126,13 @@ export async function postWebhook(
             webhook_error: null
           })
           .eq("id", visitId);
-        
+
         return { success: true, status: response.status };
       }
-      
+
       lastError = `HTTP ${response.status}: ${response.statusText}`;
       console.warn(`[Webhook] Falha na tentativa ${attempt + 1}: ${lastError}`);
-      
+
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === "AbortError") {
@@ -143,19 +143,19 @@ export async function postWebhook(
       } else {
         lastError = "Erro desconhecido";
       }
-      
+
       console.error(`[Webhook] Erro na tentativa ${attempt + 1}:`, lastError);
     }
-    
+
     // Aguardar antes de tentar novamente (exceto na última tentativa)
     if (attempt < MAX_RETRIES - 1) {
       await new Promise(resolve => setTimeout(resolve, BACKOFF_DELAYS[attempt]));
     }
   }
-  
+
   // Todas as tentativas falharam
   console.error(`[Webhook] Todas as ${MAX_RETRIES} tentativas falharam para visita ${visitId}`);
-  
+
   // Atualizar erro no banco
   await supabase
     .from("office_visits")
@@ -165,7 +165,7 @@ export async function postWebhook(
       webhook_error: lastError
     })
     .eq("id", visitId);
-  
+
   return { success: false, status: lastStatus, error: lastError };
 }
 
@@ -183,16 +183,16 @@ export async function retryWebhook(visitId: string) {
     `)
     .eq("id", visitId)
     .single();
-  
+
   if (visitError) throw visitError;
-  
+
   const { data: settings } = await supabase
     .from("office_settings")
     .select("webhook_url")
     .maybeSingle();
-  
+
   const webhookUrl = settings?.webhook_url || "https://webhook.escaladigital.ai/webhook/gabinete/envio-formulario";
-  
+
   const payload: WebhookPayload = {
     user_id: visit.contact_id,
     city_id: visit.city_id,
@@ -202,7 +202,7 @@ export async function retryWebhook(visitId: string) {
     form_link: generateVisitFormUrl(visitId),
     protocolo: visit.protocolo
   };
-  
+
   return postWebhook(visitId, payload, webhookUrl);
 }
 
@@ -215,9 +215,9 @@ export async function getWebhookStatus(visitId: string) {
     .select("webhook_sent_at, webhook_last_status, webhook_error")
     .eq("id", visitId)
     .single();
-  
+
   if (error) throw error;
-  
+
   return {
     sent_at: data.webhook_sent_at,
     status: data.webhook_last_status,

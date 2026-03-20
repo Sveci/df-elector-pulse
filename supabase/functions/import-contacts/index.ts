@@ -26,28 +26,28 @@ interface ImportResult {
 function normalizePhone(phone: string | number): string {
   // Converter para string e limpar caracteres não-numéricos
   const cleaned = String(phone).replace(/\D/g, '');
-  
+
   // 13 dígitos com 55 (internacional completo)
   if (cleaned.length === 13 && cleaned.startsWith('55')) {
     return `+${cleaned}`;
   }
-  
+
   // 12 dígitos com 55 no início (sem 0)
   if (cleaned.length === 12 && cleaned.startsWith('55')) {
     return `+${cleaned}`;
   }
-  
+
   // 12 dígitos com 0 na frente (055...)
   if (cleaned.length === 12 && cleaned.startsWith('0')) {
     const withoutZero = cleaned.substring(1); // Remove 0
     return `+55${withoutZero}`;
   }
-  
+
   // 11 dígitos (DDDNÚMERO com 9)
   if (cleaned.length === 11) {
     return `+55${cleaned}`;
   }
-  
+
   // 10 dígitos (DDDNÚMERO sem 9 - números antigos)
   if (cleaned.length === 10) {
     // Adiciona 9 após o DDD (2 primeiros dígitos)
@@ -55,17 +55,17 @@ function normalizePhone(phone: string | number): string {
     const numero = cleaned.substring(2);
     return `+55${ddd}9${numero}`;
   }
-  
+
   // 9 dígitos (número sem DDD - usar DDD padrão 61 - Brasília)
   if (cleaned.length === 9) {
     return `+5561${cleaned}`;
   }
-  
+
   // 8 dígitos (número sem DDD e sem 9 - adicionar ambos)
   if (cleaned.length === 8) {
     return `+55619${cleaned}`;
   }
-  
+
   // 14 dígitos com erro comum: 5506XXXXXXXXXXX
   // Exemplo: 55061993218831 -> deve ser 5561993218831
   if (cleaned.length === 14 && cleaned.startsWith('5506')) {
@@ -73,7 +73,7 @@ function normalizePhone(phone: string | number): string {
     console.log(`⚠️ Corrigindo número com 14 dígitos: ${cleaned} -> ${fixedNumber}`);
     return normalizePhone(fixedNumber); // Recursão com número corrigido
   }
-  
+
   throw new Error(`Telefone inválido: ${phone}. Formato esperado: (DD)9XXXX-XXXX ou variações`);
 }
 
@@ -89,7 +89,7 @@ function parseDate(dateInput?: string | number): string | null {
       date = new Date(excelEpoch.getTime() + dateInput * 86400000);
     } else {
       const dateStr = String(dateInput).trim();
-      
+
       // DD/MM/YYYY ou DD-MM-YYYY
       const ddmmyyyyMatch = dateStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
       if (ddmmyyyyMatch) {
@@ -197,7 +197,7 @@ serve(async (req) => {
     }
 
     const { contacts } = await req.json();
-    
+
     if (!Array.isArray(contacts) || contacts.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Nenhum contato fornecido' }),
@@ -251,7 +251,7 @@ serve(async (req) => {
           console.log(`⚠️ Linha ${lineNumber}: Telefone duplicado ${telefone_norm} (primeira ocorrência na linha ${firstLine})`);
           continue; // Pular para próximo contato
         }
-        
+
         phonesSeen.set(telefone_norm, lineNumber);
 
         // Buscar cidade_id (opcional - usar padrão se não fornecido)
@@ -277,7 +277,7 @@ serve(async (req) => {
             .eq('status', 'active')
             .limit(1)
             .single();
-          
+
           cidade_id = cidadePadrao?.id || null;
         }
 
@@ -309,7 +309,7 @@ serve(async (req) => {
           line: lineNumber,
           error: error instanceof Error ? error.message : 'Erro desconhecido',
         });
-        
+
         // Log detalhado do contato problemático
         console.error(`Dados do contato problemático (linha ${lineNumber}):`, {
           nome: contact.nome_completo,
@@ -329,7 +329,7 @@ serve(async (req) => {
 
     if (validContacts.length > 0) {
       console.log('Iniciando upsert em lote...');
-      
+
       const { data: upsertData, error: upsertError } = await supabaseClient
         .from('office_contacts')
         .upsert(validContacts, {
@@ -381,7 +381,7 @@ serve(async (req) => {
     console.error('Erro geral:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Erro desconhecido' }),
-      { 
+      {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }

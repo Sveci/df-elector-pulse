@@ -221,7 +221,7 @@ serve(async (req) => {
 
     let inserted = 0;
     let updated = 0;
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     for (const tpl of templates) {
       // Check if template exists by slug

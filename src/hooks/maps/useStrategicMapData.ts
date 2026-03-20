@@ -45,12 +45,12 @@ export interface CityMapData {
 export function useStrategicMapData() {
   const queryClient = useQueryClient();
   const { data: organization } = useOrganization();
-  
+
   const cargo = organization?.cargo || null;
   const estado = organization?.estado || null;
   const fieldType = getLocationFieldType(cargo);
   const useOfficeCities = fieldType === 'ra';
-  
+
   // Geocoding for localidade-based mode
   const geocoding = useLocalidadeGeocoding(!useOfficeCities ? estado : null);
 
@@ -58,7 +58,7 @@ export function useStrategicMapData() {
   useEffect(() => {
     const leadersChannel = supabase
       .channel('strategic-map-leaders')
-      .on('postgres_changes', 
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'lideres' },
         () => {
           queryClient.invalidateQueries({ queryKey: ["strategic_map_leaders"] });
@@ -96,7 +96,7 @@ export function useStrategicMapData() {
         supabase.from("office_contacts").select("id", { count: "exact", head: true })
           .eq("is_active", true)
       ]);
-      
+
       return {
         coordinatorsCount: coordResult.count || 0,
         leadersCount: leadersResult.count || 0,
@@ -151,7 +151,7 @@ export function useStrategicMapData() {
               telefone: l.telefone,
             };
           }
-          
+
           // Mode 2: localidade geocoding - resolve from IBGE
           if (!useOfficeCities && l.localidade && geocoding.isReady) {
             const coords = geocoding.lookup(l.localidade);
@@ -173,7 +173,7 @@ export function useStrategicMapData() {
               };
             }
           }
-          
+
           return null;
         })
         .filter((l): l is LeaderMapData => l !== null);
@@ -238,7 +238,7 @@ export function useStrategicMapData() {
               localidade: c.localidade || null,
             };
           }
-          
+
           // Mode 2: localidade geocoding
           if (!useOfficeCities && c.localidade && geocoding.isReady) {
             const coords = geocoding.lookup(c.localidade);
@@ -255,7 +255,7 @@ export function useStrategicMapData() {
               };
             }
           }
-          
+
           return null;
         })
         .filter((c): c is ContactMapData => c !== null);
@@ -318,10 +318,10 @@ export function useStrategicMapData() {
             contacts_count: contactsByCity[c.id] || 0,
           }));
       }
-      
+
       // Localidade mode: build virtual cities from localidade + geocoding
       if (!geocoding.isReady) return [];
-      
+
       // Get unique localidades from leaders and contacts
       const [{ data: leaderLocs }, { data: contactLocs }] = await Promise.all([
         supabase.from("lideres").select("localidade").eq("is_active", true),
@@ -329,7 +329,7 @@ export function useStrategicMapData() {
       ]);
 
       const localidadeCounts = new Map<string, { leaders: number; contacts: number }>();
-      
+
       for (const l of leaderLocs || []) {
         if (l.localidade) {
           const key = l.localidade;
@@ -338,7 +338,7 @@ export function useStrategicMapData() {
           localidadeCounts.set(key, entry);
         }
       }
-      
+
       for (const c of contactLocs || []) {
         if (c.localidade) {
           const key = c.localidade;

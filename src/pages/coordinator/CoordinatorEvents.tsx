@@ -41,7 +41,7 @@ export default function CoordinatorEvents() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [detailsEvent, setDetailsEvent] = useState<any>(null);
-  
+
   const [newEvent, setNewEvent] = useState({
     name: "",
     slug: "",

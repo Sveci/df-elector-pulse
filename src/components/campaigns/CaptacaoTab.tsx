@@ -52,9 +52,9 @@ export function CaptacaoTab() {
         </div>
       )}
 
-      <CreateFunnelDialog 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
+      <CreateFunnelDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
       />
     </div>
   );

@@ -36,18 +36,18 @@ export function useSupportTickets() {
         .from('support_tickets')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Fetch profiles for all unique user_ids
       const userIds = [...new Set(tickets.map(t => t.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
         .in('id', userIds);
-      
+
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      
+
       return tickets.map(ticket => ({
         ...ticket,
         profiles: profilesMap.get(ticket.user_id) || null,
@@ -61,30 +61,30 @@ export function useTicketDetails(ticketId: string | null) {
     queryKey: ['ticket-details', ticketId],
     queryFn: async () => {
       if (!ticketId) return null;
-      
+
       const { data: ticket, error: ticketError } = await supabase
         .from('support_tickets')
         .select('*')
         .eq('id', ticketId)
         .single();
-      
+
       if (ticketError) throw ticketError;
-      
+
       // Fetch profile for the ticket owner
       const { data: profile } = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('id', ticket.user_id)
         .single();
-      
+
       const { data: messages, error: messagesError } = await supabase
         .from('support_ticket_messages')
         .select('*')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
-      
+
       if (messagesError) throw messagesError;
-      
+
       return {
         ticket: { ...ticket, profiles: profile } as SupportTicket,
         messages: messages as TicketMessage[],
@@ -96,7 +96,7 @@ export function useTicketDetails(ticketId: string | null) {
 
 export function useCreateTicket() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       assunto: string;
@@ -106,7 +106,7 @@ export function useCreateTicket() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      
+
       const { data: ticket, error } = await supabase
         .from('support_tickets')
         .insert({
@@ -118,7 +118,7 @@ export function useCreateTicket() {
         } as any) // protocolo é gerado automaticamente pelo trigger
         .select()
         .single();
-      
+
       if (error) throw error;
       return ticket;
     },
@@ -130,7 +130,7 @@ export function useCreateTicket() {
 
 export function useAddTicketMessage() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       ticket_id: string;
@@ -139,7 +139,7 @@ export function useAddTicketMessage() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      
+
       const { data: message, error } = await supabase
         .from('support_ticket_messages')
         .insert({
@@ -150,7 +150,7 @@ export function useAddTicketMessage() {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return message;
     },

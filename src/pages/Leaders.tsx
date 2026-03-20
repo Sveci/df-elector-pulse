@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -352,18 +352,24 @@ const Leaders = () => {
   // Estatísticas (calculadas a partir dos dados da página atual)
   // totalCount já representa líderes ativos pois a query filtra is_active = true
   const activeLeaders = totalCount;
-  const totalPoints = leaders.reduce((sum, l) => sum + l.pontuacao_total, 0);
+  const totalPoints = useMemo(
+    () => leaders.reduce((sum, l) => sum + l.pontuacao_total, 0),
+    [leaders]
+  );
 
   // Paginação do backend
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const totalPages = useMemo(
+    () => Math.ceil(totalCount / ITEMS_PER_PAGE),
+    [totalCount]
+  );
 
   // Reset page when filters change
-  const handleFilterChange = (setter: (value: string) => void, value: string) => {
+  const handleFilterChange = useCallback((setter: (value: string) => void, value: string) => {
     setter(value);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const getPageNumbers = () => {
+  const getPageNumbers = useMemo(() => {
     const pages: (number | "ellipsis")[] = [];
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -377,7 +383,7 @@ const Leaders = () => {
       pages.push(totalPages);
     }
     return pages;
-  };
+  }, [totalPages, currentPage]);
 
   const { restartTutorial } = useTutorial("leaders", leadersTutorialSteps);
 
@@ -734,7 +740,7 @@ const Leaders = () => {
                   className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
-              {getPageNumbers().map((page, index) => (
+              {getPageNumbers.map((page, index) => (
                 <PaginationItem key={index}>
                   {page === "ellipsis" ? (
                     <PaginationEllipsis />

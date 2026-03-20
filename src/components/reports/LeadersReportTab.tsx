@@ -8,14 +8,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useLeadersRanking } from "@/hooks/leaders/useLeadersRanking";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 
 const COLORS = ['#FFD700', '#C0C0C0', '#CD7F32', '#3B82F6', '#10B981'];
 
 export function LeadersReportTab() {
   const [region, setRegion] = useState("all");
   const [page, setPage] = useState(1);
-  
+
   const { data: rankingData, isLoading } = useLeadersRanking({ region, page, pageSize: 10 });
 
   // Buscar regiões disponíveis
@@ -38,12 +38,12 @@ export function LeadersReportTab() {
       const { count: total } = await supabase
         .from('lideres')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: active } = await supabase
         .from('lideres')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
-      
+
       const { count: verified } = await supabase
         .from('lideres')
         .select('*', { count: 'exact', head: true })
@@ -52,7 +52,7 @@ export function LeadersReportTab() {
       const { data: indicationsData } = await supabase
         .from('lideres')
         .select('cadastros');
-      
+
       const totalIndications = indicationsData?.reduce((sum, l) => sum + (l.cadastros || 0), 0) || 0;
 
       // Distribuição por nível
@@ -223,10 +223,10 @@ export function LeadersReportTab() {
                 <BarChart data={rankingData?.data?.slice(0, 10) || []} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={100} 
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    width={100}
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => value.length > 12 ? value.substring(0, 12) + '...' : value}
                   />

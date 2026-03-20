@@ -15,12 +15,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Crown, UserCheck } from "lucide-react";
-import { 
-  MaskedDateInput, 
-  formatDateBR, 
-  parseDateBR, 
-  isValidDateBR, 
-  isNotFutureDate 
+import {
+  MaskedDateInput,
+  formatDateBR,
+  parseDateBR,
+  isValidDateBR,
+  isNotFutureDate
 } from "@/components/ui/masked-date-input";
 
 interface EditContactDialogProps {
@@ -50,7 +50,7 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
   );
   const [promoteToLeader, setPromoteToLeader] = useState(false);
   const locationConfig = useTenantLocationConfig();
-  
+
   const updateContact = useUpdateContact();
   const promoteToLeaderMutation = usePromoteToLeader();
   const { user } = useAuth();
@@ -89,7 +89,7 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
     // Determinar source_type e source_id corretamente
     let newSourceType = contact.source_type;
     let newSourceId: string | null = leaderId || null;
-    
+
     // Se selecionou um líder (novo ou diferente), define como 'lider'
     if (leaderId) {
       newSourceType = 'lider';
@@ -100,7 +100,7 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
       newSourceId = null;
     }
     // Se não tinha líder e continua sem, mantém o source_type original
-    
+
     // 1. Atualizar contato
     updateContact.mutate(
       {
@@ -225,9 +225,9 @@ export function EditContactDialog({ contact, open, onOpenChange }: EditContactDi
                     Transformar este contato em um líder da rede
                   </p>
                 </div>
-                <Switch 
-                  checked={promoteToLeader} 
-                  onCheckedChange={setPromoteToLeader} 
+                <Switch
+                  checked={promoteToLeader}
+                  onCheckedChange={setPromoteToLeader}
                 />
               </div>
             ) : (

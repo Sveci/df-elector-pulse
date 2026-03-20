@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Trophy, 
-  Phone, 
+import {
+  Trophy,
+  Phone,
   ArrowLeft,
   TrendingUp,
   Award,
@@ -69,7 +69,7 @@ const LeadersRanking = () => {
   const { restartTutorial } = useTutorial("leaders-ranking", rankingTutorialSteps);
 
   // Buscar dados reais do banco
-  const { data: rankingResult, isLoading } = useLeadersRanking({ 
+  const { data: rankingResult, isLoading } = useLeadersRanking({
     region: selectedRegion,
     period: selectedPeriod,
     page: currentPage,
@@ -248,7 +248,7 @@ const LeadersRanking = () => {
                 Nenhum líder encontrado
               </h3>
               <p className="text-gray-600">
-                {selectedRegion !== 'all' 
+                {selectedRegion !== 'all'
                   ? 'Não há líderes ativos nesta região.'
                   : 'Não há líderes cadastrados no momento.'}
               </p>
@@ -276,10 +276,10 @@ const LeadersRanking = () => {
                     <div className="flex items-center justify-center mb-4">
                       {getTrophyIcon(index + 1)}
                     </div>
-                    
+
                     <div className="absolute top-3 right-3">
                       <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full ${
-                        index === 0 ? 'bg-yellow-500' : 
+                        index === 0 ? 'bg-yellow-500' :
                         index === 1 ? 'bg-gray-400' : 'bg-orange-600'
                       }`}>
                         {index + 1}º
@@ -289,17 +289,17 @@ const LeadersRanking = () => {
                     <h3 className="font-bold text-gray-900 text-lg mb-1">
                       {leader.name}
                     </h3>
-                    
+
                     <div className="flex justify-center mb-2">
                       <LeaderLevelBadge points={leader.points} size="md" />
                     </div>
-                    
+
                     {leader.region === 'Sem região' ? (
                       <Badge variant="outline" className="text-gray-500 mb-2">Sem região</Badge>
                     ) : (
                       <p className="text-sm text-gray-600 mb-2">{leader.region}</p>
                     )}
-                    
+
                     <div className="space-y-3">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-primary-600">
@@ -332,7 +332,7 @@ const LeadersRanking = () => {
                       <div className="flex items-center justify-center space-x-1">
                         {getTrendIcon(leader.trend)}
                         <span className={`text-xs px-2 py-1 rounded-full ${getTrendColor(leader.trend)}`}>
-                          {leader.trend === "up" ? "Subindo" : 
+                          {leader.trend === "up" ? "Subindo" :
                            leader.trend === "down" ? "Descendo" : "Estável"}
                         </span>
                       </div>
@@ -365,7 +365,7 @@ const LeadersRanking = () => {
                           <div className="flex items-center justify-center w-10 h-10 bg-primary-100 text-primary-600 rounded-lg font-bold">
                             {globalIndex + 1}º
                           </div>
-                          
+
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold text-gray-900">{leader.name}</h4>
@@ -418,18 +418,18 @@ const LeadersRanking = () => {
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
-                          <PaginationPrevious 
+                          <PaginationPrevious
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                           />
                         </PaginationItem>
-                        
+
                         {[...Array(totalPages)].map((_, i) => {
                           const pageNum = i + 1;
                           // Mostrar apenas algumas páginas
                           if (
-                            pageNum === 1 || 
-                            pageNum === totalPages || 
+                            pageNum === 1 ||
+                            pageNum === totalPages ||
                             (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
                           ) {
                             return (
@@ -452,9 +452,9 @@ const LeadersRanking = () => {
                           }
                           return null;
                         })}
-                        
+
                         <PaginationItem>
-                          <PaginationNext 
+                          <PaginationNext
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                           />
@@ -516,13 +516,13 @@ const LeadersRanking = () => {
               <h4 className="font-semibold text-gray-900 mb-3">Níveis de Liderança:</h4>
               <div className="space-y-3">
                 {leaderLevels.map((level) => (
-                  <div 
+                  <div
                     key={level.name}
                     className={`flex items-center justify-between p-2 rounded-lg border ${level.bgClass} ${level.borderClass}`}
                   >
                     <span className="font-medium">{level.icon} {level.name}</span>
                     <span className="text-gray-600">
-                      {level.max === Infinity 
+                      {level.max === Infinity
                         ? `${level.min}+ pontos`
                         : `${level.min}-${level.max} pontos`
                       }

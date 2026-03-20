@@ -18,11 +18,11 @@ export function useLeaderHierarchyPath(leaderId: string | undefined) {
     queryKey: ["leader-hierarchy-path", leaderId],
     queryFn: async () => {
       if (!leaderId) return [];
-      
+
       const { data, error } = await supabase.rpc("get_leader_hierarchy_path", {
         _leader_id: leaderId,
       });
-      
+
       if (error) throw error;
       return (data as HierarchyPathNode[]) || [];
     },

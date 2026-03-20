@@ -10,18 +10,18 @@ export function useAllTickets() {
         .from('support_tickets')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Fetch profiles for all unique user_ids
       const userIds = [...new Set(tickets.map(t => t.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
         .in('id', userIds);
-      
+
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      
+
       return tickets.map(ticket => ({
         ...ticket,
         profiles: profilesMap.get(ticket.user_id) || null,
@@ -39,9 +39,9 @@ export function useTicketStats() {
       const { data, error } = await supabase
         .from('support_tickets')
         .select('status');
-      
+
       if (error) throw error;
-      
+
       const stats = {
         total: data.length,
         abertos: data.filter(t => t.status === 'aberto').length,
@@ -50,7 +50,7 @@ export function useTicketStats() {
         resolvidos: data.filter(t => t.status === 'resolvido').length,
         fechados: data.filter(t => t.status === 'fechado').length,
       };
-      
+
       return stats;
     },
     staleTime: 10 * 1000,
@@ -60,7 +60,7 @@ export function useTicketStats() {
 
 export function useUpdateTicketStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       ticketId: string;
@@ -70,16 +70,16 @@ export function useUpdateTicketStatus() {
         status: data.status,
         updated_at: new Date().toISOString(),
       };
-      
+
       if (data.status === 'resolvido') {
         updateData.resolved_at = new Date().toISOString();
       }
-      
+
       const { error } = await supabase
         .from('support_tickets')
         .update(updateData)
         .eq('id', data.ticketId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {

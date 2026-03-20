@@ -17,10 +17,10 @@ export function useOfficeCities(tipo?: OfficeCityType) {
 
 export function useOfficeCitiesByType() {
   const { data: allCities, ...rest } = useOfficeCities();
-  
+
   const dfCities = allCities?.filter(city => city.tipo === 'DF') || [];
   const entornoCities = allCities?.filter(city => city.tipo === 'ENTORNO') || [];
-  
+
   return {
     ...rest,
     data: allCities,

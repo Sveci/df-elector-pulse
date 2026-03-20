@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { EmailReportItem } from "@/hooks/useEmailReport";
@@ -15,7 +15,7 @@ export function exportEmailReportToExcel(
     "Tipo": item.leader_id ? "Líder" : item.contact_id ? "Contato" : "-",
     "Status": getStatusLabel(item.status),
     "Erro": item.error_message || "-",
-    "Data Envio": item.sent_at 
+    "Data Envio": item.sent_at
       ? format(new Date(item.sent_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
       : "-",
     "Data Criação": format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }),

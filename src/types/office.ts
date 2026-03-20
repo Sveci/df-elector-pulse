@@ -231,7 +231,7 @@ export interface WebhookPayload {
 }
 
 export interface OfficeEvent {
-  type: 
+  type:
     | "visit_registered"
     | "webhook_sent"
     | "webhook_failed"

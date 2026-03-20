@@ -38,7 +38,7 @@ export function useEmailTemplates() {
       if (globalError) throw globalError;
 
       // Fetch tenant overrides if tenant is active
-      let tenantOverrides: Record<string, any> = {};
+      const tenantOverrides: Record<string, any> = {};
       if (tenantId) {
         const { data: overrides } = await supabase
           .from("tenant_email_templates")
@@ -298,13 +298,13 @@ export function useResetTenantTemplate() {
   return useMutation({
     mutationFn: async (slug: string) => {
       if (!tenantId) throw new Error("Nenhum tenant ativo");
-      
+
       const { error } = await supabase
         .from("tenant_email_templates")
         .delete()
         .eq("tenant_id", tenantId)
         .eq("slug", slug);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -326,7 +326,7 @@ export function useTestResendConnection() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: (data) => {
@@ -370,7 +370,7 @@ export function useSendEmail() {
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: () => {
@@ -406,7 +406,7 @@ export function useSendBulkEmail() {
     }) => {
       const results = [];
       const effectiveTenantId = params.tenantId || tenantId;
-      
+
       for (const recipient of params.recipients) {
         try {
           const { data, error } = await supabase.functions.invoke("send-email", {
@@ -416,7 +416,7 @@ export function useSendBulkEmail() {
               ...recipient,
             },
           });
-          
+
           results.push({
             email: recipient.to,
             success: !error && data?.success,
@@ -429,18 +429,18 @@ export function useSendBulkEmail() {
             error: err.message,
           });
         }
-        
+
         // Small delay between emails
         await new Promise(resolve => setTimeout(resolve, 200));
       }
-      
+
       return results;
     },
     onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ["email_logs"] });
       const successCount = results.filter(r => r.success).length;
       const failCount = results.length - successCount;
-      
+
       if (failCount === 0) {
         toast.success(`${successCount} emails enviados com sucesso!`);
       } else {

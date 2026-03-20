@@ -20,17 +20,17 @@ interface OfficeStatusBadgeProps {
 
 export function OfficeStatusBadge({ status, className }: OfficeStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
-  
+
   // Classe verde para reunião realizada
-  const greenClass = status === "MEETING_COMPLETED" 
-    ? "bg-green-500 text-white hover:bg-green-600 border-transparent" 
+  const greenClass = status === "MEETING_COMPLETED"
+    ? "bg-green-500 text-white hover:bg-green-600 border-transparent"
     : "";
-  
+
   // Classe vermelha para reagendada
   const redClass = status === "RESCHEDULED"
     ? "bg-red-500 text-white hover:bg-red-600 border-transparent"
     : "";
-  
+
   return (
     <Badge variant={config.variant} className={`${greenClass} ${redClass} ${className || ""}`}>
       {config.label}

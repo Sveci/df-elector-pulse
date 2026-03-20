@@ -249,9 +249,9 @@ Deno.serve(async (req) => {
 
       // Determine provider (default to smsdev for backward compatibility)
       const provider = msg.provider || 'smsdev';
-      
+
       let statusResult: { success: boolean; status?: string; description?: string };
-      
+
       if (provider === 'smsbarato') {
         if (!smsbaratoEnabled) return { checked: 0, updated: 0 };
         statusResult = await checkSMSBaratoStatus(msg.message_id, settings.smsbarato_api_key!);

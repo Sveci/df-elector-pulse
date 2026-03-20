@@ -97,8 +97,8 @@ const ResetPassword = () => {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({ 
-        password: formData.password 
+      const { error } = await supabase.auth.updateUser({
+        password: formData.password
       });
 
       if (error) {
@@ -109,7 +109,7 @@ const ResetPassword = () => {
 
       // Sign out user after password change for security
       await supabase.auth.signOut();
-      
+
       navigate("/reset-success");
     } catch (err: any) {
       setError(err.message || "Erro ao redefinir senha. Tente novamente.");
@@ -145,9 +145,9 @@ const ResetPassword = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <img 
-              src={logo} 
-              alt="Rafael Prudente - Deputado Federal" 
+            <img
+              src={logo}
+              alt="Rafael Prudente - Deputado Federal"
               className="h-20 w-auto mx-auto mb-4"
             />
           </div>
@@ -166,7 +166,7 @@ const ResetPassword = () => {
               <p className="text-sm text-gray-600">
                 Por favor, solicite um novo link de recuperação de senha.
               </p>
-              
+
               <div className="space-y-2">
                 <Button
                   onClick={() => navigate("/forgot-password")}
@@ -174,7 +174,7 @@ const ResetPassword = () => {
                 >
                   Solicitar Novo Link
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/login")}
@@ -195,9 +195,9 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <img 
-            src={logo} 
-            alt="Rafael Prudente - Deputado Federal" 
+          <img
+            src={logo}
+            alt="Rafael Prudente - Deputado Federal"
             className="h-20 w-auto mx-auto mb-4"
           />
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">

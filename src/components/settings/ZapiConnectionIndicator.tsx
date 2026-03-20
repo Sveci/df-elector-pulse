@@ -8,11 +8,11 @@ interface ZapiConnectionIndicatorProps {
   phone?: string;
 }
 
-export function ZapiConnectionIndicator({ 
-  isConnected, 
-  isLoading, 
+export function ZapiConnectionIndicator({
+  isConnected,
+  isLoading,
   isConfigured,
-  phone 
+  phone
 }: ZapiConnectionIndicatorProps) {
   if (!isConfigured) {
     return null;

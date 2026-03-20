@@ -44,24 +44,24 @@ export function ImportContactsExcelDialog() {
       const totalTime = total * estimatedTimePerContact;
       const updateInterval = 100; // Atualizar a cada 100ms
       const maxProgress = 95; // Parar em 95% até resposta real
-      
+
       let elapsed = 0;
       const interval = setInterval(() => {
         elapsed += updateInterval;
         const progress = Math.min((elapsed / totalTime) * 100, maxProgress);
         const current = Math.floor((progress / 100) * total);
-        
+
         setImportProgress({
           current,
           total,
           percentage: Math.floor(progress)
         });
-        
+
         if (progress >= maxProgress) {
           clearInterval(interval);
         }
       }, updateInterval);
-      
+
       return () => clearInterval(interval);
     } else {
       setImportProgress({ current: 0, total: 0, percentage: 0 });
@@ -107,14 +107,14 @@ export function ImportContactsExcelDialog() {
     if (parsedData.length === 0 || validationErrors.length > 0) return;
 
     const result = await importMutation.mutateAsync(parsedData as any);
-    
+
     // Completar progresso para 100%
     setImportProgress({
       current: parsedData.length,
       total: parsedData.length,
       percentage: 100
     });
-    
+
     setImportResult(result);
 
     if (result.success) {
@@ -258,7 +258,7 @@ export function ImportContactsExcelDialog() {
                   {importProgress.current} / {importProgress.total}
                 </Badge>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Processados: {importProgress.current}</span>
@@ -304,7 +304,7 @@ export function ImportContactsExcelDialog() {
                   </div>
                 </AlertDescription>
               </Alert>
-              
+
               {/* Warnings Section (Duplicates) */}
               {importResult.errors && importResult.errors.filter((e: any) => e.error.includes('duplicado')).length > 0 && (
                 <div className="space-y-2">

@@ -15,7 +15,7 @@ export function RegionBoundaryLayer({
 }: RegionBoundaryLayerProps) {
   const boundary = useMemo(() => {
     if (!enabled || !selectedRegionCode) return null;
-    
+
     return dfRABoundaries.find(
       (b) => b.codigo_ra === selectedRegionCode || b.nome === selectedRegionName
     );
@@ -36,9 +36,9 @@ export function RegionBoundaryLayer({
         lineJoin: "round",
       }}
     >
-      <Tooltip 
-        permanent 
-        direction="center" 
+      <Tooltip
+        permanent
+        direction="center"
         className="!bg-primary/90 !text-primary-foreground !border-none !rounded-lg !px-3 !py-1.5 !font-semibold !shadow-lg"
       >
         {boundary.nome}

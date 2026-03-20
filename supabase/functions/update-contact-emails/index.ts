@@ -19,45 +19,45 @@ interface UpdateResult {
 
 function normalizePhone(phone: string): string {
   const clean = phone.replace(/\D/g, '');
-  
+
   if (clean.startsWith('55')) {
     const withoutCountry = clean.substring(2);
-    
+
     if (withoutCountry.startsWith('5506')) {
       return '+5561' + withoutCountry.substring(4);
     }
-    
+
     if (withoutCountry.length === 10 && withoutCountry.startsWith('61')) {
       return '+5561' + '9' + withoutCountry.substring(2);
     }
-    
+
     if (withoutCountry.length === 11) {
       return '+55' + withoutCountry;
     }
-    
+
     return '+55' + withoutCountry;
   }
-  
+
   if (clean.length === 12 && clean.startsWith('5506')) {
     return '+5561' + clean.substring(4);
   }
-  
+
   if (clean.length === 10 && clean.startsWith('61')) {
     return '+5561' + '9' + clean.substring(2);
   }
-  
+
   if (clean.length === 9) {
     return '+5561' + clean;
   }
-  
+
   if (clean.length === 8) {
     return '+5561' + '9' + clean;
   }
-  
+
   if (clean.length === 11) {
     return '+55' + clean;
   }
-  
+
   return '+55' + clean;
 }
 
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       try {
         // Normalizar telefone
         const telefone_norm = normalizePhone(contact.whatsapp);
-        
+
         // Buscar contato pelo telefone
         const { data: existing, error: selectError } = await supabaseClient
           .from('office_contacts')

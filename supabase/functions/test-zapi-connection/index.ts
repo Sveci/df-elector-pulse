@@ -24,7 +24,7 @@ serve(async (req) => {
     }
 
     const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/status`;
-    
+
     console.log("Calling Z-API status endpoint:", zapiUrl);
 
     const response = await fetch(zapiUrl, {
@@ -40,10 +40,10 @@ serve(async (req) => {
 
     if (!response.ok) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: data.error || "Erro ao conectar ao Z-API",
-          status: response.status 
+          status: response.status
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -74,8 +74,8 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data: {
           ...data,
           phone: deviceData?.phone || null,

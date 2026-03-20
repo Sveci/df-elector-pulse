@@ -61,7 +61,7 @@ export function ImportEmailsDialog() {
           whatsapp: row['WhatsApp'] || row['whatsapp'] || row['telefone'] || ''
         }));
 
-        const filtered = mapped.filter(item => 
+        const filtered = mapped.filter(item =>
           item.nome && item.email && item.whatsapp
         );
 

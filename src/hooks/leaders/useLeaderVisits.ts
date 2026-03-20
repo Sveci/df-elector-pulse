@@ -23,7 +23,7 @@ export function useLeaderVisits(leaderId: string | undefined) {
     queryKey: ["leader_visits", leaderId],
     queryFn: async (): Promise<LeaderVisit[]> => {
       if (!leaderId) return [];
-      
+
       const { data, error } = await supabase
         .from("office_visits")
         .select(`

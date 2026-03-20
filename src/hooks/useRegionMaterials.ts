@@ -46,7 +46,7 @@ export function useRegionMaterialByCity(cityId: string | null) {
     queryKey: ["region-material", cityId],
     queryFn: async () => {
       if (!cityId) return null;
-      
+
       const { data, error } = await supabase
         .from("region_materials")
         .select(`

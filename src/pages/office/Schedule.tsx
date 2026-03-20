@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ManualVisitFormDialog } from "@/components/office/ManualVisitFormDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { 
-  useScheduledVisitsByMonth, 
-  useScheduledVisitsByDate, 
-  useScheduledVisitsStats 
+import {
+  useScheduledVisitsByMonth,
+  useScheduledVisitsByDate,
+  useScheduledVisitsStats
 } from "@/hooks/office/useScheduledVisits";
 import { CreateScheduledVisitDialog } from "@/components/office/CreateScheduledVisitDialog";
 import { OfficeStatusBadge } from "@/components/office/OfficeStatusBadge";
@@ -117,7 +117,7 @@ export default function Schedule() {
             Gerencie os agendamentos de visitas ao gabinete
           </p>
         </div>
-        
+
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Visita Agendada
@@ -261,8 +261,8 @@ export default function Schedule() {
               <div className="text-center py-12 text-muted-foreground">
                 <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhuma visita agendada para este dia</p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={() => setCreateDialogOpen(true)}
                 >

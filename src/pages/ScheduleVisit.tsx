@@ -45,20 +45,20 @@ export default function ScheduleVisit() {
 
     try {
       setLoading(true);
-      
+
       // Usar função RPC SECURITY DEFINER para buscar visita (bypassa RLS para usuários públicos)
       const { data, error } = await supabase
         .rpc("get_visit_for_public_form", { _visit_id: visitId });
 
       if (error) throw error;
-      
+
       if (!data || data.length === 0) {
         setVisit(null);
         return;
       }
 
       const visitData = data[0] as any;
-      
+
       // Mapear para estrutura esperada pelo componente
       setVisit({
         id: visitData.id,
@@ -76,7 +76,7 @@ export default function ScheduleVisit() {
           nome: visitData.city_nome,
         },
       });
-      
+
       // Atualizar status para FORM_OPENED se ainda estiver em LINK_SENT, SCHEDULED ou REGISTERED
       if (["LINK_SENT", "SCHEDULED", "REGISTERED"].includes(visitData.status)) {
         const { error: updateError } = await supabase.rpc("update_visit_status_form_opened", { _visit_id: visitId });
@@ -192,13 +192,13 @@ export default function ScheduleVisit() {
       });
 
       // Track Lead event
-      trackLead({ 
+      trackLead({
         content_name: 'visita_gabinete',
         value: 1
       });
-      
+
       // Push to GTM dataLayer
-      pushToDataLayer('lead', { 
+      pushToDataLayer('lead', {
         source: 'visita_gabinete',
         visit_id: visitId
       });
@@ -251,18 +251,18 @@ export default function ScheduleVisit() {
                   <QrCodeIcon className="h-5 w-5" />
                   <p className="font-semibold">Seu QR Code para Check-in</p>
                 </div>
-                
+
                 <div className="flex justify-center p-6 bg-muted rounded-lg">
                   <img src={qrCodeDataUrl} alt="QR Code Check-in" className="w-64 h-64" />
                 </div>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900 font-medium text-center">
                     📱 Apresente este QR Code na entrada do gabinete para realizar o check-in
                   </p>
                 </div>
 
-                <Button 
+                <Button
                   onClick={() => {
                     const link = document.createElement('a');
                     link.href = qrCodeDataUrl;
@@ -334,11 +334,11 @@ export default function ScheduleVisit() {
                     Data e Horário Agendados
                   </div>
                   <div className="text-lg font-medium">
-                    {new Date(visit.scheduled_date + 'T12:00:00').toLocaleDateString('pt-BR', { 
-                      weekday: 'long', 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric' 
+                    {new Date(visit.scheduled_date + 'T12:00:00').toLocaleDateString('pt-BR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
                     })} às {visit.scheduled_time.substring(0, 5)}
                   </div>
                   <div className="flex items-center gap-2 pt-2">

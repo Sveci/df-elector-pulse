@@ -148,7 +148,7 @@ serve(async (req) => {
           .eq('slug', templateSlug)
           .eq('is_active', true)
           .single();
-        
+
         if (tenantTemplate) {
           template = tenantTemplate;
           console.log(`[send-email] Using tenant template override for slug: ${templateSlug}, tenant: ${tenantId}`);
@@ -219,7 +219,7 @@ serve(async (req) => {
         .select('unsubscribe_token')
         .eq('id', contactId)
         .single();
-      
+
       if (contactData?.unsubscribe_token) {
         const emailBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
         const unsubscribeUrl = `${emailBaseUrl}/descadastro?token=${contactData.unsubscribe_token}`;
@@ -273,7 +273,7 @@ serve(async (req) => {
 
     if (emailError) {
       console.error('Resend error:', emailError);
-      
+
       // Update log with error
       if (logRecord) {
         await supabase
@@ -306,10 +306,10 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         emailId: emailData?.id,
-        logId: logRecord?.id 
+        logId: logRecord?.id
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

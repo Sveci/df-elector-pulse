@@ -52,17 +52,17 @@ function replaceTemplateVariables(message: string, variables: Record<string, str
 function normalizePhone(phone: string): string {
   // Remove all non-numeric characters
   let clean = phone.replace(/\D/g, "");
-  
+
   // Remove country code if present
   if (clean.startsWith("55") && clean.length > 11) {
     clean = clean.substring(2);
   }
-  
+
   // If 10 digits and starts with DF area code, add 9
   if (clean.length === 10 && clean.startsWith("61")) {
     clean = "61" + "9" + clean.substring(2);
   }
-  
+
   return clean;
 }
 
@@ -76,23 +76,23 @@ async function sendViaSMSDev(
   const smsdevUrl = `https://api.smsdev.com.br/v1/send?key=${apiKey}&type=9&number=${phone}&msg=${encodedMessage}`;
 
   console.log("[send-sms] Sending via SMSDEV...");
-  
+
   const response = await fetch(smsdevUrl);
   const result = await response.json();
-  
+
   console.log("[send-sms] SMSDEV response:", result);
 
   if (result.situacao === "OK") {
-    return { 
-      success: true, 
-      id: result.id, 
-      description: result.descricao 
+    return {
+      success: true,
+      id: result.id,
+      description: result.descricao
     };
   }
-  
-  return { 
-    success: false, 
-    error: result.descricao || "Erro desconhecido SMSDEV" 
+
+  return {
+    success: false,
+    error: result.descricao || "Erro desconhecido SMSDEV"
   };
 }
 
@@ -103,49 +103,49 @@ async function sendViaSMSBarato(
   apiKey: string
 ): Promise<{ success: boolean; id?: string; error?: string; description?: string }> {
   const encodedMessage = encodeURIComponent(message);
-  
+
   // Endpoint correto conforme documentação SMSBarato
   const endpoint = `https://sistema81.smsbarato.com.br/send?chave=${apiKey}&dest=${phone}&text=${encodedMessage}`;
 
   console.log("[send-sms] Sending via SMSBarato...");
   console.log("[send-sms] Endpoint:", endpoint.replace(apiKey, '***'));
-  
+
   const response = await fetch(endpoint);
   const result = await response.text();
-  
+
   console.log("[send-sms] SMSBarato response:", result.substring(0, 200));
 
   // Check if response is HTML (error page)
   if (result.includes("<!DOCTYPE html>") || result.includes("<html>")) {
-    return { 
-      success: false, 
-      error: "Endpoint indisponível" 
+    return {
+      success: false,
+      error: "Endpoint indisponível"
     };
   }
 
   const trimmedResult = result.trim();
-  
+
   // Código 900 = erro de autenticação
   if (trimmedResult === "900") {
-    return { 
-      success: false, 
-      error: "Erro de autenticação - API Key inválida (código 900)" 
+    return {
+      success: false,
+      error: "Erro de autenticação - API Key inválida (código 900)"
     };
   }
-  
+
   // Código 010 = mensagem vazia
   if (trimmedResult === "010") {
-    return { 
-      success: false, 
-      error: "Mensagem vazia (código 010)" 
+    return {
+      success: false,
+      error: "Mensagem vazia (código 010)"
     };
   }
-  
+
   // Código 013 = número incorreto
   if (trimmedResult === "013") {
-    return { 
-      success: false, 
-      error: "Número de telefone incorreto (código 013)" 
+    return {
+      success: false,
+      error: "Número de telefone incorreto (código 013)"
     };
   }
 
@@ -164,18 +164,18 @@ async function sendViaSMSBarato(
 
   // Retorno numérico positivo = ID do lote (sucesso)
   const messageId = parseInt(trimmedResult, 10);
-  
+
   if (!isNaN(messageId) && messageId > 0) {
-    return { 
-      success: true, 
-      id: trimmedResult, 
-      description: "Mensagem enviada com sucesso" 
+    return {
+      success: true,
+      id: trimmedResult,
+      description: "Mensagem enviada com sucesso"
     };
   }
-  
-  return { 
-    success: false, 
-    error: `Resposta inesperada da API: ${trimmedResult}` 
+
+  return {
+    success: false,
+    error: `Resposta inesperada da API: ${trimmedResult}`
   };
 }
 
@@ -186,7 +186,7 @@ async function sendViaDisparopro(
   token: string
 ): Promise<{ success: boolean; id?: string; error?: string; description?: string }> {
   console.log("[send-sms] Sending via Disparopro with Bearer token...");
-  
+
   const response = await fetch("https://apihttp.disparopro.com.br:8433/mt", {
     method: "POST",
     headers: {
@@ -198,32 +198,32 @@ async function sendViaDisparopro(
       mensagem: message,
     }),
   });
-  
+
   const result = await response.json();
-  
+
   console.log("[send-sms] Disparopro response:", JSON.stringify(result));
 
   // Disparopro API returns status 200 with message ID on success
   if (response.ok && result.status === 200) {
-    return { 
-      success: true, 
-      id: result.detail?.id || result.id || "sent", 
-      description: "Mensagem enviada com sucesso" 
+    return {
+      success: true,
+      id: result.detail?.id || result.id || "sent",
+      description: "Mensagem enviada com sucesso"
     };
   }
-  
+
   // Map error responses
   let errorMessage = "Erro desconhecido Disparopro";
-  
+
   if (response.status === 401 || response.status === 403) {
     errorMessage = "Erro de autenticação - verifique o token";
   } else if (result.detail || result.message) {
     errorMessage = result.detail || result.message;
   }
-  
-  return { 
-    success: false, 
-    error: errorMessage 
+
+  return {
+    success: false,
+    error: errorMessage
   };
 }
 
@@ -422,7 +422,7 @@ Deno.serve(async (req) => {
       // FALLBACK: If template is leader verification and link_verificacao is missing, generate it
       if (templateSlug === "verificacao-lider-sms" && !finalVariables.link_verificacao && leaderId) {
         console.log("[send-sms] Fallback: generating link_verificacao for leader", leaderId);
-        
+
         // Fetch leader to get/generate verification_code
         const { data: leader, error: leaderError } = await supabase
           .from("lideres")
@@ -456,12 +456,12 @@ Deno.serve(async (req) => {
           }
 
           finalVariables.link_verificacao = generateLeaderVerificationUrl(verificationCode);
-          
+
           // Also ensure nome is available
           if (!finalVariables.nome && leader.nome_completo) {
             finalVariables.nome = leader.nome_completo;
           }
-          
+
           console.log("[send-sms] Injected link_verificacao:", finalVariables.link_verificacao);
         } else {
           console.error("[send-sms] Could not fetch leader for fallback:", leaderError);
@@ -471,7 +471,7 @@ Deno.serve(async (req) => {
       // FALLBACK: If template is contact verification and link_verificacao is missing, generate it
       if (templateSlug === "verificacao-link-sms" && !finalVariables.link_verificacao && contactId) {
         console.log("[send-sms] Fallback: generating link_verificacao for contact", contactId);
-        
+
         // Fetch contact to get/generate verification_code
         const { data: contact, error: contactError } = await supabase
           .from("office_contacts")
@@ -505,12 +505,12 @@ Deno.serve(async (req) => {
           }
 
           finalVariables.link_verificacao = generateContactVerificationUrl(verificationCode);
-          
+
           // Also ensure nome is available
           if (!finalVariables.nome && contact.nome) {
             finalVariables.nome = contact.nome;
           }
-          
+
           console.log("[send-sms] Injected link_verificacao:", finalVariables.link_verificacao);
         } else {
           console.error("[send-sms] Could not fetch contact for fallback:", contactError);
@@ -522,9 +522,9 @@ Deno.serve(async (req) => {
       if (templateHasLinkVar && !finalVariables.link_verificacao) {
         console.error("[send-sms] BLOCKED: template requires link_verificacao but it's missing");
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Template requer link_verificacao mas não foi possível gerá-lo. Verifique se leaderId ou contactId foi informado." 
+          JSON.stringify({
+            success: false,
+            error: "Template requer link_verificacao mas não foi possível gerá-lo. Verifique se leaderId ou contactId foi informado."
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -565,7 +565,7 @@ Deno.serve(async (req) => {
     // Send SMS via the active provider
     let sendResult: { success: boolean; id?: string; error?: string; description?: string };
     let usedProvider = activeProvider;
-    
+
     try {
       if (activeProvider === 'smsdev') {
         sendResult = await sendViaSMSDev(normalizedPhone, finalMessage, settings.smsdev_api_key!);
@@ -591,17 +591,17 @@ Deno.serve(async (req) => {
       }
     } catch (fetchError) {
       console.error("[send-sms] Fetch error:", fetchError);
-      
+
       // Update message to failed status due to connection error
       await supabase
         .from("sms_messages")
         .update({
           status: "failed",
-          error_message: `Erro de conexão com API ${activeProvider.toUpperCase()}: ` + 
+          error_message: `Erro de conexão com API ${activeProvider.toUpperCase()}: ` +
             (fetchError instanceof Error ? fetchError.message : "Unknown error"),
         })
         .eq("id", messageRecord.id);
-      
+
       return new Response(
         JSON.stringify({
           success: false,

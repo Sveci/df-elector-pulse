@@ -16,7 +16,7 @@ export function useUpdateContact() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateContactData }) => {
       console.log("Updating contact:", id, data);
-      
+
       const { data: contact, error } = await supabase
         .from('office_contacts')
         .update(data)

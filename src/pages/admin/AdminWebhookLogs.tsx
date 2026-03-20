@@ -59,7 +59,7 @@ const fieldLabels: Record<string, string> = {
 function formatFieldValue(key: string, value: unknown): string {
   if (value === null || value === undefined) return "—";
   const str = String(value);
-  
+
   if (key === "data_inscricao" && str.includes("T")) {
     try {
       return format(new Date(str), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR });

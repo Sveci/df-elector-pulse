@@ -23,7 +23,7 @@ function formatICSDate(date: Date): string {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
-  
+
   return `${year}${month}${day}T${hours}${minutes}${seconds}`;
 }
 
@@ -37,7 +37,7 @@ function formatICSDateUTC(date: Date): string {
   const hours = String(date.getUTCHours()).padStart(2, '0');
   const minutes = String(date.getUTCMinutes()).padStart(2, '0');
   const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-  
+
   return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
 }
 
@@ -58,14 +58,14 @@ function escapeICSText(text: string): string {
 export function generateICSContent(event: CalendarEventData): string {
   const uid = event.uid || `evento-${Date.now()}@eleitor360.ai`;
   const now = new Date();
-  
+
   // Combinar location e address
-  const fullLocation = event.address 
-    ? `${event.location} - ${event.address}` 
+  const fullLocation = event.address
+    ? `${event.location} - ${event.address}`
     : event.location;
-  
+
   // Descrição com instrução sobre QR Code
-  const description = event.description 
+  const description = event.description
     ? `${event.description}\\n\\nApresente seu QR Code na entrada para realizar o check-in.`
     : 'Apresente seu QR Code na entrada para realizar o check-in.';
 
@@ -92,7 +92,7 @@ export function generateICSContent(event: CalendarEventData): string {
     // Lembrete no dia do evento (9h antes, para evento às 19h lembra às 10h)
     'BEGIN:VALARM',
     'TRIGGER:-PT9H',
-    'ACTION:DISPLAY', 
+    'ACTION:DISPLAY',
     'DESCRIPTION:Evento hoje! Prepare seu QR Code para o check-in.',
     'END:VALARM',
     'END:VEVENT',
@@ -107,20 +107,20 @@ export function generateICSContent(event: CalendarEventData): string {
  */
 export function downloadCalendarEvent(event: CalendarEventData, filename: string): void {
   const icsContent = generateICSContent(event);
-  
+
   // Criar blob com o conteúdo
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-  
+
   // Criar URL temporária
   const url = URL.createObjectURL(blob);
-  
+
   // Criar link e fazer download
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}.ics`;
   document.body.appendChild(link);
   link.click();
-  
+
   // Limpar
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
@@ -133,8 +133,8 @@ export function downloadCalendarEvent(event: CalendarEventData, filename: string
  * @param durationHours Duração em horas (padrão: 2)
  */
 export function createEventDates(
-  dateStr: string, 
-  timeStr: string, 
+  dateStr: string,
+  timeStr: string,
   durationHours: number = 2
 ): { startDate: Date; endDate: Date } {
   // Parsear data e hora
@@ -142,13 +142,13 @@ export function createEventDates(
   const timeParts = timeStr.split(':').map(Number);
   const hours = timeParts[0] || 0;
   const minutes = timeParts[1] || 0;
-  
+
   // Criar data de início
   const startDate = new Date(year, month - 1, day, hours, minutes, 0);
-  
+
   // Criar data de fim (adicionar duração)
   const endDate = new Date(startDate);
   endDate.setHours(endDate.getHours() + durationHours);
-  
+
   return { startDate, endDate };
 }

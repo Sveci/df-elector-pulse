@@ -47,7 +47,7 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
       try {
         const container = document.createElement('div');
         container.innerHTML = settings.facebook_pixel_code;
-        
+
         const scripts = container.querySelectorAll('script');
         scripts.forEach((script) => {
           const newScript = document.createElement('script');

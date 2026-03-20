@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 
 interface FilterTabsProps {
@@ -11,7 +12,7 @@ const periods = [
   { value: "90d", label: "90 dias" },
 ];
 
-export const FilterTabs = ({ selected, onChange }: FilterTabsProps) => {
+export const FilterTabs = memo(({ selected, onChange }: FilterTabsProps) => {
   return (
     <div className="flex gap-2">
       {periods.map((period) => (
@@ -27,4 +28,6 @@ export const FilterTabs = ({ selected, onChange }: FilterTabsProps) => {
       ))}
     </div>
   );
-};
+});
+
+FilterTabs.displayName = "FilterTabs";

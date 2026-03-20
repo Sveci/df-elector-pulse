@@ -12,25 +12,25 @@ interface ProtocolBadgeProps {
 
 export function ProtocolBadge({ protocolo, showCopy = true, className }: ProtocolBadgeProps) {
   const [copied, setCopied] = useState(false);
-  
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(protocolo);
       setCopied(true);
       toast.success("Protocolo copiado!");
-      
+
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error("Erro ao copiar protocolo");
     }
   };
-  
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Badge variant="secondary" className="font-mono text-sm">
         {protocolo}
       </Badge>
-      
+
       {showCopy && (
         <Button
           variant="ghost"

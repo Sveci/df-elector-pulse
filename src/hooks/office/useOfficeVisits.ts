@@ -36,7 +36,7 @@ export function useOfficeVisitWithForm(id: string) {
 
 export function useCreateOfficeVisit() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       dto,
@@ -46,7 +46,7 @@ export function useCreateOfficeVisit() {
       userId: string;
     }) => {
       const visit = await createVisit(dto, userId);
-      
+
       const payload: WebhookPayload = {
         user_id: visit.contact_id,
         city_id: visit.city_id,
@@ -56,7 +56,7 @@ export function useCreateOfficeVisit() {
         form_link: generateVisitFormUrl(visit.id),
         protocolo: visit.protocolo
       };
-      
+
       // Envia via Z-API (se habilitado) ou webhook genérico
       sendVisitNotification(visit.id, payload).then(result => {
         if (result.success) {
@@ -66,7 +66,7 @@ export function useCreateOfficeVisit() {
           toast.error("Erro ao enviar mensagem: " + result.error);
         }
       });
-      
+
       return visit;
     },
     onSuccess: () => {
@@ -81,7 +81,7 @@ export function useCreateOfficeVisit() {
 
 export function useUpdateVisitStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: import("@/types/office").OfficeVisitStatus }) =>
       updateVisitStatus(id, status),

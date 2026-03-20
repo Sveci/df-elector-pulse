@@ -22,7 +22,7 @@ interface CreateSurveyDialogProps {
 
 export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurveyDialogProps) {
   const createSurvey = useCreateSurvey();
-  
+
   const [formData, setFormData] = useState({
     titulo: "",
     descricao: "",
@@ -32,14 +32,14 @@ export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurv
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = await createSurvey.mutateAsync({
       titulo: formData.titulo,
       descricao: formData.descricao || undefined,
       data_inicio: formData.data_inicio || undefined,
       data_fim: formData.data_fim || undefined,
     });
-    
+
     setFormData({ titulo: "", descricao: "", data_inicio: "", data_fim: "" });
     onOpenChange(false);
     onSuccess?.(result);
@@ -55,7 +55,7 @@ export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurv
               Crie uma nova pesquisa de opinião. Você poderá adicionar perguntas em seguida.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="titulo">Título da Pesquisa *</Label>
@@ -67,7 +67,7 @@ export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurv
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="descricao">Descrição</Label>
               <Textarea
@@ -78,7 +78,7 @@ export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurv
                 rows={3}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="data_inicio">Data Início</Label>
@@ -100,7 +100,7 @@ export function CreateSurveyDialog({ open, onOpenChange, onSuccess }: CreateSurv
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

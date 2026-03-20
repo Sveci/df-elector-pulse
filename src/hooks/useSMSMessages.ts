@@ -107,11 +107,11 @@ export function useSMSMessages(filters: SMSFilters = {}) {
       // Apply search filter client-side and transform data
       let filtered = (data || []).map((msg) => ({
         ...msg,
-        retry_history: Array.isArray(msg.retry_history) 
-          ? (msg.retry_history as unknown as RetryHistoryEntry[]) 
+        retry_history: Array.isArray(msg.retry_history)
+          ? (msg.retry_history as unknown as RetryHistoryEntry[])
           : [],
       })) as SMSMessage[];
-      
+
       if (filters.search) {
         const search = filters.search.toLowerCase();
         filtered = filtered.filter(

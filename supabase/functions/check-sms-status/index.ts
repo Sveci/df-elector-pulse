@@ -59,7 +59,7 @@ function extractVerificationCode(message: string): string | null {
     /verificar-lider\/([A-Z0-9]{5,6})/i,
     /verificar-contato\/([A-Z0-9]{5,6})/i,
   ];
-  
+
   for (const pattern of linkPatterns) {
     const match = message.match(pattern);
     if (match) {
@@ -67,14 +67,14 @@ function extractVerificationCode(message: string): string | null {
       return match[1].toUpperCase();
     }
   }
-  
+
   // Priority 2: "código: XXXXX" pattern
   const codigoMatch = message.match(/c[oó]digo[:\s]+([A-Z0-9]{5,6})/i);
   if (codigoMatch) {
     console.log(`[check-sms-status] Found code after 'código': ${codigoMatch[1]}`);
     return codigoMatch[1].toUpperCase();
   }
-  
+
   // Priority 3: Alphanumeric code 5-6 chars (fallback)
   const alphaMatch = message.match(/\b([A-Z0-9]{5,6})\b/i);
   if (alphaMatch) {
@@ -85,7 +85,7 @@ function extractVerificationCode(message: string): string | null {
       return code;
     }
   }
-  
+
   return null;
 }
 
@@ -102,7 +102,7 @@ async function findContactOrLeader(
 ): Promise<{ type: "contact" | "leader" | null; id: string | null; name: string | null }> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const cleanPhone = normalizePhone(phone);
-  
+
   // Try to find unverified contact
   const { data: contact } = await supabase
     .from("office_contacts")
@@ -143,7 +143,7 @@ async function sendWhatsAppFallback(
   contactId: string | null
 ): Promise<{ success: boolean; error?: string }> {
   console.log(`[check-sms-status] Sending WhatsApp fallback to ${phone} with code ${code}, name: ${name}`);
-  
+
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
       method: "POST",
@@ -163,12 +163,12 @@ async function sendWhatsAppFallback(
 
     const result = await response.json();
     console.log(`[check-sms-status] WhatsApp fallback response:`, JSON.stringify(result));
-    
+
     if (!response.ok) {
       console.error(`[check-sms-status] WhatsApp fallback HTTP error: ${response.status}`, result);
       return { success: false, error: result.error || `HTTP ${response.status}` };
     }
-    
+
     return { success: result.success === true, error: result.error };
   } catch (error) {
     console.error(`[check-sms-status] WhatsApp fallback exception:`, error);
@@ -182,7 +182,7 @@ async function checkSMSDEVStatus(
   apiKey: string
 ): Promise<{ success: boolean; status?: string; error?: string; description?: string }> {
   const statusUrl = `https://api.smsdev.com.br/v1/dlr?key=${apiKey}&id=${messageId}`;
-  
+
   const response = await fetch(statusUrl, {
     method: "GET",
     headers: { Accept: "application/json" },
@@ -193,29 +193,29 @@ async function checkSMSDEVStatus(
   }
 
   const statusData: SMSDEVStatusResponse = await response.json();
-  
+
   let rawStatus: string | undefined;
   if (statusData.situacao === "OK" && statusData.descricao) {
     rawStatus = statusData.descricao;
   } else {
     rawStatus = statusData.situacao || statusData.status || statusData.codigo || statusData.descricao;
   }
-  
+
   if (!rawStatus) {
     return { success: false, error: "No status in response" };
   }
 
   const normalizedStatus = rawStatus.toString().toUpperCase();
   const mappedStatus = SMSDEV_STATUS_MAP[normalizedStatus] || SMSDEV_STATUS_MAP[rawStatus];
-  
+
   if (!mappedStatus) {
     return { success: false, error: `Unknown status: ${rawStatus}` };
   }
 
-  return { 
-    success: true, 
-    status: mappedStatus, 
-    description: statusData.descricao || rawStatus 
+  return {
+    success: true,
+    status: mappedStatus,
+    description: statusData.descricao || rawStatus
   };
 }
 
@@ -225,15 +225,15 @@ async function checkSMSBaratoStatus(
   apiKey: string
 ): Promise<{ success: boolean; status?: string; error?: string; description?: string }> {
   const statusUrl = `https://sistema81.smsbarato.com.br/status?chave=${apiKey}&id=${messageId}`;
-  
+
   console.log(`[check-sms-status] Checking SMSBarato status for ${messageId}`);
-  
+
   const response = await fetch(statusUrl);
   const result = await response.text();
-  
+
   const trimmedResult = result.trim();
   console.log(`[check-sms-status] SMSBarato raw response: "${trimmedResult}"`);
-  
+
   // Verificar erros (resposta começa com "ERRO")
   if (trimmedResult.startsWith("ERRO")) {
     if (trimmedResult === "ERRO2" || trimmedResult.startsWith("ERRO2")) {
@@ -241,14 +241,14 @@ async function checkSMSBaratoStatus(
     }
     return { success: false, error: "ID não existe" };
   }
-  
+
   // SMSBarato retorna formato: "S 2026-01-22 18:00:18" (status + timestamp)
   // Extrair apenas o primeiro caractere (código de status: N, R, S, F)
   const statusCode = trimmedResult.charAt(0).toUpperCase();
-  
+
   // Mapear status
   const mappedStatus = SMSBARATO_STATUS_MAP[statusCode];
-  
+
   if (!mappedStatus) {
     console.log(`[check-sms-status] Unknown SMSBarato status code: "${statusCode}" from response: "${trimmedResult}"`);
     return { success: false, error: `Unknown status: ${statusCode}` };
@@ -267,10 +267,10 @@ async function checkSMSBaratoStatus(
     "F": "Envio falhou",
   };
 
-  return { 
-    success: true, 
-    status: mappedStatus, 
-    description: descriptions[statusCode] || trimmedResult 
+  return {
+    success: true,
+    status: mappedStatus,
+    description: descriptions[statusCode] || trimmedResult
   };
 }
 
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
 
     const smsdevEnabled = settings?.smsdev_enabled && settings?.smsdev_api_key;
     const smsbaratoEnabled = settings?.smsbarato_enabled && settings?.smsbarato_api_key;
-    
+
     if (!smsdevEnabled && !smsbaratoEnabled) {
       console.log("[check-sms-status] No SMS provider enabled");
       return new Response(
@@ -349,9 +349,9 @@ Deno.serve(async (req) => {
       try {
         // Determine provider (default to smsdev for backward compatibility)
         const provider = msg.provider || 'smsdev';
-        
+
         let statusResult: { success: boolean; status?: string; error?: string; description?: string };
-        
+
         if (provider === 'smsbarato') {
           if (!smsbaratoEnabled) {
             console.log(`[check-sms-status] SMSBarato not enabled, skipping message ${msg.message_id}`);
@@ -366,9 +366,9 @@ Deno.serve(async (req) => {
           }
           statusResult = await checkSMSDEVStatus(msg.message_id, settings.smsdev_api_key!);
         }
-        
+
         checkedCount++;
-        
+
         console.log(`[check-sms-status] Status for ${msg.message_id} (${provider}):`, JSON.stringify(statusResult));
 
         if (!statusResult.success || !statusResult.status) {
@@ -398,16 +398,16 @@ Deno.serve(async (req) => {
           updateData.sent_at = updateData.sent_at || new Date().toISOString();
         } else if (mappedStatus === "failed") {
           updateData.error_message = statusResult.description || "Falha no envio";
-          
+
           // 4. WhatsApp fallback for failed messages after 6 retries
           const retryCount = msg.retry_count || 0;
           if (whatsappFallbackEnabled && retryCount >= 6) {
             console.log(`[check-sms-status] Message ${msg.message_id} failed after ${retryCount} retries, attempting WhatsApp fallback`);
-            
+
             const code = extractVerificationCode(msg.message);
             if (code) {
               const recipient = await findContactOrLeader(supabaseUrl, supabaseServiceKey, msg.phone);
-              
+
               if (recipient.type && recipient.id && recipient.name) {
                 const fallbackResult = await sendWhatsAppFallback(
                   supabaseUrl,
@@ -416,7 +416,7 @@ Deno.serve(async (req) => {
                   code,
                   recipient.type === "contact" ? recipient.id : null
                 );
-                
+
                 if (fallbackResult.success) {
                   console.log(`[check-sms-status] WhatsApp fallback sent successfully for ${msg.message_id}`);
                   updateData.status = "fallback_whatsapp";

@@ -13,11 +13,11 @@ export const SessionLogoutWarning = () => {
   // Calcular tempo restante
   const calculateTimeRemaining = useCallback(() => {
     if (!forceLogoutAt) return null;
-    
+
     const now = Date.now();
     const logoutTime = new Date(forceLogoutAt).getTime();
     const remaining = Math.max(0, Math.floor((logoutTime - now) / 1000));
-    
+
     return remaining;
   }, [forceLogoutAt]);
 
@@ -90,7 +90,7 @@ export const SessionLogoutWarning = () => {
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"

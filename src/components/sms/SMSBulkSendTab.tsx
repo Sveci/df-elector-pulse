@@ -56,17 +56,17 @@ export function SMSBulkSendTab() {
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
   const createScheduledMessages = useCreateScheduledMessages();
-  
+
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [selectedMaterialUrl, setSelectedMaterialUrl] = useState<string>("");
   const [recipientType, setRecipientType] = useState<RecipientType>("contacts");
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [batchSize, setBatchSize] = useState<BatchSize>("20");
-  
+
   // Single person states
   const [singleSearch, setSingleSearch] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<SinglePerson | null>(null);
-  
+
   // Coordinator tree states
   const [coordinatorSearch, setCoordinatorSearch] = useState("");
   const [selectedCoordinator, setSelectedCoordinator] = useState<{
@@ -75,7 +75,7 @@ export function SMSBulkSendTab() {
     total_in_tree: number;
     unverified_count: number;
   } | null>(null);
-  
+
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
   const [currentBatch, setCurrentBatch] = useState(0);
@@ -91,7 +91,7 @@ export function SMSBulkSendTab() {
   const isVerificationType = recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree";
 
   // Verificar se o template requer seleção de material
-  const templateRequiresMaterial = selectedTemplate === "material-regiao-sms" || 
+  const templateRequiresMaterial = selectedTemplate === "material-regiao-sms" ||
     (selectedTemplateData?.variaveis as string[] | null)?.includes("link_material");
 
   // Search contacts (include verification_code for SMS verification links)
@@ -157,7 +157,7 @@ export function SMSBulkSendTab() {
       // Calcular data de 7 dias atrás
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       // Determinar padrão de mensagem baseado no tipo de destinatário
       let messagePattern = "";
       if (recipientType === "waiting_verification" || recipientType === "sms_not_sent" || recipientType === "coordinator_tree") {
@@ -171,9 +171,9 @@ export function SMSBulkSendTab() {
           messagePattern = `%${firstWords}%`;
         }
       }
-      
+
       if (!messagePattern) return new Set<string>();
-      
+
       // Buscar telefones com paginação
       const allPhones: string[] = [];
       const pageSize = 1000;
@@ -191,7 +191,7 @@ export function SMSBulkSendTab() {
           .gte("created_at", sevenDaysAgo.toISOString())
           .ilike("message", messagePattern)
           .range(from, to);
-        
+
         if (error) throw error;
 
         if (data && data.length > 0) {
@@ -202,7 +202,7 @@ export function SMSBulkSendTab() {
           hasMore = false;
         }
       }
-      
+
       return new Set(allPhones);
     },
     enabled: !!(recipientType && (isVerificationType || selectedTemplate)),
@@ -231,7 +231,7 @@ export function SMSBulkSendTab() {
             .eq("is_active", true)
             .not("telefone_norm", "is", null)
             .range(from, to);
-          
+
           if (error) throw error;
 
           if (data && data.length > 0) {
@@ -268,7 +268,7 @@ export function SMSBulkSendTab() {
             .eq("is_active", true)
             .not("telefone", "is", null)
             .range(from, to);
-          
+
           if (error) throw error;
 
           if (data && data.length > 0) {
@@ -322,7 +322,7 @@ export function SMSBulkSendTab() {
             .not("telefone", "is", null)
             .is("verification_sent_at", null)
             .range(from, to);
-          
+
           if (error) throw error;
 
           if (data && data.length > 0) {
@@ -350,20 +350,20 @@ export function SMSBulkSendTab() {
         const getTodayStartBrasilia = (): string => {
           const now = new Date();
           const utcHours = now.getUTCHours();
-          let targetDate = new Date(now);
-          
+          const targetDate = new Date(now);
+
           // Se em UTC são menos de 3h, em Brasília ainda é o dia anterior
           if (utcHours < 3) {
             targetDate.setUTCDate(targetDate.getUTCDate() - 1);
           }
-          
+
           // Meia-noite de Brasília = 03:00 UTC
           targetDate.setUTCHours(3, 0, 0, 0);
           return targetDate.toISOString();
         };
-        
+
         const todayStartBrasilia = getTodayStartBrasilia();
-        
+
         const allData: { id: string; nome_completo: string; telefone: string | null; email: string | null; verification_code: string | null }[] = [];
         const pageSize = 1000;
         let page = 0;
@@ -382,7 +382,7 @@ export function SMSBulkSendTab() {
             .not("verification_sent_at", "is", null)
             .lt("verification_sent_at", todayStartBrasilia) // Exclui quem já recebeu hoje (Brasília GMT-3)
             .range(from, to);
-          
+
           if (error) throw error;
 
           if (data && data.length > 0) {
@@ -417,7 +417,7 @@ export function SMSBulkSendTab() {
           const { data, error } = await supabase.rpc('get_unverified_leaders_in_tree_sms', {
             coordinator_id: selectedCoordinator.id
           }).range(from, to);
-          
+
           if (error) throw error;
 
           if (data && data.length > 0) {
@@ -440,10 +440,10 @@ export function SMSBulkSendTab() {
       }
       return [];
     },
-    enabled: isSingleSend 
-      ? !!selectedPerson 
-      : recipientType === "coordinator_tree" 
-        ? !!selectedCoordinator 
+    enabled: isSingleSend
+      ? !!selectedPerson
+      : recipientType === "coordinator_tree"
+        ? !!selectedCoordinator
         : (recipientType !== "event" || !!selectedEvent),
   });
 
@@ -452,19 +452,19 @@ export function SMSBulkSendTab() {
     if (!recipients || !recentRecipientPhones || recentRecipientPhones.size === 0) {
       return { count: 0, percentage: 0 };
     }
-    
+
     // Função para normalizar telefone (remover +55 e outros caracteres não numéricos)
     const normalizePhone = (phone: string | null): string => {
       if (!phone) return "";
       return phone.replace(/^\+55/, "").replace(/\D/g, "");
     };
-    
+
     const duplicateCount = recipients.filter(r => {
       if (!r.phone) return false;
       const normalizedPhone = normalizePhone(r.phone);
       return recentRecipientPhones.has(normalizedPhone);
     }).length;
-    
+
     const percentage = recipients.length > 0 ? Math.round((duplicateCount / recipients.length) * 100) : 0;
     return { count: duplicateCount, percentage };
   }, [recipients, recentRecipientPhones]);
@@ -475,7 +475,7 @@ export function SMSBulkSendTab() {
       const { data, error } = await supabase.functions.invoke("shorten-url", {
         body: { url },
       });
-      
+
       if (error) throw error;
       return data.shortUrl;
     } catch (err) {
@@ -501,7 +501,7 @@ export function SMSBulkSendTab() {
     setWaitingForConfirmation(false);
     setSentCount(0);
     let actualSentCount = 0;
-    
+
     // Encurtar link do material uma vez (reutilizado para todos os destinatários)
     let shortenedMaterialUrl = "";
     if (templateRequiresMaterial && selectedMaterialUrl) {
@@ -509,23 +509,23 @@ export function SMSBulkSendTab() {
       shortenedMaterialUrl = await shortenUrl(selectedMaterialUrl);
       console.log("Link encurtado:", shortenedMaterialUrl);
     }
-    
+
     const batchSizeNum = batchSize === "all" ? recipients.length : parseInt(batchSize);
     const batches = Math.ceil(recipients.length / batchSizeNum);
-    
+
     setTotalBatches(batches);
     setTotalCount(recipients.length);
 
     for (let batchIndex = currentBatch; batchIndex < batches; batchIndex++) {
       setCurrentBatch(batchIndex + 1);
-      
+
       const start = batchIndex * batchSizeNum;
       const end = Math.min(start + batchSizeNum, recipients.length);
       const batchRecipients = recipients.slice(start, end);
 
       for (let i = 0; i < batchRecipients.length; i++) {
         const recipient = batchRecipients[i];
-        
+
         try {
           const variables: Record<string, string> = {
             nome: recipient.nome || "",
@@ -596,10 +596,10 @@ export function SMSBulkSendTab() {
           }
 
           // Determine if recipient is a leader type (to pass leaderId for backend fallback)
-          const isLeaderRecipient = recipientType === "leaders" || 
-                                    recipientType === "single_leader" || 
-                                    recipientType === "sms_not_sent" || 
-                                    recipientType === "waiting_verification" || 
+          const isLeaderRecipient = recipientType === "leaders" ||
+                                    recipientType === "single_leader" ||
+                                    recipientType === "sms_not_sent" ||
+                                    recipientType === "waiting_verification" ||
                                     recipientType === "coordinator_tree";
 
           const isContactRecipient = recipientType === "contacts" || recipientType === "single_contact";
@@ -686,8 +686,8 @@ export function SMSBulkSendTab() {
             {recipientType !== "sms_not_sent" && recipientType !== "waiting_verification" && (
               <div className="space-y-2">
                 <Label>Template SMS</Label>
-                <Select 
-                  value={selectedTemplate} 
+                <Select
+                  value={selectedTemplate}
                   onValueChange={(v) => {
                     setSelectedTemplate(v);
                     setSelectedMaterialUrl(""); // Limpar material ao trocar template
@@ -730,7 +730,7 @@ export function SMSBulkSendTab() {
               <Alert className="bg-amber-50 border-amber-200">
                 <ShieldCheck className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800">
-                  {recipientType === "sms_not_sent" 
+                  {recipientType === "sms_not_sent"
                     ? "Líderes que nunca receberam SMS de verificação. Códigos serão gerados automaticamente."
                     : "Líderes que já receberam SMS mas não verificaram."}
                 </AlertDescription>
@@ -1097,7 +1097,7 @@ export function SMSBulkSendTab() {
         onOpenChange={setShowScheduleDialog}
         onSchedule={async (scheduledFor) => {
           if (!recipients?.length || !selectedTemplate) return;
-          
+
           const batchId = crypto.randomUUID();
           const messages = recipients.map((r) => ({
             message_type: "sms" as const,

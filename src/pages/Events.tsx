@@ -12,10 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Calendar, 
-  Plus, 
-  MapPin, 
+import {
+  Calendar,
+  Plus,
+  MapPin,
   Clock,
   Users,
   QrCode,
@@ -128,7 +128,7 @@ const Events = () => {
     const expectedAttendees = Math.round(registrations * (rate / 100));
     return Math.max(1, Math.ceil(expectedAttendees / RATIO));
   };
-  
+
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -178,34 +178,34 @@ const Events = () => {
       const checkedIn = (registrations || [])
         .filter((r: any) => r.checked_in)
         .sort((a: any, b: any) => (a.nome || "").localeCompare(b.nome || ""));
-      
+
       const pending = (registrations || [])
         .filter((r: any) => !r.checked_in)
         .sort((a: any, b: any) => (a.nome || "").localeCompare(b.nome || ""));
 
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
-      
+
       // Header
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
       pdf.text(event.name.toUpperCase(), pageWidth / 2, 20, { align: "center" });
-      
+
       pdf.setFontSize(11);
       pdf.setFont("helvetica", "normal");
       const eventDate = format(new Date(event.date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR });
       pdf.text(`Data: ${eventDate} às ${event.time} | Local: ${event.location}`, pageWidth / 2, 28, { align: "center" });
-      
+
       // Estatísticas resumidas
       pdf.setFontSize(10);
       const totalCount = registrations?.length || 0;
       const statsText = `Total: ${totalCount} inscritos | Check-ins: ${checkedIn.length} | Pendentes: ${pending.length}`;
       pdf.text(statsText, pageWidth / 2, 35, { align: "center" });
-      
+
       // Line separator
       pdf.setDrawColor(200, 200, 200);
       pdf.line(10, 40, pageWidth - 10, 40);
-      
+
       let y = 48;
 
       // Função para renderizar header de tabela
@@ -255,7 +255,7 @@ const Events = () => {
             // Repetir header na nova página
             renderTableHeader(isCheckedIn);
           }
-          
+
           pdf.setFontSize(9);
           pdf.setFont("helvetica", "normal");
           pdf.text(String(index + 1), 12, y);
@@ -263,7 +263,7 @@ const Events = () => {
           pdf.text((reg.whatsapp || "-").substring(0, 14), 72, y);
           pdf.text((reg.email || "-").substring(0, 18), 105, y);
           pdf.text(((reg.cidade as any)?.nome || "-").substring(0, 12), 138, y);
-          
+
           // Data de inscrição
           if (reg.created_at) {
             const inscricaoDate = format(new Date(reg.created_at), "dd/MM HH:mm", { locale: ptBR });
@@ -271,13 +271,13 @@ const Events = () => {
           } else {
             pdf.text("-", 165, y);
           }
-          
+
           // Horário do check-in
           if (isCheckedIn && reg.checked_in_at) {
             const checkTime = format(new Date(reg.checked_in_at), "HH:mm", { locale: ptBR });
             pdf.text(checkTime, 190, y);
           }
-          
+
           y += 6;
         });
 
@@ -289,7 +289,7 @@ const Events = () => {
 
       // Renderizar seção de check-ins pendentes
       renderSection("CHECK-IN PENDENTE", pending, false);
-      
+
       // Footer com data de geração
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
@@ -304,9 +304,9 @@ const Events = () => {
         );
         pdf.setTextColor(0, 0, 0);
       }
-      
+
       pdf.save(`inscritos-${event.slug}.pdf`);
-      
+
       toast({
         title: "PDF gerado!",
         description: `Lista com ${totalCount} inscritos (${checkedIn.length} check-ins, ${pending.length} pendentes).`
@@ -347,17 +347,17 @@ const Events = () => {
         show_registrations_count: newEvent.show_registrations_count,
         registration_deadline_hours: newEvent.registration_deadline_hours
       });
-      
-      setNewEvent({ 
-        name: "", 
-        slug: "", 
-        description: "", 
-        date: "", 
-        time: "", 
-        location: "", 
-        address: "", 
-        capacity: "100", 
-        categories: [], 
+
+      setNewEvent({
+        name: "",
+        slug: "",
+        description: "",
+        date: "",
+        time: "",
+        location: "",
+        address: "",
+        capacity: "100",
+        categories: [],
         region: "",
         coverImage: null,
         show_registrations_count: true,
@@ -390,7 +390,7 @@ const Events = () => {
         show_registrations_count: editingEvent.show_registrations_count,
         registration_deadline_hours: editingEvent.registration_deadline_hours
       });
-      
+
       setEditingEvent(null);
       setIsEditDialogOpen(false);
     } catch (error) {
@@ -418,7 +418,7 @@ const Events = () => {
                          event.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || event.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || (event.categories || []).includes(categoryFilter);
-    
+
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
@@ -506,7 +506,7 @@ const Events = () => {
                         placeholder="Nome do evento"
                       />
                     </div>
-                    
+
                     <div className="col-span-2">
                       <Label htmlFor="slug">Slug (URL) *</Label>
                       <Input
@@ -650,11 +650,11 @@ const Events = () => {
 
                     <div className="col-span-2">
                       <Label>Prazo para inscrições</Label>
-                      <Select 
-                        value={String(newEvent.registration_deadline_hours ?? "null")} 
-                        onValueChange={(v) => setNewEvent({ 
-                          ...newEvent, 
-                          registration_deadline_hours: v === "null" ? null : parseInt(v) 
+                      <Select
+                        value={String(newEvent.registration_deadline_hours ?? "null")}
+                        onValueChange={(v) => setNewEvent({
+                          ...newEvent,
+                          registration_deadline_hours: v === "null" ? null : parseInt(v)
                         })}
                       >
                         <SelectTrigger>
@@ -876,8 +876,8 @@ const Events = () => {
                                 <TrendingUp className="h-4 w-4" />
                                 <span>{m.percentage(getAttendanceRate(event), event.id + "_att")}% presença</span>
                               </div>
-                              <div 
-                                className="flex items-center gap-1 text-orange-600" 
+                              <div
+                                className="flex items-center gap-1 text-orange-600"
                                 title={`Baseado em ${event.registrations_count} inscritos, taxa média de ${Math.round(eventStats?.overallConversionRate ?? 70)}% = ~${Math.round((event.registrations_count || 0) * ((eventStats?.overallConversionRate ?? 70) / 100))} pessoas esperadas. 1 atendente a cada 30.`}
                               >
                                 <Users className="h-4 w-4" />
@@ -988,7 +988,7 @@ const Events = () => {
                       onChange={(e) => setEditingEvent({ ...editingEvent, name: e.target.value })}
                     />
                   </div>
-                  
+
                   <div className="col-span-2">
                     <Label>Slug (URL) *</Label>
                     <Input
@@ -1093,12 +1093,12 @@ const Events = () => {
 
                   <div className="col-span-2">
                     <Label>Imagem de Capa</Label>
-                    
+
                     {editingEvent.cover_image_url && (
                       <div className="mb-2 relative rounded-lg overflow-hidden">
-                        <img 
-                          src={editingEvent.cover_image_url} 
-                          alt="Cover atual" 
+                        <img
+                          src={editingEvent.cover_image_url}
+                          alt="Cover atual"
                           className="w-full h-40 object-cover"
                         />
                         <Badge className="absolute top-2 left-2 bg-background/80 backdrop-blur">
@@ -1106,13 +1106,13 @@ const Events = () => {
                         </Badge>
                       </div>
                     )}
-                    
+
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setEditingEvent({ 
-                        ...editingEvent, 
-                        coverImage: e.target.files?.[0] || null 
+                      onChange={(e) => setEditingEvent({
+                        ...editingEvent,
+                        coverImage: e.target.files?.[0] || null
                       })}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -1122,8 +1122,8 @@ const Events = () => {
 
                   <div className="col-span-2">
                     <Label>Status</Label>
-                    <Select 
-                      value={editingEvent.status} 
+                    <Select
+                      value={editingEvent.status}
                       onValueChange={(value) => setEditingEvent({ ...editingEvent, status: value })}
                     >
                       <SelectTrigger>
@@ -1152,11 +1152,11 @@ const Events = () => {
 
                   <div className="col-span-2">
                     <Label>Prazo para inscrições</Label>
-                    <Select 
-                      value={String(editingEvent.registration_deadline_hours ?? "null")} 
-                      onValueChange={(v) => setEditingEvent({ 
-                        ...editingEvent, 
-                        registration_deadline_hours: v === "null" ? null : parseInt(v) 
+                    <Select
+                      value={String(editingEvent.registration_deadline_hours ?? "null")}
+                      onValueChange={(v) => setEditingEvent({
+                        ...editingEvent,
+                        registration_deadline_hours: v === "null" ? null : parseInt(v)
                       })}
                     >
                       <SelectTrigger>
@@ -1392,11 +1392,11 @@ function CheckInSection({ events }: { events: any[] }) {
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const { data: registrations = [] } = useEventRegistrations(selectedEventId);
   const { toast } = useToast();
-  
+
   const selectedEvent = events.find(e => e.id === selectedEventId);
   const checkedInCount = registrations.filter((r: any) => r.checked_in).length;
   const pendingCount = registrations.length - checkedInCount;
-  
+
   const filteredRegistrations = registrations.filter((reg: any) =>
     reg.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     reg.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1491,7 +1491,7 @@ function CheckInSection({ events }: { events: any[] }) {
         doc.text(reg.nome?.substring(0, 26) || "", 26, yPos);
         doc.text(reg.whatsapp?.substring(0, 14) || "", 80, yPos);
         doc.text(reg.email?.substring(0, 22) || "", 115, yPos);
-        
+
         // Data de inscrição
         if (reg.created_at) {
           const inscricaoDate = format(new Date(reg.created_at), "dd/MM HH:mm", { locale: ptBR });
@@ -1499,13 +1499,13 @@ function CheckInSection({ events }: { events: any[] }) {
         } else {
           doc.text("-", 155, yPos);
         }
-        
+
         // Horário do check-in
         if (isCheckedIn && reg.checked_in_at) {
           const checkTime = format(new Date(reg.checked_in_at), "HH:mm", { locale: ptBR });
           doc.text(checkTime, 187, yPos);
         }
-        
+
         yPos += 7;
       });
 
@@ -1514,7 +1514,7 @@ function CheckInSection({ events }: { events: any[] }) {
 
     // Add checked-in section first
     addSection("✓ Check-in Realizado", checkedIn, true);
-    
+
     // Add pending section
     addSection("○ Aguardando Check-in", pending, false);
 
@@ -1557,12 +1557,12 @@ function CheckInSection({ events }: { events: any[] }) {
             <>
               <div className="flex justify-between items-center pt-2">
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{registrations.length}</span> inscritos • 
-                  <span className="text-green-600 font-medium ml-1">{checkedInCount}</span> check-ins • 
+                  <span className="font-medium text-foreground">{registrations.length}</span> inscritos •
+                  <span className="text-green-600 font-medium ml-1">{checkedInCount}</span> check-ins •
                   <span className="text-amber-600 font-medium ml-1">{pendingCount}</span> pendentes
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={handleExportCheckInPDF}
                   disabled={registrations.length === 0}
@@ -1740,7 +1740,7 @@ function EventReports({ events }: { events: any[] }) {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taxa de Conversão Geral</CardTitle>
@@ -1755,7 +1755,7 @@ function EventReports({ events }: { events: any[] }) {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Capacidade Média</CardTitle>
@@ -1770,7 +1770,7 @@ function EventReports({ events }: { events: any[] }) {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Eventos por Categoria</CardTitle>
@@ -1859,34 +1859,34 @@ function EventReports({ events }: { events: any[] }) {
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   tickFormatter={(date) => format(new Date(date), "dd/MM")}
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}
                   labelFormatter={(date) => format(new Date(date), "dd/MM/yyyy")}
                 />
                 <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="registrations" 
+                <Area
+                  type="monotone"
+                  dataKey="registrations"
                   name="Inscrições"
-                  stroke="hsl(var(--primary))" 
+                  stroke="hsl(var(--primary))"
                   fill="hsl(var(--primary))"
                   fillOpacity={0.3}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="checkins" 
+                <Area
+                  type="monotone"
+                  dataKey="checkins"
                   name="Check-ins"
-                  stroke="hsl(var(--success-500))" 
+                  stroke="hsl(var(--success-500))"
                   fill="hsl(var(--success-500))"
                   fillOpacity={0.3}
                 />
@@ -1916,15 +1916,15 @@ function EventReports({ events }: { events: any[] }) {
                 <BarChart data={categoryStats} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis 
-                    type="category" 
-                    dataKey="categoryLabel" 
+                  <YAxis
+                    type="category"
+                    dataKey="categoryLabel"
                     width={120}
                     stroke="hsl(var(--muted-foreground))"
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -2059,7 +2059,7 @@ function EventReports({ events }: { events: any[] }) {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, value, percent }) => 
+                      label={({ name, value, percent }) =>
                         `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
                       }
                       outerRadius={100}
@@ -2073,9 +2073,9 @@ function EventReports({ events }: { events: any[] }) {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}

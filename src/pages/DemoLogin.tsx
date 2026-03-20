@@ -89,7 +89,7 @@ const DemoLogin = () => {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="demo-email">E-mail</Label>
                   <Input
@@ -100,7 +100,7 @@ const DemoLogin = () => {
                     className="bg-slate-50 text-slate-600"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="demo-password">Senha</Label>
                   <div className="relative">
@@ -125,8 +125,8 @@ const DemoLogin = () => {
                   </ul>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={isSubmitting}
                   size="lg"

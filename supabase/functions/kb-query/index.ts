@@ -61,10 +61,10 @@ Deno.serve(async (req) => {
 
     // Build OR conditions for each search term using ILIKE
     let chunks: any[] = [];
-    
+
     if (searchTerms.length > 0) {
       const ilikeConditions = searchTerms.map((term: string) => `content.ilike.%${term}%`);
-      
+
       const { data, error } = await supabase
         .from("kb_chunks")
         .select(`
@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
         `)
         .eq("tenant_id", tenant_id)
         .limit(max_chunks * 2);
-      
+
       chunks = data || [];
     }
 
@@ -134,7 +134,7 @@ Selecione no máximo ${max_chunks} trechos mais relevantes.`
     });
 
     let relevantChunks = chunks.slice(0, max_chunks);
-    
+
     if (rankResponse.ok) {
       try {
         const rankData = await rankResponse.json();

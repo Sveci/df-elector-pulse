@@ -11,10 +11,10 @@ interface ContactEmailUpdate {
 interface UpdateEmailsResult {
   success: boolean;
   updated: number;
-  notFound: Array<{ 
-    line: number; 
-    reason: string; 
-    nome: string; 
+  notFound: Array<{
+    line: number;
+    reason: string;
+    nome: string;
     whatsapp: string;
   }>;
 }

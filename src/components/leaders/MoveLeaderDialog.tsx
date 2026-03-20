@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
+import {
   useSearchLeaders,
   useMoveLeaderBranch,
 } from "@/hooks/leaders/useLeaderTree";
@@ -50,7 +50,7 @@ export function MoveLeaderDialog({
   // Filter out the leader itself, its current parent (already there), and candidates that would exceed depth
   const possibleParents = useMemo(() => {
     if (!searchResults) return [];
-    
+
     return searchResults.filter((leader) => {
       // Cannot move under itself
       if (leader.id === leaderId) return false;
@@ -82,7 +82,7 @@ export function MoveLeaderDialog({
 
   const handleConfirm = async () => {
     if (!selectedParentId) return;
-    
+
     try {
       await moveLeaderBranch.mutateAsync({
         leaderId,
@@ -126,7 +126,7 @@ export function MoveLeaderDialog({
             Mover Líder para Outra Árvore
           </DialogTitle>
           <DialogDescription>
-            Mover <strong>{leaderName}</strong> (Nível {currentLevel}) 
+            Mover <strong>{leaderName}</strong> (Nível {currentLevel})
             {subordinatesCount > 0 && ` e ${subordinatesCount} subordinado(s)`}
           </DialogDescription>
         </DialogHeader>

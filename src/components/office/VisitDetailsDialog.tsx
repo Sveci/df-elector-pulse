@@ -33,7 +33,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
   const [qrCode, setQrCode] = useState<string | null>(null);
   const updateCheckIn = useUpdateVisitCheckInById();
   const { data: meetingMinutes } = useMeetingMinutes(visit?.id);
-  
+
   useEffect(() => {
     if (open && visit) {
       // Generate QR Code for form link or check-in link based on status
@@ -46,30 +46,30 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
       }
     }
   }, [open, visit]);
-  
+
   if (!visit) return null;
-  
-  const link = visit.qr_code && visit.status === 'FORM_SUBMITTED' 
+
+  const link = visit.qr_code && visit.status === 'FORM_SUBMITTED'
     ? generateVisitCheckinUrl(visit.qr_code)
     : generateVisitFormUrl(visit.id);
-  
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(link);
     toast.success("Link copiado!");
   };
 
   const handleCheckIn = async () => {
-    await updateCheckIn.mutateAsync({ 
-      id: visit.id, 
-      checked_in: true 
+    await updateCheckIn.mutateAsync({
+      id: visit.id,
+      checked_in: true
     });
     onOpenChange(false);
   };
 
   const handleUndoCheckIn = async () => {
-    await updateCheckIn.mutateAsync({ 
-      id: visit.id, 
-      checked_in: false 
+    await updateCheckIn.mutateAsync({
+      id: visit.id,
+      checked_in: false
     });
   };
 
@@ -78,7 +78,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
     if (!printWindow) return;
 
     const formData = visit.form?.[0] || visit.form;
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -231,24 +231,24 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 15;
         const maxWidth = pageWidth - 2 * margin;
-        
+
         // Título
         doc.setFontSize(16);
         doc.text('Ata da Reunião', margin, 20);
-        
+
         // Protocolo
         doc.setFontSize(12);
         doc.text(`Protocolo: ${visit.protocolo}`, margin, 30);
-        
+
         // Data
         doc.setFontSize(10);
         doc.text(`Data: ${format(new Date(meetingMinutes.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, margin, 38);
-        
+
         // Conteúdo
         doc.setFontSize(11);
         const lines = doc.splitTextToSize(meetingMinutes.content_text || '', maxWidth);
         doc.text(lines, margin, 50);
-        
+
         doc.save(`ata-${visit.protocolo}.pdf`);
         toast.success('PDF baixado com sucesso!');
       } else if (meetingMinutes.content_type === 'file' && meetingMinutes.file_path) {
@@ -256,9 +256,9 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
         const { data, error } = await supabase.storage
           .from('meeting-minutes')
           .download(meetingMinutes.file_path);
-        
+
         if (error) throw error;
-        
+
         // Criar URL temporária e baixar
         const url = URL.createObjectURL(data);
         const a = document.createElement('a');
@@ -268,7 +268,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         toast.success('Arquivo baixado com sucesso!');
       }
     } catch (error) {
@@ -276,12 +276,12 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
       toast.error('Erro ao baixar ata');
     }
   };
-  
+
   const formData = visit.form?.[0] || visit.form;
   const isFinished = visit.status === 'MEETING_COMPLETED' || visit.status === 'CANCELLED';
-  const hasFormData = visit.status === 'FORM_SUBMITTED' || 
-                      visit.status === 'CHECKED_IN' || 
-                      visit.status === 'MEETING_COMPLETED' || 
+  const hasFormData = visit.status === 'FORM_SUBMITTED' ||
+                      visit.status === 'CHECKED_IN' ||
+                      visit.status === 'MEETING_COMPLETED' ||
                       visit.status === 'CANCELLED' ||
                       visit.status === 'RESCHEDULED';
   const isCheckedIn = visit.status === 'CHECKED_IN' || visit.checked_in;
@@ -295,7 +295,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
             Informações completas sobre a visita registrada
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           {/* Protocolo e Status */}
           <div className="flex items-center justify-between">
@@ -332,7 +332,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
               <Label>Visitante</Label>
               <p className="text-sm mt-1 font-medium">{visit.contact?.nome}</p>
             </div>
-            
+
             <div>
               <Label>WhatsApp</Label>
               <p className="text-sm mt-1 font-mono">
@@ -353,7 +353,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
             <>
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-3">Dados do Formulário</h3>
-                
+
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
                   {formData.data_nascimento && (
                     <div>
@@ -363,7 +363,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                       </p>
                     </div>
                   )}
-                  
+
                   <div>
                     <Label>Aceita Reunião</Label>
                     <p className="text-sm mt-1">
@@ -372,14 +372,14 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                       </Badge>
                     </p>
                   </div>
-                  
+
                   {formData.tema && (
                     <div>
                       <Label>Pauta/Tema</Label>
                       <p className="text-sm mt-1">{formData.tema.tema}</p>
                     </div>
                   )}
-                  
+
                   <div>
                     <Label>Continua no Projeto</Label>
                     <p className="text-sm mt-1">
@@ -404,7 +404,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                       <p className="text-sm mt-1">{formData.instagram}</p>
                     </div>
                   )}
-                  
+
                   {formData.facebook && (
                     <div>
                       <Label>Facebook</Label>
@@ -494,7 +494,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                   )}
                 </Button>
               )}
-              
+
               <Button
                 onClick={handlePrint}
                 variant="outline"
@@ -513,7 +513,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Ficha
               </Button>
-              
+
               {meetingMinutes && (
                 <Button onClick={handleDownloadMinutes} variant="outline" className="flex-1">
                   <Download className="mr-2 h-4 w-4" />
@@ -541,7 +541,7 @@ export function VisitDetailsDialog({ visit, open, onOpenChange }: VisitDetailsDi
               </Button>
             </div>
           )}
-          
+
           {/* QR Code - apenas para visitas em andamento */}
           {!isFinished && qrCode && (
             <div>

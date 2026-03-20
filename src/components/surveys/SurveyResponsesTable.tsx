@@ -27,7 +27,7 @@ export function SurveyResponsesTable({ responses, questions }: SurveyResponsesTa
     const contactName = r.contact?.nome || "";
     const leaderName = r.leader?.nome_completo || "";
     const referredByName = r.referred_by?.nome_completo || "";
-    
+
     return (
       contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       leaderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,14 +38,14 @@ export function SurveyResponsesTable({ responses, questions }: SurveyResponsesTa
   const getResponsePreview = (respostas: Record<string, any>) => {
     const entries = Object.entries(respostas);
     if (entries.length === 0) return "-";
-    
+
     const firstResponses = entries.slice(0, 2).map(([, value]) => {
       if (typeof value === "string") {
         return value.length > 30 ? value.substring(0, 30) + "..." : value;
       }
       return String(value);
     });
-    
+
     return firstResponses.join(", ");
   };
 
@@ -95,8 +95,8 @@ export function SurveyResponsesTable({ responses, questions }: SurveyResponsesTa
                         )}
                         <div>
                           <p className="font-medium">
-                            {response.is_leader 
-                              ? response.leader?.nome_completo 
+                            {response.is_leader
+                              ? response.leader?.nome_completo
                               : response.contact?.nome || "Anônimo"}
                           </p>
                           {response.contact?.telefone_norm && (

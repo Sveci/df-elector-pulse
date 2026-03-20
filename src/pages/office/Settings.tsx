@@ -41,12 +41,12 @@ export default function Settings() {
   const { data: settings, isLoading } = useOfficeSettings();
   const updateSettings = useUpdateOfficeSettings();
   const { restartTutorial } = useTutorial("office-settings", officeSettingsTutorialSteps);
-  
+
   const [prefix, setPrefix] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [pontosFormSubmitted, setPontosFormSubmitted] = useState(1);
   const [pontosAceitaReuniao, setPontosAceitaReuniao] = useState(3);
-  
+
   useEffect(() => {
     if (settings) {
       setPrefix(settings.protocolo_prefix);
@@ -55,10 +55,10 @@ export default function Settings() {
       setPontosAceitaReuniao(settings.pontos_aceita_reuniao);
     }
   }, [settings]);
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     updateSettings.mutate({
       protocolo_prefix: prefix,
       webhook_url: webhookUrl,
@@ -66,7 +66,7 @@ export default function Settings() {
       pontos_aceita_reuniao: pontosAceitaReuniao
     });
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -74,7 +74,7 @@ export default function Settings() {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-6 max-w-3xl">
       <TutorialOverlay page="office-settings" />
@@ -89,7 +89,7 @@ export default function Settings() {
           <TutorialButton onClick={restartTutorial} />
         </div>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card data-tutorial="office-settings-protocol">
           <CardHeader>
@@ -114,7 +114,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Webhook</CardTitle>
@@ -135,7 +135,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card data-tutorial="office-settings-points">
           <CardHeader>
             <CardTitle>Pontuação de Líderes</CardTitle>
@@ -155,7 +155,7 @@ export default function Settings() {
                 disabled={updateSettings.isPending}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="pontos-reuniao">Pontos por Aceitar Reunião</Label>
               <Input
@@ -169,7 +169,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Button
           type="submit"
           className="w-full"

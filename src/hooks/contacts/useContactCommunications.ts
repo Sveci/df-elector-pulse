@@ -51,7 +51,7 @@ export function useContactCommunications(contactId: string | undefined, contactP
 
       // Fetch WhatsApp messages by contact_id first
       let whatsappMessages: ContactWhatsAppMessage[] = [];
-      
+
       const { data: msgById, error: whatsappError } = await supabase
         .from("whatsapp_messages")
         .select("*")
@@ -61,14 +61,14 @@ export function useContactCommunications(contactId: string | undefined, contactP
       if (whatsappError) {
         console.error("Error fetching WhatsApp messages by contact_id:", whatsappError);
       }
-      
+
       whatsappMessages = (msgById || []) as ContactWhatsAppMessage[];
 
       // If no messages found by contact_id and we have a phone, try searching by phone
       if (whatsappMessages.length === 0 && contactPhone) {
         const normalizedPhone = contactPhone.replace(/\D/g, '');
         const phoneSuffix = normalizedPhone.slice(-8); // Last 8 digits for matching
-        
+
         const { data: msgByPhone, error: phoneError } = await supabase
           .from("whatsapp_messages")
           .select("*")
@@ -85,7 +85,7 @@ export function useContactCommunications(contactId: string | undefined, contactP
 
       // Fetch SMS messages by contact_id first
       let smsMessages: ContactSMSMessage[] = [];
-      
+
       const { data: smsById, error: smsError } = await supabase
         .from("sms_messages")
         .select("*")
@@ -95,14 +95,14 @@ export function useContactCommunications(contactId: string | undefined, contactP
       if (smsError) {
         console.error("Error fetching SMS messages by contact_id:", smsError);
       }
-      
+
       smsMessages = (smsById || []) as ContactSMSMessage[];
 
       // If no SMS found by contact_id and we have a phone, try searching by phone
       if (smsMessages.length === 0 && contactPhone) {
         const normalizedPhone = contactPhone.replace(/\D/g, '');
         const phoneSuffix = normalizedPhone.slice(-8);
-        
+
         const { data: smsByPhone, error: smsPhoneError } = await supabase
           .from("sms_messages")
           .select("*")
@@ -119,7 +119,7 @@ export function useContactCommunications(contactId: string | undefined, contactP
 
       // Fetch Email logs by contact_id first
       let emailLogs: ContactEmailLog[] = [];
-      
+
       const { data: emailById, error: emailError } = await supabase
         .from("email_logs")
         .select(`
@@ -141,7 +141,7 @@ export function useContactCommunications(contactId: string | undefined, contactP
       if (emailError) {
         console.error("Error fetching email logs by contact_id:", emailError);
       }
-      
+
       emailLogs = (emailById || []).map((log: any) => ({
         ...log,
         template_name: log.email_templates?.nome || null,

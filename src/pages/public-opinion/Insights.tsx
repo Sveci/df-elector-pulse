@@ -228,8 +228,8 @@ const Insights = () => {
               <div>
                 <h3 className="font-semibold text-primary">Resumo da Análise</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {stats.total} menções analisadas — {stats.positive} positivas ({Math.round(stats.positive/stats.total*100)}%), 
-                  {stats.negative} negativas ({Math.round(stats.negative/stats.total*100)}%), 
+                  {stats.total} menções analisadas — {stats.positive} positivas ({Math.round(stats.positive/stats.total*100)}%),
+                  {stats.negative} negativas ({Math.round(stats.negative/stats.total*100)}%),
                   {stats.neutral} neutras. Score médio: {(stats.avgScore * 10).toFixed(1)}/10.
                 </p>
               </div>
@@ -246,7 +246,7 @@ const Insights = () => {
               <div>
                 <h3 className="font-semibold text-primary">Resumo Executivo da Semana</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Sua imagem pública mantém tendência positiva com score de 7.4/10. A inauguração do hospital em Ceilândia foi o evento de maior impacto, 
+                  Sua imagem pública mantém tendência positiva com score de 7.4/10. A inauguração do hospital em Ceilândia foi o evento de maior impacto,
                   gerando +522% em menções positivas. Atenção recomendada para a pauta de segurança em Sobradinho e Gama, onde o sentimento negativo cresceu 18%.
                 </p>
               </div>
@@ -270,7 +270,7 @@ const Insights = () => {
           const config = typeConfig[type] || typeConfig.recommendation;
           const Icon = config.icon;
           const priority = insight.priority || insight.impact || 'medium';
-          const confidence = typeof insight.confidence === 'number' 
+          const confidence = typeof insight.confidence === 'number'
             ? (insight.confidence <= 1 ? Math.round(insight.confidence * 100) : insight.confidence)
             : 75;
           return (

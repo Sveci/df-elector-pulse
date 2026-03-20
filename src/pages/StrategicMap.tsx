@@ -90,14 +90,14 @@ function calculateSpreadPosition(
 ): { lat: number; lng: number } {
   // Different base radius per type (coordinators center, leaders around, contacts outer)
   const baseRadius = type === 'coordinator' ? 0.004 : type === 'leader' ? 0.008 : 0.012;
-  
+
   // Golden angle for uniform distribution
   const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   const angle = index * goldenAngle;
-  
+
   // Radius increases with sqrt for uniform density
   const radius = baseRadius * Math.sqrt(index + 1) * 0.4;
-  
+
   return {
     lat: baseLat + radius * Math.cos(angle),
     lng: baseLng + radius * Math.sin(angle),
@@ -110,7 +110,7 @@ function getPositionsByCity<T extends { id: string; latitude: number; longitude:
   type: 'coordinator' | 'leader' | 'contact'
 ): Map<string, { lat: number; lng: number }> {
   const positions = new Map<string, { lat: number; lng: number }>();
-  
+
   // Group by approximate city location
   const byCityKey = new Map<string, T[]>();
   items.forEach((item) => {
@@ -121,7 +121,7 @@ function getPositionsByCity<T extends { id: string; latitude: number; longitude:
     }
     byCityKey.get(key)!.push(item);
   });
-  
+
   // Calculate spread positions for each group
   byCityKey.forEach((group) => {
     group.forEach((item, indexInGroup) => {
@@ -134,7 +134,7 @@ function getPositionsByCity<T extends { id: string; latitude: number; longitude:
       positions.set(item.id, pos);
     });
   });
-  
+
   return positions;
 }
 
@@ -167,7 +167,7 @@ function createCrownIcon(color: string) {
 function HeatmapLayer({ contacts, enabled }: { contacts: ContactMapData[]; enabled: boolean }) {
   const heatData = useMemo(() => {
     if (!enabled || contacts.length === 0) return [];
-    
+
     const grouped = contacts.reduce((acc: Record<string, { lat: number; lng: number; count: number }>, c) => {
       if (c.latitude == null || c.longitude == null) return acc;
       const key = `${c.latitude.toFixed(2)},${c.longitude.toFixed(2)}`;
@@ -226,7 +226,7 @@ function HierarchyConnectionsLayer({
       if (leader.parent_leader_id) {
         const coordinatorPos = leaderPositions.get(leader.parent_leader_id);
         const leaderPos = leaderPositions.get(leader.id);
-        
+
         if (coordinatorPos && leaderPos) {
           const coordinator = leaders.find(l => l.id === leader.parent_leader_id);
           lines.push({
@@ -299,7 +299,7 @@ function ConnectionsLayer({
       if (contact.source_type === "lider" && contact.source_id) {
         const leaderPos = leaderPositions.get(contact.source_id);
         const contactPos = contactPositions.get(contact.id);
-        
+
         if (leaderPos && contactPos) {
           lines.push({
             from: [leaderPos.lat, leaderPos.lng],
@@ -372,17 +372,17 @@ export default function StrategicMap() {
   // Filter visible leaders based on selection
   const visibleLeaders = useMemo(() => {
     if (selectedLeader === "all") return leaders;
-    
+
     const selected = leaders.find(l => l.id === selectedLeader);
     if (!selected) return leaders;
-    
+
     // If coordinator: show them + all subordinates
     if (selected.is_coordinator) {
-      return leaders.filter(l => 
+      return leaders.filter(l =>
         l.id === selectedLeader || l.parent_leader_id === selectedLeader
       );
     }
-    
+
     // If regular leader: show only them
     return [selected];
   }, [leaders, selectedLeader]);
@@ -392,17 +392,17 @@ export default function StrategicMap() {
     // Separate coordinators and leaders for different spread patterns
     const coordinators = visibleLeaders.filter(l => l.is_coordinator);
     const regularLeaders = visibleLeaders.filter(l => !l.is_coordinator);
-    
+
     const positions = new Map<string, { lat: number; lng: number }>();
-    
+
     // Calculate positions for coordinators
     const coordPositions = getPositionsByCity(coordinators, 'coordinator');
     coordPositions.forEach((pos, id) => positions.set(id, pos));
-    
+
     // Calculate positions for regular leaders
     const leaderPos = getPositionsByCity(regularLeaders, 'leader');
     leaderPos.forEach((pos, id) => positions.set(id, pos));
-    
+
     return positions;
   }, [visibleLeaders]);
 
@@ -414,7 +414,7 @@ export default function StrategicMap() {
   const contactConnectionsCount = useMemo(() => {
     return contacts.filter((c) => c.source_type === "lider" && c.source_id).length;
   }, [contacts]);
-  
+
   const hierarchyConnectionsCount = useMemo(() => {
     return leaders.filter(l => l.parent_leader_id).length;
   }, [leaders]);
@@ -437,7 +437,7 @@ export default function StrategicMap() {
 
   const mapCenter = useMemo<[number, number]>(() => {
     if (selectedRegion === "all") return mapTenantConfig.center;
-    
+
     // RA mode: use boundary or city coordinates
     if (mapTenantConfig.useOfficeCities && selectedCity) {
       if (selectedCity.codigo_ra) {
@@ -448,22 +448,22 @@ export default function StrategicMap() {
         return [selectedCity.latitude, selectedCity.longitude];
       }
     }
-    
+
     // Localidade mode: use virtual city coordinates
     if (!mapTenantConfig.useOfficeCities && selectedCity) {
       return [selectedCity.latitude, selectedCity.longitude];
     }
-    
+
     return mapTenantConfig.center;
   }, [selectedRegion, selectedCity, mapTenantConfig]);
 
   const mapZoom = useMemo(() => {
     if (selectedRegion === "all") return mapTenantConfig.zoom;
-    
+
     if (mapTenantConfig.useOfficeCities && selectedCity?.codigo_ra) {
       return getRAZoomLevel(selectedCity.codigo_ra);
     }
-    
+
     return CITY_ZOOM;
   }, [selectedRegion, selectedCity, mapTenantConfig]);
 
@@ -636,7 +636,7 @@ export default function StrategicMap() {
                 </SelectTrigger>
                 <SelectContent className="z-[9999] max-h-[400px]">
                   <SelectItem value="all">Todos os Líderes</SelectItem>
-                  
+
                   {leaderOptions.coordinators.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-xs text-muted-foreground font-semibold border-t mt-1">
@@ -649,7 +649,7 @@ export default function StrategicMap() {
                       ))}
                     </>
                   )}
-                  
+
                   {leaderOptions.regularLeaders.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-xs text-muted-foreground font-semibold border-t mt-1">
@@ -768,7 +768,7 @@ export default function StrategicMap() {
                 visibleLeaders.map((leader) => {
                   const pos = leaderPositions.get(leader.id);
                   if (!pos) return null;
-                  
+
                   const color = getLeaderColor(leader.id);
                   const icon = leader.is_coordinator ? createCrownIcon(color) : createStarIcon(color);
 
@@ -807,7 +807,7 @@ export default function StrategicMap() {
                 contacts.map((contact) => {
                   const pos = contactPositions.get(contact.id);
                   if (!pos) return null;
-                  
+
                   // Highlighted color if has leader connection
                   const hasConnection = contact.source_type === "lider" && contact.source_id;
                   const pinColor = hasConnection

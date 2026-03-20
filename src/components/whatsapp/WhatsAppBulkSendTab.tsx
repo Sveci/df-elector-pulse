@@ -88,19 +88,19 @@ export function WhatsAppBulkSendTab() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
-  
+
   // Estados para controle de lotes
   const [batchSize, setBatchSize] = useState("20");
   const [currentBatch, setCurrentBatch] = useState(0);
   const [totalBatches, setTotalBatches] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const continueResolve = useRef<(() => void) | null>(null);
-  
+
   // Estados para evento/funil/pesquisa DESTINO (para preencher variáveis)
   const [targetEventId, setTargetEventId] = useState("");
   const [targetFunnelId, setTargetFunnelId] = useState("");
   const [targetSurveyId, setTargetSurveyId] = useState("");
-  
+
   // Estados para envio individual
   const [singleContactSearch, setSingleContactSearch] = useState("");
   const [selectedSingleContact, setSelectedSingleContact] = useState<{id: string; nome: string; telefone_norm: string} | null>(null);
@@ -116,7 +116,7 @@ export function WhatsAppBulkSendTab() {
     clearSession,
     dismissDialog,
   } = useBulkSendSession("whatsapp");
-  
+
   // Estado para controle de retomada
   const [isResuming, setIsResuming] = useState(false);
 
@@ -126,7 +126,7 @@ export function WhatsAppBulkSendTab() {
     const maxDelay = 6000; // 6 segundos
     return Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
   };
-  
+
   // Função para continuar envio após pausa
   const handleContinue = () => {
     if (continueResolve.current) {
@@ -395,7 +395,7 @@ export function WhatsAppBulkSendTab() {
 
     // Para líder único: incluir templates de líderes + verificação
     if (recipientType === "single_leader") {
-      return activeTemplates.filter((t) => 
+      return activeTemplates.filter((t) =>
         CONVITE_TEMPLATES_LEADERS.includes(t.slug) || VERIFICATION_TEMPLATES.includes(t.slug)
       );
     }
@@ -436,10 +436,10 @@ export function WhatsAppBulkSendTab() {
 
     try {
       const recipients = recipientsData.recipients as Record<string, unknown>[];
-      
+
       // Obter identificadores já enviados via localStorage (para retomada de sessão)
       const localStorageSent = resumeMode || isResuming ? getSentIdentifiers() : new Set<string>();
-      
+
       // VERIFICAÇÃO DE DUPLICATAS VIA BANCO DE DADOS
       // Buscar telefones que já receberam mensagem com este template específico
       let dbSentPhones = new Set<string>();
@@ -449,7 +449,7 @@ export function WhatsAppBulkSendTab() {
           .select("phone")
           .ilike("message", `%${selectedTemplateData.slug}%`)
           .in("status", ["sent", "delivered", "read"]);
-        
+
         if (existingMessages && existingMessages.length > 0) {
           // Normalizar telefones removendo + para comparação
           dbSentPhones = new Set(existingMessages.map(m => m.phone.replace(/\+/g, "")));
@@ -459,10 +459,10 @@ export function WhatsAppBulkSendTab() {
         console.warn("[WhatsApp Bulk] Erro ao verificar duplicatas no banco:", dbError);
         // Continua mesmo com erro - é apenas uma verificação adicional
       }
-      
+
       // Combinar identificadores de localStorage + banco de dados
       const allSentIdentifiers = new Set([...localStorageSent, ...dbSentPhones]);
-      
+
       // Filtrar recipients que ainda não receberam (verificação dupla)
       const pendingRecipients = recipients.filter(r => {
         const phone = (r.telefone as string) || (r.telefone_norm as string) || (r.whatsapp as string);
@@ -471,16 +471,16 @@ export function WhatsAppBulkSendTab() {
         const normalizedPhone = phone.replace(/\+/g, "");
         return !allSentIdentifiers.has(phone) && !allSentIdentifiers.has(normalizedPhone);
       });
-      
+
       const totalRecipients = pendingRecipients.length;
-      
+
       if (totalRecipients === 0) {
         toast.info("Todos os destinatários já receberam a mensagem");
         clearSession();
         setIsSending(false);
         return;
       }
-      
+
       // Iniciar nova sessão se não estiver retomando
       if (!resumeMode && !isResuming) {
         startSession(
@@ -495,7 +495,7 @@ export function WhatsAppBulkSendTab() {
           targetSurveyId || undefined
         );
       }
-      
+
       const batchSizeNum = batchSize === "all" ? totalRecipients : parseInt(batchSize);
       const numBatches = Math.ceil(totalRecipients / batchSizeNum);
       setTotalBatches(numBatches);
@@ -544,7 +544,7 @@ export function WhatsAppBulkSendTab() {
             variables.evento_endereco = targetEvent.address || "";
             variables.evento_descricao = targetEvent.description || "";
             variables.link_inscricao = `${baseUrl}/eventos/${targetEvent.slug}`;
-            
+
             // Se for líder, gerar link_afiliado exclusivo
             if ((recipientType === "leaders" || recipientType === "single_leader") && recipient.affiliate_token) {
               variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, recipient.affiliate_token as string);
@@ -563,7 +563,7 @@ export function WhatsAppBulkSendTab() {
             variables.pesquisa_titulo = targetSurvey.titulo;
             variables.pesquisa_descricao = targetSurvey.descricao || "";
             variables.link_pesquisa = `${baseUrl}/pesquisa/${targetSurvey.slug}`;
-            
+
             // Se for líder e template lideranca-pesquisa-link, gerar link_pesquisa_afiliado
             if ((recipientType === "leaders" || recipientType === "single_leader") && recipient.affiliate_token && selectedTemplateData.slug === "lideranca-pesquisa-link") {
               variables.link_pesquisa_afiliado = generateSurveyAffiliateUrl(targetSurvey.slug, recipient.affiliate_token as string);
@@ -574,9 +574,9 @@ export function WhatsAppBulkSendTab() {
           if (isVerificationTemplate && (recipientType === "unverified_contacts" || recipientType === "single_leader")) {
             // Gerar ou obter código de verificação
             let verificationCode: string;
-            
+
             const recipientId = recipient.id as string;
-            
+
             if (recipientType === "single_leader") {
               // Para líder único, buscar ou gerar código do líder
               const { data: leaderData } = await supabase
@@ -584,14 +584,14 @@ export function WhatsAppBulkSendTab() {
                 .select("verification_code")
                 .eq("id", recipientId)
                 .single();
-              
+
               verificationCode = leaderData?.verification_code || null;
-              
+
               if (!verificationCode) {
                 const codeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
                 verificationCode = Array(6).fill(0).map(() => codeChars.charAt(Math.floor(Math.random() * codeChars.length))).join("");
               }
-              
+
               if (!leaderData?.verification_code) {
                 await supabase
                   .from("lideres")
@@ -610,12 +610,12 @@ export function WhatsAppBulkSendTab() {
                   .eq("id", recipientId);
               }
             }
-            
+
             variables.deputado_nome = organization?.nome || "Deputado";
             variables.codigo = verificationCode;
-            
+
             const message = replaceTemplateVariables(selectedTemplateData.mensagem, variables);
-            
+
             try {
               // Enviar mensagem principal de verificação
               const { data: mainResult, error: mainError } = await supabase.functions.invoke("send-whatsapp", {
@@ -626,16 +626,16 @@ export function WhatsAppBulkSendTab() {
                   tenantId,
                 },
               });
-              
+
               if (mainError || !mainResult?.success) {
                 errorCount++;
               } else {
                 // Aguardar 2 segundos e enviar o código separadamente
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-                
+
                 // Enviar mensagem com o código
                 const codigoMessage = `🔑 *Seu código de verificação:*\n\n*${verificationCode}*\n\nResponda esta mensagem com o código acima para confirmar seu cadastro.`;
-                
+
                 await supabase.functions.invoke("send-whatsapp", {
                   body: {
                     phone,
@@ -644,7 +644,7 @@ export function WhatsAppBulkSendTab() {
                     tenantId,
                   },
                 });
-                
+
                 // Atualizar verification_sent_at
                 if (recipientType === "single_leader") {
                   await supabase
@@ -657,13 +657,13 @@ export function WhatsAppBulkSendTab() {
                     .update({ verification_sent_at: new Date().toISOString() })
                     .eq("id", recipientId);
                 }
-                
+
                 successCount++;
                 markSent(phone);
               }
-              
+
               setSendProgress({ current: globalIndex + 1, total: totalRecipients });
-              
+
               if (i < batchRecipients.length - 1 || batch < numBatches - 1) {
                 await new Promise((resolve) => setTimeout(resolve, getRandomDelay()));
               }
@@ -678,22 +678,22 @@ export function WhatsAppBulkSendTab() {
           // Se for template de link de afiliado para líder (reunião ou cadastro)
           if (isLeaderAffiliateLinkTemplate && (recipientType === "leaders" || recipientType === "single_leader") && recipient.affiliate_token) {
             const affiliateToken = recipient.affiliate_token as string;
-            
+
             if (selectedTemplateData.slug === "lideranca-reuniao-link") {
               variables.deputado_nome = organization?.nome || "Deputado";
               variables.link_reuniao_afiliado = generateAffiliateUrl(affiliateToken);
             }
-            
+
             if (selectedTemplateData.slug === "lideranca-cadastro-link") {
               const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
               variables.link_cadastro_afiliado = linkCadastroAfiliado;
-              
+
               // Gerar QR code e enviar junto com a mensagem
               try {
                 const QRCode = (await import('qrcode')).default;
                 const qrCodeDataUrl = await QRCode.toDataURL(linkCadastroAfiliado, { width: 300 });
                 const message = replaceTemplateVariables(selectedTemplateData.mensagem, variables);
-                
+
                 const { data, error } = await supabase.functions.invoke("send-whatsapp", {
                   body: {
                     phone,
@@ -703,16 +703,16 @@ export function WhatsAppBulkSendTab() {
                     tenantId,
                   },
                 });
-                
+
                 if (error || !data?.success) {
                   errorCount++;
                 } else {
                   successCount++;
                   markSent(phone);
                 }
-                
+
                 setSendProgress({ current: globalIndex + 1, total: totalRecipients });
-                
+
                 if (i < batchRecipients.length - 1 || batch < numBatches - 1) {
                   await new Promise((resolve) => setTimeout(resolve, getRandomDelay()));
                 }
@@ -742,7 +742,7 @@ export function WhatsAppBulkSendTab() {
               successCount++;
               // Marcar como enviado para persistência
               markSent(phone);
-              
+
               // Se for template lideranca-evento-link, enviar link em mensagem separada
               if (selectedTemplateData.slug === "lideranca-evento-link" && variables.link_afiliado) {
                 await new Promise((resolve) => setTimeout(resolve, 2000)); // Delay de 2s
@@ -798,7 +798,7 @@ export function WhatsAppBulkSendTab() {
       setIsResuming(false);
     }
   };
-  
+
   // Handlers para retomada
   const handleResumeSession = () => {
     if (pendingSession) {
@@ -813,7 +813,7 @@ export function WhatsAppBulkSendTab() {
       // Enviar será chamado manualmente pelo usuário após configuração
     }
   };
-  
+
   const handleDiscardSession = () => {
     clearSession();
     setIsResuming(false);
@@ -1093,8 +1093,8 @@ export function WhatsAppBulkSendTab() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Selecione o Template</Label>
-              <Select 
-                value={selectedTemplate} 
+              <Select
+                value={selectedTemplate}
                 onValueChange={(v) => {
                   setSelectedTemplate(v);
                   setTargetEventId("");
@@ -1235,11 +1235,11 @@ export function WhatsAppBulkSendTab() {
                   {sendProgress.current} de {sendProgress.total} mensagens
                 </span>
               </div>
-              <Progress 
-                value={(sendProgress.current / sendProgress.total) * 100} 
+              <Progress
+                value={(sendProgress.current / sendProgress.total) * 100}
                 className="h-2"
               />
-              
+
               {isPaused ? (
                 <Alert className="bg-amber-50 border-amber-200">
                   <AlertDescription className="flex items-center justify-between">

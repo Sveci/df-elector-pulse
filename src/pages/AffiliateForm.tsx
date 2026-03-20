@@ -19,7 +19,7 @@ import { sendVerificationMessage, addPendingMessage } from "@/hooks/contacts/use
 export default function AffiliateForm() {
   const { leaderToken } = useParams();
   const locationConfig = useTenantLocationConfig();
-  
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -49,13 +49,13 @@ export default function AffiliateForm() {
 
     try {
       setLoading(true);
-      
+
       // Usar função RPC SECURITY DEFINER para buscar líder (bypassa RLS para usuários públicos)
       const { data, error } = await supabase
         .rpc("get_leader_by_affiliate_token", { _token: leaderToken });
 
       if (error) throw error;
-      
+
       if (!data || data.length === 0) {
         toast.error("Link inválido ou líder inativo");
         return;
@@ -81,7 +81,7 @@ export default function AffiliateForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nome || !telefone || !cidadeId || !endereco || !dataNascimento || 
+    if (!nome || !telefone || !cidadeId || !endereco || !dataNascimento ||
         !instagram || !facebook || !observacoes || !temaId) {
       toast.error("Por favor, preencha todos os campos");
       return;
@@ -154,7 +154,7 @@ export default function AffiliateForm() {
           if (!existingContact.verification_code) {
             const { data: newCode } = await supabase.rpc("generate_verification_code");
             verificationCode = newCode;
-            
+
             await supabase
               .from("office_contacts")
               .update({ verification_code: verificationCode })
@@ -256,7 +256,7 @@ export default function AffiliateForm() {
         } catch (whatsappError) {
           console.error('Error sending WhatsApp:', whatsappError);
         }
-        
+
         setNeedsVerification(false);
       } else {
         // Não está verificado - armazenar mensagens pendentes e enviar verificação
@@ -291,13 +291,13 @@ export default function AffiliateForm() {
       toast.success(isAlreadyVerified ? "Cadastro realizado com sucesso!" : "Cadastro realizado! Verifique seu WhatsApp.");
 
       // Track Lead event
-      trackLead({ 
+      trackLead({
         content_name: `indicacao_${leader?.nome_completo}`,
         value: 1
       });
-      
+
       // Push to GTM dataLayer
-      pushToDataLayer('lead', { 
+      pushToDataLayer('lead', {
         source: 'indicacao',
         leader_id: leader?.id,
         leader_name: leader?.nome_completo
@@ -362,7 +362,7 @@ export default function AffiliateForm() {
             {needsVerification ? (
               <div className="space-y-4">
                 <p className="text-center text-muted-foreground">
-                  Enviamos um código de verificação para seu WhatsApp. 
+                  Enviamos um código de verificação para seu WhatsApp.
                   <strong> Responda a mensagem com o código</strong> para confirmar seu cadastro.
                 </p>
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-200">
@@ -372,7 +372,7 @@ export default function AffiliateForm() {
               </div>
             ) : (
               <p className="text-center text-muted-foreground">
-                {isExistingLeader 
+                {isExistingLeader
                   ? "Identificamos que você já faz parte da nossa rede de apoiadores. Continue engajado!"
                   : "Obrigado por se cadastrar! Entraremos em contato em breve."
                 }
@@ -392,7 +392,7 @@ export default function AffiliateForm() {
             <CardTitle className="text-center text-xl md:text-2xl font-bold">
               FORMULÁRIO DE CADASTRO - VISITA AO GABINETE
             </CardTitle>
-            
+
             <div className="mt-4 flex items-center justify-center gap-2 bg-white/10 rounded-lg p-3">
               <Users className="h-5 w-5" />
               <p className="text-sm font-medium">
@@ -400,12 +400,12 @@ export default function AffiliateForm() {
               </p>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-6 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg border-b pb-2">Dados Pessoais</h3>
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nome">Nome Completo *</Label>
@@ -468,7 +468,7 @@ export default function AffiliateForm() {
 
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg border-b pb-2">Redes Sociais</h3>
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="instagram">Instagram *</Label>
@@ -495,7 +495,7 @@ export default function AffiliateForm() {
 
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg border-b pb-2">Informações Adicionais</h3>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="pauta">Pauta da Reunião *</Label>
                   <Select value={temaId} onValueChange={setTemaId} required>

@@ -12,7 +12,7 @@ export function useCreateLeader() {
     mutationFn: async (data: CreateLeaderDTO) => {
       // 1. Criar o líder com verification_code e affiliate_token
       const leader = await createLeader(data);
-      
+
       // 2. Se tem telefone, enviar SMS de verificação
       if (leader.telefone && leader.verification_code) {
         try {
@@ -27,7 +27,7 @@ export function useCreateLeader() {
           // Não bloquear cadastro se SMS falhar
         }
       }
-      
+
       return leader;
     },
     onSuccess: (leader) => {
@@ -35,7 +35,7 @@ export function useCreateLeader() {
       queryClient.invalidateQueries({ queryKey: ["office_leaders"] });
       toast({
         title: "Líder cadastrado",
-        description: leader.telefone 
+        description: leader.telefone
           ? "O líder foi adicionado. SMS de verificação enviado."
           : "O líder foi adicionado (sem telefone para verificação).",
       });

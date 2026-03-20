@@ -56,14 +56,14 @@ export function ContactPhoneAutocomplete({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const { data: contacts = [], isLoading } = useSearchContactsByPhone(inputValue);
-  
+
   // Sync input value with external value
   useEffect(() => {
     setInputValue(value);
   }, [value]);
-  
+
   // Open popover when we have results
   useEffect(() => {
     if (contacts.length > 0 && inputValue.replace(/\D/g, "").length >= 3) {
@@ -72,13 +72,13 @@ export function ContactPhoneAutocomplete({
       setOpen(false);
     }
   }, [contacts, inputValue]);
-  
+
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
     onPhoneChange(newValue);
     onContactSelect(null); // Clear selection when typing
   };
-  
+
   const handleSelect = (contact: Contact) => {
     const formattedPhone = formatPhoneDisplay(contact.telefone_norm);
     setInputValue(formattedPhone);
@@ -86,7 +86,7 @@ export function ContactPhoneAutocomplete({
     onContactSelect(contact);
     setOpen(false);
   };
-  
+
   return (
     <div ref={containerRef} className="relative">
       <Popover open={open} onOpenChange={setOpen}>
@@ -101,8 +101,8 @@ export function ContactPhoneAutocomplete({
             />
           </div>
         </PopoverTrigger>
-        <PopoverContent 
-          className="p-0 w-[var(--radix-popover-trigger-width)]" 
+        <PopoverContent
+          className="p-0 w-[var(--radix-popover-trigger-width)]"
           align="start"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >

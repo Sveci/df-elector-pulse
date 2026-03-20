@@ -3,10 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 
-import { 
-  User, Users, Calendar, MessageSquare, Trophy, History, 
+import {
+  User, Users, Calendar, MessageSquare, Trophy, History,
   MapPin, Phone, Mail, CheckCircle, Clock, AlertCircle,
   MessageCircle, Send, Eye, XCircle, Globe, ExternalLink, ClipboardList,
   Download, Crown, Star, ChevronDown, GitBranch, FileText, ShieldCheck, ShieldAlert,
@@ -29,8 +29,8 @@ import { useLeaderVisits } from "@/hooks/leaders/useLeaderVisits";
 import { useLeaderPageViews } from "@/hooks/leaders/useLeaderPageViews";
 import { useLeaderSurveyReferrals } from "@/hooks/leaders/useLeaderSurveyReferrals";
 import { LeaderLevelBadge, LeaderLevelProgress } from "@/components/leaders/LeaderLevelBadge";
-import { 
-  useLeaderLevels, 
+import {
+  useLeaderLevels,
   useGamificationSettings,
   getLeaderLevel,
   getNextLevel,
@@ -103,11 +103,11 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
   const [generatingPass, setGeneratingPass] = useState(false);
   const [portalPassword, setPortalPassword] = useState("");
   const [settingPassword, setSettingPassword] = useState(false);
-  
+
   const { data: indicatedContacts, isLoading: loadingContacts } = useLeaderIndicatedContacts(open ? leader.id : undefined);
   const { data: subordinates, isLoading: loadingSubordinates } = useLeaderSubordinates(open ? leader.id : undefined);
   const { indicatedEvents, ownEvents, isLoading: loadingEvents } = useLeaderEventParticipation(
-    open ? leader.id : undefined, 
+    open ? leader.id : undefined,
     open ? leader.telefone : undefined,
     open ? leader.email : undefined
   );
@@ -120,18 +120,18 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
   const { data: pageViews, isLoading: loadingPageViews } = useLeaderPageViews(open ? leader.id : undefined);
   const { data: surveyData, isLoading: loadingSurveys } = useLeaderSurveyReferrals(open ? leader.id : undefined);
   const { data: hierarchyPath, isLoading: loadingHierarchy } = useLeaderHierarchyPath(open ? leader.id : undefined);
-  
+
   // Hooks de verificação
   const resendVerificationMutation = useResendLeaderVerificationSMS();
   const markVerifiedMutation = useMarkLeaderVerifiedManually();
-  
+
   // Buscar níveis e configurações dinâmicas do banco
   const { data: dynamicLevels } = useLeaderLevels();
   const { data: gamificationSettings } = useGamificationSettings();
-  
+
   // Usar níveis dinâmicos ou fallback para padrão
   const activeLevels = dynamicLevels || DEFAULT_LEVELS;
-  
+
   const levelInfo = getLeaderLevel(leader.pontuacao_total, activeLevels);
   const nextLevel = getNextLevel(leader.pontuacao_total, activeLevels);
   const pointsToNext = getPointsToNextLevel(leader.pontuacao_total, activeLevels);
@@ -241,12 +241,12 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         const { data, error } = await supabase.functions.invoke('create-leader-pass', {
                           body: { leaderId: leader.id }
                         });
-                        
+
                         if (error || !data?.success) {
                           toast.error(data?.error || "Erro ao gerar cartão digital");
                           return;
                         }
-                        
+
                         if (data.data?.passUrl) {
                           window.open(data.data.passUrl, '_blank');
                           toast.success("Cartão digital gerado! Abrindo página de download...");
@@ -345,7 +345,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     <p className="text-sm text-green-600 dark:text-green-500 mt-2">
                       Este líder confirmou seu cadastro e já possui acesso ao link de indicação.
                     </p>
-                    
+
                     <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
                       {leader.verification_method === 'manual' ? (
                         <>
@@ -369,7 +369,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         </>
                       )}
                     </div>
-                    
+
                     {leader.verified_at && (
                       <p className="text-xs text-green-500 dark:text-green-600 mt-2">
                         Verificado em: {formatDateTime(leader.verified_at)}
@@ -385,7 +385,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     <p className="text-sm text-amber-600 dark:text-amber-500">
                       Este líder precisa confirmar seu cadastro antes de receber o link de indicação.
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="text-xs text-amber-600 dark:text-amber-500">
                         {leader.verification_sent_at ? (
@@ -400,10 +400,10 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-2 justify-center">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         disabled={resendVerificationMutation.isPending || !leader.telefone}
                         onClick={() => resendVerificationMutation.mutate(leader.id)}
@@ -415,8 +415,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         )}
                         Reenviar SMS de Verificação
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="default"
                         disabled={markVerifiedMutation.isPending}
                         onClick={() => markVerifiedMutation.mutate(leader.id)}
@@ -454,14 +454,14 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     const allContacts = indicatedContacts || [];
                     const allLeaders = subordinates || [];
                     const totalRecords = allContacts.length + allLeaders.length;
-                    
+
                     if (totalRecords === 0) {
                       toast.info("Nenhum registro para exportar.");
                       return;
                     }
-                    
+
                     const headers = ['Nome', 'Telefone', 'Email', 'Região', 'Tipo', 'Status', 'Data Cadastro'];
-                    
+
                     const contactRows = allContacts.map(c => [
                       c.nome,
                       formatPhone(c.telefone_norm),
@@ -471,7 +471,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       c.is_verified ? 'Verificado' : 'Pendente',
                       formatDate(c.created_at)
                     ]);
-                    
+
                     const leaderRows = allLeaders.map(l => [
                       l.nome_completo,
                       l.telefone ? formatPhone(l.telefone) : '',
@@ -481,7 +481,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       l.is_verified ? 'Verificado' : 'Não Verificado',
                       formatDate(l.created_at)
                     ]);
-                    
+
                     const allRows = [...contactRows, ...leaderRows];
                     const csv = [headers, ...allRows].map(row => row.join(';')).join('\n');
                     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -507,14 +507,14 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     const verifiedContacts = indicatedContacts?.filter(c => c.is_verified) || [];
                     const verifiedLeaders = subordinates?.filter(l => l.is_verified) || [];
                     const totalVerified = verifiedContacts.length + verifiedLeaders.length;
-                    
+
                     if (totalVerified === 0) {
                       toast.info("Nenhum registro verificado para exportar.");
                       return;
                     }
-                    
+
                     const headers = ['Nome', 'Telefone', 'Email', 'Região', 'Tipo', 'Data Cadastro', 'Data Verificação'];
-                    
+
                     const contactRows = verifiedContacts.map(c => [
                       c.nome,
                       formatPhone(c.telefone_norm),
@@ -524,7 +524,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       formatDate(c.created_at),
                       c.verified_at ? formatDate(c.verified_at) : ''
                     ]);
-                    
+
                     const leaderRows = verifiedLeaders.map(l => [
                       l.nome_completo,
                       l.telefone ? formatPhone(l.telefone) : '',
@@ -534,7 +534,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       formatDate(l.created_at),
                       l.verified_at ? formatDate(l.verified_at) : ''
                     ]);
-                    
+
                     const allRows = [...contactRows, ...leaderRows];
                     const csv = [headers, ...allRows].map(row => row.join(';')).join('\n');
                     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -560,14 +560,14 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     const pendingContacts = indicatedContacts?.filter(c => !c.is_verified) || [];
                     const pendingLeaders = subordinates?.filter(l => !l.is_verified) || [];
                     const totalPending = pendingContacts.length + pendingLeaders.length;
-                    
+
                     if (totalPending === 0) {
                       toast.info("Nenhum registro pendente para exportar.");
                       return;
                     }
-                    
+
                     const headers = ['Nome', 'Telefone', 'Email', 'Região', 'Tipo', 'Data Cadastro'];
-                    
+
                     const contactRows = pendingContacts.map(c => [
                       c.nome,
                       formatPhone(c.telefone_norm),
@@ -576,7 +576,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       'Contato',
                       formatDate(c.created_at)
                     ]);
-                    
+
                     const leaderRows = pendingLeaders.map(l => [
                       l.nome_completo,
                       l.telefone ? formatPhone(l.telefone) : '',
@@ -585,7 +585,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       'Líder',
                       formatDate(l.created_at)
                     ]);
-                    
+
                     const allRows = [...contactRows, ...leaderRows];
                     const csv = [headers, ...allRows].map(row => row.join(';')).join('\n');
                     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -616,7 +616,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       {subordinates?.length || 0} líderes
                     </Badge>
                   </div>
-                  
+
                   {loadingSubordinates ? (
                     <p className="text-sm text-muted-foreground">Carregando...</p>
                   ) : (
@@ -685,7 +685,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   {indicatedContacts?.length || 0} contatos
                 </Badge>
               </div>
-              
+
               {loadingContacts ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : !indicatedContacts?.length ? (
@@ -773,7 +773,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                 <h4 className="font-medium">Eventos Participados</h4>
                 <Badge variant="secondary">{ownEvents.length} eventos</Badge>
               </div>
-              
+
               {loadingEvents ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : !ownEvents.length ? (
@@ -854,7 +854,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                 </h4>
                 <Badge variant="secondary">{surveyData?.ownResponses?.length || 0} respostas</Badge>
               </div>
-              
+
               {loadingSurveys ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : !surveyData?.ownResponses?.length ? (
@@ -922,7 +922,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                 </h4>
                 <Badge variant="secondary">{whatsappMessages.length} mensagens</Badge>
               </div>
-              
+
               {loadingComms ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : !whatsappMessages.length ? (
@@ -1110,11 +1110,11 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   <GitBranch className="h-5 w-5 text-muted-foreground" />
                   <h4 className="font-medium">Hierarquia de Liderança</h4>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   {/* Checkbox para filtrar níveis no relatório */}
                   <div className="flex items-center gap-2">
-                    <Checkbox 
+                    <Checkbox
                       id="include-all-levels"
                       checked={includeAllLevels}
                       onCheckedChange={(checked) => setIncludeAllLevels(checked === true)}
@@ -1123,7 +1123,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       Incluir todos os níveis
                     </Label>
                   </div>
-                  
+
                   {/* Botão de Relatório Detalhado (PDF) */}
                   <Button
                     size="sm"
@@ -1175,12 +1175,12 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         const sortLeadersHierarchically = (allLeaders: any[], parentId: string): any[] => {
                           const result: any[] = [];
                           const children = allLeaders.filter((l: any) => l.parent_leader_id === parentId && l.id !== parentId);
-                          
+
                           for (const child of children) {
                             result.push(child);
                             result.push(...sortLeadersHierarchically(allLeaders, child.id));
                           }
-                          
+
                           return result;
                         };
 
@@ -1202,10 +1202,10 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                         // Calcular líderes verificados/não verificados apenas entre subordinados diretos
                         const calculateDirectChildrenStats = (leaderId: string): { verified: number; notVerified: number } => {
                           const directChildren = leaders.filter((l: any) => l.parent_leader_id === leaderId && l.id !== leaderId);
-                          
+
                           let totalVerified = 0;
                           let totalNotVerified = 0;
-                          
+
                           for (const child of directChildren) {
                             if (child.is_verified === true) {
                               totalVerified++;
@@ -1213,7 +1213,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                               totalNotVerified++;
                             }
                           }
-                          
+
                           return { verified: totalVerified, notVerified: totalNotVerified };
                         };
 
@@ -1226,7 +1226,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
 
                         // 4. Gerar Excel
                         const filterLabel = includeAllLevels ? "Todos os níveis" : "Apenas liderados diretos";
-                        
+
                         // Criar dados para a planilha
                         const excelData: any[][] = [
                           [`RELATÓRIO DE ÁRVORE - ${leader.nome_completo}`],
@@ -1235,13 +1235,13 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                           [], // Linha vazia
                           ["N°", "Nome", "Telefone", "Árvore", "Verificados", "Não Verificados"] // Cabeçalho
                         ];
-                        
+
                         // Adicionar dados dos líderes
                         leadersForReport.forEach((l: any, index: number) => {
                           const stats = statsPerLeader.get(l.id) || { verified: 0, notVerified: 0 };
                           const arvoreCount = stats.verified + stats.notVerified;
                           const phone = l.telefone ? formatPhone(l.telefone) : "";
-                          
+
                           excelData.push([
                             index + 1,
                             l.nome_completo,
@@ -1251,10 +1251,10 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                             stats.notVerified
                           ]);
                         });
-                        
+
                         // Criar workbook e worksheet
                         const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                        
+
                         // Configurar larguras das colunas
                         worksheet["!cols"] = [
                           { wch: 6 },  // N°
@@ -1264,17 +1264,17 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                           { wch: 12 }, // Verificados
                           { wch: 16 }  // Não Verificados
                         ];
-                        
+
                         // Mesclar células do cabeçalho
                         worksheet["!merges"] = [
                           { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // Título
                           { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // Data
                           { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }  // Filtro
                         ];
-                        
+
                         const workbook = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(workbook, worksheet, "Relatório");
-                        
+
                         // Salvar arquivo
                         const fileName = `Relatorio_Arvore_${leader.nome_completo.replace(/\s+/g, "_")}.xlsx`;
                         XLSX.writeFile(workbook, fileName);
@@ -1327,11 +1327,11 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       }
 
                       console.log(`Total de líderes carregados da árvore: ${allTreeData.length}`);
-                      
+
                       // Filtrar apenas líderes ativos (excluir desativados do relatório)
                       const leaders = allTreeData.filter((l: any) => l.is_active === true);
                       const leaderIds = leaders.map((l: any) => l.id);
-                      
+
                       if (leaderIds.length === 0) {
                         toast.info("Nenhum líder encontrado na árvore.");
                         setLoadingReport(false);
@@ -1395,18 +1395,18 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
 
                       // 6. Gerar CSV
                       const headers = ['Tipo', 'Nome', 'Telefone', 'Email', 'Região', 'Nível', 'Líder Indicador', 'Data Cadastro', 'Cadastros', 'Status Verificação'];
-                      
+
                       // Função recursiva para ordenar hierarquicamente
                       const sortLeadersHierarchically = (allLeaders: any[], parentId: string): any[] => {
                         const result: any[] = [];
                         const children = allLeaders.filter((l: any) => l.parent_leader_id === parentId && l.id !== parentId);
-                        
+
                         for (const child of children) {
                           result.push(child);
                           // Recursivamente adiciona os subordinados diretos
                           result.push(...sortLeadersHierarchically(allLeaders, child.id));
                         }
-                        
+
                         return result;
                       };
 
@@ -1424,8 +1424,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       const directSubordinateLevel = baseLevel + 1;
 
                       // Filtrar líderes para o relatório baseado na opção selecionada
-                      const leadersForReport = includeAllLevels 
-                        ? sortedLeaders 
+                      const leadersForReport = includeAllLevels
+                        ? sortedLeaders
                         : sortedLeaders.filter((l: any) => {
                             // Incluir apenas liderados diretos (um nível abaixo)
                             return l.hierarchy_level === directSubordinateLevel;
@@ -1435,8 +1435,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       const leaderIdsForReport = leadersForReport.map((l: any) => l.id);
 
                       // Filtrar contatos pendentes apenas dos líderes filtrados
-                      const contactsForReport = includeAllLevels 
-                        ? allPendingContacts 
+                      const contactsForReport = includeAllLevels
+                        ? allPendingContacts
                         : allPendingContacts.filter((c: any) => leaderIdsForReport.includes(c.source_id));
 
                       // Linhas de líderes (filtradas) com cadastros = contatos + subordinados
@@ -1481,8 +1481,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       const totalLeadersNotVerified = sortedLeaders.filter((l: any) => !l.is_verified).length;
 
                       // Linha informativa se não houver dados na listagem
-                      const dataRows = allRows.length > 0 
-                        ? allRows 
+                      const dataRows = allRows.length > 0
+                        ? allRows
                         : [['', 'Nenhum líder subordinado ou contato pendente encontrado', '', '', '', '', '', '', '', '']];
 
                       // 7. Criar cabeçalho do relatório com totais e filtro aplicado
@@ -1512,7 +1512,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       link.download = `${leader.nome_completo}_arvore_pendentes.csv`;
                       link.click();
                       URL.revokeObjectURL(url);
-                      
+
                       toast.success(`Relatório exportado: ${leaderRows.length} líderes + ${contactRows.length} contatos pendentes`);
                     } catch (error) {
                       console.error('Erro ao gerar relatório:', error);
@@ -1567,7 +1567,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                   {hierarchyPath.map((node, index) => {
                     const isCurrentLeader = node.id === leader.id;
                     const isCoordinator = node.is_coordinator;
-                    
+
                     return (
                       <div key={node.id}>
                         {/* Conector */}
@@ -1576,14 +1576,14 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
                           </div>
                         )}
-                        
+
                         {/* Card do nó */}
                         <Card className={`${isCurrentLeader ? 'border-primary ring-2 ring-primary/20' : ''} ${isCoordinator ? 'border-amber-300 bg-amber-50/30' : ''}`}>
                           <CardContent className="p-3">
                             <div className="flex items-center gap-3">
                               <div className={`p-2 rounded-full ${
-                                isCoordinator 
-                                  ? 'bg-amber-100 text-amber-600' 
+                                isCoordinator
+                                  ? 'bg-amber-100 text-amber-600'
                                   : 'bg-blue-100 text-blue-600'
                               }`}>
                                 {isCoordinator ? (
@@ -1592,7 +1592,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                   <Star className="h-4 w-4" />
                                 )}
                               </div>
-                              
+
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="font-medium">{node.nome_completo}</p>
@@ -1603,8 +1603,8 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                                  <Badge 
-                                    variant="secondary" 
+                                  <Badge
+                                    variant="secondary"
                                     className={`text-xs ${isCoordinator ? 'bg-amber-100 text-amber-700' : ''}`}
                                   >
                                     {isCoordinator ? 'Coordenador' : `Nível ${(node.hierarchy_level || 1) - 1}`}
@@ -1704,7 +1704,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                     </h4>
                     <Badge variant="secondary">{pageViews.length} acessos</Badge>
                   </div>
-                  
+
                   {loadingPageViews ? (
                     <p className="text-sm text-muted-foreground">Carregando...</p>
                   ) : (
@@ -1751,7 +1751,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
               {(() => {
                 const smsWithRetries = smsMessages.filter(sms => sms.retry_count && sms.retry_count > 0);
                 if (smsWithRetries.length === 0) return null;
-                
+
                 return (
                   <div className="mt-6 space-y-3">
                     <div className="flex items-center justify-between">
@@ -1761,7 +1761,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                       </h4>
                       <Badge variant="secondary">{smsWithRetries.length} SMS</Badge>
                     </div>
-                    
+
                     <div className="space-y-2">
                       {smsWithRetries.map((sms) => {
                         const statusConfig = {
@@ -1771,7 +1771,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                           failed: { label: "Falhou", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
                         };
                         const config = statusConfig[sms.status as keyof typeof statusConfig] || statusConfig.pending;
-                        
+
                         // Calcular tempo até próxima tentativa
                         let nextRetryText = null;
                         if (sms.next_retry_at && sms.status === 'failed') {
@@ -1783,7 +1783,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                             nextRetryText = `Próxima tentativa em ${diffMin} min`;
                           }
                         }
-                        
+
                         return (
                           <Card key={sms.id}>
                             <CardContent className="p-3">
@@ -1796,7 +1796,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                       <p className="text-xs text-muted-foreground">{formatDateTime(sms.created_at)}</p>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Status e badge de tentativas */}
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <Badge className={config.className} variant="secondary">
@@ -1814,7 +1814,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                       </span>
                                     )}
                                   </div>
-                                  
+
                                   {/* Erro atual */}
                                   {sms.error_message && (
                                     <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
@@ -1822,7 +1822,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                       {sms.error_message}
                                     </p>
                                   )}
-                                  
+
                                   {/* Botão para expandir histórico */}
                                   {sms.retry_history && Array.isArray(sms.retry_history) && sms.retry_history.length > 0 && (
                                     <CollapsibleTrigger asChild>
@@ -1833,7 +1833,7 @@ export function LeaderDetailsDialog({ leader, children }: LeaderDetailsDialogPro
                                     </CollapsibleTrigger>
                                   )}
                                 </div>
-                                
+
                                 {/* Histórico expansível */}
                                 <CollapsibleContent className="mt-2">
                                   <div className="border-l-2 border-muted pl-3 space-y-2">

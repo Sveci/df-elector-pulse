@@ -38,12 +38,12 @@ const AIProviders = () => {
     try {
       // Testar se a chave está configurada fazendo uma chamada de teste
       const { data, error } = await supabase.functions.invoke('chat', {
-        body: { 
+        body: {
           messages: [{ role: 'user', content: 'test' }],
-          test: true 
+          test: true
         }
       });
-      
+
       if (!error) {
         setIsSaved(true);
       }
@@ -101,14 +101,14 @@ const AIProviders = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       // A chave já foi adicionada via secrets manager
       // Aqui apenas validamos que ela funciona
       await testConnection();
       setIsSaved(true);
       setApiKey(""); // Limpar por segurança
-      
+
       toast({
         title: "Configuração salva",
         description: "A chave de API foi configurada com sucesso.",
@@ -173,9 +173,9 @@ const AIProviders = () => {
             />
             <p className="text-sm text-gray-500">
               Obtenha sua chave em{" "}
-              <a 
-                href="https://platform.openai.com/api-keys" 
-                target="_blank" 
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary-500 hover:underline"
               >
@@ -199,8 +199,8 @@ const AIProviders = () => {
               Salvar Configuração
             </Button>
             {isSaved && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={testConnection}
                 disabled={isTestingConnection}
               >
@@ -208,8 +208,8 @@ const AIProviders = () => {
                 Testar Conexão
               </Button>
             )}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setApiKey("");
                 setIsSaved(false);

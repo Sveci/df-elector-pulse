@@ -67,7 +67,7 @@ export default function Queue() {
   const [searchTerm, setSearchTerm] = useState("");
   const { completeMeeting, cancelMeeting, rescheduleMeeting } = useVisitMeetingActions();
   const { restartTutorial } = useTutorial("office-queue", queueTutorialSteps);
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -75,7 +75,7 @@ export default function Queue() {
       </div>
     );
   }
-  
+
   // Função para normalizar telefone na busca
   const normalizeSearchPhone = (phone: string) => {
     return phone.replace(/\D/g, "");
@@ -84,21 +84,21 @@ export default function Queue() {
   // Função para filtrar visitas pela busca
   const filterVisits = (visits: any[]) => {
     if (!searchTerm.trim()) return visits;
-    
+
     const term = searchTerm.toLowerCase().trim();
     const termNumbers = normalizeSearchPhone(term);
-    
+
     return visits.filter((visit) => {
       // Busca por protocolo
       const matchProtocol = visit.protocolo?.toLowerCase().includes(term);
-      
+
       // Busca por nome do visitante
       const matchName = visit.contact?.nome?.toLowerCase().includes(term);
-      
+
       // Busca por telefone (normalizado)
       const phoneNorm = visit.contact?.telefone_norm || "";
       const matchPhone = termNumbers.length >= 3 && phoneNorm.includes(termNumbers);
-      
+
       return matchProtocol || matchName || matchPhone;
     });
   };
@@ -106,14 +106,14 @@ export default function Queue() {
   // Filtrar apenas visitas ativas (excluir finalizadas)
   const activeStatuses = ["REGISTERED", "LINK_SENT", "FORM_OPENED", "FORM_SUBMITTED", "CHECKED_IN", "RESCHEDULED", "SCHEDULED"];
   const activeVisits = visits?.filter((v) => activeStatuses.includes(v.status)) || [];
-  
+
   // Aplicar filtro de busca
   const filteredVisits = filterVisits(activeVisits);
-  
+
   // Agrupar por status usando visitas filtradas
   const registered = filteredVisits.filter((v) => v.status === "REGISTERED" || v.status === "LINK_SENT" || v.status === "SCHEDULED");
   const opened = filteredVisits.filter((v) => v.status === "FORM_OPENED");
-  
+
   // Form Enviado: reagendadas primeiro
   const submitted = filteredVisits
     .filter((v) => v.status === "FORM_SUBMITTED" || v.status === "RESCHEDULED")
@@ -122,9 +122,9 @@ export default function Queue() {
       if (a.status !== "RESCHEDULED" && b.status === "RESCHEDULED") return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  
+
   const checkedIn = filteredVisits.filter((v) => v.status === "CHECKED_IN");
-  
+
   // Filtrar visitas agendadas para hoje
   const scheduledTodayFiltered = scheduledToday.filter((visit) => {
     if (!searchTerm.trim()) return true;
@@ -167,11 +167,11 @@ export default function Queue() {
     }
     return false;
   };
-  
+
   const handleReschedule = (visitId: string, newDate: Date) => {
     rescheduleMeeting.mutate({ visitId, newDate });
   };
-  
+
   return (
     <div className="container mx-auto py-6">
       <TutorialOverlay page="office-queue" />
@@ -190,10 +190,10 @@ export default function Queue() {
             </p>
           )}
         </div>
-        
+
         <div className="relative w-full sm:w-80" data-tutorial="queue-search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
+          <Input
             placeholder="Buscar por protocolo, nome ou WhatsApp..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -217,11 +217,11 @@ export default function Queue() {
               {scheduledTodayFiltered.map((visit) => {
                 const overdue = isVisitOverdue(visit);
                 return (
-                  <div 
-                    key={visit.id} 
+                  <div
+                    key={visit.id}
                     className={`p-3 bg-background rounded-lg space-y-2 border ${overdue ? 'border-destructive/50' : ''}`}
                   >
-                    <div 
+                    <div
                       className="cursor-pointer hover:bg-muted/50 transition-colors -m-3 p-3 rounded-t-lg"
                       onClick={() => setSelectedVisit(visit)}
                     >
@@ -254,16 +254,16 @@ export default function Queue() {
                       </p>
                       <OfficeStatusBadge status={visit.status as OfficeVisitStatus} className="mt-2" />
                     </div>
-                    
+
                     {/* Botões de ação para visitas atrasadas */}
                     {overdue && (
                       <TooltipProvider>
                         <div className="flex gap-2 pt-2 border-t">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -275,12 +275,12 @@ export default function Queue() {
                             </TooltipTrigger>
                             <TooltipContent>Reagendar</TooltipContent>
                           </Tooltip>
-                          
+
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -302,7 +302,7 @@ export default function Queue() {
           </CardContent>
         </Card>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-tutorial="queue-columns">
         {/* Aguardando preenchimento */}
         <Card>
@@ -317,11 +317,11 @@ export default function Queue() {
             {registered.map((visit) => {
               const overdueByDate = isVisitOverdueByDate(visit);
               return (
-                <div 
-                  key={visit.id} 
+                <div
+                  key={visit.id}
                   className={`p-3 bg-muted rounded-lg space-y-2 ${overdueByDate ? 'border border-destructive/50' : ''}`}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => setSelectedVisit(visit)}
                   >
@@ -348,7 +348,7 @@ export default function Queue() {
                     </p>
                     <OfficeStatusBadge status={visit.status} className="mt-2" />
                   </div>
-                  
+
                   {/* Botão Preencher Ficha */}
                   <div className="flex gap-2 pt-2 border-t">
                     <Button
@@ -371,9 +371,9 @@ export default function Queue() {
                       <div className="flex gap-2 pt-2 border-t">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -385,12 +385,12 @@ export default function Queue() {
                           </TooltipTrigger>
                           <TooltipContent>Reagendar</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -415,7 +415,7 @@ export default function Queue() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Form Aberto */}
         <Card>
           <CardHeader>
@@ -429,11 +429,11 @@ export default function Queue() {
             {opened.map((visit) => {
               const overdueByDate = isVisitOverdueByDate(visit);
               return (
-                <div 
-                  key={visit.id} 
+                <div
+                  key={visit.id}
                   className={`p-3 bg-muted rounded-lg space-y-2 ${overdueByDate ? 'border border-destructive/50' : ''}`}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => setSelectedVisit(visit)}
                   >
@@ -452,16 +452,16 @@ export default function Queue() {
                     </p>
                     <OfficeStatusBadge status={visit.status} className="mt-2" />
                   </div>
-                  
+
                   {/* Botões de ação para visitas atrasadas */}
                   {overdueByDate && (
                     <TooltipProvider>
                       <div className="flex gap-2 pt-2 border-t">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -473,12 +473,12 @@ export default function Queue() {
                           </TooltipTrigger>
                           <TooltipContent>Reagendar</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -503,7 +503,7 @@ export default function Queue() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Form Preenchido */}
         <Card>
           <CardHeader>
@@ -517,11 +517,11 @@ export default function Queue() {
             {submitted.map((visit) => {
               const overdueByDate = isVisitOverdueByDate(visit);
               return (
-                <div 
-                  key={visit.id} 
+                <div
+                  key={visit.id}
                   className={`p-3 bg-muted rounded-lg space-y-2 ${overdueByDate ? 'border border-destructive/50' : ''}`}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => setSelectedVisit(visit)}
                   >
@@ -540,16 +540,16 @@ export default function Queue() {
                     </p>
                     <OfficeStatusBadge status={visit.status} className="mt-2" />
                   </div>
-                  
+
                   {/* Botões de ação para visitas atrasadas */}
                   {overdueByDate && (
                     <TooltipProvider>
                       <div className="flex gap-2 pt-2 border-t">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -561,12 +561,12 @@ export default function Queue() {
                           </TooltipTrigger>
                           <TooltipContent>Reagendar</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -591,7 +591,7 @@ export default function Queue() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Check-in Realizado */}
         <Card>
           <CardHeader>
@@ -603,11 +603,11 @@ export default function Queue() {
           </CardHeader>
           <CardContent className="space-y-3">
             {checkedIn.map((visit) => (
-              <div 
-                key={visit.id} 
+              <div
+                key={visit.id}
                 className="p-3 bg-muted rounded-lg space-y-2"
               >
-                <div 
+                <div
                   className="cursor-pointer"
                   onClick={() => setSelectedVisit(visit)}
                 >
@@ -618,15 +618,15 @@ export default function Queue() {
                   </p>
                   <OfficeStatusBadge status={visit.status} className="mt-2" />
                 </div>
-                
+
                 {/* Botões de ação */}
                 <TooltipProvider>
                   <div className="flex gap-2 mt-2 pt-2 border-t">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -638,12 +638,12 @@ export default function Queue() {
                       </TooltipTrigger>
                       <TooltipContent>Reunião Realizada</TooltipContent>
                     </Tooltip>
-                    
+
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -655,12 +655,12 @@ export default function Queue() {
                       </TooltipTrigger>
                       <TooltipContent>Reunião Cancelada</TooltipContent>
                     </Tooltip>
-                    
+
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
+                        <Button
+                          size="icon"
+                          variant="ghost"
                           className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -684,20 +684,20 @@ export default function Queue() {
           </CardContent>
         </Card>
       </div>
-      
+
       <VisitDetailsDialog
         visit={selectedVisit}
         open={!!selectedVisit}
         onOpenChange={(open) => !open && setSelectedVisit(null)}
       />
-      
+
       <RescheduleVisitDialog
         visit={rescheduleVisit}
         open={!!rescheduleVisit}
         onOpenChange={(open) => !open && setRescheduleVisit(null)}
         onReschedule={handleReschedule}
       />
-      
+
       <CompleteMeetingDialog
         visit={completeMeetingVisit}
         open={!!completeMeetingVisit}
@@ -711,13 +711,13 @@ export default function Queue() {
           setMinutesVisit(visit);
         }}
       />
-      
+
       <MeetingMinutesDialog
         visit={minutesVisit}
         open={!!minutesVisit}
         onOpenChange={(open) => !open && setMinutesVisit(null)}
       />
-      
+
       <ManualVisitFormDialog
         visit={manualFormVisit}
         open={!!manualFormVisit}

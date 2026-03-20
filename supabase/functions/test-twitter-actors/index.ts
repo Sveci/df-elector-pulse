@@ -52,8 +52,8 @@ serve(async (req) => {
     testActor(token, "desearch~ai-twitter-search", { query: "Prudente câmara legislativa DF", min_likes: 0 }, 35),
   ]);
 
-  const results = { 
-    "desearch_pt": r1, 
+  const results = {
+    "desearch_pt": r1,
     "desearch_handle": r2,
     "desearch_at": r3,
     "clockworks": r4,

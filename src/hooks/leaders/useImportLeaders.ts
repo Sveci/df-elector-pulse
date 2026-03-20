@@ -41,7 +41,7 @@ export function useImportLeaders() {
 
       // Mostrar resultado
       const successMsg = `${result.inserted} líder(es) criado(s), ${result.updated} atualizado(s)`;
-      
+
       if (result.errors.length > 0) {
         toast({
           title: "Importação concluída com erros",

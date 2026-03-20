@@ -19,12 +19,12 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
   const [categoria, setCategoria] = useState("");
   const [prioridade, setPrioridade] = useState("media");
   const [descricao, setDescricao] = useState("");
-  
+
   const createTicket = useCreateTicket();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!assunto || !categoria || !descricao) {
       toast({
         title: "Campos obrigatórios",
@@ -33,7 +33,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
       });
       return;
     }
-    
+
     try {
       await createTicket.mutateAsync({
         assunto,
@@ -41,12 +41,12 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
         prioridade,
         descricao,
       });
-      
+
       toast({
         title: "Ticket criado",
         description: "Seu ticket foi criado com sucesso. Aguarde nossa resposta.",
       });
-      
+
       onOpenChange(false);
       setAssunto("");
       setCategoria("");
@@ -67,7 +67,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
         <DialogHeader>
           <DialogTitle>Abrir Novo Ticket</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="assunto">Assunto *</Label>
@@ -78,7 +78,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
               placeholder="Descreva brevemente o problema"
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Categoria *</Label>
@@ -94,7 +94,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Prioridade</Label>
               <Select value={prioridade} onValueChange={setPrioridade}>
@@ -110,7 +110,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
               </Select>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="descricao">Descrição do Problema *</Label>
             <Textarea
@@ -121,7 +121,7 @@ export function CreateTicketDialog({ open, onOpenChange }: CreateTicketDialogPro
               rows={5}
             />
           </div>
-          
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

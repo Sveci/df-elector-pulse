@@ -22,7 +22,7 @@ export function WithdrawalQRCode({ confirmationCode, materialName, open, onOpenC
 
   const getSystemPhone = () => {
     if (!settings) return DEFAULT_WA_PHONE;
-    
+
     const provider = settings.whatsapp_provider_active;
     if (provider === "meta_cloud" && settings.meta_cloud_phone) {
       return settings.meta_cloud_phone.replace(/\D/g, "");

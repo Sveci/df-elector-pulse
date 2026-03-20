@@ -35,7 +35,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
     });
-    
+
     const result = await response.json();
 
     console.log("[test-disparopro-connection] Disparopro response:", JSON.stringify(result));
@@ -56,13 +56,13 @@ serve(async (req) => {
     } else {
       // Check for authentication errors
       let errorMessage = "Erro de conexão com Disparopro";
-      
+
       if (response.status === 401 || response.status === 403) {
         errorMessage = "Token inválido - verifique seu Bearer Token";
       } else if (result.detail || result.message) {
         errorMessage = result.detail || result.message;
       }
-        
+
       return new Response(
         JSON.stringify({
           success: false,

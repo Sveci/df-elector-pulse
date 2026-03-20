@@ -43,7 +43,7 @@ const SMSDEV_WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.
 const GreatPagesWebhookCard = () => {
   const [copied, setCopied] = useState(false);
   const tenantId = useTenantId();
-  
+
   const webhookUrl = useMemo(() => {
     if (!tenantId) return BASE_WEBHOOK_URL;
     return `${BASE_WEBHOOK_URL}?tenant_id=${tenantId}`;
@@ -85,13 +85,13 @@ const GreatPagesWebhookCard = () => {
         <div className="space-y-2">
           <Label>URL do Webhook</Label>
           <div className="flex gap-2">
-            <Input 
-              value={webhookUrl} 
-              readOnly 
+            <Input
+              value={webhookUrl}
+              readOnly
               className="font-mono text-xs sm:text-sm bg-muted"
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={handleCopyUrl}
               className="shrink-0"
@@ -131,8 +131,8 @@ const GreatPagesWebhookCard = () => {
 
         <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
           <p>
-            <strong className="text-foreground">Comportamento:</strong> O webhook verifica automaticamente se o lead já é uma liderança cadastrada. 
-            Se for, atualiza apenas dados faltantes. Se não for, cria um novo contato com origem "Webhook" 
+            <strong className="text-foreground">Comportamento:</strong> O webhook verifica automaticamente se o lead já é uma liderança cadastrada.
+            Se for, atualiza apenas dados faltantes. Se não for, cria um novo contato com origem "Webhook"
             e dispara mensagens de boas-vindas automaticamente.
           </p>
         </div>
@@ -171,7 +171,7 @@ const Integrations = () => {
   const { data: settings, isLoading } = useIntegrationsSettings();
   const updateSettings = useUpdateIntegrationsSettings();
   const testZapiConnection = useTestZapiConnection();
-  
+
   const testSmsdevConnection = useTestSmsdevConnection();
   const testSmsbaratoConnection = useTestSmsbaratoConnection();
   const testDisparoproConnection = useTestDisparoproConnection();
@@ -358,14 +358,14 @@ const Integrations = () => {
   };
 
   const isZapiConfigured = zapiInstanceId && zapiToken;
-  
+
   const isSmsdevConfigured = !!smsdevApiKey;
   const isSmsbaratoConfigured = !!smsbaratoApiKey;
   const isDisparoproConfigured = !!disparoproToken;
   const isPasskitConfigured = !!passkitProgramId && !!passkitTierId;
 
   // Z-API connection status check
-  const { data: zapiStatus, isLoading: isCheckingZapi, refetch: refetchZapiStatus } = 
+  const { data: zapiStatus, isLoading: isCheckingZapi, refetch: refetchZapiStatus } =
     useZapiConnectionStatus(
       settings?.zapi_instance_id || zapiInstanceId,
       settings?.zapi_token || zapiToken,
@@ -627,7 +627,7 @@ const Integrations = () => {
                 ) : null}
                 Testar Conexão
               </Button>
-              <ZapiConnectionIndicator 
+              <ZapiConnectionIndicator
                 isConnected={zapiStatus?.connected || false}
                 isLoading={isCheckingZapi}
                 isConfigured={!!isZapiConfigured && zapiEnabled}

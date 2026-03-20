@@ -35,10 +35,10 @@ export function DeactivateContactDialog({
 
   const handleDeactivate = () => {
     if (!contact) return;
-    
+
     deactivateMutation.mutate(
-      { 
-        contactId: contact.id, 
+      {
+        contactId: contact.id,
         reason: reason || "Desativado pelo administrador",
         userId: user?.id,
       },
@@ -65,7 +65,7 @@ export function DeactivateContactDialog({
             Este contato não receberá mais comunicações por email ou WhatsApp.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="py-4">
           <Label htmlFor="reason" className="text-sm font-medium">
             Motivo (opcional)
@@ -79,7 +79,7 @@ export function DeactivateContactDialog({
             rows={3}
           />
         </div>
-        
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deactivateMutation.isPending}>
             Cancelar

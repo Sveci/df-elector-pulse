@@ -29,18 +29,18 @@ serve(async (req) => {
 
     // SMSBarato API - endpoint correto conforme documentação
     const endpoint = `https://sistema81.smsbarato.com.br/saldo?chave=${apiKey}`;
-    
+
     console.log("[test-smsbarato-connection] Calling endpoint:", endpoint.replace(apiKey, '***'));
-    
+
     const response = await fetch(endpoint, {
       method: "GET",
       headers: {
         "Accept": "text/plain, */*",
       },
     });
-    
+
     const result = await response.text();
-    
+
     console.log("[test-smsbarato-connection] Response status:", response.status);
     console.log("[test-smsbarato-connection] Response:", result.substring(0, 200));
 
@@ -56,7 +56,7 @@ serve(async (req) => {
     }
 
     const trimmedResult = result.trim();
-    
+
     // Código 900 = erro de autenticação
     if (trimmedResult === "900") {
       return new Response(
@@ -70,7 +70,7 @@ serve(async (req) => {
 
     // Retorno numérico positivo = saldo
     const balance = parseFloat(trimmedResult);
-    
+
     if (!isNaN(balance) && balance >= 0) {
       return new Response(
         JSON.stringify({

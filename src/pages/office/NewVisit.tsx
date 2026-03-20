@@ -74,7 +74,7 @@ const TIME_SLOTS = [
 export default function NewVisit() {
   const navigate = useNavigate();
   const { restartTutorial } = useTutorial("office-new-visit", newVisitTutorialSteps);
-  
+
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cidadeId, setCidadeId] = useState("");
@@ -86,14 +86,14 @@ export default function NewVisit() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [visitCreated, setVisitCreated] = useState<any>(null);
   const [selectedContact, setSelectedContact] = useState<SelectedContact | null>(null);
-  
+
   const { data: settings } = useOfficeSettings();
   const createVisit = useCreateScheduledVisit();
-  
+
   const handlePhoneChange = (phone: string) => {
     setWhatsapp(phone);
   };
-  
+
   const handleContactSelect = (contact: SelectedContact | null) => {
     setSelectedContact(contact);
     if (contact) {
@@ -104,7 +104,7 @@ export default function NewVisit() {
       }
     }
   };
-  
+
   // Limpar líder apenas quando cidade muda manualmente (não pelo contato)
   const prevCidadeRef = useRef(cidadeId);
   useEffect(() => {
@@ -115,19 +115,19 @@ export default function NewVisit() {
     }
     prevCidadeRef.current = cidadeId;
   }, [cidadeId, selectedContact]);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const hasLocation = locationConfig.fieldType === 'ra' ? !!cidadeId : !!localidade;
     if (!nome || !whatsapp || !hasLocation || !leaderId || !scheduledDate || !scheduledTime) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
-    
+
     try {
       const formattedDate = format(scheduledDate, "yyyy-MM-dd");
-      
+
       const visit = await createVisit.mutateAsync({
         nome,
         telefone: whatsapp,
@@ -136,21 +136,21 @@ export default function NewVisit() {
         scheduledDate: formattedDate,
         scheduledTime,
       });
-      
+
       setVisitCreated({
         ...visit,
         scheduledDate,
         scheduledTime,
       });
-      
+
       const link = generateVisitFormUrl(visit.id);
       const qr = await QRCode.toDataURL(link);
       setQrCode(qr);
-      
+
       // Enviar SMS com data e hora agendada
       const formattedDateBR = format(scheduledDate, "dd/MM/yyyy", { locale: ptBR });
       const primeiroNome = nome.split(" ")[0];
-      
+
       try {
         await supabase.functions.invoke("send-sms", {
           body: {
@@ -170,12 +170,12 @@ export default function NewVisit() {
         console.error("Erro ao enviar SMS:", smsError);
         // Não bloqueia o fluxo se o SMS falhar
       }
-      
+
     } catch (error) {
       console.error("Erro ao criar visita:", error);
     }
   };
-  
+
   const handleNewVisit = () => {
     setNome("");
     setWhatsapp("");
@@ -187,10 +187,10 @@ export default function NewVisit() {
     setVisitCreated(null);
     setSelectedContact(null);
   };
-  
+
   if (visitCreated) {
     const link = generateVisitFormUrl(visitCreated.id);
-    
+
     return (
       <div className="container mx-auto py-6 max-w-4xl">
         <Card>
@@ -207,12 +207,12 @@ export default function NewVisit() {
                 <ProtocolBadge protocolo={visitCreated.protocolo} />
               </div>
             </div>
-            
+
             <div>
               <Label>Visitante</Label>
               <p className="text-sm mt-1">{visitCreated.contact?.nome}</p>
             </div>
-            
+
             <div>
               <Label>Agendamento</Label>
               <p className="text-sm mt-1 flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function NewVisit() {
                 {format(visitCreated.scheduledDate, "dd/MM/yyyy", { locale: ptBR })} às {visitCreated.scheduledTime}
               </p>
             </div>
-            
+
             <div>
               <Label>Link do Formulário</Label>
               <div className="mt-2 p-3 bg-muted rounded-md break-all text-sm font-mono">
@@ -238,7 +238,7 @@ export default function NewVisit() {
                 Copiar Link
               </Button>
             </div>
-            
+
             {qrCode && (
               <div>
                 <Label className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export default function NewVisit() {
                 </div>
               </div>
             )}
-            
+
             <div className="flex gap-3">
               <Button onClick={handleNewVisit} className="flex-1">
                 <UserPlus className="mr-2 h-4 w-4" />
@@ -265,7 +265,7 @@ export default function NewVisit() {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-6 max-w-2xl">
       <TutorialOverlay page="office-new-visit" />
@@ -296,7 +296,7 @@ export default function NewVisit() {
                 Digite o número para buscar contatos existentes
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo *</Label>
               <Input
@@ -308,7 +308,7 @@ export default function NewVisit() {
                 disabled={createVisit.isPending}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="cidade">{locationConfig.label} *</Label>
               <LocationSelect
@@ -321,7 +321,7 @@ export default function NewVisit() {
                 disabled={createVisit.isPending}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="leader">Líder *</Label>
               <LeaderAutocomplete
@@ -336,7 +336,7 @@ export default function NewVisit() {
                 </p>
               )}
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4" data-tutorial="new-visit-schedule">
               <div className="space-y-2">
                 <Label>Data da Visita *</Label>
@@ -367,11 +367,11 @@ export default function NewVisit() {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Horário *</Label>
-                <Select 
-                  value={scheduledTime} 
+                <Select
+                  value={scheduledTime}
                   onValueChange={setScheduledTime}
                   disabled={createVisit.isPending}
                 >
@@ -387,7 +387,7 @@ export default function NewVisit() {
                 </Select>
               </div>
             </div>
-            
+
             <Button
               type="submit"
               className="w-full"

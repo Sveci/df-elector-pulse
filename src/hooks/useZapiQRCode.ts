@@ -22,12 +22,12 @@ interface QRCodeState {
 const MAX_ATTEMPTS = 10;
 const REFRESH_INTERVAL = 15;
 
-export function useZapiQRCode({ 
-  instanceId, 
-  token, 
-  clientToken, 
+export function useZapiQRCode({
+  instanceId,
+  token,
+  clientToken,
   isOpen,
-  onConnected 
+  onConnected
 }: UseZapiQRCodeProps) {
   const [state, setState] = useState<QRCodeState>({
     isLoading: false,
@@ -53,9 +53,9 @@ export function useZapiQRCode({
 
       if (error) {
         console.error("[useZapiQRCode] Edge function error:", error);
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
           error: "Erro ao conectar com o servidor",
           attempts: prev.attempts + 1,
         }));
@@ -71,26 +71,26 @@ export function useZapiQRCode({
       }
 
       if (data.success && data.qrcode) {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
           qrcode: data.qrcode,
           countdown: REFRESH_INTERVAL,
           attempts: prev.attempts + 1,
         }));
       } else {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
           error: data.error || "Não foi possível obter o QR Code",
           attempts: prev.attempts + 1,
         }));
       }
     } catch (err) {
       console.error("[useZapiQRCode] Error:", err);
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
         error: "Erro inesperado ao obter QR Code",
         attempts: prev.attempts + 1,
       }));

@@ -9,14 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Copy, 
-  Check, 
-  Search, 
-  Download, 
-  QrCode, 
+import {
+  Copy,
+  Check,
+  Search,
+  Download,
+  QrCode,
   Users,
-  Loader2 
+  Loader2
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,7 +86,7 @@ export function SurveyLeaderLinksDialog({ open, onOpenChange, survey }: SurveyLe
       pdf.setFont("helvetica", "bold");
       pdf.text(`Links de Pesquisa: ${survey.titulo}`, margin, currentY);
       currentY += 10;
-      
+
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       pdf.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, margin, currentY);
@@ -123,12 +123,12 @@ export function SurveyLeaderLinksDialog({ open, onOpenChange, survey }: SurveyLe
 
         pdf.setFontSize(8);
         pdf.setTextColor(100);
-        
+
         // Wrap long URLs
         const maxWidth = pageWidth - textX - margin;
         const linkLines = pdf.splitTextToSize(link, maxWidth);
         pdf.text(linkLines, textX, currentY + 30);
-        
+
         pdf.setTextColor(0);
 
         // Separator line
@@ -191,8 +191,8 @@ export function SurveyLeaderLinksDialog({ open, onOpenChange, survey }: SurveyLe
               className="pl-10"
             />
           </div>
-          <Button 
-            onClick={generatePdf} 
+          <Button
+            onClick={generatePdf}
             disabled={generatingPdf || !leaders || leaders.length === 0}
           >
             {generatingPdf ? (
@@ -216,8 +216,8 @@ export function SurveyLeaderLinksDialog({ open, onOpenChange, survey }: SurveyLe
             </div>
           ) : (
             filteredLeaders.map((leader) => (
-              <div 
-                key={leader.id} 
+              <div
+                key={leader.id}
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
               >
                 <div className="min-w-0 flex-1">
@@ -254,7 +254,7 @@ export function SurveyLeaderLinksDialog({ open, onOpenChange, survey }: SurveyLe
 
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground text-center">
-            {filteredLeaders.length} líder(es) encontrado(s) • 
+            {filteredLeaders.length} líder(es) encontrado(s) •
             Links incluem rastreamento de indicação
           </p>
         </div>

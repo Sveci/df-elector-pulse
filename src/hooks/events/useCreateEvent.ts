@@ -29,7 +29,7 @@ export function useCreateEvent() {
       if (data.coverImage) {
         const fileExt = data.coverImage.name.split('.').pop();
         const fileName = `${data.slug}-${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('event-covers')
           .upload(fileName, data.coverImage);

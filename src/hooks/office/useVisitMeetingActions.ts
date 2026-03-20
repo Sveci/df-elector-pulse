@@ -40,7 +40,7 @@ export function useVisitMeetingActions() {
         .select()
         .single();
       if (error) throw error;
-      
+
       // Enviar SMS de cancelamento em background
       getVisitForSMSNotification(visitId).then(visit => {
         if (visit) {
@@ -51,7 +51,7 @@ export function useVisitMeetingActions() {
           });
         }
       });
-      
+
       return data;
     },
     onSuccess: () => {
@@ -68,7 +68,7 @@ export function useVisitMeetingActions() {
     mutationFn: async ({ visitId, newDate }: { visitId: string; newDate: Date }) => {
       const { data, error } = await supabase
         .from("office_visits")
-        .update({ 
+        .update({
           status: "RESCHEDULED",
           checked_in: false,
           checked_in_at: null,
@@ -79,7 +79,7 @@ export function useVisitMeetingActions() {
         .select()
         .single();
       if (error) throw error;
-      
+
       // Enviar SMS de reagendamento em background
       getVisitForSMSNotification(visitId).then(visit => {
         if (visit) {
@@ -90,7 +90,7 @@ export function useVisitMeetingActions() {
           });
         }
       });
-      
+
       return data;
     },
     onSuccess: () => {
@@ -104,19 +104,19 @@ export function useVisitMeetingActions() {
   });
 
   const saveMeetingMinutes = useMutation({
-    mutationFn: async ({ 
-      visitId, 
-      contentType, 
-      contentText, 
-      file 
-    }: { 
-      visitId: string; 
+    mutationFn: async ({
+      visitId,
+      contentType,
+      contentText,
+      file
+    }: {
+      visitId: string;
       contentType: 'text' | 'file';
       contentText?: string;
       file?: File;
     }) => {
       let filePath, fileName, fileMimeType;
-      
+
       if (contentType === 'file' && file) {
         // Upload do arquivo para storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -127,7 +127,7 @@ export function useVisitMeetingActions() {
         fileName = file.name;
         fileMimeType = file.type;
       }
-      
+
       // Inserir registro na tabela
       const { error: insertError } = await supabase
         .from('office_meeting_minutes')
@@ -140,7 +140,7 @@ export function useVisitMeetingActions() {
           file_mime_type: fileMimeType
         });
       if (insertError) throw insertError;
-      
+
       // Atualizar status da visita
       const { data, error } = await supabase
         .from('office_visits')

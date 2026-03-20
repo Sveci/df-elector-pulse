@@ -48,7 +48,7 @@ function extractVerificationCode(message: string): string | null {
     // Padrão 5: Código numérico de 5-6 dígitos (fallback)
     /\b(\d{5,6})\b/
   ];
-  
+
   for (const pattern of patterns) {
     const match = message.match(pattern);
     if (match && match[1]) {
@@ -66,13 +66,13 @@ async function findContactOrLeader(supabaseUrl: string, supabaseServiceKey: stri
 }> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const cleanPhone = normalizePhone(phone);
-  
+
   // Variações do telefone para busca
   const last9Digits = cleanPhone.slice(-9);
   const last11Digits = cleanPhone.slice(-11);
-  
+
   console.log(`[retry-failed-sms] findContactOrLeader: phone=${phone}, cleanPhone=${cleanPhone}, last9=${last9Digits}`);
-  
+
   // Buscar em office_contacts pelo telefone normalizado (formato E.164: +55XXXXXXXXXXX)
   const { data: contactData, error: contactError } = await supabase
     .from('office_contacts')
@@ -81,16 +81,16 @@ async function findContactOrLeader(supabaseUrl: string, supabaseServiceKey: stri
     .or(`telefone_norm.eq.+55${cleanPhone},telefone_norm.eq.+55${last11Digits},telefone_norm.ilike.%${last9Digits}`)
     .limit(1)
     .maybeSingle();
-  
+
   if (contactError) {
     console.error(`[retry-failed-sms] Error searching contacts:`, contactError);
   }
-  
+
   if (contactData) {
     console.log(`[retry-failed-sms] Found unverified contact: ${contactData.nome} (${contactData.id})`);
     return { type: 'contact', id: contactData.id, name: contactData.nome };
   }
-  
+
   // Buscar em lideres pelo telefone - múltiplos formatos
   const { data: leaderData, error: leaderError } = await supabase
     .from('lideres')
@@ -100,16 +100,16 @@ async function findContactOrLeader(supabaseUrl: string, supabaseServiceKey: stri
     .or(`telefone.ilike.%${last9Digits},telefone.eq.+55${cleanPhone},telefone.eq.55${cleanPhone},telefone.eq.${cleanPhone}`)
     .limit(1)
     .maybeSingle();
-  
+
   if (leaderError) {
     console.error(`[retry-failed-sms] Error searching leaders:`, leaderError);
   }
-  
+
   if (leaderData) {
     console.log(`[retry-failed-sms] Found unverified leader: ${leaderData.nome_completo} (${leaderData.id})`);
     return { type: 'leader', id: leaderData.id, name: leaderData.nome_completo };
   }
-  
+
   console.log(`[retry-failed-sms] No unverified contact/leader found for phone ${phone}`);
   return { type: null, id: null, name: null };
 }
@@ -138,13 +138,13 @@ async function sendWhatsAppFallback(
         contactId,
       }),
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       return { success: false, error: data.error || 'Erro ao enviar WhatsApp' };
     }
-    
+
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -288,17 +288,17 @@ Deno.serve(async (req) => {
           // Failed again - check if this is the 6th attempt and fallback is enabled
           if (newRetryCount >= 6 && whatsappFallbackEnabled) {
             console.log(`[retry-failed-sms] 6th attempt failed for ${msg.id}, attempting WhatsApp fallback...`);
-            
+
             // Extract verification code from message
             const verificationCode = extractVerificationCode(msg.message);
-            
+
             if (verificationCode) {
               // Find contact or leader name
               const { type, id, name } = await findContactOrLeader(supabaseUrl, supabaseServiceKey, msg.phone);
-              
+
               if (type) {
                 console.log(`[retry-failed-sms] Found ${type} ${id} for phone ${msg.phone}, sending WhatsApp fallback`);
-                
+
                 const whatsappResult = await sendWhatsAppFallback(
                   supabaseUrl,
                   msg.phone,
@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
                   verificationCode,
                   type === 'contact' ? id : null
                 );
-                
+
                 if (whatsappResult.success) {
                   // Mark SMS as fallback_whatsapp
                   await supabase
@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
                       next_retry_at: null,
                     })
                     .eq("id", msg.id);
-                  
+
                   results.whatsapp_fallback++;
                   results.details.push({
                     id: msg.id,
@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
                     attempt: newRetryCount,
                     result: "fallback_whatsapp",
                   });
-                  
+
                   console.log(`[retry-failed-sms] ✓ SMS ${msg.id} sent via WhatsApp fallback`);
                   continue;
                 } else {
@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
               console.log(`[retry-failed-sms] No verification code found in message for ${msg.id}`);
             }
           }
-          
+
           // Update as failed - the trigger will update next_retry_at and retry_history
           await supabase
             .from("sms_messages")

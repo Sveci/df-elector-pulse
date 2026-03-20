@@ -53,8 +53,8 @@ const ShortUrlRedirect = () => {
           <div className="text-6xl mb-4">🔗</div>
           <h1 className="text-2xl font-bold mb-2 text-foreground">Link não encontrado</h1>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <a 
-            href="/" 
+          <a
+            href="/"
             className="text-primary hover:underline"
           >
             Voltar à página inicial

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Trophy, Phone, Users, MapPin, Calendar, Activity, TrendingUp, Building2, ClipboardList, ExternalLink, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { RankingChart } from "@/components/dashboard/RankingChart";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { ProfileStats } from "@/components/dashboard/ProfileStats";
@@ -34,6 +34,7 @@ import {
   DEMO_CITIES_RANKING,
   DEMO_OFFICE_STATS,
 } from "@/data/dashboard/demoDashboard";
+import { SkeletonDashboard } from "@/components/ui/skeletons";
 
 
 // Tutorial steps for Dashboard
@@ -101,9 +102,18 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const { m } = useDemoMask();
   const { data: organization } = useOrganization();
-  const locationFieldType = getLocationFieldType(organization?.cargo);
-  const locationLabel = locationFieldType === 'bairro' ? 'Bairros' : locationFieldType === 'ra' ? 'RAs' : 'Cidades';
-  const locationSingularLabel = locationFieldType === 'bairro' ? 'Bairro' : locationFieldType === 'ra' ? 'RA' : 'Cidade';
+  const locationFieldType = useMemo(
+    () => getLocationFieldType(organization?.cargo),
+    [organization?.cargo]
+  );
+  const locationLabel = useMemo(
+    () => locationFieldType === 'bairro' ? 'Bairros' : locationFieldType === 'ra' ? 'RAs' : 'Cidades',
+    [locationFieldType]
+  );
+  const locationSingularLabel = useMemo(
+    () => locationFieldType === 'bairro' ? 'Bairro' : locationFieldType === 'ra' ? 'RA' : 'Cidade',
+    [locationFieldType]
+  );
 
   // Tutorial hook
   const { restartTutorial } = useTutorial("dashboard", dashboardTutorialSteps);
@@ -132,7 +142,7 @@ const Dashboard = () => {
         .from("lideres")
         .update({ is_active: !isActive })
         .eq("id", leaderId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -152,29 +162,29 @@ const Dashboard = () => {
     },
   });
 
-  const handleRefreshData = () => {
+  const handleRefreshData = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["dashboard_stats"] });
     queryClient.invalidateQueries({ queryKey: ["top_leaders"] });
     queryClient.invalidateQueries({ queryKey: ["profile_stats"] });
     queryClient.invalidateQueries({ queryKey: ["temas_ranking"] });
     queryClient.invalidateQueries({ queryKey: ["cities_ranking"] });
     queryClient.invalidateQueries({ queryKey: ["office_stats"] });
-    
+
     toast({
       title: "Dados atualizados",
       description: "Os dados do dashboard foram recarregados com sucesso",
     });
-  };
+  }, [queryClient]);
 
-  const handleWhatsAppClick = (phone: string) => {
+  const handleWhatsAppClick = useCallback((phone: string) => {
     const normalizedPhone = phone.replace(/\D/g, '');
     const whatsappUrl = `https://wa.me/55${normalizedPhone}`;
     window.open(whatsappUrl, '_blank');
-  };
+  }, []);
 
-  const toggleLeaderStatus = (leaderId: string, isActive: boolean) => {
+  const toggleLeaderStatus = useCallback((leaderId: string, isActive: boolean) => {
     toggleLeaderMutation.mutate({ leaderId, isActive });
-  };
+  }, [toggleLeaderMutation]);
 
   const getTrophyColor = (position: number) => {
     switch (position) {
@@ -198,16 +208,27 @@ const Dashboard = () => {
   const listLeaders = effectiveLeaders.slice(3, 5);
 
   // Preparar dados dos gráficos com mascaramento
-  const raChartData = effectiveCities.slice(0, 8).map(item => ({
-    name: m.city(item.name),
-    value: m.number(item.value, "ra_" + item.name),
-  }));
-  const temasChartData = effectiveTemas.slice(0, 8).map(item => ({
-    name: item.tema,
-    value: m.number(item.cadastros, "tema_" + item.tema),
-  }));
+  const raChartData = useMemo(
+    () => effectiveCities.slice(0, 8).map(item => ({
+      name: m.city(item.name),
+      value: m.number(item.value, "ra_" + item.name),
+    })),
+    [effectiveCities, m]
+  );
+  const temasChartData = useMemo(
+    () => effectiveTemas.slice(0, 8).map(item => ({
+      name: item.tema,
+      value: m.number(item.cadastros, "tema_" + item.tema),
+    })),
+    [effectiveTemas, m]
+  );
 
   const isLoading = isDemoMode ? false : (statsLoading || leadersLoading || profileLoading || temasLoading || citiesLoading);
+
+  // Show skeleton while initial data loads (not on refresh)
+  if (isLoading && !effectiveStats) {
+    return <SkeletonDashboard />;
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
@@ -276,7 +297,7 @@ const Dashboard = () => {
                           </div>
                           <div className="absolute top-2 right-2">
                             <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white rounded-full ${
-                              leader.position === 1 ? 'bg-yellow-500' : 
+                              leader.position === 1 ? 'bg-yellow-500' :
                               leader.position === 2 ? 'bg-gray-400' : 'bg-orange-600'
                             }`}>
                               {leader.position}º
@@ -509,7 +530,7 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">Realizadas</p>
                   </div>
                 </div>
-                
+
                 {/* Taxa de aceite */}
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <div className="flex justify-between items-center mb-1">
@@ -517,13 +538,13 @@ const Dashboard = () => {
                     <span className="font-bold text-purple-600">{m.percentage(effectiveOffice?.acceptRateReuniao || 0, 'accept_rate')}%</span>
                   </div>
                   <div className="w-full bg-purple-200 rounded-full h-2">
-                    <div 
-                      className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                    <div
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${effectiveOffice?.acceptRateReuniao || 0}%` }}
                     />
                   </div>
                 </div>
-                
+
                 {/* Fila de atendimento */}
                 <div className="border-t pt-3">
                   <h4 className="text-sm font-medium mb-2 flex items-center">

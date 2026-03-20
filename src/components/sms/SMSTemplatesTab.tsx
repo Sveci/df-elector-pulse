@@ -28,7 +28,7 @@ export function SMSTemplatesTab({ searchTerm = "" }: SMSTemplatesTabProps) {
   const { data: templates, isLoading } = useSMSTemplates();
   const updateTemplate = useUpdateSMSTemplate();
   const deleteTemplate = useDeleteSMSTemplate();
-  
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

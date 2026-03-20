@@ -8,19 +8,19 @@ export interface ConsolidatedStats {
   totalEmail: number;
   totalWhatsApp: number;
   avgDeliveryRate: number;
-  
+
   // Eventos
   totalEvents: number;
   totalRegistrations: number;
   totalCheckins: number;
   avgConversionRate: number;
-  
+
   // Líderes
   totalLeaders: number;
   activeLeaders: number;
   totalIndications: number;
   topLeaders: Array<{ id: string; name: string; points: number; indications: number }>;
-  
+
   // Geral
   lastUpdate: string;
 }
@@ -34,7 +34,7 @@ export function useConsolidatedStats() {
         .from('sms_messages')
         .select('*', { count: 'exact', head: true })
         .eq('direction', 'outgoing');
-      
+
       const { count: smsDelivered } = await supabase
         .from('sms_messages')
         .select('*', { count: 'exact', head: true })
@@ -45,7 +45,7 @@ export function useConsolidatedStats() {
       const { count: emailTotal } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: emailSent } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true })
@@ -56,7 +56,7 @@ export function useConsolidatedStats() {
         .from('whatsapp_messages')
         .select('*', { count: 'exact', head: true })
         .eq('direction', 'outgoing');
-      
+
       const { count: waDelivered } = await supabase
         .from('whatsapp_messages')
         .select('*', { count: 'exact', head: true })
@@ -67,11 +67,11 @@ export function useConsolidatedStats() {
       const { count: eventsTotal } = await supabase
         .from('events')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: registrationsTotal } = await supabase
         .from('event_registrations')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: checkinsTotal } = await supabase
         .from('event_registrations')
         .select('*', { count: 'exact', head: true })
@@ -81,12 +81,12 @@ export function useConsolidatedStats() {
       const { count: leadersTotal } = await supabase
         .from('lideres')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: leadersActive } = await supabase
         .from('lideres')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
-      
+
       // Buscar top líderes
       const { data: topLeadersData } = await supabase
         .from('lideres')
@@ -99,7 +99,7 @@ export function useConsolidatedStats() {
       const { data: indicationsData } = await supabase
         .from('lideres')
         .select('cadastros');
-      
+
       const totalIndications = indicationsData?.reduce((sum, l) => sum + (l.cadastros || 0), 0) || 0;
 
       // Calcular taxas
@@ -107,12 +107,12 @@ export function useConsolidatedStats() {
       const totalEmail = emailTotal || 0;
       const totalWhatsApp = waTotal || 0;
       const totalMessages = totalSMS + totalEmail + totalWhatsApp;
-      
+
       const deliveredCount = (smsDelivered || 0) + (emailSent || 0) + (waDelivered || 0);
       const avgDeliveryRate = totalMessages > 0 ? (deliveredCount / totalMessages) * 100 : 0;
-      
-      const avgConversionRate = (registrationsTotal || 0) > 0 
-        ? ((checkinsTotal || 0) / (registrationsTotal || 1)) * 100 
+
+      const avgConversionRate = (registrationsTotal || 0) > 0
+        ? ((checkinsTotal || 0) / (registrationsTotal || 1)) * 100
         : 0;
 
       return {

@@ -3,11 +3,11 @@ import { Crown, User, UserPlus, UserMinus, ChevronDown, ChevronRight, MoreVertic
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { LeaderTreeNode, useRemoveFromTree, usePromoteToCoordinatorWithSubordinates, countSubordinates, maxSubtreeDepth } from "@/hooks/leaders/useLeaderTree";
 import { AddSubordinateDialog } from "./AddSubordinateDialog";
@@ -86,9 +86,9 @@ export function LeaderTreeView({ tree, highlightLeaderId }: LeaderTreeViewProps)
 
   return (
     <div className="p-4">
-      <TreeNode 
-        node={tree} 
-        isRoot 
+      <TreeNode
+        node={tree}
+        isRoot
         highlightLeaderId={highlightLeaderId}
         onHighlightedNodeRef={handleHighlightedRef}
         expandedNodes={expandedNodes}
@@ -107,8 +107,8 @@ interface TreeNodeProps {
   toggleExpand: (nodeId: string) => void;
 }
 
-const TreeNode = memo(function TreeNode({ 
-  node, isRoot = false, highlightLeaderId, onHighlightedNodeRef, expandedNodes, toggleExpand 
+const TreeNode = memo(function TreeNode({
+  node, isRoot = false, highlightLeaderId, onHighlightedNodeRef, expandedNodes, toggleExpand
 }: TreeNodeProps) {
   const { m } = useDemoMask();
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -116,10 +116,10 @@ const TreeNode = memo(function TreeNode({
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
-  
+
   const removeFromTree = useRemoveFromTree();
   const promoteToCoordinator = usePromoteToCoordinatorWithSubordinates();
-  
+
   const hasChildren = node.children && node.children.length > 0;
   const level = node.hierarchy_level || 1;
   const isHighlighted = highlightLeaderId === node.id;
@@ -131,7 +131,7 @@ const TreeNode = memo(function TreeNode({
       onHighlightedNodeRef(nodeRef.current);
     }
   }, [isHighlighted, onHighlightedNodeRef]);
-  
+
   const getLevelColor = (level: number) => {
     switch (level) {
       case 1: return "bg-amber-100 text-amber-700 border-amber-300";
@@ -180,9 +180,9 @@ const TreeNode = memo(function TreeNode({
       {!isRoot && (
         <div className="absolute left-[-20px] top-0 h-6 w-5 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg" />
       )}
-      
+
       {/* Node */}
-      <div 
+      <div
         ref={nodeRef}
         className={`flex items-center gap-2 p-3 rounded-lg border ${getLevelColor(level)} mb-2 ${isHighlighted ? 'ring-2 ring-primary ring-offset-2 animate-pulse' : ''}`}
       >
@@ -200,7 +200,7 @@ const TreeNode = memo(function TreeNode({
             )}
           </Button>
         )}
-        
+
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {getLevelIcon(level)}
           <div className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ const TreeNode = memo(function TreeNode({
                   <Crown className="h-4 w-4 mr-2" />
                   Promover a Coordenador
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setShowRemoveDialog(true)}
                   className="text-destructive"
                 >
@@ -259,9 +259,9 @@ const TreeNode = memo(function TreeNode({
       {hasChildren && isExpanded && (
         <div className="ml-8 border-l-2 border-muted-foreground/20 pl-4">
           {node.children!.map((child) => (
-            <TreeNode 
-              key={child.id} 
-              node={child} 
+            <TreeNode
+              key={child.id}
+              node={child}
               highlightLeaderId={highlightLeaderId}
               onHighlightedNodeRef={onHighlightedNodeRef}
               expandedNodes={expandedNodes}
@@ -312,7 +312,7 @@ const TreeNode = memo(function TreeNode({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleRemove}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -339,7 +339,7 @@ const TreeNode = memo(function TreeNode({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={handlePromoteToCoordinator}
                 disabled={promoteToCoordinator.isPending}
               >

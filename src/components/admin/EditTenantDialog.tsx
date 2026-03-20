@@ -268,7 +268,7 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                 )}
               </div>
               <p className="text-xs text-muted-foreground">URL base usada nos links públicos (indicações, eventos, formulários)</p>
-              
+
               {/* SCD Status */}
               {tenant?.scd_domain_uuid && (
                 <div className="flex items-center gap-1.5 text-xs text-green-600">
@@ -301,8 +301,8 @@ export function EditTenantDialog({ open, onOpenChange, tenant }: EditTenantDialo
                       <span className="text-primary font-semibold">Nome:</span>
                       <span>{(() => {
                         try {
-                          const url = form.custom_domain.startsWith("http") 
-                            ? form.custom_domain 
+                          const url = form.custom_domain.startsWith("http")
+                            ? form.custom_domain
                             : `https://${form.custom_domain}`;
                           return new URL(url).hostname;
                         } catch {

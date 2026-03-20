@@ -27,13 +27,13 @@ export default function EventRegistration() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const affiliateToken = searchParams.get("ref");
-  
+
   const { data: event, isLoading } = useEvent(slug || "");
   const { data: cities } = useOfficeCities();
   const { data: leader } = useLeaderByToken(affiliateToken || undefined);
   const { data: categories = [] } = useEventCategories();
   const createRegistration = useCreateRegistration();
-  
+
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -51,18 +51,18 @@ export default function EventRegistration() {
   useEffect(() => {
     const registerPageView = async () => {
       if (!event || !slug) return;
-      
+
       // Flag para evitar duplicação na mesma sessão para mesmo evento
       const viewKey = `pageview_${slug}`;
       if (sessionStorage.getItem(viewKey)) return;
-      
+
       // Gerar ou recuperar session_id para evitar contagem duplicada
       let sessionId = sessionStorage.getItem('visitor_session');
       if (!sessionId) {
         sessionId = crypto.randomUUID();
         sessionStorage.setItem('visitor_session', sessionId);
       }
-      
+
       // Registrar visualização
       const { error } = await supabase.from('page_views').insert({
         page_type: 'event',
@@ -73,7 +73,7 @@ export default function EventRegistration() {
         utm_content: searchParams.get("utm_content"),
         session_id: sessionId
       });
-      
+
       if (error) {
         console.error('Erro ao registrar page view:', error);
       } else {
@@ -81,13 +81,13 @@ export default function EventRegistration() {
         sessionStorage.setItem(viewKey, 'true');
       }
     };
-    
+
     registerPageView();
   }, [event, slug, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!event) return;
 
     const normalizedPhone = normalizePhoneToE164(formData.whatsapp);
@@ -113,7 +113,7 @@ export default function EventRegistration() {
       // ========== STEP 2: Gerar QR Code (com fallback) ==========
       const checkInUrl = `${getBaseUrl()}/checkin/${registration.qr_code}`;
       const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkInUrl)}`;
-      
+
       // Tentar gerar QR localmente, fallback para URL externa
       try {
         const qrData = await QRCodeComponent.toDataURL(checkInUrl, {
@@ -165,12 +165,12 @@ export default function EventRegistration() {
 
     // Track Lead event (best-effort)
     try {
-      trackLead({ 
+      trackLead({
         content_name: `evento_${event.slug}`,
         value: 1
       });
-      
-      pushToDataLayer('lead', { 
+
+      pushToDataLayer('lead', {
         source: 'evento',
         event_id: event.id,
         event_name: event.name,
@@ -212,7 +212,7 @@ export default function EventRegistration() {
           evento_local: event.location,
         }
       );
-      
+
       pendingMessages = addPendingMessage(
         pendingMessages,
         'email:evento-cadastro-confirmado',
@@ -240,10 +240,10 @@ export default function EventRegistration() {
       if (!verificationCode) {
         const { data: newCode } = await supabase.rpc("generate_verification_code");
         verificationCode = newCode;
-        
+
         await supabase
           .from("office_contacts")
-          .update({ 
+          .update({
             verification_code: verificationCode,
             source_type: 'lider',
             source_id: leader.id,
@@ -285,7 +285,7 @@ export default function EventRegistration() {
         .select("id, is_verified, verification_code")
         .eq("telefone_norm", normalizedPhone)
         .maybeSingle();
-      
+
       contactId = contact?.id;
       contactVerified = contact?.is_verified ?? true;
       verificationCode = contact?.verification_code ?? null;
@@ -344,17 +344,17 @@ export default function EventRegistration() {
     if (contactId && !contactVerified) {
       try {
         let code = verificationCode;
-        
+
         if (!code) {
           const { data: newCode } = await supabase.rpc("generate_verification_code");
           code = newCode;
-          
+
           await supabase
             .from("office_contacts")
             .update({ verification_code: code })
             .eq("id", contactId);
         }
-        
+
         if (code) {
           sendVerificationSMS({
             contactId,
@@ -427,8 +427,8 @@ export default function EventRegistration() {
 
   // Verificar se já passou o prazo configurado para inscrições
   const isRegistrationClosed = isEventDeadlinePassed(
-    event.date, 
-    event.time, 
+    event.date,
+    event.time,
     event.registration_deadline_hours
   );
 
@@ -497,7 +497,7 @@ export default function EventRegistration() {
 
             {/* Botão Adicionar ao Calendário */}
             <div className="flex justify-center">
-              <AddToCalendarButton 
+              <AddToCalendarButton
                 event={{
                   name: event.name,
                   date: event.date,
@@ -509,7 +509,7 @@ export default function EventRegistration() {
                 }}
               />
             </div>
-            
+
             {/* Aviso importante sobre o QR Code */}
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -545,8 +545,8 @@ export default function EventRegistration() {
   const getCategoriesDisplay = () => {
     const eventCategories = event.categories || [];
     return eventCategories.map(cat => {
-      const catData = categories.find(c => 
-        c.value === cat || 
+      const catData = categories.find(c =>
+        c.value === cat ||
         c.label.toLowerCase() === cat?.toLowerCase()
       );
       return {
@@ -583,7 +583,7 @@ export default function EventRegistration() {
           <div className="w-full h-full bg-gradient-to-br from-primary to-primary/50" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-wrap gap-2 mb-3">

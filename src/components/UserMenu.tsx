@@ -23,10 +23,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  User, 
-  Settings, 
-  LogOut, 
+import {
+  User,
+  Settings,
+  LogOut,
   Shield,
   ChevronDown
 } from "lucide-react";
@@ -64,7 +64,7 @@ const UserMenu = memo(function UserMenu() {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex flex-col items-start">
               <span className="text-sm font-medium text-gray-900">
                 {displayName}
@@ -73,7 +73,7 @@ const UserMenu = memo(function UserMenu() {
                 {user.role}
               </Badge>
             </div>
-            
+
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </Button>
         </DropdownMenuTrigger>
@@ -102,27 +102,27 @@ const UserMenu = memo(function UserMenu() {
               </Badge>
             </div>
           </DropdownMenuLabel>
-          
+
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/profile")}>
             <User className="mr-2 h-4 w-4" />
             <span>Perfil</span>
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/privacy")}>
             <Shield className="mr-2 h-4 w-4" />
             <span>Privacidade</span>
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             className="cursor-pointer text-red-600 focus:text-red-600"
             onClick={() => setShowLogoutDialog(true)}
           >
@@ -142,7 +142,7 @@ const UserMenu = memo(function UserMenu() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleLogout}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >

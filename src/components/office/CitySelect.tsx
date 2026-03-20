@@ -17,7 +17,7 @@ interface CitySelectProps {
 
 export function CitySelect({ value, onValueChange, placeholder = "Selecione a cidade", disabled }: CitySelectProps) {
   const { data: cities, isLoading } = useOfficeCities();
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
@@ -25,7 +25,7 @@ export function CitySelect({ value, onValueChange, placeholder = "Selecione a ci
       </div>
     );
   }
-  
+
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>

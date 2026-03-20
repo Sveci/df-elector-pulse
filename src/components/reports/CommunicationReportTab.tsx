@@ -9,16 +9,16 @@ import { useWhatsAppMetrics } from "@/hooks/useWhatsAppMessages";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import * as XLSX from "xlsx";
+import * as XLSX from '@/lib/xlsx-compat';
 
 const COLORS = ['#10B981', '#F59E0B', '#3B82F6', '#EF4444', '#6366F1'];
 
 export function CommunicationReportTab() {
   const [period, setPeriod] = useState("30");
-  
+
   const { data: smsMetrics } = useSMSMetrics();
   const { data: waMetrics } = useWhatsAppMetrics();
-  
+
   // Buscar métricas de email
   const { data: emailMetrics } = useQuery({
     queryKey: ['email_metrics'],
@@ -26,17 +26,17 @@ export function CommunicationReportTab() {
       const { count: total } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true });
-      
+
       const { count: sent } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'sent');
-      
+
       const { count: pending } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      
+
       const { count: failed } = await supabase
         .from('email_logs')
         .select('*', { count: 'exact', head: true })

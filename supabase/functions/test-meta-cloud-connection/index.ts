@@ -68,12 +68,12 @@ Deno.serve(async (req) => {
 
     // Get access token from environment
     const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-    
+
     if (!accessToken) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "META_WA_ACCESS_TOKEN não está configurado nos secrets do ambiente" 
+        JSON.stringify({
+          success: false,
+          error: "META_WA_ACCESS_TOKEN não está configurado nos secrets do ambiente"
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -89,9 +89,9 @@ Deno.serve(async (req) => {
       }
 
       console.log(`[test-meta-cloud] Listing templates for WABA ${wabaId}`);
-      
+
       const templatesUrl = `https://graph.facebook.com/${apiVersion}/${wabaId}/message_templates`;
-      
+
       const response = await fetch(templatesUrl, {
         method: "GET",
         headers: {
@@ -104,8 +104,8 @@ Deno.serve(async (req) => {
       if (!response.ok) {
         console.error("[test-meta-cloud] Templates error:", data);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
+          JSON.stringify({
+            success: false,
             error: data.error?.message || "Erro ao listar templates",
             details: data.error
           }),
@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
       console.log("[test-meta-cloud] Templates found:", data.data?.length || 0);
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           templates: data.data || []
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
     // Test connection by getting phone number info
     const graphUrl = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}`;
-    
+
     const response = await fetch(graphUrl, {
       method: "GET",
       headers: {
@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       console.error("[test-meta-cloud] Error:", data);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: data.error?.message || "Erro ao conectar com a Graph API",
           details: data.error
         }),
@@ -161,8 +161,8 @@ Deno.serve(async (req) => {
     console.log("[test-meta-cloud] Connection successful:", data);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data: {
           phoneNumberId: data.id,
           displayPhoneNumber: data.display_phone_number,

@@ -24,12 +24,12 @@ import type {
  */
 export function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
-  
+
   // Se já tem código do país, apenas adiciona +
   if (digits.startsWith("55")) {
     return `+${digits}`;
   }
-  
+
   // Adiciona código do país
   return `+55${digits}`;
 }
@@ -44,7 +44,7 @@ export function formatPhoneBR(phone: string): string {
   const ddd = digits.slice(2, 4);
   const firstPart = digits.slice(4, 9);
   const secondPart = digits.slice(9);
-  
+
   return `(${ddd}) ${firstPart}-${secondPart}`;
 }
 
@@ -59,7 +59,7 @@ export function generateMockToken(visitId: string, userId: string, leaderId: str
     leader_id: leaderId,
     exp: Date.now() + 2 * 60 * 60 * 1000 // 2h
   };
-  
+
   return btoa(JSON.stringify(payload));
 }
 
@@ -69,11 +69,11 @@ export function generateMockToken(visitId: string, userId: string, leaderId: str
 export function validateMockToken(token: string): { valid: boolean; payload?: any } {
   try {
     const payload = JSON.parse(atob(token));
-    
+
     if (payload.exp < Date.now()) {
       return { valid: false };
     }
-    
+
     return { valid: true, payload };
   } catch {
     return { valid: false };
@@ -90,7 +90,7 @@ export async function getCities() {
     .select("*")
     .eq("status", "active")
     .order("nome");
-  
+
   if (error) throw error;
   return data as OfficeCity[];
 }
@@ -101,7 +101,7 @@ export async function getCityById(id: string) {
     .select("*")
     .eq("id", id)
     .single();
-  
+
   if (error) throw error;
   return data as OfficeCity;
 }
@@ -117,10 +117,10 @@ export async function createLeader(dto: CreateLeaderDTO): Promise<OfficeLeader> 
     .fill(0)
     .map(() => chars.charAt(Math.floor(Math.random() * chars.length)))
     .join("");
-  
+
   // Gerar affiliate_token (8 caracteres)
   const affiliateToken = crypto.randomUUID().split('-')[0];
-  
+
   const { data, error } = await supabase
     .from('lideres')
     .insert({
@@ -155,8 +155,8 @@ export interface GetLeadersResult {
   count: number;
 }
 
-export async function getLeaders(filters?: { 
-  cidade_id?: string; 
+export async function getLeaders(filters?: {
+  cidade_id?: string;
   search?: string;
   page?: number;
   pageSize?: number;
@@ -172,28 +172,28 @@ export async function getLeaders(filters?: {
     .from("lideres")
     .select("*, cidade:office_cities(*), passkit_member_id, passkit_pass_installed, passkit_installed_at", { count: 'exact' })
     .eq("is_active", true);
-  
+
   if (filters?.cidade_id) {
     query = query.eq("cidade_id", filters.cidade_id);
   }
-  
+
   // Filtro de verificação
   if (filters?.verificationFilter === 'verified') {
     query = query.eq('is_verified', true);
   } else if (filters?.verificationFilter === 'not_verified') {
     query = query.eq('is_verified', false);
   }
-  
+
   if (filters?.search) {
     const searchDigits = filters.search.replace(/\D/g, '');
-    
+
     if (searchDigits.length >= 4) {
       query = query.or(`nome_completo.ilike.%${filters.search}%,telefone.ilike.%${searchDigits}%`);
     } else {
       query = query.ilike("nome_completo", `%${filters.search}%`);
     }
   }
-  
+
   // Caso especial: ordenação por próximo aniversário usa RPC
   if (filters?.sortBy === "aniversario_proximo") {
     const { data, error } = await supabase.rpc("get_leaders_by_birthday", {
@@ -246,12 +246,12 @@ export async function getLeaders(filters?: {
       query = query.order("nome_completo", { ascending: true });
       break;
   }
-  
+
   // Aplicar paginação
   query = query.range(from, to);
-  
+
   const { data, error, count } = await query;
-  
+
   if (error) throw error;
   return { data: data as OfficeLeader[], count: count || 0 };
 }
@@ -266,13 +266,13 @@ export async function getLeadersByCity(cityId: string) {
 
 export async function findContactByPhone(phone: string) {
   const normalized = normalizePhone(phone);
-  
+
   const { data, error } = await supabase
     .from("office_contacts")
     .select("*, cidade:office_cities(*)")
     .eq("telefone_norm", normalized)
     .maybeSingle();
-  
+
   if (error) throw error;
   return data as OfficeContact | null;
 }
@@ -295,7 +295,7 @@ export async function updateContactDetails(
     .eq("id", contactId)
     .select("*, cidade:office_cities(*)")
     .single();
-  
+
   if (error) throw error;
   return data as OfficeContact;
 }
@@ -310,12 +310,12 @@ export async function getLeaderByAffiliateToken(token: string): Promise<OfficeLe
     .eq("affiliate_token", token)
     .eq("is_active", true)
     .maybeSingle();
-  
+
   if (error) {
     console.error("Error fetching leader by token:", error);
     return null;
   }
-  
+
   return data as unknown as OfficeLeader;
 }
 
@@ -327,9 +327,9 @@ export async function createOrUpdateContact(
   source_id?: string
 ): Promise<OfficeContact> {
   const telefone_norm = normalizePhone(telefone);
-  
+
   const existing = await findContactByPhone(telefone);
-  
+
   if (existing) {
     // Atualizar nome e cidade, mas só sobrescrever source se contato não tinha antes
     const updateData: any = { nome, cidade_id };
@@ -337,30 +337,30 @@ export async function createOrUpdateContact(
       updateData.source_type = source_type;
       updateData.source_id = source_id;
     }
-    
+
     const { data, error } = await supabase
       .from("office_contacts")
       .update(updateData)
       .eq("id", existing.id)
       .select("*, cidade:office_cities(*)")
       .single();
-    
+
     if (error) throw error;
     return data as OfficeContact;
   }
-  
+
   const { data, error } = await supabase
     .from("office_contacts")
-    .insert({ 
-      nome, 
-      telefone_norm, 
+    .insert({
+      nome,
+      telefone_norm,
       cidade_id,
       source_type: source_type || null,
       source_id: source_id || null
     })
     .select("*, cidade:office_cities(*)")
     .single();
-  
+
   if (error) throw error;
   return data as OfficeContact;
 }
@@ -379,36 +379,36 @@ export async function getVisits(filters?: OfficeVisitsFilters) {
       city:office_cities(*),
       form:office_visit_forms(*, tema:temas(*))
     `);
-  
+
   if (filters?.status && filters.status.length > 0) {
     query = query.in("status", filters.status);
   }
-  
+
   if (filters?.cidade_id) {
     query = query.eq("city_id", filters.cidade_id);
   }
-  
+
   if (filters?.leader_id) {
     query = query.eq("leader_id", filters.leader_id);
   }
-  
+
   if (filters?.search) {
     // Busca por protocolo
     query = query.ilike("protocolo", `%${filters.search}%`);
   }
-  
+
   if (filters?.date_from) {
     query = query.gte("created_at", filters.date_from);
   }
-  
+
   if (filters?.date_to) {
     query = query.lte("created_at", filters.date_to);
   }
-  
+
   query = query.order("created_at", { ascending: false });
-  
+
   const { data, error } = await query;
-  
+
   if (error) throw error;
   return data as OfficeVisit[];
 }
@@ -424,7 +424,7 @@ export async function getVisitById(id: string) {
     `)
     .eq("id", id)
     .single();
-  
+
   if (error) throw error;
   return data as OfficeVisit;
 }
@@ -440,7 +440,7 @@ export async function getVisitByProtocol(protocolo: string) {
     `)
     .eq("protocolo", protocolo)
     .maybeSingle();
-  
+
   if (error) throw error;
   return data as OfficeVisit | null;
 }
@@ -449,10 +449,10 @@ export async function createVisit(dto: CreateOfficeVisitDTO, userId: string) {
   // Primeiro criar o protocolo
   const { data: protocolData, error: protocolError } = await supabase
     .rpc("generate_office_protocol", { _prefix: "RP-GB" });
-  
+
   if (protocolError) throw protocolError;
   const protocolo = protocolData as string;
-  
+
   // Criar contato com source_type='visita' (source_id será atualizado após criar a visita)
   const contact = await createOrUpdateContact(
     dto.nome,
@@ -461,10 +461,10 @@ export async function createVisit(dto: CreateOfficeVisitDTO, userId: string) {
     'visita',
     null // será atualizado depois
   );
-  
+
   const token = generateMockToken("pending", contact.id, dto.leader_id);
   const token_expires_at = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-  
+
   const { data: visit, error } = await supabase
     .from("office_visits")
     .insert({
@@ -484,9 +484,9 @@ export async function createVisit(dto: CreateOfficeVisitDTO, userId: string) {
       city:office_cities(*)
     `)
     .single();
-  
+
   if (error) throw error;
-  
+
   // Atualizar source_id do contato com o ID da visita (se o contato foi criado como 'visita')
   if (contact.source_type === 'visita' || !contact.source_type) {
     await supabase
@@ -494,7 +494,7 @@ export async function createVisit(dto: CreateOfficeVisitDTO, userId: string) {
       .update({ source_id: visit.id, source_type: 'visita' })
       .eq("id", contact.id);
   }
-  
+
   return visit as OfficeVisit;
 }
 
@@ -510,7 +510,7 @@ export async function updateVisitStatus(id: string, status: OfficeVisit["status"
       city:office_cities(*)
     `)
     .single();
-  
+
   if (error) throw error;
   return data as OfficeVisit;
 }
@@ -523,7 +523,7 @@ export async function submitForm(dto: SubmitOfficeFormDTO) {
   // Converter data de DD/MM/YYYY para YYYY-MM-DD
   const [day, month, year] = dto.data_nascimento.split("/");
   const data_nascimento = `${year}-${month}-${day}`;
-  
+
   const { data, error } = await supabase
     .from("office_visit_forms")
     .upsert({
@@ -542,24 +542,24 @@ export async function submitForm(dto: SubmitOfficeFormDTO) {
     })
     .select()
     .single();
-  
+
   if (error) throw error;
-  
+
   // Atualizar status da visita
   await updateVisitStatus(dto.visit_id, "FORM_SUBMITTED");
-  
+
   return data as OfficeVisitForm;
 }
 
 export async function getVisitWithForm(visitId: string) {
   const visit = await getVisitById(visitId);
-  
+
   const { data: form } = await supabase
     .from("office_visit_forms")
     .select("*")
     .eq("visit_id", visitId)
     .maybeSingle();
-  
+
   return {
     ...visit,
     form: form || undefined
@@ -575,9 +575,9 @@ export async function getSettings() {
     .from("office_settings")
     .select("*")
     .maybeSingle();
-  
+
   if (error) throw error;
-  
+
   if (!data) {
     const { data: newSettings, error: createError } = await supabase
       .from("office_settings")
@@ -589,11 +589,11 @@ export async function getSettings() {
       })
       .select()
       .single();
-    
+
     if (createError) throw createError;
     return newSettings as OfficeSettings;
   }
-  
+
   return data as OfficeSettings;
 }
 
@@ -611,7 +611,7 @@ export async function updateSettings(updates: Partial<OfficeSettings>) {
     .eq("id", existing.id)
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as OfficeSettings;
 }

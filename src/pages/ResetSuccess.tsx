@@ -22,9 +22,9 @@ const ResetSuccess = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <img 
-            src={logo} 
-            alt="Rafael Prudente - Deputado Federal" 
+          <img
+            src={logo}
+            alt="Rafael Prudente - Deputado Federal"
             className="h-20 w-auto mx-auto mb-4"
           />
         </div>
@@ -76,7 +76,7 @@ const ResetSuccess = () => {
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Ir para Login
               </Button>
-              
+
               <p className="text-sm text-gray-500">
                 Redirecionamento automático em 10 segundos...
               </p>

@@ -26,16 +26,16 @@ function replaceVariables(text: string, variables: Record<string, string>): stri
 // Normalize phone number for SMS
 function normalizePhone(phone: string): string {
   let clean = phone.replace(/[^0-9]/g, '');
-  
+
   if (clean.startsWith('55')) {
     clean = clean.substring(2);
   }
-  
+
   // Add 9 for Brasília numbers if missing
   if (clean.length === 10 && clean.startsWith('61')) {
     clean = '61' + '9' + clean.substring(2);
   }
-  
+
   return clean;
 }
 
@@ -47,7 +47,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // ── Auth: require valid JWT ──────────────────────────────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // ── End Auth ─────────────────────────────────────────────────────────────
+
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -118,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
       const shortenResponse = await supabase.functions.invoke("shorten-url", {
         body: { url: photoUrl }
       });
-      
+
       if (shortenResponse.data?.shortUrl) {
         shortUrl = shortenResponse.data.shortUrl;
         console.log("send-event-photos: URL shortened to:", shortUrl);
@@ -141,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send SMS
     if (sendSms && settings?.smsdev_enabled && settings?.smsdev_api_key) {
       console.log("send-event-photos: Sending SMS...");
-      
+
       // Get SMS template
       const { data: smsTemplate } = await supabase
         .from("sms_templates")
@@ -155,7 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         try {
           const phone = normalizePhone(participant.whatsapp);
-          const message = smsTemplate?.mensagem 
+          const message = smsTemplate?.mensagem
             ? replaceVariables(smsTemplate.mensagem, {
                 nome_evento: event.name,
                 link_fotos: shortUrl
@@ -177,10 +198,10 @@ const handler = async (req: Request): Promise<Response> => {
           });
 
           const smsResult = await smsResponse.json();
-          
+
           if (smsResult.situacao === "OK") {
             smsSentCount++;
-            
+
             // Log the SMS
             await supabase.from("sms_messages").insert({
               phone: `+55${phone}`,
@@ -203,9 +224,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Send Email
     if (sendEmail && settings?.resend_enabled && settings?.resend_api_key) {
       console.log("send-event-photos: Sending emails...");
-      
+
       const resend = new Resend(settings.resend_api_key);
-      
+
       // Get email template
       const { data: emailTemplate } = await supabase
         .from("email_templates")
@@ -221,7 +242,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (!participant.email) continue;
 
         try {
-          const subject = emailTemplate?.assunto 
+          const subject = emailTemplate?.assunto
             ? replaceVariables(emailTemplate.assunto, { nome_evento: event.name })
             : `Obrigado por participar do ${event.name}! Confira as fotos 📸`;
 
@@ -242,7 +263,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (emailResult.data?.id) {
             emailSentCount++;
-            
+
             // Log the email
             await supabase.from("email_logs").insert({
               to_email: participant.email,

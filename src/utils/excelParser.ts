@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from '@/lib/xlsx-compat';
 
 /**
  * Interface para os dados do líder importados do Excel
@@ -12,132 +12,46 @@ export interface LeaderImportRow {
   email?: string;
 }
 
-/**
- * Parse de arquivo Excel (.xlsx ou .xls) para array de objetos
- */
+/** Parse de arquivo Excel (.xlsx ou .xls) para array de objetos */
 export async function parseExcelFile(file: File): Promise<LeaderImportRow[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-
-        // Pegar a primeira planilha
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-
-        // Converter para JSON
-        const jsonData = XLSX.utils.sheet_to_json<LeaderImportRow>(worksheet, {
-          header: [
-            'nome_completo',
-            'whatsapp',
-            'data_nascimento',
-            'status',
-            'observacao',
-            'email'
-          ],
-          range: 1, // Pular a linha de cabeçalho
-          defval: '', // Valor padrão para células vazias
-        });
-
-        resolve(jsonData);
-      } catch (error) {
-        reject(new Error(`Erro ao processar arquivo: ${error}`));
-      }
-    };
-
-    reader.onerror = () => {
-      reject(new Error('Erro ao ler arquivo'));
-    };
-
-    reader.readAsBinaryString(file);
+  const buffer = await file.arrayBuffer();
+  const workbook = await XLSX.read(buffer, { type: 'binary' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  return XLSX.utils.sheet_to_json<LeaderImportRow>(worksheet, {
+    header: ['nome_completo', 'whatsapp', 'data_nascimento', 'status', 'observacao', 'email'],
+    range: 1,
+    defval: '',
   });
 }
 
-/**
- * Gera um arquivo Excel modelo para importação de líderes
- */
+/** Gera um arquivo Excel modelo para importação de líderes */
 export function generateLeadersTemplate(): void {
-  // Dados de exemplo
   const templateData = [
-    {
-      'Nome Completo': 'João da Silva',
-      'WhatsApp': '5561999887766',
-      'Data de Nascimento': '15/03/1985',
-      'Status': 'ativo',
-      'Observação': 'Líder comunitário experiente',
-      'Email': 'joao.silva@email.com'
-    },
-    {
-      'Nome Completo': 'Maria Santos',
-      'WhatsApp': '5561988776655',
-      'Data de Nascimento': '',
-      'Status': '',
-      'Observação': '',
-      'Email': ''
-    }
+    { 'Nome Completo': 'João da Silva', 'WhatsApp': '5561999887766', 'Data de Nascimento': '15/03/1985', 'Status': 'ativo', 'Observação': 'Líder comunitário experiente', 'Email': 'joao.silva@email.com' },
+    { 'Nome Completo': 'Maria Santos', 'WhatsApp': '5561988776655', 'Data de Nascimento': '', 'Status': '', 'Observação': '', 'Email': '' },
   ];
-
-  // Criar workbook e worksheet
   const ws = XLSX.utils.json_to_sheet(templateData);
+  ws['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 35 }, { wch: 30 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Líderes');
-
-  // Ajustar largura das colunas
-  const colWidths = [
-    { wch: 25 }, // Nome Completo
-    { wch: 18 }, // WhatsApp
-    { wch: 18 }, // Data de Nascimento
-    { wch: 12 }, // Status
-    { wch: 35 }, // Observação
-    { wch: 30 }  // Email
-  ];
-  ws['!cols'] = colWidths;
-
-  // Download do arquivo
   XLSX.writeFile(wb, 'modelo_importacao_lideres.xlsx');
 }
 
-/**
- * Valida a estrutura básica dos dados importados
- */
-export function validateImportData(data: LeaderImportRow[]): {
-  isValid: boolean;
-  errors: string[];
-} {
+/** Valida a estrutura básica dos dados importados */
+export function validateImportData(data: LeaderImportRow[]): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-
   if (!data || data.length === 0) {
     errors.push('Arquivo vazio ou sem dados válidos');
     return { isValid: false, errors };
   }
-
-  // Função auxiliar para validar campo
-  const validateField = (value: any): boolean => {
-    if (value === null || value === undefined) return false;
-    const strValue = String(value).trim();
-    return strValue.length > 0;
-  };
-
-  // Validar campos obrigatórios
-  data.forEach((row, index) => {
-    const lineNumber = index + 2; // +2 porque linha 1 é header e index começa em 0
-
-    if (!validateField(row.nome_completo)) {
-      errors.push(`Linha ${lineNumber}: Nome completo é obrigatório`);
-    }
-
-    if (!validateField(row.whatsapp)) {
-      errors.push(`Linha ${lineNumber}: WhatsApp é obrigatório`);
-    }
+  const valid = (v: unknown) => v !== null && v !== undefined && String(v).trim().length > 0;
+  data.forEach((row, i) => {
+    const line = i + 2;
+    if (!valid(row.nome_completo)) errors.push(`Linha ${line}: Nome completo é obrigatório`);
+    if (!valid(row.whatsapp)) errors.push(`Linha ${line}: WhatsApp é obrigatório`);
   });
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
+  return { isValid: errors.length === 0, errors };
 }
 
 /**
@@ -152,137 +66,46 @@ export interface ContactImportRow {
   cidade?: string;
 }
 
-/**
- * Parse de arquivo Excel (.xlsx ou .xls) para contatos
- */
+/** Parse de arquivo Excel (.xlsx ou .xls) para contatos */
 export async function parseContactsExcelFile(file: File): Promise<ContactImportRow[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-
-        // Pegar a primeira planilha
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-
-        // Converter para JSON
-        const jsonData = XLSX.utils.sheet_to_json<ContactImportRow>(worksheet, {
-          header: [
-            'nome_completo',
-            'whatsapp',
-            'data_nascimento',
-            'endereco',
-            'observacao',
-            'cidade'
-          ],
-          range: 1, // Pular a linha de cabeçalho
-          defval: '', // Valor padrão para células vazias
-        });
-
-        resolve(jsonData);
-      } catch (error) {
-        reject(new Error(`Erro ao processar arquivo: ${error}`));
-      }
-    };
-
-    reader.onerror = () => {
-      reject(new Error('Erro ao ler arquivo'));
-    };
-
-    reader.readAsBinaryString(file);
+  const buffer = await file.arrayBuffer();
+  const workbook = await XLSX.read(buffer, { type: 'binary' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  return XLSX.utils.sheet_to_json<ContactImportRow>(worksheet, {
+    header: ['nome_completo', 'whatsapp', 'data_nascimento', 'endereco', 'observacao', 'cidade'],
+    range: 1,
+    defval: '',
   });
 }
 
-/**
- * Gera um arquivo Excel modelo para importação de contatos
- */
+/** Gera um arquivo Excel modelo para importação de contatos */
 export function generateContactsTemplate(): void {
   const templateData = [
-    {
-      'Nome Completo': 'Ana Silva',
-      'WhatsApp': '5561987654321',
-      'Data de Nascimento': '15/03/1985',
-      'Endereço': 'QNN 14 Bloco A',
-      'Observação': 'Interessado em agricultura',
-      'Cidade': 'Ceilândia'
-    },
-    {
-      'Nome Completo': 'Carlos Santos',
-      'WhatsApp': '61988776655',
-      'Data de Nascimento': '20/07/1990',
-      'Endereço': 'QNM 28 Conjunto J',
-      'Observação': 'Participa de eventos comunitários',
-      'Cidade': 'Brasília'
-    }
+    { 'Nome Completo': 'Ana Silva', 'WhatsApp': '5561987654321', 'Data de Nascimento': '15/03/1985', 'Endereço': 'QNN 14 Bloco A', 'Observação': 'Interessado em agricultura', 'Cidade': 'Ceilândia' },
+    { 'Nome Completo': 'Carlos Santos', 'WhatsApp': '61988776655', 'Data de Nascimento': '20/07/1990', 'Endereço': 'QNM 28 Conjunto J', 'Observação': 'Participa de eventos comunitários', 'Cidade': 'Brasília' },
   ];
-
-  // Criar workbook e worksheet
   const ws = XLSX.utils.json_to_sheet(templateData);
+  ws['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 35 }, { wch: 20 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Contatos');
-
-  // Ajustar largura das colunas
-  const colWidths = [
-    { wch: 25 }, // Nome Completo
-    { wch: 18 }, // WhatsApp
-    { wch: 18 }, // Data de Nascimento
-    { wch: 30 }, // Endereço
-    { wch: 35 }, // Observação
-    { wch: 20 }  // Cidade
-  ];
-  ws['!cols'] = colWidths;
-
-  // Download do arquivo
   XLSX.writeFile(wb, 'modelo_importacao_contatos.xlsx');
 }
 
-/**
- * Valida a estrutura dos dados de contatos importados
- */
-export function validateContactImportData(data: ContactImportRow[]): {
-  isValid: boolean;
-  errors: string[];
-} {
+/** Valida a estrutura dos dados de contatos importados */
+export function validateContactImportData(data: ContactImportRow[]): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
-
   if (!data || data.length === 0) {
     errors.push('Arquivo vazio ou sem dados válidos');
     return { isValid: false, errors };
   }
-
-  // Função auxiliar para validar campo
-  const validateField = (value: any): boolean => {
-    if (value === null || value === undefined) return false;
-    const strValue = String(value).trim();
-    return strValue.length > 0;
-  };
-
-  // Validar campos obrigatórios
-  data.forEach((row, index) => {
-    const lineNumber = index + 2; // +2 porque linha 1 é header e index começa em 0
-
-    if (!validateField(row.nome_completo)) {
-      errors.push(`Linha ${lineNumber}: Nome completo é obrigatório`);
-    }
-
-    if (!validateField(row.whatsapp)) {
-      errors.push(`Linha ${lineNumber}: WhatsApp é obrigatório`);
-    }
-
-    if (!validateField(row.data_nascimento)) {
-      errors.push(`Linha ${lineNumber}: Data de nascimento é obrigatória`);
-    }
-
-    if (!validateField(row.endereco)) {
-      errors.push(`Linha ${lineNumber}: Endereço é obrigatório`);
-    }
+  const valid = (v: unknown) => v !== null && v !== undefined && String(v).trim().length > 0;
+  data.forEach((row, i) => {
+    const line = i + 2;
+    if (!valid(row.nome_completo)) errors.push(`Linha ${line}: Nome completo é obrigatório`);
+    if (!valid(row.whatsapp)) errors.push(`Linha ${line}: WhatsApp é obrigatório`);
+    if (!valid(row.data_nascimento)) errors.push(`Linha ${line}: Data de nascimento é obrigatória`);
+    if (!valid(row.endereco)) errors.push(`Linha ${line}: Endereço é obrigatório`);
   });
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
+  return { isValid: errors.length === 0, errors };
 }

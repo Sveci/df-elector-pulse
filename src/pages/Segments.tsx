@@ -36,7 +36,7 @@ const mockSegments = [
     status: "ativo"
   },
   {
-    id: "2", 
+    id: "2",
     name: "Jovens Universitários",
     description: "Estudantes universitários de 18-25 anos interessados em política",
     totalContacts: 890,
@@ -83,7 +83,7 @@ const Segments = () => {
   const filteredSegments = segments.filter(segment => {
     const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          segment.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || 
+    const matchesCategory = selectedCategory === "all" ||
                            segment.categories.includes(selectedCategory);
     return matchesSearch && matchesCategory;
   });
@@ -121,7 +121,7 @@ const Segments = () => {
       }
     });
     setIsCreateDialogOpen(false);
-    
+
     toast({
       title: "Sucesso",
       description: "Segmento criado com sucesso!"
@@ -131,7 +131,7 @@ const Segments = () => {
   const handleDeleteSegment = (id: string) => {
     setSegments(segments.filter(s => s.id !== id));
     toast({
-      title: "Sucesso", 
+      title: "Sucesso",
       description: "Segmento removido com sucesso!"
     });
   };
@@ -140,7 +140,7 @@ const Segments = () => {
     const categories = newSegment.categories.includes(category)
       ? newSegment.categories.filter(c => c !== category)
       : [...newSegment.categories, category];
-    
+
     setNewSegment({ ...newSegment, categories });
   };
 
@@ -155,7 +155,7 @@ const Segments = () => {
             Organize seus contatos em segmentos para campanhas direcionadas
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <TutorialButton onClick={restartTutorial} />
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -356,7 +356,7 @@ const Segments = () => {
             />
           </div>
         </div>
-        
+
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-48">
             <Filter className="h-4 w-4 mr-2" />
@@ -384,8 +384,8 @@ const Segments = () => {
                   <Button variant="ghost" size="sm">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteSegment(segment.id)}
                   >
@@ -395,7 +395,7 @@ const Segments = () => {
               </div>
               <CardDescription>{segment.description}</CardDescription>
             </CardHeader>
-            
+
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ const Segments = () => {
 
                 <div className="flex justify-between items-center text-sm text-gray-500">
                   <span>Atualizado em {segment.lastUpdated}</span>
-                  <Badge 
+                  <Badge
                     variant={segment.status === "ativo" ? "default" : "secondary"}
                     className="text-xs"
                   >
@@ -434,7 +434,7 @@ const Segments = () => {
             Nenhum segmento encontrado
           </h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm || selectedCategory !== "all" 
+            {searchTerm || selectedCategory !== "all"
               ? "Tente ajustar os filtros de busca."
               : "Crie seu primeiro segmento para organizar seus contatos."
             }

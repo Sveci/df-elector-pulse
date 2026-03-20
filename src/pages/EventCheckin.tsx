@@ -106,8 +106,8 @@ export default function EventCheckin() {
   }
 
   // Buscar info da categoria dinamicamente
-  const categoryData = categories.find(c => 
-    c.value === registration.event_category || 
+  const categoryData = categories.find(c =>
+    c.value === registration.event_category ||
     c.label.toLowerCase() === registration.event_category?.toLowerCase()
   );
   const categoryInfo = {
@@ -116,12 +116,12 @@ export default function EventCheckin() {
   };
 
   const isCheckedIn = registration.checked_in;
-  
+
   // Verificar se já passou o prazo configurado para check-in
-  const isCheckinClosed = registration.event_date && registration.event_time 
+  const isCheckinClosed = registration.event_date && registration.event_time
     ? isEventDeadlinePassed(
-        registration.event_date, 
-        registration.event_time, 
+        registration.event_date,
+        registration.event_time,
         registration.event_registration_deadline_hours
       )
     : false;
@@ -209,7 +209,7 @@ export default function EventCheckin() {
                     className="pl-10 text-center text-lg tracking-widest font-mono"
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={handleValidatePin}
                   disabled={isValidatingPin || pin.length < 6}
                 >
@@ -304,8 +304,8 @@ export default function EventCheckin() {
           {/* Actions */}
           <div className="flex gap-3">
             {!isCheckedIn ? (
-              <Button 
-                onClick={handleCheckIn} 
+              <Button
+                onClick={handleCheckIn}
                 disabled={updateCheckIn.isPending}
                 className="flex-1"
                 size="lg"
@@ -313,8 +313,8 @@ export default function EventCheckin() {
                 {updateCheckIn.isPending ? "Confirmando..." : "Confirmar Presença"}
               </Button>
             ) : (
-              <Button 
-                onClick={handleUndoCheckIn} 
+              <Button
+                onClick={handleUndoCheckIn}
                 disabled={updateCheckIn.isPending}
                 variant="outline"
                 className="flex-1"

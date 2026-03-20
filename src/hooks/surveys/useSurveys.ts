@@ -65,19 +65,19 @@ export function useSurvey(idOrSlug: string | undefined) {
     queryKey: ["survey", idOrSlug],
     queryFn: async () => {
       if (!idOrSlug) return null;
-      
+
       // Try by slug first (for public pages), then by id
       let query = supabase.from("surveys").select("*");
-      
+
       // Check if it's a UUID format
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-      
+
       if (isUUID) {
         query = query.eq("id", idOrSlug);
       } else {
         query = query.eq("slug", idOrSlug);
       }
-      
+
       const { data, error } = await query.single();
 
       if (error) throw error;
@@ -92,7 +92,7 @@ export function useSurveyQuestions(surveyId: string | undefined) {
     queryKey: ["survey_questions", surveyId],
     queryFn: async () => {
       if (!surveyId) return [];
-      
+
       const { data, error } = await supabase
         .from("survey_questions")
         .select("*")
@@ -111,7 +111,7 @@ export function useSurveyResponses(surveyId: string | undefined) {
     queryKey: ["survey_responses", surveyId],
     queryFn: async () => {
       if (!surveyId) return [];
-      
+
       const { data, error } = await supabase
         .from("survey_responses")
         .select(`
@@ -143,7 +143,7 @@ export function useCreateSurvey() {
       // Generate slug from title
       const { data: slugData, error: slugError } = await supabase
         .rpc("generate_survey_slug", { base_name: data.titulo });
-      
+
       if (slugError) throw slugError;
 
       const { data: survey, error } = await supabase
@@ -223,9 +223,9 @@ export function useSaveQuestions() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ surveyId, questions }: { 
-      surveyId: string; 
-      questions: Omit<SurveyQuestion, "id" | "survey_id" | "created_at">[] 
+    mutationFn: async ({ surveyId, questions }: {
+      surveyId: string;
+      questions: Omit<SurveyQuestion, "id" | "survey_id" | "created_at">[]
     }) => {
       // Delete existing questions
       await supabase

@@ -279,8 +279,8 @@ export function SurveyAIAnalysisPanel({ survey, questions, responses }: SurveyAI
                 Baixar PDF
               </Button>
             )}
-            <Button 
-              onClick={generateAnalysis} 
+            <Button
+              onClick={generateAnalysis}
               disabled={isLoading || responses.length === 0}
             >
               {isLoading ? (

@@ -45,7 +45,7 @@ export function useLeaderEventParticipation(leaderId: string | undefined, leader
     queryKey: ["leader_indicated_events", leaderId],
     queryFn: async (): Promise<LeaderIndicatedEventRegistration[]> => {
       if (!leaderId) return [];
-      
+
       const { data, error } = await supabase
         .from("event_registrations")
         .select(`
@@ -72,10 +72,10 @@ export function useLeaderEventParticipation(leaderId: string | undefined, leader
     queryKey: ["leader_own_events", leaderPhone, leaderEmail],
     queryFn: async (): Promise<LeaderEventRegistration[]> => {
       if (!leaderPhone && !leaderEmail) return [];
-      
+
       // Normalizar telefone para busca
       const normalizedPhone = leaderPhone?.replace(/\D/g, '') || '';
-      
+
       let query = supabase
         .from("event_registrations")
         .select(`

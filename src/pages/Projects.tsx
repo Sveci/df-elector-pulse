@@ -104,7 +104,7 @@ const Projects = () => {
               />
             </div>
           </div>
-          
+
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Status" />
@@ -145,7 +145,7 @@ const Projects = () => {
                   <div className="flex justify-between items-start mb-2">
                     <CardTitle className="text-lg pr-2">{isDemoMode ? m.platformName(program.nome) : program.nome}</CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         variant={program.status === "Ativo" ? "default" : "secondary"}
                         className={program.status === "Ativo" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}
                       >
@@ -166,7 +166,7 @@ const Projects = () => {
                             </DropdownMenuItem>
                           </EditProgramDialog>
                           <DeleteProgramDialog programId={program.id} programName={program.nome}>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onSelect={(e) => e.preventDefault()}
                               className="text-destructive focus:text-destructive"
                             >
@@ -181,7 +181,7 @@ const Projects = () => {
                   </div>
                   <CardDescription>{isDemoMode ? m.observation(program.descricao) : program.descricao}</CardDescription>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
@@ -209,7 +209,7 @@ const Projects = () => {
               Nenhum programa encontrado
             </h3>
             <p className="text-muted-foreground mb-4">
-              {programs.length === 0 
+              {programs.length === 0
                 ? "Comece criando seu primeiro programa."
                 : "Tente ajustar os filtros de busca."
               }

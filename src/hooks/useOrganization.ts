@@ -46,18 +46,18 @@ export function useOrganization() {
       let query = supabase
         .from("organization")
         .select("*");
-      
+
       if (tenantId) {
         query = query.eq("tenant_id", tenantId);
       }
 
       const { data, error } = await query.limit(1).maybeSingle();
-      
+
       if (error) throw error;
 
       // Merge tenant political config into organization data
       const org = (data as Organization | null) || {} as Partial<Organization>;
-      
+
       if (activeTenant) {
         return {
           ...org,
@@ -75,7 +75,7 @@ export function useOrganization() {
 export function useUpdateOrganization() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
-  
+
   return useMutation({
     mutationFn: async (updates: Partial<Organization>) => {
       // First get the existing organization for this tenant
@@ -83,7 +83,7 @@ export function useUpdateOrganization() {
         .from("organization")
         .select("id")
         .limit(1);
-      
+
       if (tenantId) {
         findQuery = findQuery.eq("tenant_id", tenantId);
       }
@@ -97,11 +97,11 @@ export function useUpdateOrganization() {
           .eq("id", existing.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return data;
       } else {
-        const insertData = tenantId 
+        const insertData = tenantId
           ? { ...updates, tenant_id: tenantId }
           : updates;
         const { data, error } = await supabase
@@ -109,7 +109,7 @@ export function useUpdateOrganization() {
           .insert(insertData)
           .select()
           .single();
-        
+
         if (error) throw error;
         return data;
       }

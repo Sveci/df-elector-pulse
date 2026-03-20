@@ -73,7 +73,7 @@ export function useSendEventPhotos() {
 
       toast({
         title: "Fotos enviadas com sucesso!",
-        description: channels.length > 0 
+        description: channels.length > 0
           ? `Enviado: ${channels.join(" e ")}`
           : "Nenhuma mensagem foi enviada. Verifique as configurações de integração."
       });

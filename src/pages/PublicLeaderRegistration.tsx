@@ -92,7 +92,7 @@ export default function PublicLeaderRegistration() {
 
   async function handleResendVerification() {
     if (!alreadyRegistered) return;
-    
+
     setIsResending(true);
     try {
       // Buscar dados atualizados do líder via RPC SECURITY DEFINER
@@ -121,7 +121,7 @@ export default function PublicLeaderRegistration() {
       // Enviar SMS de verificação com o código EXISTENTE
       // SEMPRE usa URL de produção (via função dedicada)
       const linkVerificacao = generateLeaderVerificationUrl(verificationCode);
-      
+
       const { error: smsError } = await supabase.functions.invoke('send-sms', {
         body: {
           phone: leader.telefone,
@@ -183,7 +183,7 @@ export default function PublicLeaderRegistration() {
         is_verified: boolean;
         error_message: string | null;
       } | null;
-      
+
       if (!registrationResult) {
         throw new Error("Erro ao processar cadastro. Tente novamente.");
       }
@@ -212,9 +212,9 @@ export default function PublicLeaderRegistration() {
       const verificationCode = registrationResult.verification_code;
 
       // Verificar se deve usar verificação via WhatsApp (pausa SMS)
-      const useWhatsAppVerification = 
-        integrationSettings?.verification_wa_enabled && 
-        (integrationSettings?.verification_method === 'whatsapp_consent' || 
+      const useWhatsAppVerification =
+        integrationSettings?.verification_wa_enabled &&
+        (integrationSettings?.verification_method === 'whatsapp_consent' ||
          integrationSettings?.verification_method === 'whatsapp_meta_cloud');
 
       if (leaderId && verificationCode) {
@@ -270,7 +270,7 @@ export default function PublicLeaderRegistration() {
       // Email de boas-vindas: SEMPRE envia (mesmo com WhatsApp ativo)
       if (leaderId && normalizedEmail) {
         try {
-          const mensagem = useWhatsAppVerification 
+          const mensagem = useWhatsAppVerification
             ? 'Seu cadastro foi recebido! Verifique pelo WhatsApp para ativar seu link de indicação.'
             : 'Seu cadastro foi recebido! Você receberá um SMS para confirmar seu telefone e ativar seu link de indicação.';
 
@@ -374,8 +374,8 @@ export default function PublicLeaderRegistration() {
                   <p className="text-sm text-muted-foreground mb-6">
                     Para ativar seu cadastro, você precisa clicar no link de verificação que enviamos por SMS.
                   </p>
-                  <Button 
-                    onClick={handleResendVerification} 
+                  <Button
+                    onClick={handleResendVerification}
                     disabled={isResending}
                     className="w-full"
                   >
@@ -401,16 +401,16 @@ export default function PublicLeaderRegistration() {
   }
 
   // Verificar se WhatsApp está ativo para exibir botão
-  const useWhatsAppVerification = 
-    integrationSettings?.verification_wa_enabled && 
-    (integrationSettings?.verification_method === 'whatsapp_consent' || 
+  const useWhatsAppVerification =
+    integrationSettings?.verification_wa_enabled &&
+    (integrationSettings?.verification_method === 'whatsapp_consent' ||
      integrationSettings?.verification_method === 'whatsapp_meta_cloud');
 
   // Verificar elegibilidade para WhatsApp (modo teste)
   const isWhatsAppEligible = (() => {
     if (!useWhatsAppVerification) return false;
     if (!integrationSettings?.verification_wa_test_mode) return true; // Produção: todos elegíveis
-    
+
     // Modo teste: verificar whitelist
     const whitelist = integrationSettings?.verification_wa_whitelist || [];
     const phone = successData?.phone || '';
@@ -419,14 +419,14 @@ export default function PublicLeaderRegistration() {
 
   const handleOpenWhatsApp = () => {
     if (!successData || !integrationSettings) return;
-    
+
     const keyword = integrationSettings.verification_wa_keyword || 'CONFIRMAR';
     const zapiPhone = integrationSettings.verification_wa_zapi_phone || '';
     const token = successData.verificationCode;
-    
+
     const message = `${keyword} ${token}`;
     const url = buildWhatsAppLink(zapiPhone, message);
-    
+
     window.open(url, '_blank');
   };
 
@@ -442,7 +442,7 @@ export default function PublicLeaderRegistration() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              
+
               {isWhatsAppEligible ? (
                 // Fluxo WhatsApp
                 <>
@@ -452,8 +452,8 @@ export default function PublicLeaderRegistration() {
                   <p className="text-muted-foreground mb-6">
                     Para ativar seu link de indicação, confirme pelo WhatsApp:
                   </p>
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleOpenWhatsApp}
                     className="w-full bg-green-600 hover:bg-green-700 mb-4"
                     size="lg"
@@ -461,7 +461,7 @@ export default function PublicLeaderRegistration() {
                     <MessageSquare className="mr-2 h-5 w-5" />
                     Verificar pelo WhatsApp
                   </Button>
-                  
+
                   <p className="text-xs text-muted-foreground">
                     Você também receberá um email com mais informações.
                   </p>
@@ -499,7 +499,7 @@ export default function PublicLeaderRegistration() {
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {/* Logo */}
         {logoUrl && (
           <div className="absolute top-6 left-0 right-0 flex justify-center">

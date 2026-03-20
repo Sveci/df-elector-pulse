@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
-import { 
-  Eye, 
-  Edit, 
-  Copy, 
-  Trash2, 
-  ExternalLink, 
+import {
+  Eye,
+  Edit,
+  Copy,
+  Trash2,
+  ExternalLink,
   MoreVertical,
   Play,
   Pause,
@@ -34,11 +34,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  LeadFunnel, 
-  useUpdateFunnel, 
-  useDuplicateFunnel, 
-  useDeleteFunnel 
+import {
+  LeadFunnel,
+  useUpdateFunnel,
+  useDuplicateFunnel,
+  useDeleteFunnel
 } from "@/hooks/campaigns/useLeadFunnels";
 import { CreateFunnelDialog } from "./CreateFunnelDialog";
 import { FunnelReportDialog } from "./FunnelReportDialog";
@@ -54,15 +54,15 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   const updateFunnel = useUpdateFunnel();
   const duplicateFunnel = useDuplicateFunnel();
   const deleteFunnel = useDeleteFunnel();
 
   const funnelUrl = `${getBaseUrl()}/captacao/${funnel.slug}`;
-  
-  const conversionRate = funnel.views_count > 0 
-    ? ((funnel.leads_count / funnel.views_count) * 100).toFixed(1) 
+
+  const conversionRate = funnel.views_count > 0
+    ? ((funnel.leads_count / funnel.views_count) * 100).toFixed(1)
     : '0';
 
   const downloadRate = funnel.leads_count > 0
@@ -105,18 +105,18 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
     <>
       <Card className="overflow-hidden">
         {/* Cover preview */}
-        <div 
+        <div
           className="h-24 bg-gradient-to-br from-primary/20 to-primary/5 relative"
-          style={!isDemoMode && funnel.cover_url ? { 
+          style={!isDemoMode && funnel.cover_url ? {
             backgroundImage: `url(${funnel.cover_url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           } : undefined}
         >
           {!isDemoMode && funnel.logo_url && (
-            <img 
-              src={funnel.logo_url} 
-              alt="Logo" 
+            <img
+              src={funnel.logo_url}
+              alt="Logo"
               className="absolute bottom-2 left-1/2 -translate-x-1/2 h-12 w-auto bg-white rounded-lg p-1 shadow"
             />
           )}
@@ -178,7 +178,7 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => setDeleteDialogOpen(true)}
                     className="text-destructive focus:text-destructive"
                   >
@@ -225,8 +225,8 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
         </CardContent>
       </Card>
 
-      <CreateFunnelDialog 
-        open={editDialogOpen} 
+      <CreateFunnelDialog
+        open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         editFunnel={funnel}
       />
@@ -242,7 +242,7 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir funil?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O funil "{m.brand(funnel.nome)}" será 
+              Esta ação não pode ser desfeita. O funil "{m.brand(funnel.nome)}" será
               permanentemente excluído, mas os leads já capturados serão mantidos.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -58,12 +58,27 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Webhook Secret Validation ────────────────────────────────────
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const url = new URL(req.url);
+      const token = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
+      if (token !== webhookSecret) {
+        console.warn("[zapi-webhook] Unauthorized request - invalid secret");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // ── End Webhook Secret ───────────────────────────────────────────
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    
+
     console.log("[zapi-webhook] Received webhook:", JSON.stringify(body));
 
     // Detect webhook type based on payload structure
@@ -101,7 +116,7 @@ Deno.serve(async (req) => {
 function detectWebhookType(body: Record<string, unknown>): string {
   // Use Z-API's 'type' field as primary source
   const zapiType = body.type as string | undefined;
-  
+
   if (zapiType) {
     switch (zapiType) {
       case "MessageStatusCallback":
@@ -115,29 +130,29 @@ function detectWebhookType(body: Record<string, unknown>): string {
         return "connection-status";
     }
   }
-  
+
   // Fallback to previous logic if no 'type' field
   if (body.status && (body.zapiMessageId || body.messageId || body.ids)) {
     return "message-status";
   }
-  
+
   if (body.text || (body.phone && !body.status && !zapiType)) {
     return "received-message";
   }
-  
+
   if (body.connected !== undefined) {
     return "connection-status";
   }
-  
+
   return "unknown";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleMessageStatus(supabase: any, data: ZapiMessageStatus) {
   // Extract messageId from multiple possible sources
-  const messageId = data.zapiMessageId || data.messageId || 
+  const messageId = data.zapiMessageId || data.messageId ||
     (Array.isArray(data.ids) && data.ids.length > 0 ? data.ids[0] : null);
-  
+
   if (!messageId) {
     console.log("[zapi-webhook] No messageId in status update, data:", JSON.stringify(data));
     return;
@@ -146,7 +161,7 @@ async function handleMessageStatus(supabase: any, data: ZapiMessageStatus) {
   // Determine status based on callback type and status field
   let status = data.status?.toLowerCase();
   const zapiType = data.type;
-  
+
   // If DeliveryCallback without explicit status, it's "delivered"
   if (zapiType === "DeliveryCallback" && !status) {
     status = "delivered";
@@ -218,7 +233,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       .eq("message_id", messageId)
       .limit(1)
       .single();
-    
+
     if (existingMsg) {
       console.log(`[zapi-webhook] Duplicate messageId ${messageId} detected, skipping processing`);
       return;
@@ -246,10 +261,10 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
   // Check for opt-out commands
   const optOutCommands = ["SAIR", "PARAR", "CANCELAR", "DESCADASTRAR", "STOP", "UNSUBSCRIBE"];
   const normalizedMessage = message.trim().toUpperCase();
-  
+
   if (optOutCommands.includes(normalizedMessage)) {
     console.log(`[zapi-webhook] Opt-out command detected: ${normalizedMessage}`);
-    
+
     if (contact && contact.is_active !== false) {
       // Mark contact as inactive
       const { error: optOutError } = await supabase
@@ -261,7 +276,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
           opt_out_channel: "whatsapp",
         })
         .eq("id", contact.id);
-      
+
       if (optOutError) {
         console.error("[zapi-webhook] Error processing opt-out:", optOutError);
       } else {
@@ -276,7 +291,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
     } else if (contact && contact.is_active === false) {
       console.log("[zapi-webhook] Contact already opted out");
     }
-    
+
     // Record incoming message regardless
     await supabase.from("whatsapp_messages").insert({
       message_id: messageId,
@@ -287,14 +302,14 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       contact_id: contact?.id || null,
       sent_at: new Date().toISOString(),
     });
-    
+
     return;
   }
 
   // Check for re-subscribe command
   if (normalizedMessage === "VOLTAR" && contact && contact.is_active === false) {
     console.log("[zapi-webhook] Re-subscribe command detected");
-    
+
     const { error: resubError } = await supabase
       .from("office_contacts")
       .update({
@@ -304,7 +319,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
         opt_out_channel: null,
       })
       .eq("id", contact.id);
-    
+
     if (!resubError) {
       console.log(`[zapi-webhook] Contact ${contact.id} re-subscribed successfully`);
       // Send confirmation only if opt-out category is enabled
@@ -314,7 +329,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
         console.log("[zapi-webhook] wa_auto_optout_enabled=false, skipping re-subscribe confirmation");
       }
     }
-    
+
     await supabase.from("whatsapp_messages").insert({
       message_id: messageId,
       phone: phone,
@@ -324,7 +339,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       contact_id: contact?.id || null,
       sent_at: new Date().toISOString(),
     });
-    
+
     return;
   }
 
@@ -334,10 +349,10 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
     .replace(/[*_~`]/g, '')  // Remove WhatsApp formatting characters
     .trim()
     .toUpperCase();
-  
+
   console.log(`[zapi-webhook] Original message: "${message}"`);
   console.log(`[zapi-webhook] Cleaned message: "${cleanMessage}"`);
-  
+
   // === RETIRAR [CODE] - Material withdrawal confirmation ===
   const retirarMatch = cleanMessage.match(/^RETIRAR\s+([A-Z0-9]{6})$/);
   if (retirarMatch) {
@@ -499,7 +514,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
   if (confirmMatch) {
     const token = confirmMatch[1];
     console.log(`[zapi-webhook] Detected CONFIRMAR command with token: ${token}`);
-    
+
     // Record incoming message FIRST (before any processing)
     await supabase.from("whatsapp_messages").insert({
       message_id: messageId,
@@ -510,7 +525,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       contact_id: contact?.id || null,
       sent_at: new Date().toISOString(),
     });
-    
+
     // Call RPC to process verification keyword
     const { data: verifyResult, error: verifyError } = await supabase.rpc("process_verification_keyword", {
       _token: token,
@@ -527,24 +542,24 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       // Ask for consent
       const consentMessage = `Olá ${verificationData.contact_name}! 👋\n\nPara confirmar seu cadastro como apoiador(a), responda *SIM* para esta mensagem.`;
       console.log(`[zapi-webhook] Sending consent question to ${normalizedPhone}`);
-      
+
       try {
         const sendResult = await sendWhatsAppMessage(supabase, normalizedPhone, consentMessage, typedSettings);
         console.log(`[zapi-webhook] Consent message send result:`, sendResult);
-        
+
         // Update contact_verifications to record consent question was sent
         const { error: updateError } = await supabase
           .from("contact_verifications")
           .update({ consent_question_sent_at: new Date().toISOString() })
           .eq("token", token);
-        
+
         if (updateError) {
           console.error(`[zapi-webhook] Error updating consent_question_sent_at:`, updateError);
         }
       } catch (sendError) {
         console.error(`[zapi-webhook] Failed to send consent message to ${normalizedPhone}:`, sendError);
       }
-      
+
       return;
     } else {
       // Token not found, already verified, or phone mismatch
@@ -562,11 +577,11 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       return;
     }
   }
-  
+
   // Check for SIM response (consent confirmation)
   if (cleanMessage === "SIM") {
     console.log(`[zapi-webhook] Detected SIM consent response from ${normalizedPhone}`);
-    
+
     // Call RPC to process consent
     const { data: consentResult, error: consentError } = await supabase.rpc("process_verification_consent", {
       _phone: normalizedPhone
@@ -582,14 +597,14 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       // Send confirmation message
       const confirmMessage = `✅ Cadastro confirmado com sucesso!\n\nVocê receberá seu link de indicação em instantes.`;
       await sendWhatsAppMessage(supabase, normalizedPhone, confirmMessage, typedSettings);
-      
+
       // Call edge function to send affiliate links
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      
+
       try {
         console.log(`[zapi-webhook] Calling send-leader-affiliate-links for ${consentData.contact_type} ${consentData.contact_id}`);
-        
+
         const response = await fetch(
           `${supabaseUrl}/functions/v1/send-leader-affiliate-links`,
           {
@@ -603,13 +618,13 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
             }),
           }
         );
-        
+
         const result = await response.json();
         console.log(`[zapi-webhook] send-leader-affiliate-links result:`, result);
       } catch (affiliateError) {
         console.error(`[zapi-webhook] Error sending affiliate links:`, affiliateError);
       }
-      
+
       // Record incoming message
       await supabase.from("whatsapp_messages").insert({
         message_id: messageId,
@@ -620,23 +635,23 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
         contact_id: contact?.id || null,
         sent_at: new Date().toISOString(),
       });
-      
+
       return;
     }
     // If no pending consent found, continue to chatbot
   }
-  
+
   // LEGACY FLOW DISABLED: Direct code verification via WhatsApp is no longer supported.
   // Users must use the new flow: "CONFIRMAR [TOKEN]" → "SIM"
   // This prevents confusion between the old (verification_code from lideres) and new (token from contact_verifications) flows.
   const codeMatch = cleanMessage.match(/^[A-Z0-9]{5,6}$/);
   let shouldCallChatbot = false;
-  
+
   if (codeMatch) {
     const code = codeMatch[0];
     console.log(`[zapi-webhook] Detected 5-6 char code: ${code}. Legacy direct verification is DISABLED.`);
     console.log(`[zapi-webhook] User should use "CONFIRMAR ${code}" format instead.`);
-    
+
     // Search for contact with this verification code (only for logging/context)
     const { data: contactToVerify } = await supabase
       .from("office_contacts")
@@ -644,13 +659,13 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       .eq("verification_code", code)
       .limit(1)
       .single();
-    
+
     if (contactToVerify) {
       console.log(`[zapi-webhook] Found contact with code ${code}: id=${contactToVerify.id}, is_verified=${contactToVerify.is_verified}`);
       // Instead of auto-verifying, inform user of correct flow
       const helpMessage = `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`;
       await sendWhatsAppMessage(supabase, normalizedPhone, helpMessage, typedSettings);
-      
+
       // Record incoming message
       await supabase.from("whatsapp_messages").insert({
         message_id: messageId,
@@ -663,7 +678,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       });
       return;
     }
-    
+
     // Check for leader with this code
     const { data: leaderToVerify } = await supabase
       .from("lideres")
@@ -671,10 +686,10 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       .eq("verification_code", code)
       .limit(1)
       .single();
-    
+
     if (leaderToVerify) {
       console.log(`[zapi-webhook] Found leader with code ${code}: id=${leaderToVerify.id}, is_verified=${leaderToVerify.is_verified}`);
-      
+
       if (leaderToVerify.is_verified) {
         // Already verified - inform user
         const infoMessage = `Seu cadastro já foi verificado! Se você precisa do seu link de indicação, entre em contato com nossa equipe.`;
@@ -684,7 +699,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
         const helpMessage = `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`;
         await sendWhatsAppMessage(supabase, normalizedPhone, helpMessage, typedSettings);
       }
-      
+
       // Record incoming message
       await supabase.from("whatsapp_messages").insert({
         message_id: messageId,
@@ -697,7 +712,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
       });
       return;
     }
-    
+
     // No match found - might be chatbot keyword
     console.log(`[zapi-webhook] No pending verification found for code: ${code}, checking if sender is a leader for chatbot`);
     shouldCallChatbot = true;
@@ -710,7 +725,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
   if (shouldCallChatbot) {
     // Try with normalized phone (with +) and without + prefix
     const phoneWithoutPlus = normalizedPhone.replace(/^\+/, "");
-    
+
     const { data: leader } = await supabase
       .from("lideres")
       .select("id, nome_completo")
@@ -721,10 +736,10 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
 
     if (leader) {
       console.log(`[zapi-webhook] Message from leader ${leader.nome_completo}, calling chatbot`);
-      
+
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      
+
       try {
         const chatbotResponse = await fetch(
           `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
@@ -742,7 +757,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
             }),
           }
         );
-        
+
         const chatbotResult = await chatbotResponse.json();
         console.log("[zapi-webhook] Chatbot response:", JSON.stringify(chatbotResult));
       } catch (chatbotError) {
@@ -774,14 +789,14 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sendPendingMessages(supabase: any, contact: any, settings: IntegrationSettings | null) {
   const pendingMessages = contact.pending_messages || [];
-  
+
   if (pendingMessages.length === 0) {
     console.log("[zapi-webhook] No pending messages to send");
     return;
   }
-  
+
   console.log(`[zapi-webhook] Sending ${pendingMessages.length} pending messages`);
-  
+
   // Use passed settings or fetch if not available
   let typedSettings = settings;
   if (!typedSettings) {
@@ -792,7 +807,7 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
       .single();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
-  
+
   for (const pending of pendingMessages) {
     try {
       // Check if it's an email template (prefixed with "email:")
@@ -800,41 +815,41 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
         // Process email
         const emailTemplateSlug = pending.template.replace("email:", "");
         console.log(`[zapi-webhook] Processing pending email: ${emailTemplateSlug}`);
-        
+
         if (!typedSettings?.resend_enabled || !typedSettings?.resend_api_key) {
           console.log("[zapi-webhook] Resend not configured, skipping email");
           continue;
         }
-        
+
         // Get email template
         const { data: emailTemplate } = await supabase
           .from("email_templates")
           .select("assunto, conteudo_html")
           .eq("slug", emailTemplateSlug)
           .single();
-        
+
         if (!emailTemplate) {
           console.log(`[zapi-webhook] Email template ${emailTemplateSlug} not found`);
           continue;
         }
-        
+
         // Replace variables in subject and content
         let subject = emailTemplate.assunto;
         let htmlContent = emailTemplate.conteudo_html;
-        
+
         for (const [key, value] of Object.entries(pending.variables || {})) {
           const regex = new RegExp(`{{${key}}}`, "g");
           subject = subject.replace(regex, value as string);
           htmlContent = htmlContent.replace(regex, value as string);
         }
-        
+
         // Get recipient email from variables
         const recipientEmail = pending.variables?.email;
         if (!recipientEmail) {
           console.log("[zapi-webhook] No email in pending message variables");
           continue;
         }
-        
+
         // Send email via Resend
         const resendResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -843,7 +858,7 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
             Authorization: `Bearer ${typedSettings.resend_api_key}`,
           },
           body: JSON.stringify({
-            from: typedSettings.resend_from_email 
+            from: typedSettings.resend_from_email
               ? `${typedSettings.resend_from_name || 'Sistema'} <${typedSettings.resend_from_email}>`
               : "Sistema <onboarding@resend.dev>",
             to: [recipientEmail],
@@ -851,10 +866,10 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
             html: htmlContent,
           }),
         });
-        
+
         const resendResult = await resendResponse.json();
         console.log(`[zapi-webhook] Sent pending email ${emailTemplateSlug}:`, resendResult);
-        
+
         // Record in email_logs
         await supabase.from("email_logs").insert({
           to_email: recipientEmail,
@@ -867,32 +882,32 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
           contact_id: contact.id,
           event_id: pending.variables?.eventId || null,
         });
-        
+
       } else {
         // Process WhatsApp message
         if (!typedSettings?.zapi_enabled || !typedSettings?.zapi_instance_id || !typedSettings?.zapi_token) {
           console.log("[zapi-webhook] Z-API not configured, skipping WhatsApp message");
           continue;
         }
-        
+
         // Get template
         const { data: template } = await supabase
           .from("whatsapp_templates")
           .select("mensagem")
           .eq("slug", pending.template)
           .single();
-        
+
         if (!template) {
           console.log(`[zapi-webhook] Template ${pending.template} not found`);
           continue;
         }
-        
+
         // Replace variables
         let message = template.mensagem;
         for (const [key, value] of Object.entries(pending.variables || {})) {
           message = message.replace(new RegExp(`{{${key}}}`, "g"), value as string);
         }
-        
+
         // Send via Z-API
         const zapiUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-text`;
         const response = await fetch(zapiUrl, {
@@ -903,10 +918,10 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
             message: message,
           }),
         });
-        
+
         const result = await response.json();
         console.log(`[zapi-webhook] Sent pending message ${pending.template}:`, result);
-        
+
         // Record in whatsapp_messages
         await supabase.from("whatsapp_messages").insert({
           message_id: result.messageId || result.zapiMessageId,
@@ -918,15 +933,15 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
           sent_at: new Date().toISOString(),
         });
       }
-      
+
       // Small delay between messages
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
     } catch (err) {
       console.error(`[zapi-webhook] Error sending pending message:`, err);
     }
   }
-  
+
   // Clear pending messages
   await supabase
     .from("office_contacts")
@@ -946,36 +961,36 @@ async function sendVerificationConfirmation(supabase: any, phone: string, nome: 
       .single();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
-  
+
   if (!typedSettings?.zapi_enabled) {
     console.log("[zapi-webhook] Z-API not enabled, skipping confirmation");
     return;
   }
-  
+
   // Get organization name
   const { data: org } = await supabase
     .from("organization")
     .select("nome")
     .limit(1)
     .single();
-  
+
   // Get confirmation template
   const { data: template } = await supabase
     .from("whatsapp_templates")
     .select("mensagem")
     .eq("slug", "verificacao-confirmada")
     .single();
-  
+
   if (!template) {
     console.log("[zapi-webhook] Confirmation template not found");
     return;
   }
-  
+
   // Replace variables
   let message = template.mensagem;
   message = message.replace(/{{nome}}/g, nome);
   message = message.replace(/{{deputado_nome}}/g, org?.nome || "Deputado");
-  
+
   // Send via Z-API
   try {
     const zapiUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-text`;
@@ -987,17 +1002,17 @@ async function sendVerificationConfirmation(supabase: any, phone: string, nome: 
         message: message,
       }),
     });
-    
+
     const result = await response.json();
     console.log("[zapi-webhook] Sent verification confirmation:", result);
-    
+
     // Record in whatsapp_messages
     const { data: contact } = await supabase
       .from("office_contacts")
       .select("id")
       .eq("telefone_norm", phone)
       .single();
-    
+
     await supabase.from("whatsapp_messages").insert({
       message_id: result.messageId || result.zapiMessageId,
       phone: phone,
@@ -1007,7 +1022,7 @@ async function sendVerificationConfirmation(supabase: any, phone: string, nome: 
       contact_id: contact?.id,
       sent_at: new Date().toISOString(),
     });
-    
+
   } catch (err) {
     console.error("[zapi-webhook] Error sending confirmation:", err);
   }
@@ -1025,29 +1040,29 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
       .single();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
-  
+
   if (!typedSettings?.zapi_enabled) {
     console.log("[zapi-webhook] Z-API not enabled, skipping leader verification confirmation");
     return;
   }
-  
+
   // Get organization name
   const { data: org } = await supabase
     .from("organization")
     .select("nome")
     .limit(1)
     .single();
-  
+
   // Get confirmation template for leaders
   const { data: template } = await supabase
     .from("whatsapp_templates")
     .select("mensagem")
     .eq("slug", "lider-verificado")
     .single();
-  
+
   // Default message if template not found
   let message = template?.mensagem || `Olá ${nome}! 🎉\n\nSeu cadastro como liderança foi *verificado com sucesso*!\n\nAgora você faz parte oficial da rede de apoio do ${org?.nome || "Deputado"}.\n\nDigite *AJUDA* para ver os comandos disponíveis.`;
-  
+
   // Replace variables
   message = message.replace(/{{nome}}/g, nome);
   message = message.replace(/{{deputado_nome}}/g, org?.nome || "Deputado");
@@ -1055,7 +1070,7 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
     const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
     message = message.replace(/{{link_afiliado}}/g, `${appBaseUrl}/i/${affiliateToken}`);
   }
-  
+
   // Send via Z-API
   try {
     const zapiUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-text`;
@@ -1067,10 +1082,10 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
         message: message,
       }),
     });
-    
+
     const result = await response.json();
     console.log("[zapi-webhook] Sent leader verification confirmation:", result);
-    
+
     // Record in whatsapp_messages
     await supabase.from("whatsapp_messages").insert({
       message_id: result.messageId || result.zapiMessageId,
@@ -1080,7 +1095,7 @@ async function sendLeaderVerificationConfirmation(supabase: any, phone: string, 
       status: "sent",
       sent_at: new Date().toISOString(),
     });
-    
+
   } catch (err) {
     console.error("[zapi-webhook] Error sending leader verification confirmation:", err);
   }
@@ -1098,22 +1113,22 @@ async function sendOptOutConfirmation(supabase: any, phone: string, nome: string
       .single();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
-  
+
   if (!typedSettings?.zapi_enabled) {
     console.log("[zapi-webhook] Z-API not enabled, skipping opt-out confirmation");
     return;
   }
-  
+
   // Get template or use default message
   const { data: template } = await supabase
     .from("whatsapp_templates")
     .select("mensagem")
     .eq("slug", "descadastro-confirmado")
     .single();
-  
+
   let message = template?.mensagem || `Olá ${nome}! 👋\n\nVocê foi descadastrado(a) com sucesso e não receberá mais nossas comunicações.\n\nSe desejar voltar a receber, basta enviar "VOLTAR" para este número.\n\nObrigado pelo tempo que esteve conosco! 🙏`;
   message = message.replace(/{{nome}}/g, nome);
-  
+
   try {
     const zapiUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-text`;
     const response = await fetch(zapiUrl, {
@@ -1124,17 +1139,17 @@ async function sendOptOutConfirmation(supabase: any, phone: string, nome: string
         message: message,
       }),
     });
-    
+
     const result = await response.json();
     console.log("[zapi-webhook] Sent opt-out confirmation:", result);
-    
+
     // Record in whatsapp_messages
     const { data: contact } = await supabase
       .from("office_contacts")
       .select("id")
       .eq("telefone_norm", phone.startsWith("+") ? phone : "+" + phone)
       .single();
-    
+
     await supabase.from("whatsapp_messages").insert({
       message_id: result.messageId || result.zapiMessageId,
       phone: phone,
@@ -1144,7 +1159,7 @@ async function sendOptOutConfirmation(supabase: any, phone: string, nome: string
       contact_id: contact?.id,
       sent_at: new Date().toISOString(),
     });
-    
+
   } catch (err) {
     console.error("[zapi-webhook] Error sending opt-out confirmation:", err);
   }
@@ -1162,11 +1177,11 @@ async function sendResubscribeConfirmation(supabase: any, phone: string, nome: s
       .single();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
-  
+
   if (!typedSettings?.zapi_enabled) return;
-  
+
   const message = `Olá ${nome}! 🎉\n\nVocê voltou a receber nossas comunicações!\n\nSe precisar de algo, estamos à disposição.`;
-  
+
   try {
     const zapiUrl = `https://api.z-api.io/instances/${typedSettings.zapi_instance_id}/token/${typedSettings.zapi_token}/send-text`;
     await fetch(zapiUrl, {
@@ -1189,7 +1204,7 @@ async function sendWhatsAppMessage(supabase: any, phone: string, message: string
     console.log("[zapi-webhook] Z-API not configured, cannot send message");
     return;
   }
-  
+
   try {
     const zapiUrl = `https://api.z-api.io/instances/${settings.zapi_instance_id}/token/${settings.zapi_token}/send-text`;
     const response = await fetch(zapiUrl, {
@@ -1203,10 +1218,10 @@ async function sendWhatsAppMessage(supabase: any, phone: string, message: string
         message: message,
       }),
     });
-    
+
     const result = await response.json();
     console.log(`[zapi-webhook] Sent message to ${phone}:`, result);
-    
+
     // Record in whatsapp_messages
     await supabase.from("whatsapp_messages").insert({
       message_id: result.messageId || result.zapiMessageId,
@@ -1216,7 +1231,7 @@ async function sendWhatsAppMessage(supabase: any, phone: string, message: string
       status: "sent",
       sent_at: new Date().toISOString(),
     });
-    
+
     return result;
   } catch (err) {
     console.error("[zapi-webhook] Error sending message:", err);
@@ -1227,9 +1242,9 @@ async function sendWhatsAppMessage(supabase: any, phone: string, message: string
 async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus) {
   const isConnected = data.connected || data.status === "connected" || data.type === "ConnectedCallback";
   const isDisconnected = data.type === "DisconnectedCallback" || data.status === "disconnected" || data.connected === false;
-  
+
   console.log(`[zapi-webhook] Connection status: ${isConnected ? "connected" : "disconnected"} (type: ${data.type})`);
-  
+
   // Update verification fallback status based on connection
   if (isConnected) {
     // Z-API connected - disable fallback
@@ -1240,7 +1255,7 @@ async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus)
         zapi_last_connected_at: new Date().toISOString(),
       })
       .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all rows
-    
+
     if (error) {
       console.error("[zapi-webhook] Error updating connection status:", error);
     } else {
@@ -1255,7 +1270,7 @@ async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus)
         zapi_disconnected_at: new Date().toISOString(),
       })
       .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all rows
-    
+
     if (error) {
       console.error("[zapi-webhook] Error updating disconnection status:", error);
     } else {
@@ -1266,7 +1281,7 @@ async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus)
 
 function mapZapiStatus(status: string | undefined): string {
   if (!status) return "unknown";
-  
+
   const statusMap: Record<string, string> = {
     "sent": "sent",
     "delivered": "delivered",
@@ -1279,18 +1294,18 @@ function mapZapiStatus(status: string | undefined): string {
     "error": "failed",
     "pending": "pending",
   };
-  
+
   return statusMap[status.toLowerCase()] || status.toLowerCase();
 }
 
 function normalizePhone(phone: string): string {
   // Remove all non-numeric characters
   let clean = phone.replace(/\D/g, "");
-  
+
   // Add +55 if not present
   if (!clean.startsWith("55") && clean.length <= 11) {
     clean = "55" + clean;
   }
-  
+
   return "+" + clean;
 }

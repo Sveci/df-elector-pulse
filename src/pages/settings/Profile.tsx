@@ -12,12 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Camera, 
-  Save, 
+import {
+  User,
+  Mail,
+  Phone,
+  Camera,
+  Save,
   Calendar,
   Shield,
   Loader2
@@ -42,7 +42,7 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const updateProfile = useUpdateProfile();
   const { restartTutorial } = useTutorial("profile", profileTutorialSteps);
-  
+
   const [name, setName] = useState("");
   const [telefone, setTelefone] = useState("");
   const [bio, setBio] = useState("");
@@ -53,13 +53,13 @@ const Profile = () => {
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -99,7 +99,7 @@ const Profile = () => {
 
   const handleSave = () => {
     if (!user?.id) return;
-    
+
     updateProfile.mutate({
       id: user.id,
       data: {
@@ -264,7 +264,7 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground">Conta Criada em</p>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {profile?.created_at 
+                    {profile?.created_at
                       ? format(new Date(profile.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                       : "—"
                     }
@@ -274,7 +274,7 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground">Última Atualização</p>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {profile?.updated_at 
+                    {profile?.updated_at
                       ? format(new Date(profile.updated_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                       : "—"
                     }
@@ -288,8 +288,8 @@ const Profile = () => {
         <Separator />
 
         <div className="flex justify-end">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={updateProfile.isPending}
             className="min-w-32"
           >

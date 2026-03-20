@@ -19,7 +19,7 @@ serve(async (req) => {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
       throw new Error("No file provided");
     }
@@ -35,7 +35,7 @@ serve(async (req) => {
     const fileType = file.name.toLowerCase();
 
     // Read file content - limit to MAX_FILE_SIZE to avoid memory issues
-    const arrayBuffer = file.size > MAX_FILE_SIZE 
+    const arrayBuffer = file.size > MAX_FILE_SIZE
       ? await file.slice(0, MAX_FILE_SIZE).arrayBuffer()
       : await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -46,7 +46,7 @@ serve(async (req) => {
       // This is a simplified approach - we look for text streams
       const decoder = new TextDecoder('latin1');
       const rawText = decoder.decode(bytes);
-      
+
       // Extract text between stream/endstream markers (simplified PDF text extraction)
       const streamMatches = rawText.match(/stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g);
       if (streamMatches) {
@@ -59,7 +59,7 @@ serve(async (req) => {
           .trim()
           .substring(0, 8000);
       }
-      
+
       // If no text extracted, use filename and metadata hints
       if (!extractedText || extractedText.length < 100) {
         extractedText = `Documento PDF: ${file.name.replace('.pdf', '')}. Tamanho: ${Math.round(file.size / 1024)}KB`;
@@ -76,7 +76,7 @@ serve(async (req) => {
       // For Excel files, we'll try to extract strings from the raw content
       const decoder = new TextDecoder('utf-8', { fatal: false });
       const rawText = decoder.decode(bytes);
-      
+
       // Look for shared strings (common in xlsx)
       const stringMatches = rawText.match(/<t[^>]*>([^<]+)<\/t>/g);
       if (stringMatches) {
@@ -145,7 +145,7 @@ Responda APENAS com o JSON válido, sem markdown ou explicações.`;
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
           status: 429,
@@ -163,7 +163,7 @@ Responda APENAS com o JSON válido, sem markdown ou explicações.`;
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
-    
+
     if (!content) {
       throw new Error("Empty AI response");
     }
@@ -202,8 +202,8 @@ Responda APENAS com o JSON válido, sem markdown ou explicações.`;
 
   } catch (error) {
     console.error("Error in analyze-lead-magnet:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Erro desconhecido"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
