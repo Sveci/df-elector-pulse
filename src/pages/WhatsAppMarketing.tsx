@@ -49,15 +49,9 @@ export default function WhatsAppMarketing() {
           <div className="mb-6" data-tutorial="whatsapp-header">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-                    WhatsApp Marketing
-                  </h1>
+                <PageHeader icon={MessageSquare} title="WhatsApp Marketing" subtitle="Gerencie templates e envie mensagens em massa via WhatsApp">
                   <TutorialButton onClick={restartTutorial} />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Gerencie templates e envie mensagens em massa via WhatsApp
-                </p>
+                </PageHeader>
               </div>
 
               {activeTab === "templates" && (

@@ -152,13 +152,9 @@ export default function ScheduledMessages() {
       <TutorialOverlay page="scheduled-messages" />
       <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
         <div data-tutorial="scheduled-header" className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Mensagens Agendadas</h1>
-            <p className="text-muted-foreground">
-              Gerencie envios programados de SMS, E-mail e WhatsApp
-            </p>
-          </div>
-          <TutorialButton onClick={restartTutorial} />
+          <PageHeader icon={Clock} title="Mensagens Agendadas" subtitle="Gerencie envios programados de SMS, E-mail e WhatsApp" dataTutorial="scheduled-header">
+            <TutorialButton onClick={restartTutorial} />
+          </PageHeader>
         </div>
 
         {/* Stats Cards */}

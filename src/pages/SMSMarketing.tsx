@@ -48,15 +48,9 @@ export default function SMSMarketing() {
           <div className="mb-6" data-tutorial="sms-header">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-                    SMS Marketing
-                  </h1>
+                <PageHeader icon={MessageSquare} title="SMS Marketing" subtitle="Gerencie templates e envie mensagens em massa via SMS">
                   <TutorialButton onClick={restartTutorial} />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Gerencie templates e envie mensagens em massa via SMS
-                </p>
+                </PageHeader>
               </div>
 
               {activeTab === "templates" && (
