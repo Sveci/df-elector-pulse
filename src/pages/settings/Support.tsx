@@ -60,12 +60,7 @@ const Support = () => {
       <TutorialOverlay page="support" />
       <div className="p-4 sm:p-6 max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6" data-tutorial="sup-header">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Suporte</h1>
-            <p className="text-muted-foreground text-sm">
-              Abra tickets para reportar problemas ou tirar dúvidas
-            </p>
-          </div>
+          <PageHeader icon={HelpCircle} title="Suporte" subtitle="Abra tickets para reportar problemas ou tirar dúvidas" dataTutorial="sup-header" />
           <div className="flex items-center gap-2">
             <TutorialButton onClick={restartTutorial} />
             <Button onClick={() => setCreateDialogOpen(true)} data-tutorial="sup-create">

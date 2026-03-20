@@ -126,12 +126,7 @@ const Profile = () => {
       <TutorialOverlay page="profile" />
       <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between" data-tutorial="profile-header">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-            <p className="text-muted-foreground">
-              Gerencie suas informações pessoais e preferências
-            </p>
-          </div>
+          <PageHeader icon={User} title="Meu Perfil" subtitle="Gerencie suas informações pessoais e preferências" />
           <TutorialButton onClick={restartTutorial} />
         </div>
 

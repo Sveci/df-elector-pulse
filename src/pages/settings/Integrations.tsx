@@ -402,12 +402,7 @@ const Integrations = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Integrações</h1>
-            <p className="text-muted-foreground">
-              Conecte serviços externos para ampliar as funcionalidades do sistema
-            </p>
-          </div>
+          <PageHeader icon={Plug} title="Integrações" subtitle="Conecte serviços externos para ampliar as funcionalidades do sistema" className="flex-1" />
           <TutorialButton onClick={restartTutorial} />
         </div>
 

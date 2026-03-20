@@ -195,10 +195,11 @@ const Settings = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <p className="text-gray-600 mt-2">
-          Gerencie as configurações da sua organização e personalize a plataforma
-        </p>
+        <PageHeader
+          icon={Building2}
+          title="Configurações"
+          subtitle="Gerencie as configurações da sua organização e personalize a plataforma"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
