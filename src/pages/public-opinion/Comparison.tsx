@@ -486,7 +486,10 @@ const Comparison = () => {
                     <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Eng. Médio</span><span className="font-semibold">{(c.engagement_rate || 0).toLocaleString()}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Eng. Total</span><span className="font-semibold">{(c.engagement_total || 0).toLocaleString()}</span></div>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
+                      {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map((t: any, idx: number) => {
+                        const label = typeof t === "string" ? t : (t?.name || String(t));
+                        return <Badge key={`${label}-${idx}`} variant="secondary" className="text-xs">{label}</Badge>;
+                      })}
                     </div>
                   </div>
                 )}
