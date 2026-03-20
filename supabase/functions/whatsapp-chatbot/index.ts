@@ -1229,7 +1229,7 @@ async function searchKnowledgeBase(
 
     console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
 
-    const sources: string[] = [...new Set(rankedChunks.map((c: RankedKBChunk) => c.source))];
+    const sources = [...new Set<string>(rankedChunks.map((c: RankedKBChunk) => c.source))];
     const context = rankedChunks.map((c: RankedKBChunk) => c.content).join("\n\n");
 
     return { context, sources, rankedChunks };
