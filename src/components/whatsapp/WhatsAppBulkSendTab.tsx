@@ -683,7 +683,7 @@ export function WhatsAppBulkSendTab() {
 
             if (selectedTemplateData.slug === "lideranca-reuniao-link") {
               variables.deputado_nome = organization?.nome || "Deputado";
-              variables.link_reuniao_afiliado = generateAffiliateUrl(affiliateToken);
+              variables.link_reuniao_afiliado = generateAffiliateUrl(affiliateToken, tenantDomain);
             }
 
             if (selectedTemplateData.slug === "lideranca-cadastro-link") {
