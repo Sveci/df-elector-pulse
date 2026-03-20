@@ -13,6 +13,7 @@ export interface LeaderMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  cidade_id: string | null;
   localidade: string | null;
   is_coordinator: boolean;
   hierarchy_level: number | null;
@@ -29,6 +30,7 @@ export interface ContactMapData {
   latitude: number;
   longitude: number;
   cidade_nome: string;
+  cidade_id: string | null;
   localidade: string | null;
 }
 
@@ -103,12 +105,13 @@ export function useStrategicMapData() {
         contactsCount: contactsResult.count || 0
       };
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    // P3 fix: 2 min staleTime — data doesn't change that fast
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 
-  // Fetch leaders with city coordinates - always fresh data
+  // Fetch leaders with city coordinates — always fresh data
   const leadersQuery = useQuery({
     queryKey: ["strategic_map_leaders", useOfficeCities, geocoding.isReady],
     queryFn: async (): Promise<LeaderMapData[]> => {
@@ -125,6 +128,7 @@ export function useStrategicMapData() {
           email,
           telefone,
           localidade,
+          cidade_id,
           cidade:office_cities(id, nome, latitude, longitude)
         `)
         .eq("is_active", true);
@@ -143,6 +147,7 @@ export function useStrategicMapData() {
               latitude: l.cidade.latitude,
               longitude: l.cidade.longitude,
               cidade_nome: l.cidade.nome,
+              cidade_id: l.cidade_id || null,
               localidade: l.localidade || null,
               is_coordinator: l.is_coordinator || false,
               hierarchy_level: l.hierarchy_level,
@@ -164,6 +169,7 @@ export function useStrategicMapData() {
                 latitude: coords.lat,
                 longitude: coords.lng,
                 cidade_nome: l.localidade,
+                cidade_id: l.cidade_id || null,
                 localidade: l.localidade,
                 is_coordinator: l.is_coordinator || false,
                 hierarchy_level: l.hierarchy_level,
@@ -178,8 +184,9 @@ export function useStrategicMapData() {
         })
         .filter((l): l is LeaderMapData => l !== null);
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    // P3 fix: 2 min staleTime
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 
@@ -205,6 +212,7 @@ export function useStrategicMapData() {
             source_type,
             source_id,
             localidade,
+            cidade_id,
             cidade:office_cities(id, nome, latitude, longitude)
           `)
           .eq("is_active", true)
@@ -235,6 +243,7 @@ export function useStrategicMapData() {
               latitude: c.cidade.latitude,
               longitude: c.cidade.longitude,
               cidade_nome: c.cidade.nome,
+              cidade_id: c.cidade_id || null,
               localidade: c.localidade || null,
             };
           }
@@ -251,6 +260,7 @@ export function useStrategicMapData() {
                 latitude: coords.lat,
                 longitude: coords.lng,
                 cidade_nome: c.localidade,
+                cidade_id: c.cidade_id || null,
                 localidade: c.localidade,
               };
             }
@@ -264,8 +274,9 @@ export function useStrategicMapData() {
 
       return filtered;
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    // P3 fix: 3 min staleTime for contacts (heaviest query)
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch cities with aggregated counts (only in RA mode)
@@ -367,6 +378,7 @@ export function useStrategicMapData() {
       return virtualCities;
     },
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   return {

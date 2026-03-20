@@ -7,6 +7,7 @@ import { Brain, RefreshCw, Sparkles, AlertTriangle, TrendingUp, MapPin, Download
 import ReactMarkdown from "react-markdown";
 import { CityMapData } from "@/hooks/maps/useStrategicMapData";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "@/hooks/useTenantId";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
@@ -26,6 +27,7 @@ export function MapAnalysisPanel({
   totalConnections
 }: MapAnalysisPanelProps) {
   const { isDemoMode } = useDemoMask();
+  const tenantId = useTenantId();
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,16 +36,19 @@ export function MapAnalysisPanel({
   // Carregar última análise salva ao montar o componente
   useEffect(() => {
     loadLastAnalysis();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
 
   const loadLastAnalysis = async () => {
     try {
-      const { data, error } = await supabase
+      // B3 fix: scope to current tenant
+      let query = supabase
         .from('map_analyses')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      if (tenantId) query = (query as any).eq('tenant_id', tenantId);
+      const { data, error } = await (query as any).maybeSingle();
 
       if (error) throw error;
 
@@ -61,15 +66,18 @@ export function MapAnalysisPanel({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const insertPayload: Record<string, unknown> = {
+        user_id: user.id,
+        content,
+        total_leaders: totalLeaders,
+        total_contacts: totalContacts,
+        total_connections: totalConnections,
+      };
+      if (tenantId) insertPayload.tenant_id = tenantId;
+
       const { error } = await supabase
         .from('map_analyses')
-        .insert({
-          user_id: user.id,
-          content,
-          total_leaders: totalLeaders,
-          total_contacts: totalContacts,
-          total_connections: totalConnections
-        });
+        .insert(insertPayload);
 
       if (error) throw error;
 
