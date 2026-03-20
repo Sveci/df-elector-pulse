@@ -18,22 +18,22 @@ interface SendEventPhotosRequest {
 function replaceVariables(text: string, variables: Record<string, string>): string {
   let result = text;
   for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`{{${key}}}`, 'g'), value || '');
+    result = result.replace(new RegExp(`{{${key}}}`, "g"), value || "");
   }
   return result;
 }
 
 // Normalize phone number for SMS
 function normalizePhone(phone: string): string {
-  let clean = phone.replace(/[^0-9]/g, '');
+  let clean = phone.replace(/[^0-9]/g, "");
 
-  if (clean.startsWith('55')) {
+  if (clean.startsWith("55")) {
     clean = clean.substring(2);
   }
 
   // Add 9 for Brasília numbers if missing
-  if (clean.length === 10 && clean.startsWith('61')) {
-    clean = '61' + '9' + clean.substring(2);
+  if (clean.length === 10 && clean.startsWith("61")) {
+    clean = "61" + "9" + clean.substring(2);
   }
 
   return clean;
@@ -60,7 +60,10 @@ const handler = async (req: Request): Promise<Response> => {
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -76,25 +79,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Resolve tenant from the authenticated user
     const { data: userTenant } = await supabase
-      .from('user_tenants')
-      .select('tenant_id')
-      .eq('user_id', user.id)
+      .from("user_tenants")
+      .select("tenant_id")
+      .eq("user_id", user.id)
       .limit(1)
       .maybeSingle();
     const tenantId = userTenant?.tenant_id || null;
 
     if (!eventId || !photoUrl) {
-      return new Response(
-        JSON.stringify({ error: "eventId e photoUrl são obrigatórios" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "eventId e photoUrl são obrigatórios" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     if (!sendSms && !sendEmail) {
-      return new Response(
-        JSON.stringify({ error: "Selecione pelo menos um canal de envio (SMS ou Email)" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Selecione pelo menos um canal de envio (SMS ou Email)" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     console.log("send-event-photos: Processing event:", eventId);
@@ -108,17 +111,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (eventError || !event) {
       console.error("send-event-photos: Event not found:", eventError);
-      return new Response(
-        JSON.stringify({ error: "Evento não encontrado" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Evento não encontrado" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     // Get organization info — tenant-scoped
-    const orgQuery = supabase
-      .from("organization")
-      .select("nome");
-    if (tenantId) orgQuery.eq('tenant_id', tenantId);
+    const orgQuery = supabase.from("organization").select("nome");
+    if (tenantId) orgQuery.eq("tenant_id", tenantId);
     const { data: org } = await orgQuery.limit(1).maybeSingle();
 
     // Get participants who checked in
@@ -134,10 +135,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!participants || participants.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Nenhum participante com check-in encontrado" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Nenhum participante com check-in encontrado" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     console.log(`send-event-photos: Found ${participants.length} participants with check-in`);
@@ -146,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
     let shortUrl = photoUrl;
     try {
       const shortenResponse = await supabase.functions.invoke("shorten-url", {
-        body: { url: photoUrl }
+        body: { url: photoUrl },
       });
 
       if (shortenResponse.data?.shortUrl) {
@@ -163,7 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: tenantSettings } = await supabase
         .from("integrations_settings")
         .select("*")
-        .eq('tenant_id', tenantId)
+        .eq("tenant_id", tenantId)
         .maybeSingle();
       settings = tenantSettings;
     }
@@ -172,8 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: globalSettings } = await supabase
         .from("integrations_settings")
         .select("*")
-        .not('resend_api_key', 'is', null)
-        .order('created_at', { ascending: true })
+        .not("resend_api_key", "is", null)
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (globalSettings) {
@@ -205,7 +206,7 @@ const handler = async (req: Request): Promise<Response> => {
           const message = smsTemplate?.mensagem
             ? replaceVariables(smsTemplate.mensagem, {
                 nome_evento: event.name,
-                link_fotos: shortUrl
+                link_fotos: shortUrl,
               })
             : `Olá! 👋\nObrigado por participar do ${event.name}.\nAs fotos do evento já estão disponíveis:\n${shortUrl}`;
 
@@ -213,14 +214,14 @@ const handler = async (req: Request): Promise<Response> => {
           const smsResponse = await fetch("https://api.smsdev.com.br/v1/send", {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               key: settings.smsdev_api_key,
               type: 9,
               number: phone,
-              msg: message
-            })
+              msg: message,
+            }),
           });
 
           const smsResult = await smsResponse.json();
@@ -233,7 +234,7 @@ const handler = async (req: Request): Promise<Response> => {
               phone: `+55${phone}`,
               message,
               status: "queued",
-              message_id: smsResult.id?.toString()
+              message_id: smsResult.id?.toString(),
             });
           } else {
             console.warn(`send-event-photos: SMS failed for ${phone}:`, smsResult);
@@ -276,7 +277,7 @@ const handler = async (req: Request): Promise<Response> => {
             ? replaceVariables(emailTemplate.conteudo_html, {
                 nome_evento: event.name,
                 link_fotos: photoUrl, // Use full URL for email
-                nome_organizacao: org?.nome || ""
+                nome_organizacao: org?.nome || "",
               })
             : `<p>Olá,</p><p>As fotos do ${event.name} estão disponíveis!</p><p><a href="${photoUrl}">Ver fotos</a></p>`;
 
@@ -284,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
             from: `${fromName} <${fromEmail}>`,
             to: [participant.email],
             subject,
-            html
+            html,
           });
 
           if (emailResult.data?.id) {
@@ -298,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
               status: "sent",
               resend_id: emailResult.data.id,
               event_id: eventId,
-              sent_at: new Date().toISOString()
+              sent_at: new Date().toISOString(),
             });
           }
         } catch (emailError: any) {
@@ -311,18 +312,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Save the photo link record
-    const { error: saveError } = await supabase
-      .from("event_photo_links")
-      .insert({
-        event_id: eventId,
-        photo_url: photoUrl,
-        short_code: shortUrl.includes("/s/") ? shortUrl.split("/s/")[1] : null,
-        sms_sent: smsSentCount > 0,
-        email_sent: emailSentCount > 0,
-        sms_recipients_count: smsSentCount,
-        email_recipients_count: emailSentCount,
-        sent_at: new Date().toISOString()
-      });
+    const { error: saveError } = await supabase.from("event_photo_links").insert({
+      event_id: eventId,
+      photo_url: photoUrl,
+      short_code: shortUrl.includes("/s/") ? shortUrl.split("/s/")[1] : null,
+      sms_sent: smsSentCount > 0,
+      email_sent: emailSentCount > 0,
+      sms_recipients_count: smsSentCount,
+      email_recipients_count: emailSentCount,
+      sent_at: new Date().toISOString(),
+    });
 
     if (saveError) {
       console.error("send-event-photos: Error saving photo link record:", saveError);
@@ -337,17 +336,16 @@ const handler = async (req: Request): Promise<Response> => {
         emailSent: emailSentCount,
         totalParticipants: participants.length,
         shortUrl,
-        errors: errors.length > 0 ? errors : undefined
+        errors: errors.length > 0 ? errors : undefined,
       }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
-
   } catch (error: any) {
     console.error("send-event-photos: Fatal error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 
