@@ -154,29 +154,6 @@ function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, d
   });
 }
 
-// ── Per-date analysis detail ──
-function useDateAnalysisDetail(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
-  return useQuery({
-    queryKey: ["po_comparison_date_detail", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
-    enabled: !!entityId && !!dateRange?.from,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
-      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
-
-      const { data: snapshots } = await supabase
-        .from("po_daily_snapshots")
-        .select("snapshot_date, total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics, top_emotions, source_breakdown")
-        .eq("entity_id", entityId!)
-        .gte("snapshot_date", fromDate)
-        .lte("snapshot_date", toDate)
-        .order("snapshot_date", { ascending: false });
-
-      return snapshots || [];
-    },
-  });
-}
-
 const Comparison = () => {
   const { data: entities } = useMonitoredEntities();
   const hasRealEntities = entities && entities.length >= 1;
