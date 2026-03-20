@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle } from "lucide-react";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTenantId } from "@/hooks/useTenantId";
@@ -708,12 +709,7 @@ const AdminApis = () => {
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">APIs Externas</h1>
-          <p className="text-muted-foreground text-sm">
-            Gerencie as credenciais dos serviços externos utilizados na plataforma
-          </p>
-        </div>
+        <PageHeader icon={Key} title="APIs Externas" subtitle="Gerencie as credenciais dos serviços externos utilizados na plataforma" />
 
         <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
           <CardContent className="pt-4 pb-4">

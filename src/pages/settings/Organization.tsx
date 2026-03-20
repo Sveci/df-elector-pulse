@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useOrganization, useUpdateOrganization, uploadOrganizationLogo } from "@/hooks/useOrganization";
 import { useDemoMask } from "@/contexts/DemoModeContext";
@@ -146,12 +147,7 @@ const Organization = () => {
       <TutorialOverlay page="organization" />
       <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between" data-tutorial="org-header">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Organização</h1>
-            <p className="text-muted-foreground">
-              Configure os dados do político e da campanha
-            </p>
-          </div>
+          <PageHeader icon={Building2} title="Organização" subtitle="Configure os dados do político e da campanha" />
           <TutorialButton onClick={restartTutorial} />
         </div>
 

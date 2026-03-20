@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Trophy, Phone, Users, MapPin, Calendar, Activity, TrendingUp, Building2, ClipboardList, ExternalLink, RefreshCw } from "lucide-react";
+import { Trophy, Phone, Users, MapPin, Calendar, Activity, TrendingUp, Building2, ClipboardList, ExternalLink, RefreshCw, LayoutDashboard } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Link } from "react-router-dom";
 import { useState, useMemo, useCallback } from "react";
 import { RankingChart } from "@/components/dashboard/RankingChart";
@@ -239,14 +240,12 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8" data-tutorial="dashboard-header">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Dashboard
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Visão geral do desempenho e ranking de lideranças
-              </p>
-            </div>
+            <PageHeader
+              icon={LayoutDashboard}
+              title="Dashboard"
+              subtitle="Visão geral do desempenho e ranking de lideranças"
+              dataTutorial="dashboard-header"
+            />
             <div className="flex items-center gap-2">
               <TutorialButton onClick={restartTutorial} />
               <Button

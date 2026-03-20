@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,12 +155,7 @@ export default function Team() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Equipe</h1>
-              <p className="text-muted-foreground">
-                Gerencie os membros da sua equipe
-              </p>
-            </div>
+            <PageHeader icon={Users} title="Equipe" subtitle="Gerencie os membros da sua equipe" />
           </div>
           <div className="flex items-center gap-2">
             <TutorialButton onClick={restartTutorial} />

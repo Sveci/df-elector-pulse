@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings as SettingsIcon, Save, Loader2, Link2, FileText, Volume2, Copy, Check } from "lucide-react";
+import { Settings as SettingsIcon, Settings2, Save, Loader2, Link2, FileText, Volume2, Copy, Check } from "lucide-react";
 import { useOfficeSettings, useUpdateOfficeSettings } from "@/hooks/office/useOfficeSettings";
 import { toast } from "sonner";
 import { useTutorial } from "@/hooks/useTutorial";
@@ -81,10 +82,7 @@ export default function Settings() {
       <div className="mb-6" data-tutorial="office-settings-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Configurações do Gabinete</h1>
-            <p className="text-muted-foreground">
-              Gerencie as configurações do módulo de visitas
-            </p>
+            <PageHeader icon={Settings2} title="Configurações do Gabinete" subtitle="Gerencie as configurações do módulo de visitas" />
           </div>
           <TutorialButton onClick={restartTutorial} />
         </div>

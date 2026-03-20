@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -792,14 +793,11 @@ const Campaigns = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8" data-tutorial="campaigns-header">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Campanhas & Atribuição
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Geração de links, QR Codes e relatórios de origem dos cadastros
-              </p>
-            </div>
+            <PageHeader
+              icon={Megaphone}
+              title="Campanhas & Atribuição"
+              subtitle="Geração de links, QR Codes e relatórios de origem dos cadastros"
+            />
             <div className="flex gap-2">
               <TutorialButton onClick={restartTutorial} />
               <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>

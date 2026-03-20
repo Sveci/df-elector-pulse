@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -223,12 +224,7 @@ const Privacy = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Privacidade e Segurança</h1>
-            <p className="text-muted-foreground">
-              Gerencie sua segurança e exercite seus direitos sob a LGPD
-            </p>
-          </div>
+          <PageHeader icon={Shield} title="Privacidade e Segurança" subtitle="Gerencie sua segurança e exercite seus direitos sob a LGPD" className="flex-1" />
           <TutorialButton onClick={restartTutorial} />
         </div>
 

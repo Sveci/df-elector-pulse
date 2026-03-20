@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,10 +145,9 @@ export default function Surveys() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-tutorial="surveys-header">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">Pesquisas Eleitorais</h1>
+            <PageHeader icon={ClipboardList} title="Pesquisas Eleitorais" dataTutorial="surveys-header">
               <TutorialButton onClick={restartTutorial} />
-            </div>
+            </PageHeader>
             <p className="text-muted-foreground">Gerencie pesquisas de opinião e análise de resultados</p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)} data-tutorial="surveys-create-btn">

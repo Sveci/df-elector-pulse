@@ -13,6 +13,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Users,
   Search,
@@ -394,11 +395,10 @@ const Leaders = () => {
       <div className="mb-6" data-tutorial="leaders-header">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Gestão de Lideranças</h1>
+            <PageHeader icon={Users} title="Gestão de Lideranças" dataTutorial="leaders-header">
               <TutorialButton onClick={restartTutorial} />
-            </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground" data-tutorial="leaders-stats">
+            </PageHeader>
+            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground ml-[52px]" data-tutorial="leaders-stats">
               <span className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />
                 <strong className="text-foreground">{m.number(totalCount, 'leaders_total')}</strong> líderes

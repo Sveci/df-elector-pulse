@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { GitBranch, Crown, Plus, Users, Award, Target, Loader2, Search, Star } from "lucide-react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
@@ -164,11 +165,9 @@ export default function LeaderTree() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" data-tutorial="tree-header">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <GitBranch className="h-6 w-6 text-primary" />
-              Árvore de Lideranças
-            </h1>
-            <TutorialButton onClick={restartTutorial} />
+            <PageHeader icon={GitBranch} title="Árvore de Lideranças">
+              <TutorialButton onClick={restartTutorial} />
+            </PageHeader>
           </div>
           <p className="text-muted-foreground mt-1">
             Gerencie a hierarquia multinível de coordenadores e líderes

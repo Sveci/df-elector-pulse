@@ -1,7 +1,8 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOfficeVisits } from "@/hooks/office/useOfficeVisits";
-import { Loader2, Eye } from "lucide-react";
+import { Loader2, Eye, ClipboardList } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -73,10 +74,7 @@ export default function History() {
       <TutorialOverlay page="office-history" />
       <div data-tutorial="history-header" className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Histórico de Visitas</h1>
-          <p className="text-muted-foreground">
-            Consulte todas as visitas registradas
-          </p>
+          <PageHeader icon={ClipboardList} title="Histórico de Visitas" subtitle="Consulte todas as visitas registradas" />
         </div>
         <TutorialButton onClick={restartTutorial} />
       </div>

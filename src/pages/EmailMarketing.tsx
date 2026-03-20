@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -42,15 +43,9 @@ const EmailMarketing = () => {
           <div className="mb-6 sm:mb-8" data-tutorial="email-header">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                    Email Marketing
-                  </h1>
+                <PageHeader icon={Mail} title="Email Marketing" subtitle="Gerencie templates, envie emails em massa e acompanhe o histórico">
                   <TutorialButton onClick={restartTutorial} />
-                </div>
-                <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                  Gerencie templates, envie emails em massa e acompanhe o histórico
-                </p>
+                </PageHeader>
               </div>
               {activeTab === "templates" && (
                 <div className="relative w-full sm:w-auto sm:min-w-[280px]">

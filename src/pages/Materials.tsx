@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,8 +125,7 @@ export default function Materials() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Controle de Materiais</h1>
-          <p className="text-muted-foreground">Gerencie produção, estoque e distribuição de materiais de campanha</p>
+          <PageHeader icon={Package} title="Controle de Materiais" subtitle="Gerencie produção, estoque e distribuição de materiais de campanha" />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setAddMaterialOpen(true)}>
