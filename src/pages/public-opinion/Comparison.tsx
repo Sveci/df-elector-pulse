@@ -243,9 +243,6 @@ const Comparison = () => {
       setAnalysis(data);
 
       if (user?.id) {
-        // Delete all previous analyses before inserting the new one
-        await supabase.from("po_strategic_analyses").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-
         const { error } = await supabase
           .from("po_strategic_analyses")
           .insert({
@@ -260,6 +257,7 @@ const Comparison = () => {
           const now = new Date().toISOString();
           setSavedAt(now);
           queryClient.invalidateQueries({ queryKey: ["po_strategic_analysis_last"] });
+          queryClient.invalidateQueries({ queryKey: ["po_strategic_analysis_history"] });
           toast.success("Análise estratégica gerada e salva com sucesso!");
         }
       } else {
