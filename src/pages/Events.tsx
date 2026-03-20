@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

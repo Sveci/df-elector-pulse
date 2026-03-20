@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
