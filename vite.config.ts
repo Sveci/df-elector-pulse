@@ -1,4 +1,4 @@
-import { defineConfig, splitVendorChunkPlugin, loadEnv } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -20,16 +20,17 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
       // Security headers for local development
+      // NOTE: X-Frame-Options is omitted intentionally — Lovable embeds the
+      // preview in an iframe from lovableproject.com. CSP frame-ancestors
+      // handles framing restrictions in a more granular way.
       headers: {
         "X-Content-Type-Options": "nosniff",
-        "X-Frame-Options": "SAMEORIGIN",
         "X-XSS-Protection": "1; mode=block",
         "Referrer-Policy": "strict-origin-when-cross-origin",
       },
     },
     plugins: [
       react(),
-      splitVendorChunkPlugin(),
       mode === "development" && componentTagger(),
       // Gzip + Brotli compression for production
       mode === "production" &&

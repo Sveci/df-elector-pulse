@@ -2,8 +2,9 @@
   # Prevent MIME-type sniffing
   X-Content-Type-Options: nosniff
 
-  # Prevent clickjacking
-  X-Frame-Options: SAMEORIGIN
+  # NOTE: X-Frame-Options is intentionally OMITTED here because Lovable embeds
+  # the app in an iframe for its preview. Framing is controlled via CSP
+  # frame-ancestors below, which is the modern standard and takes precedence.
 
   # Enable XSS protection in legacy browsers
   X-XSS-Protection: 1; mode=block
@@ -18,14 +19,5 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
   # Content-Security-Policy
-  # - default-src: only same origin
-  # - script-src: self + eval needed for some libs (chart.js, mapbox) + blob for web workers
-  # - style-src: self + inline styles (used by shadcn/radix) + Google Fonts
-  # - img-src: self + data URIs + blob + supabase storage + CDN providers used by the app
-  # - connect-src: self + supabase + sentry + lovable AI gateway + meta graph API
-  # - font-src: self + Google Fonts
-  # - frame-src: self (for embeds)
-  # - object-src: none (block Flash/plugins)
-  # - base-uri: self (prevent base tag injection)
-  # - form-action: self (prevent form hijacking)
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://lovable.dev https://*.lovable.app https://*.cloudfront.net https://lh3.googleusercontent.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://ai.gateway.lovable.dev https://graph.facebook.com https://sentry.io; font-src 'self' https://fonts.gstatic.com; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;
+  # frame-ancestors: allow Lovable preview + same origin. All other embedders blocked.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://lovable.dev https://*.lovable.app https://*.lovableproject.com https://*.cloudfront.net https://lh3.googleusercontent.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://ai.gateway.lovable.dev https://graph.facebook.com https://sentry.io https://*.lovable.dev https://*.lovableproject.com; font-src 'self' https://fonts.gstatic.com data:; frame-src 'self' https://*.lovableproject.com; frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://*.lovableproject.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;
