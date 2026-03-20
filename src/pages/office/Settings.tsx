@@ -81,10 +81,7 @@ export default function Settings() {
       <div className="mb-6" data-tutorial="office-settings-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Configurações do Gabinete</h1>
-            <p className="text-muted-foreground">
-              Gerencie as configurações do módulo de visitas
-            </p>
+            <PageHeader icon={Settings2} title="Configurações do Gabinete" subtitle="Gerencie as configurações do módulo de visitas" />
           </div>
           <TutorialButton onClick={restartTutorial} />
         </div>

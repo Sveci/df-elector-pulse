@@ -160,12 +160,9 @@ const LeadersRanking = () => {
                     Voltar
                   </Link>
                 </Button>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    Ranking Detalhado de Lideranças
-                  </h1>
+                <PageHeader icon={Trophy} title="Ranking Detalhado de Lideranças">
                   <TutorialButton onClick={restartTutorial} />
-                </div>
+                </PageHeader>
               </div>
               <p className="text-sm sm:text-base text-gray-600">
                 Classificação completa com histórico de desempenho

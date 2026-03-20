@@ -120,13 +120,7 @@ const AdminWebhookLogs = () => {
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Webhook className="h-6 w-6 text-primary" />
-              Logs de Webhook
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {logs.length} registros — Payloads brutos recebidos antes do processamento
-            </p>
+            <PageHeader icon={Webhook} title="Logs de Webhook" subtitle={`${logs.length} registros — Payloads brutos recebidos antes do processamento`} />
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
             <RefreshCw className="h-4 w-4" />

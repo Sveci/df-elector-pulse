@@ -47,8 +47,7 @@ const AdminTenants = () => {
       <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Gestão de Tenants</h1>
-            <p className="text-muted-foreground text-sm">Gerencie as organizações da plataforma</p>
+            <PageHeader icon={Building2} title="Gestão de Tenants" subtitle="Gerencie as organizações da plataforma" />
           </div>
           <Button className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />

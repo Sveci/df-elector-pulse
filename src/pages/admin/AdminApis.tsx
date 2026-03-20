@@ -708,12 +708,7 @@ const AdminApis = () => {
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">APIs Externas</h1>
-          <p className="text-muted-foreground text-sm">
-            Gerencie as credenciais dos serviços externos utilizados na plataforma
-          </p>
-        </div>
+        <PageHeader icon={Key} title="APIs Externas" subtitle="Gerencie as credenciais dos serviços externos utilizados na plataforma" />
 
         <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
           <CardContent className="pt-4 pb-4">
