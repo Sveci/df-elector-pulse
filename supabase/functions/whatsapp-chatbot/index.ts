@@ -662,25 +662,31 @@ Deno.serve(async (req) => {
     const bareCodeMatch = normalizedMessage.match(/^[A-Z0-9]{5,6}$/);
 
     if (confirmMatchChatbot || (bareCodeMatch && normalizedMessage !== "AJUDA" && normalizedMessage !== "PONTOS" && normalizedMessage !== "SIM")) {
+      if (!actor) {
+        console.log(`[whatsapp-chatbot] Verification code received from unknown phone ${normalizedPhone}`);
+        return new Response(JSON.stringify({ success: false, reason: "leader_not_found_for_code" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       const code = confirmMatchChatbot ? confirmMatchChatbot[1] : bareCodeMatch![0];
-      console.log(`[whatsapp-chatbot] Detected verification code: ${code} from leader ${leader.id}`);
+      console.log(`[whatsapp-chatbot] Detected verification code: ${code} from leader ${actor.id}`);
 
       const { data: leaderVerificationStatus } = await supabase
         .from("lideres")
         .select("is_verified, verification_code")
-        .eq("id", leader.id)
+        .eq("id", actor.id)
         .single();
 
       if (leaderVerificationStatus?.is_verified) {
-        const responseAlready = `Olá ${leader.nome_completo.split(" ")[0]}! ✅\n\nSeu cadastro já foi verificado anteriormente. Você já pode usar todos os comandos disponíveis.\n\nDigite *AJUDA* para ver a lista de comandos.`;
-        
+        const responseAlready = `Olá ${actor.nome_completo.split(" ")[0]}! ✅\n\nSeu cadastro já foi verificado anteriormente. Você já pode usar todos os comandos disponíveis.\n\nDigite *AJUDA* para ver a lista de comandos.`;
+
         let intSettingsQuery = supabase
           .from("integrations_settings")
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
-        const useMetaCloudForVerif = provider === 'meta_cloud' || 
+        const useMetaCloudForVerif = provider === 'meta_cloud' ||
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
@@ -691,7 +697,7 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: leader.id, phone: normalizedPhone, message_in: message,
+          leader_id: actor.id, phone: normalizedPhone, message_in: message,
           message_out: responseAlready, keyword_matched: "CONFIRMAR", response_type: "verification_already",
           processing_time_ms: Date.now() - startTime,
           ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -702,7 +708,7 @@ Deno.serve(async (req) => {
       }
 
       if (leaderVerificationStatus?.verification_code && leaderVerificationStatus.verification_code !== code) {
-        const responseWrongCode = `Olá ${leader.nome_completo.split(" ")[0]}! ⚠️\n\nEsse código não pertence ao seu número de telefone. Por favor, utilize o código que foi enviado para você.`;
+        const responseWrongCode = `Olá ${actor.nome_completo.split(" ")[0]}! ⚠️\n\nEsse código não pertence ao seu número de telefone. Por favor, utilize o código que foi enviado para você.`;
 
         let intSettingsQuery = supabase
           .from("integrations_settings")
@@ -710,7 +716,7 @@ Deno.serve(async (req) => {
         if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
-        const useMetaCloudForVerif = provider === 'meta_cloud' || 
+        const useMetaCloudForVerif = provider === 'meta_cloud' ||
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
@@ -721,7 +727,7 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: leader.id, phone: normalizedPhone, message_in: message,
+          leader_id: actor.id, phone: normalizedPhone, message_in: message,
           message_out: responseWrongCode, keyword_matched: "CONFIRMAR", response_type: "verification_wrong_code",
           processing_time_ms: Date.now() - startTime,
           ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -735,496 +741,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, reason: "deferred_to_verification" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+...
+    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
 
-    let matchedKeyword: ChatbotKeyword | null = null;
-
-    for (const kw of activeKeywords) {
-      const keywordNorm = normalizeTextForMatch(kw.keyword);
-      const aliasesNorm = (kw.aliases || []).map(normalizeTextForMatch);
-      
-      if (isKeywordMatch(messageForKeywordMatch, keywordNorm, aliasesNorm, isCommandLikeMessage)) {
-        matchedKeyword = kw;
-        break;
-      }
-    }
-
-    let responseMessage = "";
-    let responseType = "unknown";
-
-    if (matchedKeyword) {
-      console.log(`[whatsapp-chatbot] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
-      responseType = matchedKeyword.response_type;
-
-      if (matchedKeyword.response_type === "static" && matchedKeyword.static_response) {
-        responseMessage = matchedKeyword.static_response
-          .replace("{{nome}}", getFirstName(actor))
-          .replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
-          .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
-          .replace("{{cadastros}}", String(actor?.cadastros || 0));
-      } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        if (actor) {
-          const fn = dynamicFunctions[matchedKeyword.dynamic_function];
-          if (fn) {
-            responseMessage = await fn(supabase, actor);
-          } else {
-            responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
-          }
-        } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
-          responseType = "ai";
-          responseMessage = await generateAIResponse(
-            lovableApiKey,
-            message,
-            null,
-            matchedKeyword.description || "",
-            chatbotConfig.ai_system_prompt || "",
-            supabase,
-            tenantId
-          );
-        } else {
-          responseType = "fallback";
-          responseMessage = chatbotConfig.fallback_message || "Posso responder perguntas gerais sobre o mandato e os documentos disponíveis.";
-        }
-      } else if (matchedKeyword.response_type === "ai") {
-        if (lovableApiKey && chatbotConfig.use_ai_for_unknown) {
-          responseMessage = await generateAIResponse(
-            lovableApiKey,
-            message,
-            actor,
-            matchedKeyword.description || "",
-            chatbotConfig.ai_system_prompt || "",
-            supabase,
-            tenantId
-          );
-        } else {
-          responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
-        }
-      }
-    } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
-      console.log("[whatsapp-chatbot] No keyword match, using AI");
-      responseType = "ai";
-      responseMessage = await generateAIResponse(
-        lovableApiKey,
-        message,
-        actor,
-        "",
-        chatbotConfig.ai_system_prompt || "",
-        supabase,
-        tenantId
-      );
-    } else {
-      responseType = "fallback";
-      responseMessage = chatbotConfig.fallback_message || 
-        `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Digite AJUDA para ver os comandos disponíveis.`;
-    }
-
-    // Send response - decide provider (filtered by tenant)
-    let intSettingsQuery = supabase
-      .from("integrations_settings")
-      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
-    if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
-    const { data: integrationSettings } = await intSettingsQuery.limit(1).single();
-
-    const useMetaCloud = provider === 'meta_cloud' || 
-      (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
-
-    let messageSent = false;
-
-    if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
-      const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-      if (metaAccessToken) {
-        messageSent = await sendWhatsAppMessageMetaCloud(
-          integrationSettings.meta_cloud_phone_number_id,
-          integrationSettings.meta_cloud_api_version || "v20.0",
-          metaAccessToken,
-          normalizedPhone,
-          responseMessage,
-          supabase
-        );
-      } else {
-        console.log("[whatsapp-chatbot] META_WA_ACCESS_TOKEN not configured");
-      }
-    }
-
-    if (!messageSent && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
-      await sendWhatsAppMessage(
-        integrationSettings.zapi_instance_id,
-        integrationSettings.zapi_token,
-        integrationSettings.zapi_client_token,
-        normalizedPhone,
-        responseMessage
-      );
-      messageSent = true;
-    }
-
-    if (!messageSent) {
-      console.log("[whatsapp-chatbot] No WhatsApp provider configured, skipping send");
-    }
-
-    // Log the interaction
-    await supabase.from("whatsapp_chatbot_logs").insert({
-      leader_id: actor?.id || null,
-      phone: normalizedPhone,
-      message_in: message,
-      message_out: responseMessage,
-      keyword_matched: matchedKeyword?.keyword || null,
-      response_type: responseType,
-      processing_time_ms: Date.now() - startTime,
-      ...(tenantId ? { tenant_id: tenantId } : {}),
-    });
-
-    console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
-
-    // =====================================================
-    // POST-RESPONSE: Check if we should trigger registration invite
-    // =====================================================
-    if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
-      const firstMsgTime = new Date(session.first_message_at).getTime();
-      const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
-      
-      if (minutesSinceFirst >= 30) {
-        console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
-        
-        const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
-        
-        // Send the registration invite
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
-        
-        // Update session state
-        await supabase
-          .from("whatsapp_chatbot_sessions")
-          .update({ registration_state: "awaiting_confirmation", registration_asked_at: new Date().toISOString() })
-          .eq("id", session.id);
-        
-        // Log
-        await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
-          message_out: regInviteMsg, keyword_matched: null, response_type: "registration_invite",
-          processing_time_ms: Date.now() - startTime,
-          ...(tenantId ? { tenant_id: tenantId } : {}),
-        });
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        responseType,
-        keywordMatched: matchedKeyword?.keyword || null
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-  } catch (error) {
-    console.error("[whatsapp-chatbot] Error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-});
-
-function getFirstName(leader: Leader | null): string {
-  if (!leader?.nome_completo) return "amigo(a)";
-  return leader.nome_completo.split(" ")[0] || "amigo(a)";
-}
-
-function normalizeTextForMatch(value: string): string {
-  return value.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
-
-function sanitizeKeywordCandidate(value: string): string {
-  return value.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function isKeywordMatch(
-  messageForMatch: string,
-  keyword: string,
-  aliases: string[],
-  isCommandLikeMessage: boolean
-): boolean {
-  const candidates = [keyword, ...aliases]
-    .map(sanitizeKeywordCandidate)
-    .filter((candidate, index, arr) => candidate.length >= 2 && arr.indexOf(candidate) === index);
-
-  const messageTokens = new Set(messageForMatch.split(" ").filter(Boolean));
-
-  return candidates.some((candidate) => {
-    if (messageForMatch === candidate) return true;
-    if (messageTokens.has(candidate)) return true;
-
-    // Partial matching only for short command-like inputs to avoid false positives on natural questions
-    if (isCommandLikeMessage && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
-
-    return false;
-  });
-}
-
-// Normalize phone number
-function normalizePhone(phone: string): string {
-  let clean = phone.replace(/[^0-9]/g, "");
-  
-  if (clean.startsWith("55") && clean.length > 11) {
-    clean = clean.substring(2);
-  }
-  
-  // Add 9 if missing for Brasília
-  if (clean.length === 10 && clean.startsWith("61")) {
-    clean = "61" + "9" + clean.substring(2);
-  }
-  
-  return "+55" + clean;
-}
-
-// Send WhatsApp message via Z-API
-async function sendWhatsAppMessage(
-  instanceId: string,
-  token: string,
-  clientToken: string | null,
-  phone: string,
-  message: string
-): Promise<boolean> {
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
-  const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
-  
-  const headers: Record<string, string> = { 
-    "Content-Type": "application/json" 
-  };
-  
-  if (clientToken) {
-    headers["Client-Token"] = clientToken;
-  }
-  
-  try {
-    const response = await fetch(zapiUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        phone: cleanPhone,
-        message: message
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[whatsapp-chatbot] Z-API error:", errorText);
-      return false;
-    } else {
-      console.log("[whatsapp-chatbot] Message sent successfully via Z-API");
-      return true;
-    }
-  } catch (err) {
-    console.error("[whatsapp-chatbot] Error sending via Z-API:", err);
-    return false;
-  }
-}
-
-// Send WhatsApp message via Meta Cloud API
-async function sendWhatsAppMessageMetaCloud(
-  phoneNumberId: string,
-  apiVersion: string,
-  accessToken: string,
-  phone: string,
-  message: string,
-  supabase?: any
-): Promise<boolean> {
-  let cleanPhone = phone.replace(/[^0-9]/g, "");
-  if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
-    cleanPhone = "55" + cleanPhone;
-  }
-
-  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
-  
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: cleanPhone,
-        type: "text",
-        text: { body: message },
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[whatsapp-chatbot] Meta Cloud API error:", errorText);
-      return false;
-    }
-    
-    const result = await response.json();
-    const wamid = result.messages?.[0]?.id;
-    console.log("[whatsapp-chatbot] Message sent successfully via Meta Cloud API:", wamid);
-
-    if (supabase) {
-      await supabase.from("whatsapp_messages").insert({
-        phone: cleanPhone,
-        message: message,
-        direction: "outgoing",
-        status: "sent",
-        provider: "meta_cloud",
-        metadata: { wamid },
-      });
-    }
-
-    return true;
-  } catch (err) {
-    console.error("[whatsapp-chatbot] Error sending via Meta Cloud:", err);
-    return false;
-  }
-}
-
-// Search Knowledge Base for relevant context
-interface RankedKBChunk {
-  content: string;
-  source: string;
-  score: number;
-}
-
-const KB_STOP_WORDS = new Set([
-  "que", "como", "para", "por", "com", "uma", "dos", "das", "nos", "nas", "foi", "ser", "ter", "seu", "sua", "são", "tem", "mais", "quando", "onde", "qual", "quem", "ele", "ela", "sobre", "essa", "esse", "isso", "esta", "este", "isto", "muito", "pode", "pelo", "pela", "ainda", "bem", "sem", "data",
-  "mas", "não", "nao", "sim", "nao", "voce", "você", "meu", "minha", "tudo", "aqui", "ali", "tambem", "também", "porque", "pois", "então", "entao", "depois", "antes", "agora", "sempre", "nunca", "outro", "outra", "cada", "todo", "toda", "entre", "acho", "quero", "saber", "favor", "diga", "fale", "conte", "explique"
-]);
-
-function normalizeForKb(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function extractSearchTerms(question: string): string[] {
-  const rawTerms = question
-    .toLowerCase()
-    .replace(/[^\w\sáéíóúãõâêîôûç]/g, " ")
-    .split(/\s+/)
-    .filter((w: string) => w.length > 2 && !KB_STOP_WORDS.has(w));
-
-  const termSet = new Set<string>();
-  for (const term of rawTerms) {
-    termSet.add(term);
-    const normalized = normalizeForKb(term);
-    if (normalized && normalized !== term) {
-      termSet.add(normalized);
-    }
-  }
-
-  return Array.from(termSet).slice(0, 12);
-}
-
-function countOccurrences(text: string, term: string): number {
-  if (!term) return 0;
-  let count = 0;
-  let fromIndex = 0;
-  while (true) {
-    const index = text.indexOf(term, fromIndex);
-    if (index === -1) break;
-    count += 1;
-    fromIndex = index + term.length;
-  }
-  return count;
-}
-
-function getIntentKeywords(question: string): string[] {
-  const normalized = normalizeForKb(question);
-  const intentKeywords = new Set<string>();
-
-  if (/(nascimento|nasceu|nascido|nascida|idade)/.test(normalized)) {
-    ["nascimento", "nasceu", "nascido", "nascida", "data de nascimento"].forEach((k) => intentKeywords.add(k));
-  }
-
-  if (/(presidente|comissao|comissão|eleito|eleicao|eleição)/.test(normalized)) {
-    ["presidente", "comissao", "eleito", "eleicao", "desenvolvimento urbano"].forEach((k) => intentKeywords.add(k));
-  }
-
-  return Array.from(intentKeywords);
-}
-
-async function searchKnowledgeBase(
-  supabase: any,
-  question: string,
-  tenantId: string
-): Promise<{ context: string; sources: string[]; rankedChunks: RankedKBChunk[] }> {
-  try {
-    const searchTerms = extractSearchTerms(question);
-    if (searchTerms.length === 0) return { context: "", sources: [], rankedChunks: [] };
-
-    console.log(`[whatsapp-chatbot] KB search terms: ${searchTerms.join(", ")}`);
-
-    const ilikeConditions = searchTerms.map((term) => `content.ilike.%${term}%`);
-
-    const { data: chunks } = await supabase
-      .from("kb_chunks")
-      .select(`
-        content, metadata,
-        document:kb_documents(title, category)
-      `)
-      .eq("tenant_id", tenantId)
-      .or(ilikeConditions.join(","))
-      .limit(30);
-
-    if (!chunks || chunks.length === 0) {
-      return { context: "", sources: [], rankedChunks: [] };
-    }
-
-    const normalizedQuestion = normalizeForKb(question);
-    const intentKeywords = getIntentKeywords(question).map((k) => normalizeForKb(k));
-
-    const rankedChunks = chunks
-      .map((chunk: any) => {
-        const doc = Array.isArray(chunk.document) ? chunk.document[0] : chunk.document;
-        const source = doc?.title || "Documento";
-        const content = chunk.content || "";
-
-        const contentNorm = normalizeForKb(content);
-        const topicNorm = normalizeForKb(chunk.metadata?.topic || "");
-        const summaryNorm = normalizeForKb(chunk.metadata?.summary || "");
-
-        let score = 0;
-
-        for (const term of searchTerms.map((t) => normalizeForKb(t))) {
-          if (!term) continue;
-          score += countOccurrences(contentNorm, term) * 3;
-          if (topicNorm.includes(term)) score += 8;
-          if (summaryNorm.includes(term)) score += 5;
-        }
-
-        for (const intent of intentKeywords) {
-          if (!intent) continue;
-          if (contentNorm.includes(intent)) score += 12;
-          if (topicNorm.includes(intent)) score += 15;
-          if (summaryNorm.includes(intent)) score += 10;
-        }
-
-        if (/(nascimento|nasceu|nascido|nascida)/.test(normalizedQuestion) && /(nascimento|nasceu|nascido|nascida)/.test(contentNorm)) {
-          score += 30;
-        }
-
-        if (contentNorm.includes("tabela") && contentNorm.includes("armazena") && score > 0) {
-          score -= 4;
-        }
-
-        return { content, source, score } as RankedKBChunk;
-      })
-      .filter((chunk: RankedKBChunk) => chunk.score > 0)
-      .sort((a: RankedKBChunk, b: RankedKBChunk) => b.score - a.score)
-      .slice(0, 5);
-
-    if (rankedChunks.length === 0) {
-      return { context: "", sources: [], rankedChunks: [] };
-    }
-
-    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c) => `score=${c.score}`).join(", ")}`);
-
-    const sources = [...new Set(rankedChunks.map((c) => c.source))];
-    const context = rankedChunks.map((c) => c.content).join("\n\n");
+    const sources: string[] = [...new Set(rankedChunks.map((c: RankedKBChunk) => c.source))];
+    const context = rankedChunks.map((c: RankedKBChunk) => c.content).join("\n\n");
 
     return { context, sources, rankedChunks };
   } catch (err) {
