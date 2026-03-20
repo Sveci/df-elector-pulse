@@ -23,6 +23,7 @@ import { PageLoader } from "./components/PageLoader";
 import { CoordinatorAuthProvider } from "./contexts/CoordinatorAuthContext";
 import { DynamicMetaTags } from "./components/DynamicMetaTags";
 import { PublicOpinionRealtimeProvider } from "./components/public-opinion/PublicOpinionRealtimeProvider";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { TenantProvider } from "./contexts/TenantContext";
 import { TenantSelectorModal } from "./components/TenantSelectorModal";
 import type { AppRole } from "./hooks/useUserRole";
@@ -38,6 +39,7 @@ const ResetSuccess = lazy(() => import("./pages/ResetSuccess"));
 const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const LgpdCookies = lazy(() => import("./pages/LgpdCookies"));
+const LgpdDireitos = lazy(() => import("./pages/LgpdDireitos"));
 const SobreNos = lazy(() => import("./pages/SobreNos"));
 const Contato = lazy(() => import("./pages/Contato"));
 const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
@@ -197,6 +199,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <DynamicMetaTags />
+          <CookieConsentBanner />
           <BrowserRouter
             future={{
               v7_startTransition: true,
@@ -221,6 +224,7 @@ const App = () => (
                         <Route path="/termos-de-uso" element={<TermosDeUso />} />
                         <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                         <Route path="/lgpd-cookies" element={<LgpdCookies />} />
+                        <Route path="/lgpd-direitos" element={<LgpdDireitos />} />
                         <Route path="/sobre" element={<SobreNos />} />
                         <Route path="/contato" element={<Contato />} />
                         <Route path="/ajuda" element={<CentralAjuda />} />
