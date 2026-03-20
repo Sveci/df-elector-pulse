@@ -402,7 +402,7 @@ const Dashboard = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                     <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary-500" />
-                    Ranking por Região Administrativa
+                    Ranking por {locationSingularLabel}
                   </CardTitle>
                   <FilterTabs selected={periodRA} onChange={setPeriodRA} />
                 </div>
