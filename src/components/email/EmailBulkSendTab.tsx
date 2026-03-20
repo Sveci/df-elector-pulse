@@ -210,15 +210,15 @@ export function EmailBulkSendTab() {
     enabled: !!targetSurveyId && isSurveyInviteTemplate,
   });
 
-  // Buscar nome do deputado/organização (para template de reunião e cabeçalho)
+  // Buscar nome do deputado/organização (para template de reunião e cabeçalho) — tenant-scoped
   const { data: organization } = useQuery({
-    queryKey: ["organization-name-email"],
+    queryKey: ["organization-name-email", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("organization")
-        .select("nome, cargo")
-        .limit(1)
-        .single();
+        .select("nome, cargo");
+      if (tenantId) query = query.eq("tenant_id", tenantId);
+      const { data, error } = await query.limit(1).single();
       if (error) return { nome: "Deputado", cargo: "" };
       return data;
     },

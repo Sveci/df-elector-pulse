@@ -211,12 +211,18 @@ serve(async (req) => {
         });
       }
 
-      // If tenant has its own from_email/from_name, prefer those
+      // When falling back to the global API key:
+      // - If tenant had its own from_email/from_name, prefer those
+      // - For resend_enabled: if the tenant has its own key but it was null (fallback scenario),
+      //   use the global enabled flag. If the tenant explicitly enabled it, respect that.
+      //   The key insight: when there's no tenant key, rely on global enabled status.
+      const tenantHasExplicitKey = settings?.resend_api_key != null;
       settings = {
         resend_api_key: globalSettings.resend_api_key,
         resend_from_email: settings?.resend_from_email || globalSettings.resend_from_email,
         resend_from_name: settings?.resend_from_name || globalSettings.resend_from_name,
-        resend_enabled: settings?.resend_enabled ?? globalSettings.resend_enabled,
+        // If tenant explicitly enabled (true), keep it. Otherwise use global enabled.
+        resend_enabled: settings?.resend_enabled === true ? true : globalSettings.resend_enabled,
       };
     }
 
