@@ -76,7 +76,7 @@ export function AdminSidebar() {
             <img
               src={logo}
               alt="Eleitor 360.ai"
-              className={`h-8 object-contain transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-75 w-0' : 'opacity-100 scale-100 w-full'}`}
+              className={`h-7 object-contain transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-75 w-0' : 'opacity-100 scale-100 w-full'}`}
             />
             <img
               src={logoIcon}
