@@ -173,10 +173,20 @@ const Comparison = () => {
   const statsArr = [e0, e1, e2, e3, e4];
   const isLoadingStats = statsArr.some((s, i) => entities?.[i] && s.isLoading);
 
-  // Per-date detail for principal entity
-  const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const dateDetail = useDateAnalysisDetail(principalEntity?.id, true, resolvedRange);
-  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  // History of analyses
+  const { data: analysisHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ["po_strategic_analysis_history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("po_strategic_analyses")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [historyDialogItem, setHistoryDialogItem] = useState<any>(null);
 
   const comparisonData = hasRealEntities
     ? entities.map((e, i) => {
