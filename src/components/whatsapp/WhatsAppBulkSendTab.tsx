@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useQuery } from "@tanstack/react-query";
 import {
   Send,
@@ -38,7 +39,7 @@ import {
 } from "@/hooks/useWhatsAppTemplates";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getProductionUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
+import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
 
 type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts";
 
@@ -82,6 +83,7 @@ const BATCH_SIZE_OPTIONS = [
 
 export function WhatsAppBulkSendTab() {
   const tenantId = useTenantId();
+  const tenantDomain = useTenantDomain();
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
@@ -432,7 +434,7 @@ export function WhatsAppBulkSendTab() {
     let errorCount = 0;
 
     // SEMPRE usa URL de produção para comunicações externas
-    const baseUrl = getProductionUrl();
+    const baseUrl = getTenantBaseUrl(tenantDomain);
 
     try {
       const recipients = recipientsData.recipients as Record<string, unknown>[];
@@ -681,11 +683,11 @@ export function WhatsAppBulkSendTab() {
 
             if (selectedTemplateData.slug === "lideranca-reuniao-link") {
               variables.deputado_nome = organization?.nome || "Deputado";
-              variables.link_reuniao_afiliado = generateAffiliateUrl(affiliateToken);
+              variables.link_reuniao_afiliado = generateAffiliateUrl(affiliateToken, tenantDomain);
             }
 
             if (selectedTemplateData.slug === "lideranca-cadastro-link") {
-              const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
+              const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken, tenantDomain);
               variables.link_cadastro_afiliado = linkCadastroAfiliado;
 
               // Gerar QR code e enviar junto com a mensagem

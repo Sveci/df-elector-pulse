@@ -6,7 +6,12 @@
  */
 function getAppBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
+    const origin = window.location.origin;
+    // Proteger contra URLs de preview em comunicações externas
+    if (origin.includes('lovableproject.com') || origin.includes('lovable.app') || origin.includes('localhost')) {
+      return "https://app.eleitor360.ai";
+    }
+    return origin;
   }
   // Fallback para SSR ou testes
   return "https://app.eleitor360.ai";
@@ -79,9 +84,18 @@ export function generateEventCampaignUrl(eventSlug: string, utmSource: string, u
   return `${getTenantBaseUrl(customDomain)}/eventos/${eventSlug}?${params.toString()}`;
 }
 
-/** Link de indicação de líder */
-export function generateLeaderReferralUrl(affiliateToken: string, customDomain?: string | null): string {
-  return `${getTenantBaseUrl(customDomain)}/cadastro/${affiliateToken}`;
+/** Link de indicação de líder (com nome e cargo opcionais para identificação) */
+export function generateLeaderReferralUrl(
+  affiliateToken: string,
+  customDomain?: string | null,
+  options?: { politico?: string; cargo?: string }
+): string {
+  const base = `${getTenantBaseUrl(customDomain)}/cadastro/${affiliateToken}`;
+  const params = new URLSearchParams();
+  if (options?.politico) params.set("ref_nome", options.politico);
+  if (options?.cargo) params.set("ref_cargo", options.cargo);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 /** Link de afiliado */

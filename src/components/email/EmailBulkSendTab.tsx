@@ -23,11 +23,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getProductionUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateUnsubscribeUrl, generateVerificationUrl, generateLeaderVerificationUrl } from "@/lib/urlHelper";
+import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateUnsubscribeUrl, generateVerificationUrl, generateLeaderVerificationUrl } from "@/lib/urlHelper";
 import { toast } from "sonner";
 import { useBulkSendSession } from "@/hooks/useBulkSendSession";
 import { ResumeSessionAlert } from "@/components/bulk-send/ResumeSessionAlert";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 type RecipientType = "all_contacts" | "event_contacts" | "funnel_contacts" | "leaders" | "single_contact" | "single_leader" | "unverified_leaders" | "unverified_contacts" | "coordinator_tree";
 
@@ -65,6 +66,7 @@ export function EmailBulkSendTab() {
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
   const tenantId = useTenantId();
+  const tenantDomain = useTenantDomain();
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
@@ -565,8 +567,9 @@ export function EmailBulkSendTab() {
     let successCount = 0;
     let errorCount = 0;
 
-    // SEMPRE usa URL de produção para comunicações externas
-    const baseUrl = getProductionUrl();
+    // SEMPRE usa URL de produção para comunicações externas (com domínio customizado do tenant)
+    const baseUrl = getTenantBaseUrl(tenantDomain);
+    const orgInfo = { politico: organization?.nome || "", cargo: organization?.cargo || "" };
 
     // Obter identificadores já enviados (para retomada)
     const sentIdentifiers = resumeMode || isResuming ? getSentIdentifiers() : new Set<string>();
@@ -607,7 +610,7 @@ export function EmailBulkSendTab() {
         // Gerar link de verificação baseado no tipo
         const linkVerificacao = isLeader
           ? `${baseUrl}/verificar-lider/${verificationCode}`
-          : generateVerificationUrl(verificationCode);
+          : generateVerificationUrl(verificationCode, tenantDomain);
 
         variables.link_verificacao = linkVerificacao;
         variables.deputado_nome = organization?.nome || "Deputado";
@@ -625,7 +628,7 @@ export function EmailBulkSendTab() {
 
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken) {
-          variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, affiliateToken);
+          variables.link_afiliado = generateEventAffiliateUrl(targetEvent.slug, affiliateToken, tenantDomain);
         }
       }
 
@@ -641,7 +644,7 @@ export function EmailBulkSendTab() {
 
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken && selectedTemplate === "lideranca-pesquisa-link") {
-          const linkPesquisaAfiliado = generateSurveyAffiliateUrl(targetSurvey.slug, affiliateToken);
+          const linkPesquisaAfiliado = generateSurveyAffiliateUrl(targetSurvey.slug, affiliateToken, tenantDomain);
           variables.link_pesquisa_afiliado = linkPesquisaAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkPesquisaAfiliado)}`;
         }
@@ -659,14 +662,14 @@ export function EmailBulkSendTab() {
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
 
         if (affiliateToken && selectedTemplate === "lideranca-reuniao-link") {
-          const linkReuniaoAfiliado = generateAffiliateUrl(affiliateToken);
+          const linkReuniaoAfiliado = generateAffiliateUrl(affiliateToken, tenantDomain);
           variables.deputado_nome = organization?.nome || "Deputado";
           variables.link_reuniao_afiliado = linkReuniaoAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkReuniaoAfiliado)}`;
         }
 
         if (affiliateToken && selectedTemplate === "lideranca-cadastro-link") {
-          const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
+          const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken, tenantDomain, orgInfo);
           variables.link_cadastro_afiliado = linkCadastroAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkCadastroAfiliado)}`;
         }
