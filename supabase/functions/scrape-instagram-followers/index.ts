@@ -17,6 +17,43 @@ Deno.serve(async (req) => {
     const apifyToken = Deno.env.get("APIFY_API_TOKEN");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Não autenticado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Token inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "super_admin"])
+      .limit(1)
+      .single();
+
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ error: "Acesso não autorizado. Requer permissão de administrador." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[scrape-instagram-followers] Authenticated user: ${user.id} role: ${roleData.role}`);
+    // ========== END AUTHENTICATION CHECK ==========
+
     if (!apifyToken) {
       return new Response(
         JSON.stringify({ error: "APIFY_API_TOKEN não configurado" }),

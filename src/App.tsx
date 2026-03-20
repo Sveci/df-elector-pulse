@@ -159,7 +159,11 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/reset-success" element={<ResetSuccess />} />
-            <Route path="/setup-users" element={<SetupUsers />} />
+            <Route path="/setup-users" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <SetupUsers />
+              </RoleProtectedRoute>
+            } />
             
             {/* Public routes */}
             <Route path="/visita-gabinete/:visitId" element={<ScheduleVisit />} />

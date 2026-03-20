@@ -1427,7 +1427,44 @@ Deno.serve(async (req) => {
 
   try {
     const { messages, sessionId = 'default', userName = '' } = await req.json();
-    
+
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Não autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: callerUser }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !callerUser) {
+      return new Response(
+        JSON.stringify({ error: 'Token inválido' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', callerUser.id)
+      .in('role', ['admin', 'super_admin', 'atendente'])
+      .limit(1)
+      .single();
+
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ error: 'Acesso não autorizado.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[chat] Authenticated user: ${callerUser.id} role: ${roleData.role}`);
+    // ========== END AUTHENTICATION CHECK ==========
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY não está configurada');

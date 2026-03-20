@@ -8,7 +8,8 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
+  /** Role atribuído na tabela user_roles. Pode ser null se o usuário ainda não tiver role associado. */
+  role: string | null;
   avatar?: string;
 }
 
@@ -182,8 +183,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error('Error fetching role:', roleError);
       }
 
-      // Role vem de user_roles, com fallback para profiles.role ou 'admin'
-      const userRole = roleData?.role || profileData.role || 'admin';
+      // Role vem de user_roles, com fallback para profiles.role
+      // SECURITY: não assumir 'admin' como padrão — usar null quando role não encontrado
+      const userRole = roleData?.role || profileData.role || null;
+
+      if (!userRole) {
+        console.warn('No role found for user:', userId, '— access will be restricted');
+      }
 
       return {
         id: userId,
