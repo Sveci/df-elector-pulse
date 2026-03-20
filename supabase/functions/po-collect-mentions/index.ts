@@ -544,9 +544,9 @@ serve(async (req) => {
       }
     });
 
-    // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
-    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
-      EdgeRuntime.waitUntil(bgTask);
+    const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil: (promise: Promise<unknown>) => void } }).EdgeRuntime;
+    if (edgeRuntime?.waitUntil) {
+      edgeRuntime.waitUntil(bgTask);
     }
 
     // Return immediately with the job ID

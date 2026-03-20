@@ -70,7 +70,12 @@ Deno.serve(async (req) => {
         console.log(`[send-leader-affiliate-links] Background batch done. Success: ${successCount}, Errors: ${errorCount}`);
       };
 
-      EdgeRuntime.waitUntil(backgroundTask());
+      const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil: (promise: Promise<unknown>) => void } }).EdgeRuntime;
+      if (edgeRuntime?.waitUntil) {
+        edgeRuntime.waitUntil(backgroundTask());
+      } else {
+        backgroundTask().catch((e) => console.error("[send-leader-affiliate-links] Background task failed:", e));
+      }
 
       return new Response(
         JSON.stringify({ success: true, message: `Processing ${leaderIds.length} leaders in background`, total: leaderIds.length }),
@@ -84,104 +89,6 @@ Deno.serve(async (req) => {
         success: true,
         message: "Batch processing disabled (use leader_id or leader_ids)",
         processed: 0,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-    const results = [];
-    let processedCount = 0;
-    let skippedCount = 0;
-
-    for (const leader of recentLeaders) {
-      if (!leader.telefone && !leader.email) {
-        console.log(`[send-leader-affiliate-links] Skipping ${leader.nome_completo}: no contact info`);
-        skippedCount++;
-        continue;
-      }
-
-      const phoneNormalized = leader.telefone?.replace(/\D/g, "").slice(-8) || "";
-      // Check for both 'whatsapp_consent' (new flow) and 'whatsapp' (legacy flow)
-      const isWhatsAppVerification = leader.verification_method === 'whatsapp_consent' || leader.verification_method === 'whatsapp';
-
-      // Check if welcome SMS already sent for this leader
-      const { data: existingSMS } = await supabase
-        .from("sms_messages")
-        .select("id")
-        .or(`message.ilike.%link de indicacao%,message.ilike.%cadastro confirmado%,message.ilike.%indicar pessoas%`)
-        .ilike("phone", `%${phoneNormalized}`)
-        .limit(1);
-
-      // Check if WhatsApp with affiliate link already sent
-      // Note: Search for key phrases that appear in the welcome message template
-      const { data: existingWhatsApp } = await supabase
-        .from("whatsapp_messages")
-        .select("id")
-        .or(`message.ilike.%Seu link de indica%,message.ilike.%rede de lideranças%,message.ilike.%/cadastro/%`)
-        .ilike("phone", `%${phoneNormalized}`)
-        .eq("direction", "outgoing")
-        .limit(1);
-
-      // Check if ANY email already sent/attempted for this leader
-      const { data: existingEmail } = await supabase
-        .from("email_logs")
-        .select("id")
-        .eq("leader_id", leader.id)
-        .limit(1);
-
-      const hasSMS = existingSMS && existingSMS.length > 0;
-      const hasWhatsApp = existingWhatsApp && existingWhatsApp.length > 0;
-      const hasEmail = existingEmail && existingEmail.length > 0;
-
-      // Determine what channels need to be sent based on verification method
-      let skipSMS = hasSMS;
-      let skipWhatsApp = hasWhatsApp;
-      const skipEmail = hasEmail;
-
-      // If verified via WhatsApp, we use WhatsApp channel (not SMS)
-      // If verified via other methods, we use SMS channel (not WhatsApp)
-      if (isWhatsAppVerification) {
-        skipSMS = true; // Never send SMS for WhatsApp verifications
-        // Check if both WhatsApp AND Email were already sent
-        if (hasWhatsApp && hasEmail) {
-          console.log(`[send-leader-affiliate-links] Skipping ${leader.nome_completo}: already has WhatsApp and Email (WhatsApp verification)`);
-          skippedCount++;
-          continue;
-        }
-      } else {
-        skipWhatsApp = true; // Never send WhatsApp for non-WhatsApp verifications
-        // Check if both SMS AND Email were already sent
-        if (hasSMS && hasEmail) {
-          console.log(`[send-leader-affiliate-links] Skipping ${leader.nome_completo}: already has SMS and Email`);
-          skippedCount++;
-          continue;
-        }
-      }
-
-      // Process to send missing channels
-      const result = await processLeader(
-        supabase,
-        leader.id,
-        baseUrl,
-        leader as Leader,
-        skipSMS,
-        skipEmail,
-        skipWhatsApp
-      );
-      results.push(result);
-      processedCount++;
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    console.log(`[send-leader-affiliate-links] Done. Processed: ${processedCount}, Skipped: ${skippedCount}`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        processed: processedCount,
-        skipped: skippedCount,
-        total: recentLeaders.length,
-        results: results.slice(0, 5),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

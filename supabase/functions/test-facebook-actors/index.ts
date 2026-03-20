@@ -29,7 +29,7 @@ async function testActor(token: string, actorId: string, input: Record<string, a
       actor: actorId,
       count: items.length,
       sample: items[0] ? Object.keys(items[0]) : null,
-      raw: items[0] ? JSON.stringify(items[0]).substring(0, 600) : null,
+      raw: items[0] ? JSON.stringify(items[0]).substring(0, 600) : undefined,
     };
   } catch (e) {
     return { actor: actorId, count: 0, sample: null, error: e instanceof Error ? e.message : String(e) };

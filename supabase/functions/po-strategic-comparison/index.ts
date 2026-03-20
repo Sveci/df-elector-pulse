@@ -204,7 +204,8 @@ Seja realista e baseie-se nos dados fornecidos. Se os dados são limitados, indi
     });
   } catch (error) {
     console.error("Error in po-strategic-comparison:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

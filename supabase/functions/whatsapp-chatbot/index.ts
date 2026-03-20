@@ -662,25 +662,31 @@ Deno.serve(async (req) => {
     const bareCodeMatch = normalizedMessage.match(/^[A-Z0-9]{5,6}$/);
 
     if (confirmMatchChatbot || (bareCodeMatch && normalizedMessage !== "AJUDA" && normalizedMessage !== "PONTOS" && normalizedMessage !== "SIM")) {
+      if (!actor) {
+        console.log(`[whatsapp-chatbot] Verification code received from unknown phone ${normalizedPhone}`);
+        return new Response(JSON.stringify({ success: false, reason: "leader_not_found_for_code" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       const code = confirmMatchChatbot ? confirmMatchChatbot[1] : bareCodeMatch![0];
-      console.log(`[whatsapp-chatbot] Detected verification code: ${code} from leader ${leader.id}`);
+      console.log(`[whatsapp-chatbot] Detected verification code: ${code} from leader ${actor.id}`);
 
       const { data: leaderVerificationStatus } = await supabase
         .from("lideres")
         .select("is_verified, verification_code")
-        .eq("id", leader.id)
+        .eq("id", actor.id)
         .single();
 
       if (leaderVerificationStatus?.is_verified) {
-        const responseAlready = `Olá ${leader.nome_completo.split(" ")[0]}! ✅\n\nSeu cadastro já foi verificado anteriormente. Você já pode usar todos os comandos disponíveis.\n\nDigite *AJUDA* para ver a lista de comandos.`;
-        
+        const responseAlready = `Olá ${actor.nome_completo.split(" ")[0]}! ✅\n\nSeu cadastro já foi verificado anteriormente. Você já pode usar todos os comandos disponíveis.\n\nDigite *AJUDA* para ver a lista de comandos.`;
+
         let intSettingsQuery = supabase
           .from("integrations_settings")
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
-        const useMetaCloudForVerif = provider === 'meta_cloud' || 
+        const useMetaCloudForVerif = provider === 'meta_cloud' ||
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
@@ -691,7 +697,7 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: leader.id, phone: normalizedPhone, message_in: message,
+          leader_id: actor.id, phone: normalizedPhone, message_in: message,
           message_out: responseAlready, keyword_matched: "CONFIRMAR", response_type: "verification_already",
           processing_time_ms: Date.now() - startTime,
           ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -702,7 +708,7 @@ Deno.serve(async (req) => {
       }
 
       if (leaderVerificationStatus?.verification_code && leaderVerificationStatus.verification_code !== code) {
-        const responseWrongCode = `Olá ${leader.nome_completo.split(" ")[0]}! ⚠️\n\nEsse código não pertence ao seu número de telefone. Por favor, utilize o código que foi enviado para você.`;
+        const responseWrongCode = `Olá ${actor.nome_completo.split(" ")[0]}! ⚠️\n\nEsse código não pertence ao seu número de telefone. Por favor, utilize o código que foi enviado para você.`;
 
         let intSettingsQuery = supabase
           .from("integrations_settings")
@@ -710,7 +716,7 @@ Deno.serve(async (req) => {
         if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
 
-        const useMetaCloudForVerif = provider === 'meta_cloud' || 
+        const useMetaCloudForVerif = provider === 'meta_cloud' ||
           (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
@@ -721,7 +727,7 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: leader.id, phone: normalizedPhone, message_in: message,
+          leader_id: actor.id, phone: normalizedPhone, message_in: message,
           message_out: responseWrongCode, keyword_matched: "CONFIRMAR", response_type: "verification_wrong_code",
           processing_time_ms: Date.now() - startTime,
           ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -1221,10 +1227,10 @@ async function searchKnowledgeBase(
       return { context: "", sources: [], rankedChunks: [] };
     }
 
-    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c) => `score=${c.score}`).join(", ")}`);
+    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
 
-    const sources = [...new Set(rankedChunks.map((c) => c.source))];
-    const context = rankedChunks.map((c) => c.content).join("\n\n");
+    const sources = [...new Set<string>(rankedChunks.map((c: RankedKBChunk) => c.source))];
+    const context = rankedChunks.map((c: RankedKBChunk) => c.content).join("\n\n");
 
     return { context, sources, rankedChunks };
   } catch (err) {
