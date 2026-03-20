@@ -669,7 +669,7 @@ export function EmailBulkSendTab() {
         }
 
         if (affiliateToken && selectedTemplate === "lideranca-cadastro-link") {
-          const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken);
+          const linkCadastroAfiliado = generateLeaderReferralUrl(affiliateToken, tenantDomain, orgInfo);
           variables.link_cadastro_afiliado = linkCadastroAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkCadastroAfiliado)}`;
         }
