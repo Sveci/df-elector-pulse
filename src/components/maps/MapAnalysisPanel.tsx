@@ -66,18 +66,18 @@ export function MapAnalysisPanel({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const insertPayload: Record<string, unknown> = {
+      const insertPayload = {
         user_id: user.id,
         content,
         total_leaders: totalLeaders,
         total_contacts: totalContacts,
         total_connections: totalConnections,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       };
-      if (tenantId) insertPayload.tenant_id = tenantId;
 
       const { error } = await supabase
         .from('map_analyses')
-        .insert(insertPayload);
+        .insert([insertPayload] as any);
 
       if (error) throw error;
 

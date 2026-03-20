@@ -132,6 +132,7 @@ function generateDemoContacts(leaders: LeaderMapData[]): ContactMapData[] {
         latitude: region.lat,
         longitude: region.lng,
         cidade_nome: region.nome,
+        cidade_id: region.id,
         localidade: null,
       });
       contactIdx++;
