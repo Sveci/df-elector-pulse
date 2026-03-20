@@ -18,12 +18,18 @@ interface ScheduledMessage {
   tenant_id: string | null;
 }
 
-function isQuietHours(settings: { quiet_hours_enabled: boolean | null; quiet_hours_start: string | null; quiet_hours_end: string | null } | null): boolean {
+function isQuietHours(
+  settings: {
+    quiet_hours_enabled: boolean | null;
+    quiet_hours_start: string | null;
+    quiet_hours_end: string | null;
+  } | null,
+): boolean {
   if (!settings?.quiet_hours_enabled) return false;
   const now = new Date();
   const brasiliaHour = (now.getUTCHours() - 3 + 24) % 24;
-  const startHour = parseInt((settings.quiet_hours_start || '21:00').split(':')[0]);
-  const endHour = parseInt((settings.quiet_hours_end || '08:00').split(':')[0]);
+  const startHour = parseInt((settings.quiet_hours_start || "21:00").split(":")[0]);
+  const endHour = parseInt((settings.quiet_hours_end || "08:00").split(":")[0]);
   if (startHour > endHour) {
     return brasiliaHour >= startHour || brasiliaHour < endHour;
   }
@@ -45,17 +51,16 @@ Deno.serve(async (req) => {
     const { data: qhSettings } = await supabase
       .from("integrations_settings")
       .select("quiet_hours_enabled, quiet_hours_start, quiet_hours_end")
-      .not('quiet_hours_enabled', 'is', null)
-      .order('created_at', { ascending: true })
+      .not("quiet_hours_enabled", "is", null)
+      .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
 
     if (isQuietHours(qhSettings)) {
       console.log("[process-scheduled-messages] Horário de silêncio ativo. Pulando execução.");
-      return new Response(
-        JSON.stringify({ success: true, skipped: true, reason: "quiet_hours" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: "quiet_hours" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log("[process-scheduled-messages] Starting processing...");
@@ -76,10 +81,9 @@ Deno.serve(async (req) => {
 
     if (!pendingMessages || pendingMessages.length === 0) {
       console.log("[process-scheduled-messages] No pending messages to process");
-      return new Response(
-        JSON.stringify({ success: true, processed: 0 }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, processed: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`[process-scheduled-messages] Found ${pendingMessages.length} messages to process`);
@@ -90,10 +94,7 @@ Deno.serve(async (req) => {
     for (const message of pendingMessages as ScheduledMessage[]) {
       try {
         // Mark as processing
-        await supabase
-          .from("scheduled_messages")
-          .update({ status: "processing" })
-          .eq("id", message.id);
+        await supabase.from("scheduled_messages").update({ status: "processing" }).eq("id", message.id);
 
         console.log(`[process-scheduled-messages] Processing message ${message.id} (${message.message_type})`);
 
@@ -183,16 +184,15 @@ Deno.serve(async (req) => {
 
     console.log(`[process-scheduled-messages] Completed. Processed: ${processed}, Failed: ${failed}`);
 
-    return new Response(
-      JSON.stringify({ success: true, processed, failed }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, processed, failed }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("[process-scheduled-messages] Error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: false, error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
