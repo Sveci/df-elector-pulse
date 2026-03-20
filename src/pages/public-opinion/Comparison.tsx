@@ -1,25 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { COMPETITOR_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Legend, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
 import {
   Shield, Swords, Lightbulb, CalendarDays, Brain, Loader2,
   AlertTriangle, TrendingUp, Target, MessageSquare, ThumbsUp, Users, Ban, Check, ChevronRight, Download,
+  CalendarIcon, ChevronDown, ChevronUp, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { generateComparisonPdf } from "@/utils/generateComparisonReportPdf";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const entityColors = ['#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#22c55e'];
 
@@ -52,93 +60,117 @@ const ASPECT_KEYS = [
   "entrega_resultados", "atuacao_federal", "cultura_local",
 ];
 
-function useEntityStats(entityId?: string, isPrincipal?: boolean) {
+// ── Fast stats using po_daily_snapshots (pre-aggregated) ──
+function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
   return useQuery({
-    queryKey: ["po_comparison_stats", entityId, isPrincipal],
+    queryKey: ["po_comparison_stats_fast", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     enabled: !!entityId,
+    staleTime: 60_000,
     queryFn: async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
+      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
       const isAdversary = !isPrincipal;
-      const pageSize = 1000;
 
       if (isAdversary) {
-        let allAnalyses: any[] = [];
-        let from = 0;
-        while (true) {
-          const { data } = await supabase
-            .from("po_sentiment_analyses")
-            .select("sentiment, sentiment_score, topics, category, ai_summary, mention_id")
-            .eq("adversary_entity_id", entityId!)
-            .gte("analyzed_at", since.toISOString())
-            .range(from, from + pageSize - 1);
-          if (!data || data.length === 0) break;
-          allAnalyses = allAnalyses.concat(data);
-          if (data.length < pageSize) break;
-          from += pageSize;
-        }
-        const analyses = allAnalyses.filter(isRelevantAnalysis);
-        const total = analyses.length;
-        const positive = analyses.filter(a => a.sentiment === "positivo").length;
-        const negative = analyses.filter(a => a.sentiment === "negativo").length;
-        const neutral = analyses.filter(a => a.sentiment === "neutro").length;
-        const rawAvg = total > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total : 0;
+        // Adversaries don't have snapshots, use a single count query
+        const { count: total } = await supabase
+          .from("po_sentiment_analyses")
+          .select("id", { count: "exact", head: true })
+          .eq("adversary_entity_id", entityId!)
+          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
+          .lte("analyzed_at", `${toDate}T23:59:59.999Z`);
+
+        const { data: sentimentCounts } = await (supabase as any).rpc("get_adversary_sentiment_counts", {
+          p_entity_id: entityId,
+          p_from: `${fromDate}T00:00:00.000Z`,
+          p_to: `${toDate}T23:59:59.999Z`,
+        }).maybeSingle();
+
+        // Fallback: fetch a small sample for topics
+        const { data: topicSample } = await supabase
+          .from("po_sentiment_analyses")
+          .select("sentiment, sentiment_score, topics")
+          .eq("adversary_entity_id", entityId!)
+          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
+          .lte("analyzed_at", `${toDate}T23:59:59.999Z`)
+          .order("analyzed_at", { ascending: false })
+          .limit(200);
+
+        const analyses = (topicSample || []).filter(isRelevantAnalysis);
+        const totalCount = total || analyses.length;
+        const positive = sentimentCounts?.positive || analyses.filter((a: any) => a.sentiment === "positivo").length;
+        const negative = sentimentCounts?.negative || analyses.filter((a: any) => a.sentiment === "negativo").length;
+        const neutral = sentimentCounts?.neutral || analyses.filter((a: any) => a.sentiment === "neutro").length;
+        const rawAvg = analyses.length > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / analyses.length : 0;
         const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
         const topicCounts: Record<string, number> = {};
         analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
         const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
-        const mentionIds = [...new Set(analyses.map((a: any) => a.mention_id))];
-        let totalEngagement = 0;
-        for (let i = 0; i < mentionIds.length; i += pageSize) {
-          const batch = mentionIds.slice(i, i + pageSize);
-          const { data: mentions } = await supabase.from("po_mentions").select("id, engagement").in("id", batch);
-          (mentions || []).forEach(m => {
-            const eng = m.engagement as Record<string, unknown> | null;
-            if (eng) totalEngagement += (Number(eng.likes) || 0) + (Number(eng.comments) || 0) + (Number(eng.shares) || 0) + (Number(eng.views) || 0);
-          });
-        }
-        const engRate = mentionIds.length > 0 ? Math.round((totalEngagement / mentionIds.length) * 10) / 10 : 0;
-        return { mentions: total, positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0, negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0, neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0, sentiment_score: sentimentScore, engagement_total: totalEngagement, engagement_rate: engRate, top_topics: topTopics };
+
+        return { mentions: totalCount, positive_pct: totalCount > 0 ? Math.round((positive / totalCount) * 100) : 0, negative_pct: totalCount > 0 ? Math.round((negative / totalCount) * 100) : 0, neutral_pct: totalCount > 0 ? Math.round((neutral / totalCount) * 100) : 0, sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics };
       }
 
-      let allMentions: any[] = [];
-      let from = 0;
-      while (true) {
-        const { data } = await supabase.from("po_mentions").select("id, source, engagement").eq("entity_id", entityId!).gte("collected_at", since.toISOString()).range(from, from + pageSize - 1);
-        if (!data || data.length === 0) break;
-        allMentions = allMentions.concat(data);
-        if (data.length < pageSize) break;
-        from += pageSize;
+      // Principal entity: use po_daily_snapshots for speed
+      const { data: snapshots } = await supabase
+        .from("po_daily_snapshots")
+        .select("total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics")
+        .eq("entity_id", entityId!)
+        .gte("snapshot_date", fromDate)
+        .lte("snapshot_date", toDate);
+
+      if (!snapshots || snapshots.length === 0) {
+        return { mentions: 0, positive_pct: 0, negative_pct: 0, neutral_pct: 0, sentiment_score: 0, engagement_total: 0, engagement_rate: 0, top_topics: [] };
       }
-      let allAnalyses: any[] = [];
-      from = 0;
-      while (true) {
-        const { data } = await supabase.from("po_sentiment_analyses").select("sentiment, sentiment_score, topics, category, ai_summary, mention_id").eq("entity_id", entityId!).gte("analyzed_at", since.toISOString()).range(from, from + pageSize - 1);
-        if (!data || data.length === 0) break;
-        allAnalyses = allAnalyses.concat(data);
-        if (data.length < pageSize) break;
-        from += pageSize;
-      }
-      const analyses = allAnalyses.filter(isRelevantAnalysis);
-      const mentions = allMentions;
-      const total = analyses.length;
-      const positive = analyses.filter(a => a.sentiment === "positivo").length;
-      const negative = analyses.filter(a => a.sentiment === "negativo").length;
-      const neutral = analyses.filter(a => a.sentiment === "neutro").length;
-      const rawAvg = total > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total : 0;
-      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+
+      let totalMentions = 0, totalPos = 0, totalNeg = 0, totalNeu = 0, totalScore = 0, scoreCount = 0;
       const topicCounts: Record<string, number> = {};
-      analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
-      const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
-      const relevantMentionIds = new Set(analyses.map((a: any) => a.mention_id));
-      let totalEngagement = 0;
-      mentions.filter(m => relevantMentionIds.has(m.id)).forEach(m => {
-        const eng = m.engagement as Record<string, unknown> | null;
-        if (eng) totalEngagement += (Number(eng.likes) || 0) + (Number(eng.comments) || 0) + (Number(eng.shares) || 0) + (Number(eng.views) || 0);
+      snapshots.forEach((s: any) => {
+        totalMentions += s.total_mentions || 0;
+        totalPos += s.positive_count || 0;
+        totalNeg += s.negative_count || 0;
+        totalNeu += s.neutral_count || 0;
+        if (s.avg_sentiment_score != null) { totalScore += s.avg_sentiment_score * (s.total_mentions || 1); scoreCount += (s.total_mentions || 1); }
+        (s.top_topics || []).forEach((t: any) => {
+          const name = typeof t === "string" ? t : t.name;
+          const count = typeof t === "string" ? 1 : (t.count || 1);
+          if (name) topicCounts[name] = (topicCounts[name] || 0) + count;
+        });
       });
-      const relevantMentionCount = mentions.filter(m => relevantMentionIds.has(m.id)).length;
-      const engRate = relevantMentionCount > 0 ? Math.round((totalEngagement / relevantMentionCount) * 10) / 10 : 0;
-      return { mentions: total, positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0, negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0, neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0, sentiment_score: sentimentScore, engagement_total: totalEngagement, engagement_rate: engRate, top_topics: topTopics };
+
+      const total = totalPos + totalNeg + totalNeu || totalMentions;
+      const rawAvg = scoreCount > 0 ? totalScore / scoreCount : 0;
+      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+      const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+
+      return {
+        mentions: totalMentions, positive_pct: total > 0 ? Math.round((totalPos / total) * 100) : 0,
+        negative_pct: total > 0 ? Math.round((totalNeg / total) * 100) : 0,
+        neutral_pct: total > 0 ? Math.round((totalNeu / total) * 100) : 0,
+        sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics,
+      };
+    },
+  });
+}
+
+// ── Per-date analysis detail ──
+function useDateAnalysisDetail(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
+  return useQuery({
+    queryKey: ["po_comparison_date_detail", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    enabled: !!entityId && !!dateRange?.from,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+
+      const { data: snapshots } = await supabase
+        .from("po_daily_snapshots")
+        .select("snapshot_date, total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics, top_emotions, source_breakdown")
+        .eq("entity_id", entityId!)
+        .gte("snapshot_date", fromDate)
+        .lte("snapshot_date", toDate)
+        .order("snapshot_date", { ascending: false });
+
+      return snapshots || [];
     },
   });
 }
