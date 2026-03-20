@@ -832,6 +832,113 @@ const Comparison = () => {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* History Detail Dialog */}
+      <Dialog open={!!historyDialogItem} onOpenChange={(open) => !open && setHistoryDialogItem(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Análise de {historyDialogItem ? format(new Date(historyDialogItem.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[65vh] pr-4">
+            {historyDialogItem && (() => {
+              const ha = historyDialogItem.analysis;
+              const hComp = historyDialogItem.comparison_data as any[];
+              return (
+                <div className="space-y-6">
+                  {/* Entities comparison summary */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Entidades Comparadas</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {hComp?.map((c: any, i: number) => (
+                        <div key={i} className="border rounded-md p-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: c.color || entityColors[i % entityColors.length] }}>
+                              {c.nome?.charAt(0)}
+                            </div>
+                            <span className="font-medium">{c.nome}</span>
+                            {c.is_principal && <Badge className="text-xs">Principal</Badge>}
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                            <span>Menções: <span className="font-medium text-foreground">{(c.mentions || 0).toLocaleString()}</span></span>
+                            <span>Score: <span className="font-medium text-foreground">{c.sentiment_score || 0}/10</span></span>
+                            <span>Positivo: <span className="text-green-600 font-medium">{c.positive_pct || 0}%</span></span>
+                            <span>Negativo: <span className="text-red-600 font-medium">{c.negative_pct || 0}%</span></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Forças */}
+                  {ha?.forcas?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1"><Shield className="h-4 w-4" /> Forças ({ha.forcas.length})</h4>
+                      <div className="space-y-2">
+                        {ha.forcas.map((f: any, i: number) => (
+                          <div key={i} className="border border-green-200 rounded-md p-3 bg-green-50/30 text-sm">
+                            <p className="font-medium text-foreground">{f.aspecto}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{f.definicao}</p>
+                            {f.por_que_forca && <p className="text-xs text-green-700 mt-1">{f.por_que_forca}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fraquezas */}
+                  {ha?.fraquezas?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-1"><Swords className="h-4 w-4" /> Fraquezas ({ha.fraquezas.length})</h4>
+                      <div className="space-y-2">
+                        {ha.fraquezas.map((f: any, i: number) => (
+                          <div key={i} className="border border-red-200 rounded-md p-3 bg-red-50/30 text-sm">
+                            <p className="font-medium text-foreground">{f.aspecto}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{f.definicao}</p>
+                            {f.por_que_fraqueza && <p className="text-xs text-red-700 mt-1">{f.por_que_fraqueza}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Oportunidades */}
+                  {ha?.oportunidades?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-amber-700 mb-2 flex items-center gap-1"><Lightbulb className="h-4 w-4" /> Oportunidades ({ha.oportunidades.length})</h4>
+                      <div className="space-y-2">
+                        {ha.oportunidades.map((o: any, i: number) => (
+                          <div key={i} className="border rounded-md p-3 text-sm">
+                            <p className="font-medium text-foreground">{o.titulo}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{o.descricao}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Load into main view */}
+                  <div className="pt-2 border-t flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setAnalysis(ha);
+                        setSavedAt(historyDialogItem.created_at);
+                        setHistoryDialogItem(null);
+                        toast.success("Análise carregada na tela principal.");
+                      }}
+                      className="gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      Carregar na Tela Principal
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
