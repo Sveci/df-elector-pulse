@@ -964,12 +964,12 @@ Deno.serve(async (req) => {
     // ── UPDATE CONVERSATION HISTORY (for AI context in future turns) ──
     if (session?.id && responseMessage) {
       // Append user turn
-      await supabase.rpc('append_conversation_turn', {
+      await (supabase.rpc as any)('append_conversation_turn', {
         p_session_id: session.id,
         p_role: 'user',
         p_content: message,
         p_max_turns: MAX_CONVERSATION_TURNS,
-      }).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append user turn:', e));
+      }).then(() => {}).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append user turn:', e));
 
       // Append assistant turn
       await supabase.rpc('append_conversation_turn', {
