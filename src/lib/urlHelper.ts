@@ -6,7 +6,12 @@
  */
 function getAppBaseUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
+    const origin = window.location.origin;
+    // Proteger contra URLs de preview em comunicações externas
+    if (origin.includes('lovableproject.com') || origin.includes('lovable.app') || origin.includes('localhost')) {
+      return "https://app.eleitor360.ai";
+    }
+    return origin;
   }
   // Fallback para SSR ou testes
   return "https://app.eleitor360.ai";
