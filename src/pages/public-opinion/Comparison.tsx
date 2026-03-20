@@ -178,13 +178,26 @@ function useDateAnalysisDetail(entityId?: string, isPrincipal?: boolean, dateRan
 const Comparison = () => {
   const { data: entities } = useMonitoredEntities();
   const hasRealEntities = entities && entities.length >= 1;
+  
+  // Date range filter state
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  const resolvedRange = dateRange?.from ? { from: dateRange.from, to: dateRange.to || dateRange.from } : { from: subDays(new Date(), 30), to: new Date() };
 
-  const e0 = useEntityStats(entities?.[0]?.id, entities?.[0]?.is_principal);
-  const e1 = useEntityStats(entities?.[1]?.id, entities?.[1]?.is_principal);
-  const e2 = useEntityStats(entities?.[2]?.id, entities?.[2]?.is_principal);
-  const e3 = useEntityStats(entities?.[3]?.id, entities?.[3]?.is_principal);
-  const e4 = useEntityStats(entities?.[4]?.id, entities?.[4]?.is_principal);
+  const e0 = useEntityStatsFromSnapshots(entities?.[0]?.id, entities?.[0]?.is_principal, resolvedRange);
+  const e1 = useEntityStatsFromSnapshots(entities?.[1]?.id, entities?.[1]?.is_principal, resolvedRange);
+  const e2 = useEntityStatsFromSnapshots(entities?.[2]?.id, entities?.[2]?.is_principal, resolvedRange);
+  const e3 = useEntityStatsFromSnapshots(entities?.[3]?.id, entities?.[3]?.is_principal, resolvedRange);
+  const e4 = useEntityStatsFromSnapshots(entities?.[4]?.id, entities?.[4]?.is_principal, resolvedRange);
   const statsArr = [e0, e1, e2, e3, e4];
+  const isLoadingStats = statsArr.some((s, i) => entities?.[i] && s.isLoading);
+
+  // Per-date detail for principal entity
+  const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
+  const dateDetail = useDateAnalysisDetail(principalEntity?.id, true, resolvedRange);
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
   const comparisonData = hasRealEntities
     ? entities.map((e, i) => {
