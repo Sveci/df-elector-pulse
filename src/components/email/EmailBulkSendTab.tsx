@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { useBulkSendSession } from "@/hooks/useBulkSendSession";
 import { ResumeSessionAlert } from "@/components/bulk-send/ResumeSessionAlert";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 type RecipientType = "all_contacts" | "event_contacts" | "funnel_contacts" | "leaders" | "single_contact" | "single_leader" | "unverified_leaders" | "unverified_contacts" | "coordinator_tree";
 
