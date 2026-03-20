@@ -199,7 +199,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <DynamicMetaTags />
-          <CookieConsentBanner />
           <BrowserRouter
             future={{
               v7_startTransition: true,
@@ -207,6 +206,7 @@ const App = () => (
             }}
           >
             <ScrollToTop />
+            <CookieConsentBanner />
             <AuthProvider>
               <DemoModeProvider>
                 <TenantProvider>
