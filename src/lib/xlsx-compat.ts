@@ -181,7 +181,7 @@ export async function read(
     for (let i = 0; i < data.length; i++) bytes[i] = data.charCodeAt(i) & 0xff;
     buffer = bytes.buffer;
   } else {
-    buffer = data instanceof Uint8Array ? data.buffer : data;
+    buffer = data instanceof Uint8Array ? (data.buffer as ArrayBuffer) : data;
   }
 
   await wb.xlsx.load(buffer as ArrayBuffer);
