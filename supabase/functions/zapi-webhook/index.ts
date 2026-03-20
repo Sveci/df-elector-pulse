@@ -227,40 +227,84 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
 
   // Deduplication: check if this messageId was already processed
   if (messageId) {
-    const { data: existingMsg } = await supabase
-      .from("whatsapp_messages")
-      .select("id")
-      .eq("message_id", messageId)
-      .limit(1)
-      .single();
+    // Use the dedicated deduplication RPC if available
+    const { data: isNew } = await supabase.rpc('check_and_record_message', {
+      p_message_id: messageId,
+      p_phone: phone,
+      p_tenant_id: null,
+    }).catch(() => ({ data: null }));
 
-    if (existingMsg) {
-      console.log(`[zapi-webhook] Duplicate messageId ${messageId} detected, skipping processing`);
+    if (isNew === false) {
+      console.log(`[zapi-webhook] Duplicate messageId ${messageId} detected via RPC, skipping`);
       return;
+    }
+
+    // Fallback: check whatsapp_messages table
+    if (isNew === null) {
+      const { data: existingMsg } = await supabase
+        .from("whatsapp_messages")
+        .select("id")
+        .eq("message_id", messageId)
+        .limit(1)
+        .single();
+
+      if (existingMsg) {
+        console.log(`[zapi-webhook] Duplicate messageId ${messageId} detected, skipping processing`);
+        return;
+      }
     }
   }
 
-  // Get integration settings to check category toggles
-  const { data: settings } = await supabase
-    .from("integrations_settings")
-    .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, wa_auto_verificacao_enabled, wa_auto_optout_enabled, resend_api_key, resend_enabled, resend_from_email, resend_from_name, verification_method, verification_wa_enabled, verification_wa_keyword")
-    .limit(1)
-    .single();
+  // ── INPUT SANITIZATION ────────────────────────────────────────
+  // Sanitize the message to prevent injection attacks
+  const sanitizedMessage = message
+    .replace(/\0/g, '')
+    .replace(/[\u200B-\u200F\uFEFF]/g, '')
+    .substring(0, 4096)
+    .trim();
 
-  const typedSettings = settings as IntegrationSettings | null;
+  if (!sanitizedMessage) {
+    console.log('[zapi-webhook] Empty message after sanitization, skipping');
+    return;
+  }
 
-  // Try to find associated contact by phone
+  // Try to find associated contact by phone (to get tenant context)
   const normalizedPhone = normalizePhone(phone);
   const { data: contact } = await supabase
     .from("office_contacts")
-    .select("id, nome, is_verified, verification_code, source_id, source_type, pending_messages, is_active, telefone_norm")
+    .select("id, nome, is_verified, verification_code, source_id, source_type, pending_messages, is_active, telefone_norm, tenant_id")
     .eq("telefone_norm", normalizedPhone)
     .limit(1)
     .single();
 
+  // Resolve tenant from contact, leader, or default
+  let resolvedTenantId: string | null = contact?.tenant_id || null;
+  if (!resolvedTenantId) {
+    const { data: leaderForTenant } = await supabase
+      .from("lideres")
+      .select("tenant_id")
+      .or(`telefone.eq.${normalizedPhone},telefone.eq.${phone}`)
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+    resolvedTenantId = leaderForTenant?.tenant_id || null;
+  }
+
+  // Get integration settings scoped to tenant when possible
+  let settingsQuery = supabase
+    .from("integrations_settings")
+    .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, wa_auto_verificacao_enabled, wa_auto_optout_enabled, resend_api_key, resend_enabled, resend_from_email, resend_from_name, verification_method, verification_wa_enabled, verification_wa_keyword");
+
+  if (resolvedTenantId) {
+    settingsQuery = settingsQuery.eq("tenant_id", resolvedTenantId);
+  }
+
+  const { data: settings } = await settingsQuery.limit(1).single();
+  const typedSettings = settings as IntegrationSettings | null;
+
   // Check for opt-out commands
   const optOutCommands = ["SAIR", "PARAR", "CANCELAR", "DESCADASTRAR", "STOP", "UNSUBSCRIBE"];
-  const normalizedMessage = message.trim().toUpperCase();
+  const normalizedMessage = sanitizedMessage.trim().toUpperCase();
 
   if (optOutCommands.includes(normalizedMessage)) {
     console.log(`[zapi-webhook] Opt-out command detected: ${normalizedMessage}`);

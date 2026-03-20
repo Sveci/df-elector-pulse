@@ -208,9 +208,27 @@ async function handleConversationalFlow(
       state: 'awaiting_municipality',
     });
 
+    // Fetch organization name dynamically (no hardcoded names)
+    let orgNome = 'nosso gabinete';
+    let orgCargo = 'Deputado(a)';
+    let orgEstado = '';
+    try {
+      const { data: org } = await supabase
+        .from('organization')
+        .select('nome, cargo, estado')
+        .eq('tenant_id', tenantId)
+        .limit(1)
+        .single();
+      if (org?.nome) orgNome = org.nome;
+      if (org?.cargo) orgCargo = org.cargo;
+      if (org?.estado) orgEstado = org.estado;
+    } catch { /* use defaults */ }
+
+    const orgTitle = `${orgCargo} ${orgNome}`.trim();
+
     // Send welcome + municipality list
-    let welcomeMsg = `Olá, seja bem-vindo(a) ao WhatsApp oficial do deputado Acácio Favacho! 🏛️\n\n`;
-    welcomeMsg += `Aqui você recebe informações diretas sobre projetos, programas e oportunidades para o Amapá.\n\n`;
+    let welcomeMsg = `Olá, seja bem-vindo(a) ao WhatsApp oficial ${orgTitle.length > 5 ? `d${orgCargo.startsWith('A') ? 'a' : 'o'} ${orgTitle}` : 'ao nosso gabinete'}! 🏛️\n\n`;
+    welcomeMsg += `Aqui você recebe informações diretas sobre projetos, programas e oportunidades${orgEstado ? ` para o ${orgEstado}` : ''}.\n\n`;
     welcomeMsg += `📍 *De qual município você é?*\n`;
     welcomeMsg += `Digite o número correspondente:\n\n`;
 
@@ -477,6 +495,18 @@ serve(async (req) => {
               } else if (messageType === 'interactive') {
                 messageText = message.interactive?.button_reply?.title ||
                               message.interactive?.list_reply?.title || '';
+              }
+
+              // ── INPUT SANITIZATION ──────────────────────────────
+              messageText = messageText
+                .replace(/\0/g, '')
+                .replace(/[\u200B-\u200F\uFEFF]/g, '')
+                .substring(0, 4096)
+                .trim();
+
+              if (!messageText && messageType !== 'image' && messageType !== 'audio' && messageType !== 'video' && messageType !== 'document') {
+                console.log(`[Meta Webhook] Empty message text for type ${messageType}, skipping`);
+                continue;
               }
 
               const normalizedPhone = normalizePhone(from);

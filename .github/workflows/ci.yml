@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "security/**", "feat/**", "fix/**", "genspark_ai_developer"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: Type-check + Lint + Build ────────────────────────────────────────
+  quality:
+    name: Type-check · Lint · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit --project tsconfig.app.json
+
+      - name: Lint (errors only – warnings allowed)
+        run: npm run lint -- --max-warnings=9999
+
+      - name: Build
+        run: npm run build
+        env:
+          # Provide fake env vars so Vite doesn't fail during CI build
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+          VITE_SUPABASE_PROJECT_ID: placeholder
+
+      - name: Check bundle sizes
+        run: |
+          echo "=== Bundle size report ==="
+          find dist/assets -name "*.js" -exec du -sh {} \; 2>/dev/null | sort -h | tail -20
+          echo "---"
+          TOTAL=$(du -sh dist/ | cut -f1)
+          echo "Total dist size: $TOTAL"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+  # ── Job 2: Security audit ────────────────────────────────────────────────────
+  audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      # Fail on critical vulnerabilities in production deps only
+      - name: npm audit (critical only, prod)
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: npm audit (high+, prod) – report only
+        run: npm audit --omit=dev --audit-level=high || true
+
+      - name: Summarize vulnerabilities
+        run: |
+          echo "=== Vulnerability summary ==="
+          npm audit --json --omit=dev 2>/dev/null | \
+            node -e "
+              const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+              const m=d.metadata?.vulnerabilities||{};
+              console.log('critical:',m.critical||0,'high:',m.high||0,'moderate:',m.moderate||0,'low:',m.low||0);
+            " || true
+
+  # ── Job 3: Lighthouse CI (performance budget) ────────────────────────────────
+  # Disabled until a live URL is configured. Uncomment and add LHCI_GITHUB_APP_TOKEN
+  # lighthouse:
+  #   name: Lighthouse CI
+  #   runs-on: ubuntu-latest
+  #   needs: [quality]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version-file: ".nvmrc"
+  #         cache: "npm"
+  #     - run: npm ci --prefer-offline
+  #     - run: npm run build
+  #       env:
+  #         VITE_SUPABASE_URL: https://placeholder.supabase.co
+  #         VITE_SUPABASE_PUBLISHABLE_KEY: placeholder
+  #     - uses: treosh/lighthouse-ci-action@v11
+  #       with:
+  #         uploadArtifacts: true
+  #         temporaryPublicStorage: true

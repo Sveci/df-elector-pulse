@@ -42,10 +42,16 @@ import {
   Zap,
   Brain,
   FileText,
-  ArrowLeft
+  ArrowLeft,
+  BarChart2,
+  Users,
+  Clock,
+  TrendingUp,
+  RefreshCw,
+  Activity
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   useChatbotConfig,
@@ -55,6 +61,8 @@ import {
   useUpdateChatbotKeyword,
   useDeleteChatbotKeyword,
   useChatbotLogs,
+  useChatbotSessions,
+  useChatbotStats,
   ChatbotKeyword,
   AVAILABLE_DYNAMIC_FUNCTIONS
 } from "@/hooks/useWhatsAppChatbot";
@@ -98,6 +106,8 @@ const WhatsAppChatbot = () => {
   const { data: logs, isLoading: loadingLogs } = useChatbotLogs(100);
   const { data: communities, isLoading: loadingCommunities } = useWhatsAppCommunities();
   const { data: chatStates, isLoading: loadingChatStates } = useWhatsAppChatStates();
+  const { data: sessions, isLoading: loadingSessions } = useChatbotSessions(50);
+  const { data: stats, isLoading: loadingStats } = useChatbotStats();
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
@@ -246,6 +256,12 @@ const WhatsAppChatbot = () => {
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2" data-tutorial="bot-logs">
             <History className="h-4 w-4" /> Histórico
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="gap-2">
+            <Users className="h-4 w-4" /> Sessões
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="gap-2">
+            <BarChart2 className="h-4 w-4" /> Estatísticas
           </TabsTrigger>
         </TabsList>
 
@@ -573,6 +589,169 @@ const WhatsAppChatbot = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Sessions Tab */}
+        <TabsContent value="sessions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Sessões Ativas
+              </CardTitle>
+              <CardDescription>
+                Usuários que interagiram com o chatbot recentemente (últimas 50 sessões)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingSessions ? (
+                <Skeleton className="h-64 w-full" />
+              ) : !sessions || sessions.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">Nenhuma sessão registrada ainda.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Nome Coletado</TableHead>
+                      <TableHead>Status de Cadastro</TableHead>
+                      <TableHead>Invites Enviados</TableHead>
+                      <TableHead>Primeira Mensagem</TableHead>
+                      <TableHead>Última Atividade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-mono text-sm">
+                          {s.phone ? `***${s.phone.slice(-4)}` : '-'}
+                        </TableCell>
+                        <TableCell>{s.collected_name || <span className="text-muted-foreground">-</span>}</TableCell>
+                        <TableCell>
+                          {s.registration_completed_at ? (
+                            <Badge className="bg-green-500">Cadastrado</Badge>
+                          ) : s.registration_state === 'awaiting_confirmation' ? (
+                            <Badge variant="secondary">Aguardando confirmação</Badge>
+                          ) : s.registration_state ? (
+                            <Badge variant="outline">{s.registration_state}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Sem fluxo</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className={(s.invite_sent_count || 0) > 0 ? "text-orange-600 font-medium" : "text-muted-foreground"}>
+                            {s.invite_sent_count || 0}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {s.first_message_at
+                            ? formatDistanceToNow(new Date(s.first_message_at), { addSuffix: true, locale: ptBR })
+                            : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {s.last_activity_at
+                            ? formatDistanceToNow(new Date(s.last_activity_at), { addSuffix: true, locale: ptBR })
+                            : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Stats Tab */}
+        <TabsContent value="stats" className="space-y-4">
+          {loadingStats ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+            </div>
+          ) : !stats ? (
+            <p className="text-muted-foreground text-center py-8">Sem dados de estatísticas ainda.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                      <Activity className="h-4 w-4" /> Total de Interações
+                    </div>
+                    <p className="text-2xl font-bold">{(stats.total_interactions || 0).toLocaleString('pt-BR')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Últimas 24h: {stats.interactions_24h || 0}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                      <Users className="h-4 w-4" /> Usuários Únicos
+                    </div>
+                    <p className="text-2xl font-bold">{(stats.unique_users || 0).toLocaleString('pt-BR')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Hoje: {stats.unique_users_24h || 0}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                      <TrendingUp className="h-4 w-4" /> Interações (7 dias)
+                    </div>
+                    <p className="text-2xl font-bold">{(stats.interactions_7d || 0).toLocaleString('pt-BR')}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                      <Clock className="h-4 w-4" /> Tempo Médio de Resposta
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {stats.avg_processing_ms != null ? `${stats.avg_processing_ms}ms` : '-'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Distribuição de Tipos de Resposta</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-purple-600">{stats.ai_responses || 0}</p>
+                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                        <Brain className="h-3 w-3" /> IA
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-blue-600">{stats.dynamic_responses || 0}</p>
+                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                        <Zap className="h-3 w-3" /> Dinâmica
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">{stats.static_responses || 0}</p>
+                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                        <FileText className="h-3 w-3" /> Estática
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-gray-500">{stats.fallback_responses || 0}</p>
+                      <p className="text-sm text-muted-foreground">Fallback</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {stats.last_interaction_at && (
+                <p className="text-xs text-muted-foreground text-right flex items-center justify-end gap-1">
+                  <RefreshCw className="h-3 w-3" />
+                  Última interação: {formatDistanceToNow(new Date(stats.last_interaction_at), { addSuffix: true, locale: ptBR })}
+                  {' · '}Atualiza automaticamente a cada minuto
+                </p>
+              )}
+            </>
+          )}
         </TabsContent>
       </Tabs>
 

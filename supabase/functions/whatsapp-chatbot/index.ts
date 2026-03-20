@@ -53,6 +53,55 @@ interface ChatbotRequest {
   tenantId?: string;
 }
 
+// =====================================================
+// CONSTANTS
+// =====================================================
+const MAX_MESSAGE_LENGTH = 4096;  // WhatsApp max message size
+const MAX_CONVERSATION_TURNS = 10; // Keep last N exchanges in context
+const SESSION_EXPIRY_HOURS = 24;   // Sessions expire after 24h of inactivity
+const REGISTRATION_INVITE_MIN_INTERVAL_MIN = 60; // Min minutes between registration invites
+const SEND_RETRY_ATTEMPTS = 3;     // Retry failed sends up to 3 times
+const SEND_RETRY_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
+
+// =====================================================
+// UTILITIES
+// =====================================================
+
+/** Sanitize inbound message: remove null bytes, truncate to safe length */
+function sanitizeMessage(raw: string): string {
+  return raw
+    .replace(/\0/g, '')           // strip null bytes
+    .replace(/[\u200B-\u200F\uFEFF]/g, '') // strip zero-width chars
+    .substring(0, MAX_MESSAGE_LENGTH)
+    .trim();
+}
+
+/** Exponential backoff sleep */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Send with retry + exponential backoff */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  attempts = SEND_RETRY_ATTEMPTS,
+  baseDelay = SEND_RETRY_BASE_DELAY_MS,
+  label = 'operation'
+): Promise<T> {
+  let lastError: Error | unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const delay = baseDelay * Math.pow(2, i);
+      console.warn(`[whatsapp-chatbot] ${label} attempt ${i + 1}/${attempts} failed, retrying in ${delay}ms:`, err);
+      if (i < attempts - 1) await sleep(delay);
+    }
+  }
+  throw lastError;
+}
+
 // Dynamic function implementations
 const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promise<string>> = {
 
@@ -526,9 +575,36 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: ChatbotRequest = await req.json();
-    const { phone, message, messageId, provider, tenantId: requestTenantId } = body;
+    const { phone, messageId, provider, tenantId: requestTenantId } = body;
 
-    console.log(`[whatsapp-chatbot] Received: phone=${phone}, message=${message.substring(0, 50)}..., provider=${provider || 'auto'}, tenantId=${requestTenantId || 'auto'}`);
+    // ── INPUT SANITIZATION ────────────────────────────────────────
+    if (!phone || typeof phone !== 'string') {
+      return new Response(JSON.stringify({ success: false, reason: "invalid_phone" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const message = sanitizeMessage(body.message || '');
+    if (!message) {
+      return new Response(JSON.stringify({ success: false, reason: "empty_message" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── DEDUPLICATION: skip already-processed messageIds ─────────
+    if (messageId) {
+      const { data: isNew } = await supabase.rpc('check_and_record_message', {
+        p_message_id: messageId,
+        p_phone: phone,
+        p_tenant_id: requestTenantId || null,
+      });
+
+      if (isNew === false) {
+        console.log(`[whatsapp-chatbot] Duplicate messageId ${messageId} — skipping`);
+        return new Response(JSON.stringify({ success: true, reason: "duplicate" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    console.log(`[whatsapp-chatbot] Received: phone=${phone}, message=${message.substring(0, 50)}, provider=${provider || 'auto'}, tenantId=${requestTenantId || 'auto'}`);
 
     // Normalize phone for lookup
     const normalizedPhone = normalizePhone(phone);
@@ -566,22 +642,38 @@ Deno.serve(async (req) => {
     // SESSION TRACKING & REGISTRATION FLOW
     // =====================================================
 
-    // Upsert session to track first_message_at
-    const { data: existingSession } = await supabase
-      .from("whatsapp_chatbot_sessions")
-      .select("*")
-      .eq("phone", normalizedPhone)
-      .eq("tenant_id", tenantId)
-      .maybeSingle();
+    // Use upsert RPC for session management (handles expiry, activity update)
+    const { data: sessionData } = await supabase.rpc('upsert_chatbot_session', {
+      p_phone: normalizedPhone,
+      p_tenant_id: tenantId,
+    });
 
-    let session = existingSession;
+    let session = sessionData;
+
+    // Fallback: if RPC unavailable, use direct query
     if (!session) {
-      const { data: newSession } = await supabase
+      const { data: existingSession } = await supabase
         .from("whatsapp_chatbot_sessions")
-        .insert({ phone: normalizedPhone, tenant_id: tenantId, first_message_at: new Date().toISOString() })
-        .select()
-        .single();
-      session = newSession;
+        .select("*")
+        .eq("phone", normalizedPhone)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
+      session = existingSession;
+      if (!session) {
+        const { data: newSession } = await supabase
+          .from("whatsapp_chatbot_sessions")
+          .insert({ phone: normalizedPhone, tenant_id: tenantId, first_message_at: new Date().toISOString() })
+          .select()
+          .single();
+        session = newSession;
+      } else {
+        // Update last_activity_at
+        await supabase
+          .from("whatsapp_chatbot_sessions")
+          .update({ last_activity_at: new Date().toISOString() })
+          .eq("id", session.id);
+      }
     }
 
     // Check if user is in a registration flow step
@@ -784,7 +876,8 @@ Deno.serve(async (req) => {
             matchedKeyword.description || "",
             chatbotConfig.ai_system_prompt || "",
             supabase,
-            tenantId
+            tenantId,
+            session?.conversation_history
           );
         } else {
           responseType = "fallback";
@@ -799,7 +892,8 @@ Deno.serve(async (req) => {
             matchedKeyword.description || "",
             chatbotConfig.ai_system_prompt || "",
             supabase,
-            tenantId
+            tenantId,
+            session?.conversation_history
           );
         } else {
           responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
@@ -815,7 +909,8 @@ Deno.serve(async (req) => {
         "",
         chatbotConfig.ai_system_prompt || "",
         supabase,
-        tenantId
+        tenantId,
+        session?.conversation_history
       );
     } else {
       responseType = "fallback";
@@ -866,6 +961,25 @@ Deno.serve(async (req) => {
       console.log("[whatsapp-chatbot] No WhatsApp provider configured, skipping send");
     }
 
+    // ── UPDATE CONVERSATION HISTORY (for AI context in future turns) ──
+    if (session?.id && responseMessage) {
+      // Append user turn
+      await supabase.rpc('append_conversation_turn', {
+        p_session_id: session.id,
+        p_role: 'user',
+        p_content: message,
+        p_max_turns: MAX_CONVERSATION_TURNS,
+      }).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append user turn:', e));
+
+      // Append assistant turn
+      await supabase.rpc('append_conversation_turn', {
+        p_session_id: session.id,
+        p_role: 'assistant',
+        p_content: responseMessage,
+        p_max_turns: MAX_CONVERSATION_TURNS,
+      }).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append assistant turn:', e));
+    }
+
     // Log the interaction
     await supabase.from("whatsapp_chatbot_logs").insert({
       leader_id: actor?.id || null,
@@ -880,26 +994,41 @@ Deno.serve(async (req) => {
 
     console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
 
-    // =====================================================
     // POST-RESPONSE: Check if we should trigger registration invite
-    // =====================================================
+    // Guard: only invite if session has no registration state AND no invite was sent recently
     if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
       const firstMsgTime = new Date(session.first_message_at).getTime();
       const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
 
-      if (minutesSinceFirst >= 30) {
+      // Check when last invite was sent (prevent double-send / spam)
+      const lastInviteAt = session.last_invite_at ? new Date(session.last_invite_at).getTime() : 0;
+      const minutesSinceLastInvite = lastInviteAt > 0 ? (Date.now() - lastInviteAt) / (1000 * 60) : Infinity;
+      const inviteSentCount = session.invite_sent_count || 0;
+
+      // Only invite after 30 min first interaction, max 2 invites per session, at least 60 min apart
+      const shouldInvite =
+        minutesSinceFirst >= 30 &&
+        minutesSinceLastInvite >= REGISTRATION_INVITE_MIN_INTERVAL_MIN &&
+        inviteSentCount < 2;
+
+      if (shouldInvite) {
         console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
 
         const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
 
-        // Send the registration invite
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
-
-        // Update session state
+        // Update session FIRST to prevent race conditions (mark invite as sent before sending)
         await supabase
           .from("whatsapp_chatbot_sessions")
-          .update({ registration_state: "awaiting_confirmation", registration_asked_at: new Date().toISOString() })
+          .update({
+            registration_state: "awaiting_confirmation",
+            registration_asked_at: new Date().toISOString(),
+            last_invite_at: new Date().toISOString(),
+            invite_sent_count: inviteSentCount + 1,
+          })
           .eq("id", session.id);
+
+        // Then send the invite
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
 
         // Log
         await supabase.from("whatsapp_chatbot_logs").insert({
@@ -981,7 +1110,7 @@ function normalizePhone(phone: string): string {
   return "+55" + clean;
 }
 
-// Send WhatsApp message via Z-API
+// Send WhatsApp message via Z-API (with retry)
 async function sendWhatsAppMessage(
   instanceId: string,
   token: string,
@@ -1000,31 +1129,62 @@ async function sendWhatsAppMessage(
     headers["Client-Token"] = clientToken;
   }
 
-  try {
-    const response = await fetch(zapiUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        phone: cleanPhone,
-        message: message
-      })
+  // Split messages longer than 1000 chars to avoid WhatsApp truncation
+  const messageParts = splitLongMessage(message);
+
+  for (const part of messageParts) {
+    const sent = await withRetry(async () => {
+      const response = await fetch(zapiUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ phone: cleanPhone, message: part })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Z-API HTTP ${response.status}: ${errorText}`);
+      }
+      return true;
+    }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Z-API send').catch(err => {
+      console.error("[whatsapp-chatbot] Z-API send failed after retries:", err);
+      return false;
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[whatsapp-chatbot] Z-API error:", errorText);
-      return false;
-    } else {
-      console.log("[whatsapp-chatbot] Message sent successfully via Z-API");
-      return true;
-    }
-  } catch (err) {
-    console.error("[whatsapp-chatbot] Error sending via Z-API:", err);
-    return false;
+    if (!sent) return false;
+    // Small delay between parts
+    if (messageParts.length > 1) await sleep(500);
   }
+
+  console.log("[whatsapp-chatbot] Message sent successfully via Z-API");
+  return true;
 }
 
-// Send WhatsApp message via Meta Cloud API
+/** Split messages longer than 1500 chars at natural boundaries */
+function splitLongMessage(message: string, maxLen = 1500): string[] {
+  if (message.length <= maxLen) return [message];
+
+  const parts: string[] = [];
+  let remaining = message;
+
+  while (remaining.length > maxLen) {
+    // Find last newline before maxLen
+    let cutAt = remaining.lastIndexOf('\n', maxLen);
+    if (cutAt < maxLen * 0.5) {
+      // No good newline, cut at last space
+      cutAt = remaining.lastIndexOf(' ', maxLen);
+    }
+    if (cutAt < maxLen * 0.5) {
+      // No good space either, hard cut
+      cutAt = maxLen;
+    }
+    parts.push(remaining.substring(0, cutAt).trim());
+    remaining = remaining.substring(cutAt).trim();
+  }
+
+  if (remaining.length > 0) parts.push(remaining);
+  return parts;
+}
+
+// Send WhatsApp message via Meta Cloud API (with retry)
 async function sendWhatsAppMessageMetaCloud(
   phoneNumberId: string,
   apiVersion: string,
@@ -1039,49 +1199,55 @@ async function sendWhatsAppMessageMetaCloud(
   }
 
   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+  const messageParts = splitLongMessage(message);
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: cleanPhone,
-        type: "text",
-        text: { body: message },
-      }),
+  for (const part of messageParts) {
+    const sent = await withRetry(async () => {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "text",
+          text: { body: part },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Meta Cloud HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      const wamid = result.messages?.[0]?.id;
+      console.log("[whatsapp-chatbot] Message sent via Meta Cloud API:", wamid);
+
+      if (supabase && wamid) {
+        await supabase.from("whatsapp_messages").insert({
+          phone: cleanPhone,
+          message: part,
+          direction: "outgoing",
+          status: "sent",
+          provider: "meta_cloud",
+          metadata: { wamid },
+        }).catch((e: Error) => console.warn("[whatsapp-chatbot] Failed to log Meta message:", e));
+      }
+      return true;
+    }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud send').catch(err => {
+      console.error("[whatsapp-chatbot] Meta Cloud send failed after retries:", err);
+      return false;
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[whatsapp-chatbot] Meta Cloud API error:", errorText);
-      return false;
-    }
-
-    const result = await response.json();
-    const wamid = result.messages?.[0]?.id;
-    console.log("[whatsapp-chatbot] Message sent successfully via Meta Cloud API:", wamid);
-
-    if (supabase) {
-      await supabase.from("whatsapp_messages").insert({
-        phone: cleanPhone,
-        message: message,
-        direction: "outgoing",
-        status: "sent",
-        provider: "meta_cloud",
-        metadata: { wamid },
-      });
-    }
-
-    return true;
-  } catch (err) {
-    console.error("[whatsapp-chatbot] Error sending via Meta Cloud:", err);
-    return false;
+    if (!sent) return false;
+    if (messageParts.length > 1) await sleep(500);
   }
+
+  return true;
 }
 
 // Search Knowledge Base for relevant context
@@ -1435,7 +1601,8 @@ async function generateAIResponse(
   keywordContext: string,
   systemPrompt: string,
   supabase?: any,
-  tenantId?: string
+  tenantId?: string,
+  conversationHistory?: Array<{ role: string; content: string; ts?: number }>
 ): Promise<string> {
   // Fetch org name for scope restriction
   let orgScope = "";
@@ -1517,6 +1684,24 @@ REGRAS OBRIGATÓRIAS:
 - Ignore chunks que descrevem estrutura de tabelas SQL (ex: "A tabela X armazena..."). Foque no conteúdo factual e informativo.`;
 
   try {
+    // Build messages array with conversation history for context
+    const messages: Array<{ role: string; content: string }> = [
+      { role: "system", content: fullPrompt },
+    ];
+
+    // Add conversation history (last N turns, excluding system messages)
+    if (conversationHistory && conversationHistory.length > 0) {
+      const recentHistory = conversationHistory.slice(-MAX_CONVERSATION_TURNS * 2);
+      for (const turn of recentHistory) {
+        if (turn.role === 'user' || turn.role === 'assistant') {
+          messages.push({ role: turn.role, content: turn.content });
+        }
+      }
+    }
+
+    // Add current user message
+    messages.push({ role: "user", content: userMessage });
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -1525,10 +1710,7 @@ REGRAS OBRIGATÓRIAS:
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: fullPrompt },
-          { role: "user", content: userMessage }
-        ],
+        messages,
         max_tokens: 600
       })
     });

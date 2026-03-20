@@ -45,6 +45,36 @@ export interface ChatbotLog {
   };
 }
 
+export interface ChatbotSession {
+  id: string;
+  phone: string;
+  tenant_id: string;
+  first_message_at: string;
+  last_activity_at: string | null;
+  registration_state: string | null;
+  registration_completed_at: string | null;
+  collected_name: string | null;
+  collected_email: string | null;
+  collected_city: string | null;
+  invite_sent_count: number;
+  conversation_history: Array<{ role: string; content: string; ts?: number }>;
+  created_at: string;
+}
+
+export interface ChatbotStats {
+  total_interactions: number;
+  interactions_24h: number;
+  interactions_7d: number;
+  unique_users: number;
+  unique_users_24h: number;
+  ai_responses: number;
+  dynamic_responses: number;
+  static_responses: number;
+  fallback_responses: number;
+  avg_processing_ms: number | null;
+  last_interaction_at: string | null;
+}
+
 // Hook for chatbot config
 export function useChatbotConfig() {
   return useQuery({
@@ -218,6 +248,72 @@ export function useChatbotLogs(limit = 50) {
   });
 }
 
+// Hook for chatbot sessions (for admin monitoring)
+export function useChatbotSessions(limit = 50) {
+  return useQuery({
+    queryKey: ["chatbot-sessions", limit],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("whatsapp_chatbot_sessions")
+        .select("id, phone, first_message_at, last_activity_at, registration_state, registration_completed_at, collected_name, invite_sent_count, created_at")
+        .order("last_activity_at", { ascending: false, nullsFirst: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data as Partial<ChatbotSession>[];
+    }
+  });
+}
+
+// Hook for chatbot stats (aggregated)
+export function useChatbotStats() {
+  return useQuery({
+    queryKey: ["chatbot-stats"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("whatsapp_chatbot_stats")
+        .select("*")
+        .limit(1)
+        .single();
+
+      // If view doesn't exist yet, compute manually from logs
+      if (error || !data) {
+        const now = new Date();
+        const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        const d7ago = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: logs } = await (supabase as any)
+          .from("whatsapp_chatbot_logs")
+          .select("phone, response_type, processing_time_ms, created_at")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+
+        if (!logs) return null;
+
+        const stats: ChatbotStats = {
+          total_interactions: logs.length,
+          interactions_24h: logs.filter((l: any) => l.created_at >= h24ago).length,
+          interactions_7d: logs.filter((l: any) => l.created_at >= d7ago).length,
+          unique_users: new Set(logs.map((l: any) => l.phone)).size,
+          unique_users_24h: new Set(logs.filter((l: any) => l.created_at >= h24ago).map((l: any) => l.phone)).size,
+          ai_responses: logs.filter((l: any) => l.response_type === 'ai').length,
+          dynamic_responses: logs.filter((l: any) => l.response_type === 'dynamic').length,
+          static_responses: logs.filter((l: any) => l.response_type === 'static').length,
+          fallback_responses: logs.filter((l: any) => l.response_type === 'fallback').length,
+          avg_processing_ms: logs.length > 0
+            ? Math.round(logs.reduce((sum: number, l: any) => sum + (l.processing_time_ms || 0), 0) / logs.length)
+            : null,
+          last_interaction_at: logs[0]?.created_at || null,
+        };
+        return stats;
+      }
+
+      return data as ChatbotStats;
+    },
+    refetchInterval: 60_000, // refresh every minute
+  });
+}
+
 // Available dynamic functions for reference
 export const AVAILABLE_DYNAMIC_FUNCTIONS = [
   { value: "minha_arvore", label: "Minha Árvore", description: "Mostra estatísticas da rede do líder" },
@@ -225,5 +321,7 @@ export const AVAILABLE_DYNAMIC_FUNCTIONS = [
   { value: "minha_pontuacao", label: "Minha Pontuação", description: "Mostra pontos e nível de gamificação" },
   { value: "minha_posicao", label: "Minha Posição", description: "Mostra posição no ranking geral" },
   { value: "meus_subordinados", label: "Meus Subordinados", description: "Lista líderes diretamente abaixo" },
-  { value: "ajuda", label: "Ajuda", description: "Lista de comandos disponíveis" }
+  { value: "pendentes", label: "Pendentes", description: "Lista subordinados pendentes de verificação" },
+  { value: "ajuda", label: "Ajuda", description: "Lista de comandos disponíveis" },
 ];
+
