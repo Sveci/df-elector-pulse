@@ -272,9 +272,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      const { data: roleData } = await supabase
+      // Check role from user_roles table
+      const { data: roleData } = await (supabase as any)
         .from("user_roles")
-        .select("role, tenant_id")
+        .select("role")
         .eq("user_id", user.id)
         .in("role", ["admin", "super_admin", "atendente"])
         .limit(1)
@@ -287,7 +288,28 @@ Deno.serve(async (req) => {
         );
       }
 
-      resolvedTenantId = roleData.tenant_id || null;
+      // Resolve tenant from user_tenants table
+      const { data: userTenant } = await (supabase as any)
+        .from("user_tenants")
+        .select("tenant_id")
+        .eq("user_id", user.id)
+        .eq("is_default", true)
+        .limit(1)
+        .single();
+
+      if (userTenant?.tenant_id) {
+        resolvedTenantId = userTenant.tenant_id;
+      } else {
+        // Fallback: pick any tenant for this user
+        const { data: anyTenant } = await (supabase as any)
+          .from("user_tenants")
+          .select("tenant_id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
+        resolvedTenantId = anyTenant?.tenant_id || null;
+      }
+
       console.log(`[send-sms] Authenticated user with role: ${roleData.role}, tenant: ${resolvedTenantId}`);
     }
 
