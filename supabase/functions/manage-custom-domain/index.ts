@@ -41,9 +41,10 @@ serve(async (req) => {
       });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
@@ -76,22 +77,22 @@ serve(async (req) => {
       const res = await fetch(url, {
         method,
         headers: {
-          "Authorization": `Bearer ${scdApiKey}`,
+          Authorization: `Bearer ${scdApiKey}`,
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: body ? JSON.stringify(body) : undefined,
       });
       const text = await res.text();
       console.log(`SCD API response ${res.status}: ${text.substring(0, 500)}`);
-      
+
       let data: any;
       try {
         data = JSON.parse(text);
       } catch {
         throw new Error(`SCD API returned non-JSON (${res.status}): ${text.substring(0, 200)}`);
       }
-      
+
       if (!res.ok) {
         throw new Error(data?.message || data?.error || `SCD API error: ${res.status}`);
       }
@@ -120,13 +121,115 @@ serve(async (req) => {
       // If already registered, delete old one first
       if (tenant?.scd_domain_uuid) {
         try {
-          await scdFetch("DELETE", `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`);
+          await scdFetch(
+            "DELETE",
+            `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`
+          );
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
           console.log("Could not delete old SCD domain, continuing:", message);
         }
       }
-...
+
+      // Register new domain
+      const scdResult = await scdFetch(
+        "POST",
+        `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains`,
+        {
+          host: cleanDomain,
+        }
+      );
+
+      const scdDomainUuid = scdResult.uuid || scdResult.data?.uuid || scdResult.id;
+
+      // Save SCD UUID to tenant
+      await supabase
+        .from("tenants")
+        .update({ scd_domain_uuid: scdDomainUuid, custom_domain: cleanDomain })
+        .eq("id", tenant_id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          scd_domain_uuid: scdDomainUuid,
+          domain: cleanDomain,
+          message: `Domínio ${cleanDomain} registrado com sucesso no SaaSCustomDomains.`,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } else if (action === "delete") {
+      // Delete domain from SaaSCustomDomains
+      if (!tenant_id) {
+        return new Response(JSON.stringify({ error: "tenant_id é obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: tenant } = await supabase
+        .from("tenants")
+        .select("scd_domain_uuid")
+        .eq("id", tenant_id)
+        .single();
+
+      if (tenant?.scd_domain_uuid) {
+        await scdFetch(
+          "DELETE",
+          `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`
+        );
+        await supabase.from("tenants").update({ scd_domain_uuid: null }).eq("id", tenant_id);
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Domínio removido." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } else if (action === "status") {
+      // Check domain status on SaaSCustomDomains
+      if (!tenant_id) {
+        return new Response(JSON.stringify({ error: "tenant_id é obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: tenant } = await supabase
+        .from("tenants")
+        .select("scd_domain_uuid, custom_domain")
+        .eq("id", tenant_id)
+        .single();
+
+      if (!tenant?.scd_domain_uuid) {
+        return new Response(
+          JSON.stringify({ registered: false, message: "Domínio não registrado no SCD." }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const scdResult = await scdFetch(
+        "GET",
+        `/accounts/${scdAccountUuid}/upstreams/${scdUpstreamUuid}/custom_domains/${tenant.scd_domain_uuid}`
+      );
+
+      return new Response(
+        JSON.stringify({
+          registered: true,
+          domain: tenant.custom_domain,
+          scd_status: scdResult,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } else {
+      return new Response(JSON.stringify({ error: "Ação inválida. Use: register, delete, status" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   } catch (err) {
     console.error("manage-custom-domain error:", err);
     const message = err instanceof Error ? err.message : String(err);
