@@ -175,12 +175,7 @@ const RegionMaterials = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Materiais por Região</h1>
-          <p className="text-muted-foreground">
-            Configure materiais exclusivos para cada RA que serão enviados automaticamente após a verificação do líder
-          </p>
-        </div>
+        <PageHeader icon={Package} title="Materiais por Região" subtitle="Configure materiais exclusivos para cada RA que serão enviados automaticamente após a verificação do líder" />
       </div>
 
       {/* Global Settings Card */}

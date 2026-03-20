@@ -549,15 +549,7 @@ export default function StrategicMap() {
       <TutorialOverlay page="strategic-map" />
       {/* Header */}
       <div data-tutorial="map-header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <MapIcon className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Mapa Estratégico</h1>
-            <p className="text-muted-foreground text-sm">{mapTenantConfig.subtitle}</p>
-          </div>
-        </div>
+        <PageHeader icon={MapIcon} title="Mapa Estratégico" subtitle={mapTenantConfig.subtitle} />
 
         <div className="flex items-center gap-3">
           {/* Stats */}

@@ -18,17 +18,7 @@ const Reports = () => {
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar para Configurações
         </Link>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-            <p className="text-muted-foreground">
-              Visualize métricas consolidadas de comunicações, eventos e líderes
-            </p>
-          </div>
-        </div>
+        <PageHeader icon={BarChart3} title="Relatórios" subtitle="Visualize métricas consolidadas de comunicações, eventos e líderes" />
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">

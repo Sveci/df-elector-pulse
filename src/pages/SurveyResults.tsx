@@ -75,15 +75,11 @@ export default function SurveyResults() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/surveys")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{survey.titulo}</h1>
-              <Badge variant={survey.status === "active" ? "default" : "secondary"}>
-                {survey.status === "active" ? "Ativa" : survey.status === "closed" ? "Encerrada" : "Rascunho"}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">Resultados e análise da pesquisa</p>
-          </div>
+          <PageHeader icon={ClipboardList} title={survey.titulo} subtitle="Resultados e análise da pesquisa">
+            <Badge variant={survey.status === "active" ? "default" : "secondary"}>
+              {survey.status === "active" ? "Ativa" : survey.status === "closed" ? "Encerrada" : "Rascunho"}
+            </Badge>
+          </PageHeader>
         </div>
         <Button variant="outline" onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />

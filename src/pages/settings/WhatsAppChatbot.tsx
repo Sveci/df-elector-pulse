@@ -205,15 +205,7 @@ const WhatsAppChatbot = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            Assistente Virtual WhatsApp
-          </h1>
-          <p className="text-muted-foreground">
-            Configure o chatbot para atender automaticamente os líderes via WhatsApp
-          </p>
-        </div>
+        <PageHeader icon={Bot} title="Assistente Virtual WhatsApp" subtitle="Configure o chatbot para atender automaticamente os líderes via WhatsApp" className="flex-1" />
         <TutorialButton onClick={restartTutorial} />
       </div>
 

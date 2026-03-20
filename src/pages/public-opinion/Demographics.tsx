@@ -210,13 +210,9 @@ const Demographics = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Análise de Conteúdo</h1>
-        <p className="text-muted-foreground mt-1">
-          Categorias, temas e fontes das menções sobre você
-          {!hasRealData && <Badge variant="outline" className="ml-2">Demo</Badge>}
-        </p>
-      </div>
+      <PageHeader icon={BarChart2} title="Análise de Conteúdo" subtitle="Categorias, temas e fontes das menções sobre você">
+        {!hasRealData && <Badge variant="outline">Demo</Badge>}
+      </PageHeader>
 
       {/* Word Cloud - full width */}
       <Card>
