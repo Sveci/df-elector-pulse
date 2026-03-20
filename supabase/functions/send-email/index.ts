@@ -31,6 +31,65 @@ const PUBLIC_TEMPLATES = [
   'lideranca-boas-vindas', // Template para promoção automática de líderes
 ];
 
+/**
+ * Resolve tenant ID from multiple sources in priority order:
+ * 1. Explicitly passed tenantId in request body
+ * 2. JWT user's tenant (via user_tenants)
+ * 3. contact_id → office_contacts.tenant_id
+ * 4. leader_id → lideres.tenant_id
+ * 5. Default (first) tenant in DB
+ */
+async function resolveTenantId(
+  supabase: ReturnType<typeof createClient>,
+  requestTenantId: string | undefined,
+  userId: string | undefined,
+  contactId: string | undefined,
+  leaderId: string | undefined,
+): Promise<string | null> {
+  // 1. Explicitly provided
+  if (requestTenantId) return requestTenantId;
+
+  // 2. From authenticated user
+  if (userId) {
+    const { data: tenantRow } = await supabase
+      .from('user_tenants')
+      .select('tenant_id')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+    if (tenantRow?.tenant_id) return tenantRow.tenant_id;
+  }
+
+  // 3. From contact
+  if (contactId) {
+    const { data: contact } = await supabase
+      .from('office_contacts')
+      .select('tenant_id')
+      .eq('id', contactId)
+      .maybeSingle();
+    if (contact?.tenant_id) return contact.tenant_id;
+  }
+
+  // 4. From leader
+  if (leaderId) {
+    const { data: leader } = await supabase
+      .from('lideres')
+      .select('tenant_id')
+      .eq('id', leaderId)
+      .maybeSingle();
+    if (leader?.tenant_id) return leader.tenant_id;
+  }
+
+  // 5. Fallback: default tenant
+  const { data: defaultTenant } = await supabase
+    .from('tenants')
+    .select('id')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return defaultTenant?.id || null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -43,11 +102,25 @@ serve(async (req) => {
 
     // Parse body first to check if it's a public template
     const body: SendEmailRequest = await req.json();
-    const { templateSlug, templateId, tenantId, to, toName, subject: customSubject, html: customHtml, variables = {}, contactId, leaderId, eventId } = body;
+    const {
+      templateSlug,
+      templateId,
+      tenantId: requestTenantId,
+      to,
+      toName,
+      subject: customSubject,
+      html: customHtml,
+      variables = {},
+      contactId,
+      leaderId,
+      eventId,
+    } = body;
 
     const isPublicTemplate = templateSlug && PUBLIC_TEMPLATES.includes(templateSlug);
 
     // ============ AUTHENTICATION CHECK (skip for public templates) ============
+    let authenticatedUserId: string | undefined;
+
     if (!isPublicTemplate) {
       const authHeader = req.headers.get("authorization");
       if (!authHeader) {
@@ -86,25 +159,72 @@ serve(async (req) => {
         );
       }
 
+      authenticatedUserId = user.id;
       console.log(`[send-email] Authenticated user: ${user.email} with role: ${roleData.role}`);
     } else {
       console.log(`[send-email] Public template '${templateSlug}' - skipping authentication`);
     }
     // ============ END AUTHENTICATION CHECK ============
 
-    // Get integration settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('integrations_settings')
-      .select('resend_api_key, resend_from_email, resend_from_name, resend_enabled')
-      .limit(1)
-      .single();
+    // ============ RESOLVE TENANT ID ============
+    const resolvedTenantId = await resolveTenantId(
+      supabase,
+      requestTenantId,
+      authenticatedUserId,
+      contactId,
+      leaderId,
+    );
 
-    if (settingsError || !settings) {
-      console.error('Failed to fetch settings:', settingsError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Configurações de email não encontradas' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    console.log(`[send-email] Resolved tenant_id: ${resolvedTenantId}`);
+
+    // ============ GET INTEGRATION SETTINGS (tenant-scoped) ============
+    let settings: {
+      resend_api_key: string | null;
+      resend_from_email: string | null;
+      resend_from_name: string | null;
+      resend_enabled: boolean;
+    } | null = null;
+
+    // Try tenant-specific settings first
+    if (resolvedTenantId) {
+      const { data: tenantSettings, error: tenantSettingsError } = await supabase
+        .from('integrations_settings')
+        .select('resend_api_key, resend_from_email, resend_from_name, resend_enabled')
+        .eq('tenant_id', resolvedTenantId)
+        .maybeSingle();
+
+      if (!tenantSettingsError && tenantSettings) {
+        settings = tenantSettings;
+        console.log(`[send-email] Using tenant-specific settings for tenant: ${resolvedTenantId}`);
+      }
+    }
+
+    // Fallback: global settings row (for backward compat when resend_api_key is shared)
+    if (!settings || !settings.resend_api_key) {
+      console.log(`[send-email] Falling back to global settings row`);
+      const { data: globalSettings, error: globalSettingsError } = await supabase
+        .from('integrations_settings')
+        .select('resend_api_key, resend_from_email, resend_from_name, resend_enabled')
+        .not('resend_api_key', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (globalSettingsError || !globalSettings) {
+        console.error('[send-email] Failed to fetch settings:', globalSettingsError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Configurações de email não encontradas' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // If tenant has its own from_email/from_name, prefer those
+      settings = {
+        resend_api_key: globalSettings.resend_api_key,
+        resend_from_email: settings?.resend_from_email || globalSettings.resend_from_email,
+        resend_from_name: settings?.resend_from_name || globalSettings.resend_from_name,
+        resend_enabled: settings?.resend_enabled ?? globalSettings.resend_enabled,
+      };
     }
 
     if (!settings.resend_enabled) {
@@ -124,7 +244,7 @@ serve(async (req) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!to || !emailRegex.test(to)) {
-      console.error('Invalid email address:', to);
+      console.error('[send-email] Invalid email address:', to);
       return new Response(
         JSON.stringify({ success: false, error: `Email inválido: "${to}". O email deve seguir o formato email@exemplo.com` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -140,18 +260,18 @@ serve(async (req) => {
       let template: any = null;
 
       // Try tenant override first
-      if (tenantId && templateSlug) {
+      if (resolvedTenantId && templateSlug) {
         const { data: tenantTemplate } = await supabase
           .from('tenant_email_templates')
           .select('*')
-          .eq('tenant_id', tenantId)
+          .eq('tenant_id', resolvedTenantId)
           .eq('slug', templateSlug)
           .eq('is_active', true)
           .single();
 
         if (tenantTemplate) {
           template = tenantTemplate;
-          console.log(`[send-email] Using tenant template override for slug: ${templateSlug}, tenant: ${tenantId}`);
+          console.log(`[send-email] Using tenant template override for slug: ${templateSlug}, tenant: ${resolvedTenantId}`);
         }
       }
 
@@ -171,7 +291,7 @@ serve(async (req) => {
         const { data: globalTemplate, error: templateError } = await query.single();
 
         if (templateError || !globalTemplate) {
-          console.error('Template not found:', templateError);
+          console.error('[send-email] Template not found:', templateError);
           return new Response(
             JSON.stringify({ success: false, error: 'Template de email não encontrado' }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -184,13 +304,19 @@ serve(async (req) => {
       finalHtml = template.conteudo_html;
       finalSubject = template.assunto;
 
-      // Auto-inject politico and cargo from organization table if not provided
+      // Auto-inject politico and cargo from organization table — TENANT-SCOPED
       if (!variables.politico || !variables.cargo) {
-        const { data: orgData } = await supabase
+        let orgQuery = supabase
           .from('organization')
-          .select('nome, cargo')
-          .limit(1)
-          .single();
+          .select('nome, cargo');
+
+        // Filter by tenant if possible
+        if (resolvedTenantId) {
+          orgQuery = orgQuery.eq('tenant_id', resolvedTenantId);
+        }
+
+        const { data: orgData } = await orgQuery.limit(1).maybeSingle();
+
         if (orgData) {
           if (!variables.politico) variables.politico = orgData.nome || '';
           if (!variables.cargo) variables.cargo = orgData.cargo || '';
@@ -223,7 +349,6 @@ serve(async (req) => {
       if (contactData?.unsubscribe_token) {
         const emailBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
         const unsubscribeUrl = `${emailBaseUrl}/descadastro?token=${contactData.unsubscribe_token}`;
-        // Replace unsubscribe placeholder in HTML
         finalHtml = finalHtml.replace(/{{link_descadastro}}/g, unsubscribeUrl);
         finalHtml = finalHtml.replace(/href="#"([^>]*>Se não deseja mais receber)/g, `href="${unsubscribeUrl}"$1`);
       }
@@ -236,7 +361,7 @@ serve(async (req) => {
       );
     }
 
-    // Create email log record with rendered HTML
+    // Create email log record with rendered HTML and tenant_id
     const { data: logRecord, error: logError } = await supabase
       .from('email_logs')
       .insert({
@@ -249,12 +374,13 @@ serve(async (req) => {
         leader_id: leaderId || null,
         event_id: eventId || null,
         body_html: finalHtml,
+        tenant_id: resolvedTenantId || null,
       })
       .select()
       .single();
 
     if (logError) {
-      console.error('Failed to create email log:', logError);
+      console.error('[send-email] Failed to create email log:', logError);
     }
 
     // Send email via Resend
@@ -262,7 +388,7 @@ serve(async (req) => {
     const fromEmail = settings.resend_from_email || 'onboarding@resend.dev';
     const fromName = settings.resend_from_name || 'Sistema';
 
-    console.log(`Sending email to ${to} with subject: ${finalSubject}`);
+    console.log(`[send-email] Sending to ${to} (tenant: ${resolvedTenantId}) subject: ${finalSubject}`);
 
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: `${fromName} <${fromEmail}>`,
@@ -272,9 +398,8 @@ serve(async (req) => {
     });
 
     if (emailError) {
-      console.error('Resend error:', emailError);
+      console.error('[send-email] Resend error:', emailError);
 
-      // Update log with error
       if (logRecord) {
         await supabase
           .from('email_logs')
@@ -291,9 +416,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('Email sent successfully:', emailData);
+    console.log('[send-email] Sent successfully:', emailData);
 
-    // Update log with success
     if (logRecord) {
       await supabase
         .from('email_logs')
@@ -309,13 +433,14 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         emailId: emailData?.id,
-        logId: logRecord?.id
+        logId: logRecord?.id,
+        tenantId: resolvedTenantId,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[send-email] Error:', error);
     return new Response(
       JSON.stringify({ success: false, error: (error as Error).message || 'Erro desconhecido' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
