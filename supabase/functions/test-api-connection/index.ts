@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { provider } = await req.json();
+    const body = await req.json();
+    const { provider, tenantId } = body;
 
     if (!provider) {
       return new Response(
@@ -60,14 +61,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[test-api-connection] Testing provider: ${provider}`);
+    console.log(`[test-api-connection] Testing provider: ${provider}, tenantId: ${tenantId || "none"}`);
 
-    // Fetch integration settings from database (keys stored here, not in env)
-    const { data: settings } = await serviceClient
-      .from("integrations_settings")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
+    // Fetch integration settings — prefer tenant-scoped row, fall back to first global row
+    let settings: Record<string, unknown> | null = null;
+
+    if (tenantId) {
+      const { data: tenantSettings } = await serviceClient
+        .from("integrations_settings")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      settings = tenantSettings;
+      console.log(`[test-api-connection] Tenant settings found: ${!!settings}`);
+    }
+
+    // Fallback to first global row (backward compat)
+    if (!settings) {
+      const { data: globalSettings } = await serviceClient
+        .from("integrations_settings")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      settings = globalSettings;
+      console.log(`[test-api-connection] Using global fallback settings: ${!!settings}`);
+    }
 
     switch (provider) {
       case "smsbarato": {
@@ -110,7 +129,20 @@ Deno.serve(async (req) => {
       }
 
       case "resend": {
-        const apiKey = settings?.resend_api_key;
+        // resend_api_key is per-tenant; try tenant row first, already resolved above
+        let apiKey = settings?.resend_api_key as string | undefined;
+        // If tenant row didn't have a key, try finding any row that has it (global fallback)
+        if (!apiKey && tenantId) {
+          const { data: fallback } = await serviceClient
+            .from("integrations_settings")
+            .select("resend_api_key")
+            .not("resend_api_key", "is", null)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          apiKey = fallback?.resend_api_key as string | undefined;
+          if (apiKey) console.log("[test-api-connection] resend: using global fallback API key");
+        }
         if (!apiKey) return jsonError("API Key do Resend não configurada nas integrações");
         const res = await fetch("https://api.resend.com/api-keys", {
           headers: { Authorization: `Bearer ${apiKey}` },

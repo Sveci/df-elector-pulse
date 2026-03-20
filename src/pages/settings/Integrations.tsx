@@ -198,7 +198,10 @@ const Integrations = () => {
   const [waAutoOptout, setWaAutoOptout] = useState(true);
   const [waAutoSmsFallback, setWaAutoSmsFallback] = useState(false);
 
-  // Resend state (apenas remetente - API Key e habilitação são configurados pelo super admin)
+  // Resend state (Token API + Email + Nome por tenant)
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [resendEnabled, setResendEnabled] = useState(false);
+  const [showResendKey, setShowResendKey] = useState(false);
   const [resendFromEmail, setResendFromEmail] = useState("");
   const [resendFromName, setResendFromName] = useState("");
 
@@ -246,6 +249,8 @@ const Integrations = () => {
       setZapiToken(settings.zapi_token || "");
       setZapiClientToken(settings.zapi_client_token || "");
       setZapiEnabled(settings.zapi_enabled || false);
+      setResendApiKey(settings.resend_api_key || "");
+      setResendEnabled(settings.resend_enabled || false);
       setResendFromEmail(settings.resend_from_email || "");
       setResendFromName(settings.resend_from_name || "");
       setSmsdevApiKey(settings.smsdev_api_key || "");
@@ -659,22 +664,59 @@ const Integrations = () => {
         <MetaCloudConfigCard settings={settings as any} />
 
 
-        {/* Resend - Configurações do Remetente */}
-        <Card>
+        {/* Resend - Email Marketing */}
+        <Card data-tutorial="int-resend">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Mail className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Email - Resend</CardTitle>
+                  <CardDescription>
+                    Configure o Token API, email e nome do remetente para envios deste workspace
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-lg">Email - Remetente</CardTitle>
-                <CardDescription>
-                  Configure o email e nome que aparecerão como remetente nos envios
-                </CardDescription>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{resendEnabled ? "Ativo" : "Inativo"}</span>
+                <Switch
+                  checked={resendEnabled}
+                  onCheckedChange={(checked) => setResendEnabled(checked)}
+                />
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Token API */}
+            <div className="space-y-2">
+              <Label htmlFor="resend-api-key">Token API (Resend)</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="resend-api-key"
+                    type={showResendKey ? "text" : "password"}
+                    placeholder="re_xxxxxxxxxxxxxxxxxxxx"
+                    value={resendApiKey}
+                    onChange={(e) => setResendApiKey(e.target.value)}
+                    className="pr-10 font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResendKey(!showResendKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showResendKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Obtenha em <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">resend.com/api-keys</a>. Cada workspace pode ter sua própria chave.
+              </p>
+            </div>
+
+            {/* From e Nome */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="resend-email">Email Remetente</Label>
@@ -686,7 +728,7 @@ const Integrations = () => {
                   onChange={(e) => setResendFromEmail(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Domínio deve estar verificado no provedor de email
+                  Domínio deve estar verificado no Resend
                 </p>
               </div>
 
@@ -705,6 +747,8 @@ const Integrations = () => {
               <Button
                 onClick={() => {
                   updateSettings.mutate({
+                    resend_api_key: resendApiKey || null,
+                    resend_enabled: resendEnabled,
                     resend_from_email: resendFromEmail || null,
                     resend_from_name: resendFromName || null,
                   });
