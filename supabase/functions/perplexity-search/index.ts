@@ -52,6 +52,47 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ========== AUTHENTICATION CHECK ==========
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Não autenticado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Token inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "super_admin", "atendente"])
+      .limit(1)
+      .single();
+
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Acesso não autorizado." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[perplexity-search] Authenticated user: ${user.id} role: ${roleData.role}`);
+    // ========== END AUTHENTICATION CHECK ==========
+
     const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
     if (!perplexityKey) {
       return new Response(
