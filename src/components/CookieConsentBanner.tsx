@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Cookie, Shield, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 type ConsentLevel = "all" | "essential" | null;
 
@@ -86,9 +85,9 @@ export function CookieConsentBanner() {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Usamos cookies essenciais para o funcionamento da plataforma e, com seu consentimento,
               cookies analíticos para melhorar sua experiência. Conforme a{" "}
-              <Link to="/lgpd-cookies" className="text-primary underline hover:text-primary/80" target="_blank">
+              <a href="/lgpd-cookies" className="text-primary underline hover:text-primary/80" target="_blank" rel="noopener noreferrer">
                 LGPD (Lei 13.709/2018)
-              </Link>
+              </a>
               , você tem o direito de aceitar ou recusar.{" "}
               <button
                 onClick={() => setShowDetails((v) => !v)}
@@ -158,9 +157,9 @@ export function CookieConsentBanner() {
               <strong>Consentimento (Art. 7º, I LGPD)</strong> para cookies analíticos;{" "}
               <strong>Execução de contrato (Art. 7º, V)</strong> para cookies essenciais.
               Você pode alterar suas preferências a qualquer momento em{" "}
-              <Link to="/lgpd-cookies" className="text-primary underline" target="_blank">
+              <a href="/lgpd-cookies" className="text-primary underline" target="_blank" rel="noopener noreferrer">
                 Política de Cookies
-              </Link>.
+              </a>.
             </p>
           </div>
         )}
