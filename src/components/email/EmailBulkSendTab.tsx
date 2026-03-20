@@ -66,6 +66,7 @@ export function EmailBulkSendTab() {
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
   const tenantId = useTenantId();
+  const tenantDomain = useTenantDomain();
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
