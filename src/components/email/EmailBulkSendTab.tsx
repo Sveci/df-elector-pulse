@@ -644,7 +644,7 @@ export function EmailBulkSendTab() {
 
         const affiliateToken = (r as { affiliateToken?: string | null }).affiliateToken;
         if ((recipientType === "leaders" || recipientType === "single_leader") && affiliateToken && selectedTemplate === "lideranca-pesquisa-link") {
-          const linkPesquisaAfiliado = generateSurveyAffiliateUrl(targetSurvey.slug, affiliateToken);
+          const linkPesquisaAfiliado = generateSurveyAffiliateUrl(targetSurvey.slug, affiliateToken, tenantDomain);
           variables.link_pesquisa_afiliado = linkPesquisaAfiliado;
           variables.qr_code_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkPesquisaAfiliado)}`;
         }
