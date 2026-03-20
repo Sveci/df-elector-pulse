@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle } from "lucide-react";
+import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTenantId } from "@/hooks/useTenantId";
