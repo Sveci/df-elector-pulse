@@ -466,15 +466,13 @@ const Events = () => {
         <div className="mb-6 sm:mb-8" data-tutorial="events-header">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-                  Gestão de Eventos
-                </h1>
+              <PageHeader
+                icon={Calendar}
+                title="Gestão de Eventos"
+                subtitle={`${filteredEvents.length} eventos encontrados`}
+              >
                 <TutorialButton onClick={restartTutorial} />
-              </div>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {filteredEvents.length} eventos encontrados
-              </p>
+              </PageHeader>
             </div>
             {canManageEvents && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

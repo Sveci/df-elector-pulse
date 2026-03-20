@@ -240,14 +240,12 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8" data-tutorial="dashboard-header">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Dashboard
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Visão geral do desempenho e ranking de lideranças
-              </p>
-            </div>
+            <PageHeader
+              icon={LayoutDashboard}
+              title="Dashboard"
+              subtitle="Visão geral do desempenho e ranking de lideranças"
+              dataTutorial="dashboard-header"
+            />
             <div className="flex items-center gap-2">
               <TutorialButton onClick={restartTutorial} />
               <Button
