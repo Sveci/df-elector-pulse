@@ -74,9 +74,9 @@ const apis: ApiConfig[] = [
   {
     key: "resend",
     name: "Resend — Email Marketing",
-    icon: MessageSquare,
+    icon: Mail,
     description: "Envie emails automatizados e em massa com a plataforma Resend.",
-    purpose: "Token global para envio de emails. Cada tenant configura seu próprio email e nome de remetente nas configurações do workspace.",
+    purpose: "Token API, email remetente e nome são configurados por tenant. Este card serve como chave padrão global (fallback) caso o tenant não tenha configurado a própria chave. Cada workspace pode sobrescrever todos os 3 campos em Configurações → Integrações → Email Resend.",
     howToGet: "Acesse resend.com → faça login → vá em API Keys → clique em 'Create API Key' → copie a chave gerada.",
     link: "https://resend.com/api-keys",
     secretName: "RESEND_API_KEY",
@@ -249,7 +249,7 @@ function ApiCard({ api, enabledStates, onToggle, tenantId }: { api: ApiConfig; e
     setTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("test-api-connection", {
-        body: { provider: api.key },
+        body: { provider: api.key, tenantId },
       });
 
       if (error) throw error;
@@ -720,7 +720,8 @@ const AdminApis = () => {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-900 dark:text-amber-200">
-                As chaves de API são usadas globalmente por todos os tenants da plataforma.
+                As chaves configuradas aqui são usadas como <strong>padrão global (fallback)</strong> para todos os tenants.
+                Cada workspace pode sobrescrever individualmente em <em>Configurações → Integrações</em>.
                 Os tokens são armazenados de forma segura e criptografada.
               </p>
             </div>
