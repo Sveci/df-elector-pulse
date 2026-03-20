@@ -92,12 +92,7 @@ export default function WhatsAppHistory() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Histórico de Mensagens WhatsApp
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Acompanhe todas as mensagens enviadas e recebidas
-              </p>
+              <PageHeader icon={MessageSquare} title="Histórico de Mensagens WhatsApp" subtitle="Acompanhe todas as mensagens enviadas e recebidas" />
             </div>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4 mr-2" />

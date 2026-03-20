@@ -149,12 +149,7 @@ const Segments = () => {
       <TutorialOverlay page="segments" />
       {/* Header */}
       <div className="flex justify-between items-center mb-6" data-tutorial="seg-header">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Segmentos</h1>
-          <p className="text-gray-600 mt-1">
-            Organize seus contatos em segmentos para campanhas direcionadas
-          </p>
-        </div>
+        <PageHeader icon={Target} title="Segmentos" subtitle="Organize seus contatos em segmentos para campanhas direcionadas" dataTutorial="seg-header" />
 
         <div className="flex items-center gap-2">
           <TutorialButton onClick={restartTutorial} />

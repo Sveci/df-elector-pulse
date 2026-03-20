@@ -75,13 +75,9 @@ const Projects = () => {
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-tutorial="projects-header">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Programas</h1>
+            <PageHeader icon={Target} title="Programas" subtitle="Acompanhe os programas oficiais e seu impacto na comunidade">
               <TutorialButton onClick={restartTutorial} />
-            </div>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
-              Acompanhe os programas oficiais e seu impacto na comunidade
-            </p>
+            </PageHeader>
           </div>
           <AddProgramDialog>
             <Button data-tutorial="projects-create">
