@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { GitBranch, Crown, Plus, Users, Award, Target, Loader2, Search, Star } from "lucide-react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
