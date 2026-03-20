@@ -74,6 +74,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { eventId, photoUrl, sendSms, sendEmail }: SendEventPhotosRequest = await req.json();
 
+    // Resolve tenant from the authenticated user
+    const { data: userTenant } = await supabase
+      .from('user_tenants')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    const tenantId = userTenant?.tenant_id || null;
+
     if (!eventId || !photoUrl) {
       return new Response(
         JSON.stringify({ error: "eventId e photoUrl são obrigatórios" }),
@@ -105,12 +114,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get organization info
-    const { data: org } = await supabase
+    // Get organization info — tenant-scoped
+    const orgQuery = supabase
       .from("organization")
-      .select("nome")
-      .limit(1)
-      .single();
+      .select("nome");
+    if (tenantId) orgQuery.eq('tenant_id', tenantId);
+    const { data: org } = await orgQuery.limit(1).maybeSingle();
 
     // Get participants who checked in
     const { data: participants, error: participantsError } = await supabase
@@ -148,12 +157,29 @@ const handler = async (req: Request): Promise<Response> => {
       console.warn("send-event-photos: Could not shorten URL, using original:", shortenError);
     }
 
-    // Get integrations settings
-    const { data: settings } = await supabase
-      .from("integrations_settings")
-      .select("*")
-      .limit(1)
-      .single();
+    // Get integrations settings — tenant-scoped with global fallback
+    let settings: any = null;
+    if (tenantId) {
+      const { data: tenantSettings } = await supabase
+        .from("integrations_settings")
+        .select("*")
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+      settings = tenantSettings;
+    }
+    // Fallback to global row
+    if (!settings || !settings.resend_api_key) {
+      const { data: globalSettings } = await supabase
+        .from("integrations_settings")
+        .select("*")
+        .not('resend_api_key', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (globalSettings) {
+        settings = { ...globalSettings, ...(settings || {}) };
+      }
+    }
 
     let smsSentCount = 0;
     let emailSentCount = 0;

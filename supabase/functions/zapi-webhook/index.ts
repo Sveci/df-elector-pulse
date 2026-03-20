@@ -58,10 +58,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+
     // ── Webhook Secret Validation ────────────────────────────────────
     const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
     if (webhookSecret) {
-      const url = new URL(req.url);
       const token = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
       if (token !== webhookSecret) {
         console.warn("[zapi-webhook] Unauthorized request - invalid secret");
@@ -81,9 +82,12 @@ Deno.serve(async (req) => {
 
     console.log("[zapi-webhook] Received webhook:", JSON.stringify(body));
 
+    // Extract optional tenant_id from query param (Z-API webhook can be configured per-tenant)
+    const webhookTenantId = url.searchParams.get("tenant_id") || null;
+
     // Detect webhook type based on payload structure
     const webhookType = detectWebhookType(body);
-    console.log("[zapi-webhook] Detected webhook type:", webhookType, "| Z-API type:", body.type);
+    console.log("[zapi-webhook] Detected webhook type:", webhookType, "| Z-API type:", body.type, "| Tenant:", webhookTenantId);
 
     switch (webhookType) {
       case "message-status":
@@ -93,7 +97,7 @@ Deno.serve(async (req) => {
         await handleReceivedMessage(supabase, body as ZapiReceivedMessage);
         break;
       case "connection-status":
-        await handleConnectionStatus(supabase, body as ZapiConnectionStatus);
+        await handleConnectionStatus(supabase, body as ZapiConnectionStatus, webhookTenantId);
         break;
       default:
         console.log("[zapi-webhook] Unknown webhook type, logging only");
@@ -831,7 +835,7 @@ async function handleReceivedMessage(supabase: any, data: ZapiReceivedMessage) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function sendPendingMessages(supabase: any, contact: any, settings: IntegrationSettings | null) {
+async function sendPendingMessages(supabase: any, contact: any, settings: IntegrationSettings | null, tenantId?: string | null) {
   const pendingMessages = contact.pending_messages || [];
 
   if (pendingMessages.length === 0) {
@@ -839,16 +843,16 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
     return;
   }
 
-  console.log(`[zapi-webhook] Sending ${pendingMessages.length} pending messages`);
+  console.log(`[zapi-webhook] Sending ${pendingMessages.length} pending messages (tenant: ${tenantId})`);
 
-  // Use passed settings or fetch if not available
+  // Use passed settings or fetch if not available (tenant-scoped)
   let typedSettings = settings;
   if (!typedSettings) {
-    const { data: fetchedSettings } = await supabase
+    let settingsQ = supabase
       .from("integrations_settings")
-      .select("zapi_instance_id, zapi_token, zapi_enabled, resend_api_key, resend_enabled, resend_from_email, resend_from_name")
-      .limit(1)
-      .single();
+      .select("zapi_instance_id, zapi_token, zapi_enabled, resend_api_key, resend_enabled, resend_from_email, resend_from_name");
+    if (tenantId) settingsQ = settingsQ.eq("tenant_id", tenantId);
+    const { data: fetchedSettings } = await settingsQ.limit(1).maybeSingle();
     typedSettings = fetchedSettings as IntegrationSettings;
   }
 
@@ -914,7 +918,7 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
         const resendResult = await resendResponse.json();
         console.log(`[zapi-webhook] Sent pending email ${emailTemplateSlug}:`, resendResult);
 
-        // Record in email_logs
+        // Record in email_logs — include tenant_id for data isolation
         await supabase.from("email_logs").insert({
           to_email: recipientEmail,
           to_name: pending.variables?.nome || null,
@@ -925,6 +929,7 @@ async function sendPendingMessages(supabase: any, contact: any, settings: Integr
           error_message: resendResult.error?.message || null,
           contact_id: contact.id,
           event_id: pending.variables?.eventId || null,
+          tenant_id: tenantId || contact.tenant_id || null,
         });
 
       } else {
@@ -1283,22 +1288,30 @@ async function sendWhatsAppMessage(supabase: any, phone: string, message: string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus) {
+async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus, tenantId?: string | null) {
   const isConnected = data.connected || data.status === "connected" || data.type === "ConnectedCallback";
   const isDisconnected = data.type === "DisconnectedCallback" || data.status === "disconnected" || data.connected === false;
 
-  console.log(`[zapi-webhook] Connection status: ${isConnected ? "connected" : "disconnected"} (type: ${data.type})`);
+  console.log(`[zapi-webhook] Connection status: ${isConnected ? "connected" : "disconnected"} (type: ${data.type}, tenant: ${tenantId})`);
+
+  // Build base query — if we have a tenant, scope to it; otherwise update all rows (global config)
+  const buildQuery = (updates: Record<string, unknown>) => {
+    let q = supabase.from("integrations_settings").update(updates);
+    if (tenantId) {
+      q = q.eq("tenant_id", tenantId);
+    } else {
+      q = q.not("id", "is", null); // Update all rows when no tenant context
+    }
+    return q;
+  };
 
   // Update verification fallback status based on connection
   if (isConnected) {
     // Z-API connected - disable fallback
-    const { error } = await supabase
-      .from("integrations_settings")
-      .update({
-        verification_fallback_active: false,
-        zapi_last_connected_at: new Date().toISOString(),
-      })
-      .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all rows
+    const { error } = await buildQuery({
+      verification_fallback_active: false,
+      zapi_last_connected_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error("[zapi-webhook] Error updating connection status:", error);
@@ -1307,13 +1320,10 @@ async function handleConnectionStatus(supabase: any, data: ZapiConnectionStatus)
     }
   } else if (isDisconnected) {
     // Z-API disconnected - enable fallback to SMS
-    const { error } = await supabase
-      .from("integrations_settings")
-      .update({
-        verification_fallback_active: true,
-        zapi_disconnected_at: new Date().toISOString(),
-      })
-      .neq("id", "00000000-0000-0000-0000-000000000000"); // Update all rows
+    const { error } = await buildQuery({
+      verification_fallback_active: true,
+      zapi_disconnected_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error("[zapi-webhook] Error updating disconnection status:", error);

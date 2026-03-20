@@ -15,6 +15,7 @@ interface ScheduledMessage {
   variables: Record<string, string>;
   contact_id: string | null;
   leader_id: string | null;
+  tenant_id: string | null;
 }
 
 function isQuietHours(settings: { quiet_hours_enabled: boolean | null; quiet_hours_start: string | null; quiet_hours_end: string | null } | null): boolean {
@@ -39,12 +40,15 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verificar horário de silêncio
+    // Verificar horário de silêncio — usa a primeira linha encontrada como referência global
+    // (quiet hours é uma configuração operacional compartilhada)
     const { data: qhSettings } = await supabase
       .from("integrations_settings")
       .select("quiet_hours_enabled, quiet_hours_start, quiet_hours_end")
+      .not('quiet_hours_enabled', 'is', null)
+      .order('created_at', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (isQuietHours(qhSettings)) {
       console.log("[process-scheduled-messages] Horário de silêncio ativo. Pulando execução.");
@@ -102,6 +106,7 @@ Deno.serve(async (req) => {
               templateSlug: message.template_slug,
               variables: message.variables,
               contactId: message.contact_id,
+              tenantId: (message as any).tenant_id || undefined,
             },
           });
 
@@ -119,6 +124,8 @@ Deno.serve(async (req) => {
               variables: message.variables,
               contactId: message.contact_id,
               leaderId: message.leader_id,
+              // Pass tenant_id so send-email uses the correct Resend settings
+              tenantId: (message as any).tenant_id || undefined,
             },
           });
 
@@ -134,6 +141,7 @@ Deno.serve(async (req) => {
               templateSlug: message.template_slug,
               variables: message.variables,
               contactId: message.contact_id,
+              tenantId: (message as any).tenant_id || undefined,
             },
           });
 

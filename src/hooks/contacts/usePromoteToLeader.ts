@@ -112,6 +112,8 @@ export function usePromoteToLeader() {
               to: contact.email,
               toName: contact.nome,
               templateSlug: "lideranca-aguardando-verificacao",
+              // Pass contactId so send-email can resolve tenant from the contact's tenant_id
+              contactId: contact.id,
               variables: {
                 nome: contact.nome,
               },

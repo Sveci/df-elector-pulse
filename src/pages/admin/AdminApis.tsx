@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MessageSquare, Bot, Brain, ExternalLink, CheckCircle2, AlertCircle, Eye, EyeOff, Save, Loader2, Mail, Phone, Wallet, Radio, Zap, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTenantId } from "@/hooks/useTenantId";
 
 interface ApiConfig {
   key: string;
@@ -151,7 +152,7 @@ const categoryColors: Record<string, string> = {
   "Carteira Digital": "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
 };
 
-function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStates: Record<string, boolean>; onToggle: (field: string, value: boolean) => void }) {
+function ApiCard({ api, enabledStates, onToggle, tenantId }: { api: ApiConfig; enabledStates: Record<string, boolean>; onToggle: (field: string, value: boolean) => void; tenantId: string | null }) {
   const Icon = api.icon;
   const [tokenValue, setTokenValue] = useState("");
   const [showToken, setShowToken] = useState(false);
@@ -169,11 +170,15 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
     const fetchSettings = async () => {
       if (api.hasRegionSelector || api.dbField) {
         setIsLoadingRegion(true);
-        const { data } = await supabase
-          .from("integrations_settings")
-          .select("*")
-          .limit(1)
-          .maybeSingle();
+
+        // Build query — prefer tenant-scoped row
+        let query = supabase.from("integrations_settings").select("*");
+        if (tenantId) {
+          query = query.eq("tenant_id", tenantId);
+        } else {
+          query = (query as any).order("created_at", { ascending: true });
+        }
+        const { data } = await (query as any).limit(1).maybeSingle();
 
         if (data) {
           if (api.hasRegionSelector && (data as any).passkit_api_base_url) {
@@ -199,12 +204,26 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
     setIsSaving(true);
     try {
       if (api.dbField) {
-        // Save directly to integrations_settings table
-        const { error } = await supabase
-          .from("integrations_settings")
-          .update({ [api.dbField]: tokenValue.trim() })
-          .not("id", "is", null);
-        if (error) throw error;
+        // Save directly to integrations_settings table — scoped to tenant
+        let query = supabase.from("integrations_settings").select("id");
+        if (tenantId) query = query.eq("tenant_id", tenantId);
+        const { data: existing } = await (query as any).limit(1).maybeSingle();
+
+        if (existing?.id) {
+          const { error } = await supabase
+            .from("integrations_settings")
+            .update({ [api.dbField]: tokenValue.trim() })
+            .eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          // Create row for this tenant
+          const insertData: any = { [api.dbField]: tokenValue.trim() };
+          if (tenantId) insertData.tenant_id = tenantId;
+          const { error } = await supabase
+            .from("integrations_settings")
+            .insert(insertData);
+          if (error) throw error;
+        }
         setHasStoredKey(true);
       } else {
         // Save to Vault via edge function
@@ -332,11 +351,29 @@ function ApiCard({ api, enabledStates, onToggle }: { api: ApiConfig; enabledStat
                   onChange={async (e) => {
                     const newUrl = e.target.value;
                     setRegionUrl(newUrl);
-                    const { error } = await supabase
-                      .from("integrations_settings")
-                      .update({ passkit_api_base_url: newUrl })
-                      .not("id", "is", null);
-                    if (error) {
+
+                    // Tenant-scoped update
+                    let q = supabase.from("integrations_settings").select("id");
+                    if (tenantId) q = q.eq("tenant_id", tenantId);
+                    const { data: existingRow } = await (q as any).limit(1).maybeSingle();
+
+                    let updateError;
+                    if (existingRow?.id) {
+                      const { error } = await supabase
+                        .from("integrations_settings")
+                        .update({ passkit_api_base_url: newUrl })
+                        .eq("id", existingRow.id);
+                      updateError = error;
+                    } else {
+                      const insertData: any = { passkit_api_base_url: newUrl };
+                      if (tenantId) insertData.tenant_id = tenantId;
+                      const { error } = await supabase
+                        .from("integrations_settings")
+                        .insert(insertData);
+                      updateError = error;
+                    }
+
+                    if (updateError) {
                       toast.error("Erro ao salvar região");
                     } else {
                       toast.success(`Região alterada para ${newUrl.includes("pub1") ? "Região 1 (pub1)" : "Região 2 (pub2)"}`);
@@ -486,33 +523,49 @@ const smsProviders = [
   { value: "disparopro", label: "DisparoPro", description: "Plataforma profissional com relatórios detalhados" },
 ];
 
-function ActiveSmsProviderCard() {
+function ActiveSmsProviderCard({ tenantId }: { tenantId: string | null }) {
   const [activeProvider, setActiveProvider] = useState<string>("smsdev");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProvider = async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("sms_active_provider")
-        .limit(1)
-        .maybeSingle();
+        .select("sms_active_provider");
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      } else {
+        query = (query as any).order("created_at", { ascending: true });
+      }
+      const { data } = await (query as any).limit(1).maybeSingle();
       if (data?.sms_active_provider) {
         setActiveProvider(data.sms_active_provider);
       }
       setIsLoading(false);
     };
     fetchProvider();
-  }, []);
+  }, [tenantId]);
 
   const handleSave = async (newProvider: string) => {
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from("integrations_settings")
-        .update({ sms_active_provider: newProvider })
-        .not("id", "is", null);
+      // Find the correct row for this tenant
+      let q = supabase.from("integrations_settings").select("id");
+      if (tenantId) q = q.eq("tenant_id", tenantId);
+      const { data: existing } = await (q as any).limit(1).maybeSingle();
+
+      let error;
+      if (existing?.id) {
+        ({ error } = await supabase
+          .from("integrations_settings")
+          .update({ sms_active_provider: newProvider })
+          .eq("id", existing.id));
+      } else {
+        const insertData: any = { sms_active_provider: newProvider };
+        if (tenantId) insertData.tenant_id = tenantId;
+        ({ error } = await supabase.from("integrations_settings").insert(insertData));
+      }
 
       if (error) throw error;
 
@@ -589,14 +642,21 @@ function ActiveSmsProviderCard() {
 const AdminApis = () => {
   const [enabledStates, setEnabledStates] = useState<Record<string, boolean>>({});
   const [isLoadingStates, setIsLoadingStates] = useState(true);
+  const tenantId = useTenantId();
 
   useEffect(() => {
     const fetchEnabledStates = async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("integrations_settings")
-        .select("meta_cloud_enabled, resend_enabled, smsbarato_enabled, disparopro_enabled, smsdev_enabled, passkit_enabled")
-        .limit(1)
-        .maybeSingle();
+        .select("meta_cloud_enabled, resend_enabled, smsbarato_enabled, disparopro_enabled, smsdev_enabled, passkit_enabled");
+
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      } else {
+        query = (query as any).order("created_at", { ascending: true });
+      }
+
+      const { data } = await (query as any).limit(1).maybeSingle();
 
       if (data) {
         setEnabledStates({
@@ -618,10 +678,22 @@ const AdminApis = () => {
     setEnabledStates(prev => ({ ...prev, [field]: value }));
 
     try {
-      const { error } = await supabase
-        .from("integrations_settings")
-        .update({ [field]: value })
-        .not("id", "is", null);
+      // Find the correct row for this tenant
+      let q = supabase.from("integrations_settings").select("id");
+      if (tenantId) q = q.eq("tenant_id", tenantId);
+      const { data: existing } = await (q as any).limit(1).maybeSingle();
+
+      let error;
+      if (existing?.id) {
+        ({ error } = await supabase
+          .from("integrations_settings")
+          .update({ [field]: value })
+          .eq("id", existing.id));
+      } else {
+        const insertData: any = { [field]: value };
+        if (tenantId) insertData.tenant_id = tenantId;
+        ({ error } = await supabase.from("integrations_settings").insert(insertData));
+      }
 
       if (error) throw error;
 
@@ -655,7 +727,7 @@ const AdminApis = () => {
           </CardContent>
         </Card>
 
-        <ActiveSmsProviderCard />
+        <ActiveSmsProviderCard tenantId={tenantId} />
 
         {isLoadingStates ? (
           <div className="flex items-center justify-center py-12">
@@ -669,6 +741,7 @@ const AdminApis = () => {
                 api={api}
                 enabledStates={enabledStates}
                 onToggle={handleToggle}
+                tenantId={tenantId}
               />
             ))}
           </div>

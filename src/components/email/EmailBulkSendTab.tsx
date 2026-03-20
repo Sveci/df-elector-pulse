@@ -27,6 +27,7 @@ import { getProductionUrl, generateEventAffiliateUrl, generateAffiliateUrl, gene
 import { toast } from "sonner";
 import { useBulkSendSession } from "@/hooks/useBulkSendSession";
 import { ResumeSessionAlert } from "@/components/bulk-send/ResumeSessionAlert";
+import { useTenantId } from "@/hooks/useTenantId";
 
 type RecipientType = "all_contacts" | "event_contacts" | "funnel_contacts" | "leaders" | "single_contact" | "single_leader" | "unverified_leaders" | "unverified_contacts" | "coordinator_tree";
 
@@ -63,6 +64,7 @@ export function EmailBulkSendTab() {
   const { data: templates, isLoading: loadingTemplates } = useEmailTemplates();
   const { data: events } = useEvents();
   const { data: regionMaterials } = useRegionMaterials();
+  const tenantId = useTenantId();
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [recipientType, setRecipientType] = useState<RecipientType>("all_contacts");
@@ -728,6 +730,7 @@ export function EmailBulkSendTab() {
             const { data, error } = await supabase.functions.invoke("send-email", {
               body: {
                 templateSlug: selectedTemplate,
+                tenantId: tenantId || undefined,
                 ...recipient,
               },
             });
