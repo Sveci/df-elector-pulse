@@ -1227,10 +1227,10 @@ async function searchKnowledgeBase(
       return { context: "", sources: [], rankedChunks: [] };
     }
 
-    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c) => `score=${c.score}`).join(", ")}`);
+    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
 
-    const sources = [...new Set(rankedChunks.map((c) => c.source))];
-    const context = rankedChunks.map((c) => c.content).join("\n\n");
+    const sources: string[] = [...new Set(rankedChunks.map((c: RankedKBChunk) => c.source))];
+    const context = rankedChunks.map((c: RankedKBChunk) => c.content).join("\n\n");
 
     return { context, sources, rankedChunks };
   } catch (err) {
