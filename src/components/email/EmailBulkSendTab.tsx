@@ -567,8 +567,9 @@ export function EmailBulkSendTab() {
     let successCount = 0;
     let errorCount = 0;
 
-    // SEMPRE usa URL de produção para comunicações externas
-    const baseUrl = getProductionUrl();
+    // SEMPRE usa URL de produção para comunicações externas (com domínio customizado do tenant)
+    const baseUrl = getTenantBaseUrl(tenantDomain);
+    const orgInfo = { politico: organization?.nome || "", cargo: organization?.cargo || "" };
 
     // Obter identificadores já enviados (para retomada)
     const sentIdentifiers = resumeMode || isResuming ? getSentIdentifiers() : new Set<string>();
