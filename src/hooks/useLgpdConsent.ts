@@ -54,14 +54,12 @@ export async function logLgpdConsent(params: LogConsentParams): Promise<void> {
     } = params;
 
     // We use the RPC function so it works even without auth (anon key)
-    const { error } = await supabase.rpc("log_lgpd_consent", {
+    const { error } = await (supabase.rpc as any)("log_lgpd_consent", {
       p_tenant_id: tenantId ?? null,
       p_contact_id: contactId ?? null,
       p_consent_type: consentType,
       p_action: action,
       p_legal_basis: legalBasis,
-      // IP is resolved server-side in the DB function via request headers.
-      // We pass an empty string; the edge function / RLS policy can populate it.
       p_ip_address: "",
       p_user_agent:
         typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "",

@@ -134,8 +134,7 @@ const LgpdDireitos = () => {
 
     try {
       // Insert into lgpd_rights_requests (public insert, no auth required)
-      const { data: inserted, error } = await supabase
-        .from("lgpd_rights_requests")
+      const { data: inserted, error } = await (supabase.from as any)("lgpd_rights_requests")
         .insert({
           requester_name: data.requester_name,
           requester_email: data.requester_email,
@@ -144,7 +143,7 @@ const LgpdDireitos = () => {
           description: data.description,
           status: "pending",
           user_agent: navigator.userAgent.slice(0, 200),
-          ip_address: "", // populated by DB/edge
+          ip_address: "",
         })
         .select("id")
         .single();
