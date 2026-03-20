@@ -34,10 +34,10 @@ export default defineConfig(({ mode }) => {
       mode === "development" && componentTagger(),
       // Gzip + Brotli compression for production
       mode === "production" &&
-        compression({ algorithm: "gzip", exclude: [/\.(png|jpg|webp|svg|gif)$/] }),
+        compression({ algorithms: ["gzip"], exclude: [/\.(png|jpg|webp|svg|gif)$/] }),
       mode === "production" &&
         compression({
-          algorithm: "brotliCompress",
+          algorithms: ["brotliCompress"],
           exclude: [/\.(png|jpg|webp|svg|gif)$/],
         }),
     ].filter(Boolean),
