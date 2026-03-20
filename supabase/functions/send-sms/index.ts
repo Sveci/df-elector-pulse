@@ -249,8 +249,9 @@ Deno.serve(async (req) => {
 
     const { phone, message, templateSlug, variables, contactId, leaderId }: SendSMSRequest = await req.json();
 
-    // ========== AUTHENTICATION CHECK ==========
+    // ========== AUTHENTICATION & TENANT RESOLUTION ==========
     const isPublicTemplate = templateSlug && SMS_PUBLIC_TEMPLATES.includes(templateSlug);
+    let resolvedTenantId: string | null = null;
 
     if (!isPublicTemplate) {
       const authHeader = req.headers.get("authorization");
@@ -273,7 +274,7 @@ Deno.serve(async (req) => {
 
       const { data: roleData } = await supabase
         .from("user_roles")
-        .select("role")
+        .select("role, tenant_id")
         .eq("user_id", user.id)
         .in("role", ["admin", "super_admin", "atendente"])
         .limit(1)
@@ -286,9 +287,39 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log(`[send-sms] Authenticated user with role: ${roleData.role}`);
+      resolvedTenantId = roleData.tenant_id || null;
+      console.log(`[send-sms] Authenticated user with role: ${roleData.role}, tenant: ${resolvedTenantId}`);
     }
-    // ========== END AUTHENTICATION CHECK ==========
+
+    // Fallback: resolve tenant from contactId or leaderId
+    if (!resolvedTenantId && contactId) {
+      const { data: contact } = await supabase
+        .from("office_contacts")
+        .select("tenant_id")
+        .eq("id", contactId)
+        .single();
+      if (contact?.tenant_id) resolvedTenantId = contact.tenant_id;
+    }
+    if (!resolvedTenantId && leaderId) {
+      const { data: leader } = await supabase
+        .from("lideres")
+        .select("tenant_id")
+        .eq("id", leaderId)
+        .single();
+      if (leader?.tenant_id) resolvedTenantId = leader.tenant_id;
+    }
+    // Last fallback: pick first tenant from integrations_settings
+    if (!resolvedTenantId) {
+      const { data: fallbackSettings } = await supabase
+        .from("integrations_settings")
+        .select("tenant_id")
+        .limit(1)
+        .single();
+      if (fallbackSettings?.tenant_id) resolvedTenantId = fallbackSettings.tenant_id;
+    }
+
+    console.log(`[send-sms] Resolved tenant_id: ${resolvedTenantId}`);
+    // ========== END AUTHENTICATION & TENANT RESOLUTION ==========
 
     console.log("[send-sms] Request received:", { phone, templateSlug, hasMessage: !!message });
 
