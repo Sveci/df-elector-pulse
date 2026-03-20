@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ANALYZED_EVENTS } from "@/data/public-opinion/demoPublicOpinionData";

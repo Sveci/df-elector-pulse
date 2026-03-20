@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, MessageSquare, Calendar, Users, Network } from "lucide-react";
 import { Link } from "react-router-dom";

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Upload, FileText, Trash2, Edit, ExternalLink, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Trash2, Edit, ExternalLink, MapPin, Clock, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
 import { useSMSTemplates } from "@/hooks/useSMSTemplates";

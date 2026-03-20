@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Polyline, Marker } from "react-leaflet";
 import { useDemoMask } from "@/contexts/DemoModeContext";

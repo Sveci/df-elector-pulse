@@ -6,6 +6,7 @@ import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { BarChart2 } from "lucide-react";
 import { useMemo } from "react";
 
 const categoryColors = ['#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6b7280', '#84cc16', '#f97316'];
