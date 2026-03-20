@@ -204,10 +204,10 @@ const App = () => (
             }}
           >
             <ScrollToTop />
-            <TrackingProvider>
-              <AuthProvider>
-                <DemoModeProvider>
-                  <TenantProvider>
+            <AuthProvider>
+              <DemoModeProvider>
+                <TenantProvider>
+                  <TrackingProvider>
                     <TenantSelectorModal />
                     <Suspense fallback={<PageLoader />}>
                       <Routes>
@@ -553,10 +553,10 @@ const App = () => (
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
-                  </TenantProvider>
-                </DemoModeProvider>
-              </AuthProvider>
-            </TrackingProvider>
+                  </TrackingProvider>
+                </TenantProvider>
+              </DemoModeProvider>
+            </AuthProvider>
           </BrowserRouter>
         </TutorialProvider>
       </TooltipProvider>
