@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings as SettingsIcon, Save, Loader2, Link2, FileText, Volume2, Copy, Check } from "lucide-react";
+import { Settings as SettingsIcon, Settings2, Save, Loader2, Link2, FileText, Volume2, Copy, Check } from "lucide-react";
 import { useOfficeSettings, useUpdateOfficeSettings } from "@/hooks/office/useOfficeSettings";
 import { toast } from "sonner";
 import { useTutorial } from "@/hooks/useTutorial";
