@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
