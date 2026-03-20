@@ -1,25 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { COMPETITOR_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Legend, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts";
 import {
   Shield, Swords, Lightbulb, CalendarDays, Brain, Loader2,
   AlertTriangle, TrendingUp, Target, MessageSquare, ThumbsUp, Users, Ban, Check, ChevronRight, Download,
+  CalendarIcon, ChevronDown, ChevronUp, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { generateComparisonPdf } from "@/utils/generateComparisonReportPdf";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const entityColors = ['#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#22c55e'];
 
@@ -52,93 +60,117 @@ const ASPECT_KEYS = [
   "entrega_resultados", "atuacao_federal", "cultura_local",
 ];
 
-function useEntityStats(entityId?: string, isPrincipal?: boolean) {
+// ── Fast stats using po_daily_snapshots (pre-aggregated) ──
+function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
   return useQuery({
-    queryKey: ["po_comparison_stats", entityId, isPrincipal],
+    queryKey: ["po_comparison_stats_fast", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     enabled: !!entityId,
+    staleTime: 60_000,
     queryFn: async () => {
-      const since = new Date();
-      since.setDate(since.getDate() - 30);
+      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
       const isAdversary = !isPrincipal;
-      const pageSize = 1000;
 
       if (isAdversary) {
-        let allAnalyses: any[] = [];
-        let from = 0;
-        while (true) {
-          const { data } = await supabase
-            .from("po_sentiment_analyses")
-            .select("sentiment, sentiment_score, topics, category, ai_summary, mention_id")
-            .eq("adversary_entity_id", entityId!)
-            .gte("analyzed_at", since.toISOString())
-            .range(from, from + pageSize - 1);
-          if (!data || data.length === 0) break;
-          allAnalyses = allAnalyses.concat(data);
-          if (data.length < pageSize) break;
-          from += pageSize;
-        }
-        const analyses = allAnalyses.filter(isRelevantAnalysis);
-        const total = analyses.length;
-        const positive = analyses.filter(a => a.sentiment === "positivo").length;
-        const negative = analyses.filter(a => a.sentiment === "negativo").length;
-        const neutral = analyses.filter(a => a.sentiment === "neutro").length;
-        const rawAvg = total > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total : 0;
+        // Adversaries don't have snapshots, use a single count query
+        const { count: total } = await supabase
+          .from("po_sentiment_analyses")
+          .select("id", { count: "exact", head: true })
+          .eq("adversary_entity_id", entityId!)
+          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
+          .lte("analyzed_at", `${toDate}T23:59:59.999Z`);
+
+        const { data: sentimentCounts } = await (supabase as any).rpc("get_adversary_sentiment_counts", {
+          p_entity_id: entityId,
+          p_from: `${fromDate}T00:00:00.000Z`,
+          p_to: `${toDate}T23:59:59.999Z`,
+        }).maybeSingle();
+
+        // Fallback: fetch a small sample for topics
+        const { data: topicSample } = await supabase
+          .from("po_sentiment_analyses")
+          .select("sentiment, sentiment_score, topics")
+          .eq("adversary_entity_id", entityId!)
+          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
+          .lte("analyzed_at", `${toDate}T23:59:59.999Z`)
+          .order("analyzed_at", { ascending: false })
+          .limit(200);
+
+        const analyses = (topicSample || []).filter(isRelevantAnalysis);
+        const totalCount = total || analyses.length;
+        const positive = sentimentCounts?.positive || analyses.filter((a: any) => a.sentiment === "positivo").length;
+        const negative = sentimentCounts?.negative || analyses.filter((a: any) => a.sentiment === "negativo").length;
+        const neutral = sentimentCounts?.neutral || analyses.filter((a: any) => a.sentiment === "neutro").length;
+        const rawAvg = analyses.length > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / analyses.length : 0;
         const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
         const topicCounts: Record<string, number> = {};
         analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
         const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
-        const mentionIds = [...new Set(analyses.map((a: any) => a.mention_id))];
-        let totalEngagement = 0;
-        for (let i = 0; i < mentionIds.length; i += pageSize) {
-          const batch = mentionIds.slice(i, i + pageSize);
-          const { data: mentions } = await supabase.from("po_mentions").select("id, engagement").in("id", batch);
-          (mentions || []).forEach(m => {
-            const eng = m.engagement as Record<string, unknown> | null;
-            if (eng) totalEngagement += (Number(eng.likes) || 0) + (Number(eng.comments) || 0) + (Number(eng.shares) || 0) + (Number(eng.views) || 0);
-          });
-        }
-        const engRate = mentionIds.length > 0 ? Math.round((totalEngagement / mentionIds.length) * 10) / 10 : 0;
-        return { mentions: total, positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0, negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0, neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0, sentiment_score: sentimentScore, engagement_total: totalEngagement, engagement_rate: engRate, top_topics: topTopics };
+
+        return { mentions: totalCount, positive_pct: totalCount > 0 ? Math.round((positive / totalCount) * 100) : 0, negative_pct: totalCount > 0 ? Math.round((negative / totalCount) * 100) : 0, neutral_pct: totalCount > 0 ? Math.round((neutral / totalCount) * 100) : 0, sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics };
       }
 
-      let allMentions: any[] = [];
-      let from = 0;
-      while (true) {
-        const { data } = await supabase.from("po_mentions").select("id, source, engagement").eq("entity_id", entityId!).gte("collected_at", since.toISOString()).range(from, from + pageSize - 1);
-        if (!data || data.length === 0) break;
-        allMentions = allMentions.concat(data);
-        if (data.length < pageSize) break;
-        from += pageSize;
+      // Principal entity: use po_daily_snapshots for speed
+      const { data: snapshots } = await supabase
+        .from("po_daily_snapshots")
+        .select("total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics")
+        .eq("entity_id", entityId!)
+        .gte("snapshot_date", fromDate)
+        .lte("snapshot_date", toDate);
+
+      if (!snapshots || snapshots.length === 0) {
+        return { mentions: 0, positive_pct: 0, negative_pct: 0, neutral_pct: 0, sentiment_score: 0, engagement_total: 0, engagement_rate: 0, top_topics: [] };
       }
-      let allAnalyses: any[] = [];
-      from = 0;
-      while (true) {
-        const { data } = await supabase.from("po_sentiment_analyses").select("sentiment, sentiment_score, topics, category, ai_summary, mention_id").eq("entity_id", entityId!).gte("analyzed_at", since.toISOString()).range(from, from + pageSize - 1);
-        if (!data || data.length === 0) break;
-        allAnalyses = allAnalyses.concat(data);
-        if (data.length < pageSize) break;
-        from += pageSize;
-      }
-      const analyses = allAnalyses.filter(isRelevantAnalysis);
-      const mentions = allMentions;
-      const total = analyses.length;
-      const positive = analyses.filter(a => a.sentiment === "positivo").length;
-      const negative = analyses.filter(a => a.sentiment === "negativo").length;
-      const neutral = analyses.filter(a => a.sentiment === "neutro").length;
-      const rawAvg = total > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / total : 0;
-      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+
+      let totalMentions = 0, totalPos = 0, totalNeg = 0, totalNeu = 0, totalScore = 0, scoreCount = 0;
       const topicCounts: Record<string, number> = {};
-      analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
-      const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
-      const relevantMentionIds = new Set(analyses.map((a: any) => a.mention_id));
-      let totalEngagement = 0;
-      mentions.filter(m => relevantMentionIds.has(m.id)).forEach(m => {
-        const eng = m.engagement as Record<string, unknown> | null;
-        if (eng) totalEngagement += (Number(eng.likes) || 0) + (Number(eng.comments) || 0) + (Number(eng.shares) || 0) + (Number(eng.views) || 0);
+      snapshots.forEach((s: any) => {
+        totalMentions += s.total_mentions || 0;
+        totalPos += s.positive_count || 0;
+        totalNeg += s.negative_count || 0;
+        totalNeu += s.neutral_count || 0;
+        if (s.avg_sentiment_score != null) { totalScore += s.avg_sentiment_score * (s.total_mentions || 1); scoreCount += (s.total_mentions || 1); }
+        (s.top_topics || []).forEach((t: any) => {
+          const name = typeof t === "string" ? t : t.name;
+          const count = typeof t === "string" ? 1 : (t.count || 1);
+          if (name) topicCounts[name] = (topicCounts[name] || 0) + count;
+        });
       });
-      const relevantMentionCount = mentions.filter(m => relevantMentionIds.has(m.id)).length;
-      const engRate = relevantMentionCount > 0 ? Math.round((totalEngagement / relevantMentionCount) * 10) / 10 : 0;
-      return { mentions: total, positive_pct: total > 0 ? Math.round((positive / total) * 100) : 0, negative_pct: total > 0 ? Math.round((negative / total) * 100) : 0, neutral_pct: total > 0 ? Math.round((neutral / total) * 100) : 0, sentiment_score: sentimentScore, engagement_total: totalEngagement, engagement_rate: engRate, top_topics: topTopics };
+
+      const total = totalPos + totalNeg + totalNeu || totalMentions;
+      const rawAvg = scoreCount > 0 ? totalScore / scoreCount : 0;
+      const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+      const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+
+      return {
+        mentions: totalMentions, positive_pct: total > 0 ? Math.round((totalPos / total) * 100) : 0,
+        negative_pct: total > 0 ? Math.round((totalNeg / total) * 100) : 0,
+        neutral_pct: total > 0 ? Math.round((totalNeu / total) * 100) : 0,
+        sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics,
+      };
+    },
+  });
+}
+
+// ── Per-date analysis detail ──
+function useDateAnalysisDetail(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
+  return useQuery({
+    queryKey: ["po_comparison_date_detail", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
+    enabled: !!entityId && !!dateRange?.from,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+
+      const { data: snapshots } = await supabase
+        .from("po_daily_snapshots")
+        .select("snapshot_date, total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics, top_emotions, source_breakdown")
+        .eq("entity_id", entityId!)
+        .gte("snapshot_date", fromDate)
+        .lte("snapshot_date", toDate)
+        .order("snapshot_date", { ascending: false });
+
+      return snapshots || [];
     },
   });
 }
@@ -146,13 +178,26 @@ function useEntityStats(entityId?: string, isPrincipal?: boolean) {
 const Comparison = () => {
   const { data: entities } = useMonitoredEntities();
   const hasRealEntities = entities && entities.length >= 1;
+  
+  // Date range filter state
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  const resolvedRange = dateRange?.from ? { from: dateRange.from, to: dateRange.to || dateRange.from } : { from: subDays(new Date(), 30), to: new Date() };
 
-  const e0 = useEntityStats(entities?.[0]?.id, entities?.[0]?.is_principal);
-  const e1 = useEntityStats(entities?.[1]?.id, entities?.[1]?.is_principal);
-  const e2 = useEntityStats(entities?.[2]?.id, entities?.[2]?.is_principal);
-  const e3 = useEntityStats(entities?.[3]?.id, entities?.[3]?.is_principal);
-  const e4 = useEntityStats(entities?.[4]?.id, entities?.[4]?.is_principal);
+  const e0 = useEntityStatsFromSnapshots(entities?.[0]?.id, entities?.[0]?.is_principal, resolvedRange);
+  const e1 = useEntityStatsFromSnapshots(entities?.[1]?.id, entities?.[1]?.is_principal, resolvedRange);
+  const e2 = useEntityStatsFromSnapshots(entities?.[2]?.id, entities?.[2]?.is_principal, resolvedRange);
+  const e3 = useEntityStatsFromSnapshots(entities?.[3]?.id, entities?.[3]?.is_principal, resolvedRange);
+  const e4 = useEntityStatsFromSnapshots(entities?.[4]?.id, entities?.[4]?.is_principal, resolvedRange);
   const statsArr = [e0, e1, e2, e3, e4];
+  const isLoadingStats = statsArr.some((s, i) => entities?.[i] && s.isLoading);
+
+  // Per-date detail for principal entity
+  const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
+  const dateDetail = useDateAnalysisDetail(principalEntity?.id, true, resolvedRange);
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
   const comparisonData = hasRealEntities
     ? entities.map((e, i) => {
@@ -340,6 +385,53 @@ const Comparison = () => {
         )}
       </div>
 
+      {/* Date Filter */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Período:</span>
+            <div className="flex gap-2 flex-wrap">
+              {[7, 15, 30, 60].map(days => (
+                <Button
+                  key={days}
+                  variant={
+                    dateRange?.from && Math.round((new Date().getTime() - dateRange.from.getTime()) / 86400000) === days
+                      ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setDateRange({ from: subDays(new Date(), days), to: new Date() })}
+                >
+                  {days} dias
+                </Button>
+              ))}
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>{format(dateRange.from, "dd/MM/yy")} — {format(dateRange.to, "dd/MM/yy")}</>
+                    ) : format(dateRange.from, "dd/MM/yy")
+                  ) : "Selecionar datas"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  disabled={{ after: new Date() }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Blocks */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className={fraquezasCount > 0 ? "border-red-200 bg-red-50/50" : ""}>
@@ -382,29 +474,169 @@ const Comparison = () => {
 
       {/* Entity Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {comparisonData.map((c) => (
-          <Card key={c.id} className={c.is_principal ? 'border-primary border-2' : ''}>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-white text-xl font-bold" style={{ backgroundColor: c.color }}>
-                  {c.nome.charAt(0)}
+        {comparisonData.map((c, idx) => {
+          const isLoading = hasRealEntities && statsArr[idx]?.isLoading;
+          return (
+            <Card key={c.id} className={c.is_principal ? 'border-primary border-2' : ''}>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-white text-xl font-bold" style={{ backgroundColor: c.color }}>
+                    {c.nome.charAt(0)}
+                  </div>
+                  <h3 className="font-bold mt-2">{c.nome}</h3>
+                  <Badge variant="outline" className="mt-1">{c.partido}</Badge>
                 </div>
-                <h3 className="font-bold mt-2">{c.nome}</h3>
-                <Badge variant="outline" className="mt-1">{c.partido}</Badge>
-              </div>
-              <div className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="h-3 w-3" /> Menções</span><span className="font-semibold">{(c.mentions || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> Sentimento</span><span className="font-semibold">{c.sentiment_score || 0}/10</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Eng. Médio</span><span className="font-semibold">{(c.engagement_rate || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Eng. Total</span><span className="font-semibold">{(c.engagement_total || 0).toLocaleString()}</span></div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {isLoading ? (
+                  <div className="mt-3 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ) : (
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="h-3 w-3" /> Menções</span><span className="font-semibold">{(c.mentions || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> Sentimento</span><span className="font-semibold">{c.sentiment_score || 0}/10</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Eng. Médio</span><span className="font-semibold">{(c.engagement_rate || 0).toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Eng. Total</span><span className="font-semibold">{(c.engagement_total || 0).toLocaleString()}</span></div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(c.top_topics.length > 0 ? c.top_topics : ['Geral']).map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Per-Date Analysis */}
+      {hasRealEntities && principalEntity && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Análises por Data — {principalEntity.nome}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dateDetail.isLoading ? (
+              <div className="space-y-2">
+                {[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : !dateDetail.data?.length ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para o período selecionado.</p>
+            ) : (
+              <div className="space-y-2">
+                {dateDetail.data.map((snap: any) => {
+                  const isExpanded = expandedDate === snap.snapshot_date;
+                  const total = (snap.positive_count || 0) + (snap.negative_count || 0) + (snap.neutral_count || 0);
+                  const posPct = total > 0 ? Math.round((snap.positive_count / total) * 100) : 0;
+                  const negPct = total > 0 ? Math.round((snap.negative_count / total) * 100) : 0;
+                  const neuPct = total > 0 ? Math.round((snap.neutral_count / total) * 100) : 0;
+                  return (
+                    <div key={snap.snapshot_date} className="border rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setExpandedDate(isExpanded ? null : snap.snapshot_date)}
+                        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="font-medium text-sm text-foreground min-w-[90px]">
+                            {format(new Date(snap.snapshot_date + "T12:00:00"), "dd/MM/yyyy")}
+                          </span>
+                          <Badge variant="outline" className="gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {snap.total_mentions || 0} menções
+                          </Badge>
+                          <div className="hidden sm:flex items-center gap-2 text-xs">
+                            <span className="text-green-600">▲ {posPct}%</span>
+                            <span className="text-muted-foreground">● {neuPct}%</span>
+                            <span className="text-red-600">▼ {negPct}%</span>
+                          </div>
+                          {snap.avg_sentiment_score != null && (
+                            <Badge variant="secondary" className="text-xs">
+                              Score: {(Math.round(((snap.avg_sentiment_score + 1) / 2) * 100) / 10).toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t p-4 bg-muted/30 space-y-4">
+                          {/* Sentiment breakdown bar */}
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-2">Distribuição de Sentimento</p>
+                            <div className="flex h-6 rounded-md overflow-hidden">
+                              {posPct > 0 && <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${posPct}%` }}>{posPct}%</div>}
+                              {neuPct > 0 && <div className="bg-gray-400 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${neuPct}%` }}>{neuPct}%</div>}
+                              {negPct > 0 && <div className="bg-red-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${negPct}%` }}>{negPct}%</div>}
+                            </div>
+                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                              <span>✅ {snap.positive_count || 0} positivas</span>
+                              <span>⬜ {snap.neutral_count || 0} neutras</span>
+                              <span>❌ {snap.negative_count || 0} negativas</span>
+                            </div>
+                          </div>
+
+                          {/* Top topics */}
+                          {snap.top_topics && snap.top_topics.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Principais Tópicos</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {snap.top_topics.slice(0, 8).map((t: any, i: number) => {
+                                  const name = typeof t === "string" ? t : t.name;
+                                  const count = typeof t === "string" ? null : t.count;
+                                  return (
+                                    <Badge key={i} variant="secondary" className="text-xs">
+                                      {name}{count ? ` (${count})` : ""}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Top emotions */}
+                          {snap.top_emotions && snap.top_emotions.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Emoções Detectadas</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {snap.top_emotions.slice(0, 6).map((e: any, i: number) => {
+                                  const name = typeof e === "string" ? e : e.name;
+                                  const count = typeof e === "string" ? null : e.count;
+                                  return <Badge key={i} variant="outline" className="text-xs">{name}{count ? ` (${count})` : ""}</Badge>;
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Source breakdown */}
+                          {snap.source_breakdown && snap.source_breakdown.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Fontes</p>
+                              <div className="flex flex-wrap gap-2">
+                                {snap.source_breakdown.map((s: any, i: number) => (
+                                  <div key={i} className="flex items-center gap-1.5 text-xs bg-background border rounded-md px-2 py-1">
+                                    <span className="font-medium">{s.name}</span>
+                                    <span className="text-muted-foreground">({s.count})</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="text-xs text-muted-foreground pt-1 border-t">
+                            Total de menções analisadas nesta data: <span className="font-semibold text-foreground">{snap.total_mentions || 0}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {!analysis && !analysisMutation.isPending && (
         <Card className="border-dashed">
