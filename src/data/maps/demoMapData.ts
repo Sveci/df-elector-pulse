@@ -90,6 +90,7 @@ function generateDemoLeaders(): LeaderMapData[] {
         latitude: region.lat,
         longitude: region.lng,
         cidade_nome: region.nome,
+        cidade_id: region.id,
         localidade: null,
         is_coordinator: false,
         hierarchy_level: 1,
