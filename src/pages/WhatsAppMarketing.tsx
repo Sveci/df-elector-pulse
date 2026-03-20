@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Search } from "lucide-react";
+import { Search, MessageSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/DashboardLayout";
