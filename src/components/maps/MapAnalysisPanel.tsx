@@ -66,18 +66,18 @@ export function MapAnalysisPanel({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const insertPayload: Record<string, unknown> = {
+      const insertPayload = {
         user_id: user.id,
         content,
         total_leaders: totalLeaders,
         total_contacts: totalContacts,
         total_connections: totalConnections,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       };
-      if (tenantId) insertPayload.tenant_id = tenantId;
 
       const { error } = await supabase
         .from('map_analyses')
-        .insert(insertPayload);
+        .insert([insertPayload] as any);
 
       if (error) throw error;
 
@@ -201,13 +201,20 @@ Forneça uma análise em português do Brasil com no máximo 400 palavras, organ
 
 Seja direto, use dados específicos dos números fornecidos, e priorize recomendações acionáveis.`;
 
+      // Get the user's session token for authenticated requests
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             messages: [{ role: 'user', content: prompt }],
