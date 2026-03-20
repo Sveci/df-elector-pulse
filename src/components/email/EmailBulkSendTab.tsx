@@ -23,7 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getProductionUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateUnsubscribeUrl, generateVerificationUrl, generateLeaderVerificationUrl } from "@/lib/urlHelper";
+import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateUnsubscribeUrl, generateVerificationUrl, generateLeaderVerificationUrl } from "@/lib/urlHelper";
 import { toast } from "sonner";
 import { useBulkSendSession } from "@/hooks/useBulkSendSession";
 import { ResumeSessionAlert } from "@/components/bulk-send/ResumeSessionAlert";
