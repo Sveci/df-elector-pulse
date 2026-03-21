@@ -133,6 +133,7 @@ export function usePoAlerts(entityId?: string) {
           title: "Baixa atividade de menções",
           description: `Média de apenas ${avgMentions.toFixed(0)} menções/dia nos últimos ${recentSnapshots.length} dias. Considere aumentar a frequência de coleta.`,
           value: Math.round(avgMentions),
+          sourceUrl: latestMentionUrl,
           detectedAt: new Date().toISOString(),
         });
       }
