@@ -13,6 +13,7 @@ export interface PoAlert {
   value?: number;
   threshold?: number;
   source?: string;
+  sourceUrl?: string;
   detectedAt: string;
 }
 
