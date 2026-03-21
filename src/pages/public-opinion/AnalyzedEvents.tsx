@@ -66,7 +66,7 @@ const AnalyzedEvents = () => {
       tipo: form.tipo,
       tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
       impacto_score: form.impacto_score ? parseFloat(form.impacto_score) : null,
-      is_active: true,
+      
     });
     setDialogOpen(false);
     setForm({ titulo: "", descricao: "", data_evento: new Date().toISOString().split("T")[0], tipo: "acao", tags: "", impacto_score: "" });

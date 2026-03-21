@@ -235,26 +235,46 @@ const Overview = () => {
           </CardContent>
         </Card>
 
-        {/* Sentiment gauge */}
-        <Card className="overflow-hidden">
-          <CardContent className="pt-4 pb-2">
-            <p className="text-sm text-muted-foreground mb-1">Score de Sentimento</p>
-            {hasRealData ? (
-              <div className="flex flex-col items-center">
-                <SentimentGauge score={sentimentScore} size={120} showLabel={false} />
-                <div className="flex items-center gap-2 mt-1">
-                  {trend === 'up'
-                    ? <TrendingUp className="h-4 w-4 text-green-500" />
-                    : <TrendingDown className="h-4 w-4 text-red-500" />}
-                  <TrendDeltaBadge entityId={resolvedEntityId} metric="score" />
-                </div>
+        {/* Sentiment score */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Score de Sentimento</p>
+                {hasRealData ? (
+                  <>
+                    <div className="flex items-baseline gap-1.5 mt-1">
+                      <p className="text-3xl font-bold" style={{
+                        color: sentimentScore >= 7 ? 'hsl(142, 71%, 45%)' : sentimentScore >= 4 ? 'hsl(48, 96%, 53%)' : 'hsl(0, 84%, 60%)'
+                      }}>
+                        {sentimentScore.toFixed(1)}
+                      </p>
+                      <span className="text-sm text-muted-foreground">/10</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2 mt-2">
+                      <div
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${sentimentScore * 10}%`,
+                          backgroundColor: sentimentScore >= 7 ? 'hsl(142, 71%, 45%)' : sentimentScore >= 4 ? 'hsl(48, 96%, 53%)' : 'hsl(0, 84%, 60%)'
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs font-medium" style={{
+                        color: sentimentScore >= 7 ? 'hsl(142, 71%, 45%)' : sentimentScore >= 4 ? 'hsl(48, 96%, 53%)' : 'hsl(0, 84%, 60%)'
+                      }}>
+                        {sentimentScore >= 8 ? 'Excelente' : sentimentScore >= 6 ? 'Bom' : sentimentScore >= 4 ? 'Regular' : sentimentScore >= 2 ? 'Ruim' : 'Crítico'}
+                      </span>
+                      <TrendDeltaBadge entityId={resolvedEntityId} metric="score" />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-3xl font-bold mt-1">—</p>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <p className="text-3xl font-bold">—</p>
-                <Heart className="h-8 w-8 text-green-500" />
-              </div>
-            )}
+              <Heart className="h-8 w-8 text-primary" />
+            </div>
           </CardContent>
         </Card>
 
