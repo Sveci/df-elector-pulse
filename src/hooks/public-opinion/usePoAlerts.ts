@@ -101,6 +101,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Volume de menções muito acima do normal",
             description: `${last.total_mentions} menções hoje — ${mentionRatio.toFixed(1)}x a mais que ontem (${prev.total_mentions}). Evento viral em andamento?`,
             value: last.total_mentions,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
