@@ -4898,6 +4898,21 @@ export type Database = {
       get_distinct_cities_count:
         | { Args: never; Returns: number }
         | { Args: { _tenant_id?: string }; Returns: number }
+      get_entity_sentiment_counts: {
+        Args: {
+          p_entity_id: string
+          p_from: string
+          p_is_principal?: boolean
+          p_to: string
+        }
+        Returns: {
+          avg_score: number
+          negative: number
+          neutral: number
+          positive: number
+          total: number
+        }[]
+      }
       get_leader_by_affiliate_token: {
         Args: { _token: string }
         Returns: {
