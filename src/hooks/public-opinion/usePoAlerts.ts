@@ -116,6 +116,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Onda positiva detectada!",
             description: `Sentimento positivo subiu ${posRise.toFixed(0)}pp para ${lastPositivePct.toFixed(0)}%. Ótimo momento para ampliar o engajamento.`,
             value: Math.round(lastPositivePct),
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
