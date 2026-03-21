@@ -401,9 +401,33 @@ async function handleConversationalFlow(
       return true;
     }
 
-    // For short/ambiguous messages (single word, single char), show menu
-    // For longer natural language messages, fall through to AI chatbot
+    // For short messages, check if it matches a chatbot keyword before showing menu
+    // This allows dynamic functions like "EVENTO" to work properly
     if (cleanMessage.length <= 15 && !cleanMessage.includes(' ')) {
+      // Check if this matches any chatbot keyword
+      const normalizedCheck = upperMessage.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      let kwQuery = supabase
+        .from("whatsapp_chatbot_keywords")
+        .select("id, keyword, aliases")
+        .eq("is_active", true);
+      if (tenantId) kwQuery = kwQuery.eq("tenant_id", tenantId);
+      const { data: keywords } = await kwQuery;
+
+      const matchesKeyword = keywords?.some((kw: any) => {
+        const kwNorm = kw.keyword?.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
+        if (kwNorm === normalizedCheck) return true;
+        const aliases = (kw.aliases || []).map((a: string) =>
+          a.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        );
+        return aliases.includes(normalizedCheck);
+      });
+
+      if (matchesKeyword) {
+        // Fall through to chatbot to handle the keyword
+        console.log(`[Meta Webhook] Message "${upperMessage}" matches chatbot keyword, forwarding to chatbot`);
+        return false;
+      }
+
       await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
       return true;
     }
