@@ -55,9 +55,9 @@ function CommentCard({ comment, rank }: { comment: TopComment; rank: number }) {
   );
 }
 
-function EntityComments({ entityId }: { entityId: string }) {
-  const { data: heavy, isLoading: loadingH } = useTopHeavyComments(entityId);
-  const { data: praise, isLoading: loadingP } = useTopPraiseComments(entityId);
+function EntityComments({ entityId, isPrincipal }: { entityId: string; isPrincipal: boolean }) {
+  const { data: heavy, isLoading: loadingH } = useTopHeavyComments(entityId, isPrincipal);
+  const { data: praise, isLoading: loadingP } = useTopPraiseComments(entityId, isPrincipal);
   const [innerTab, setInnerTab] = useState("heavy");
 
   const isLoading = loadingH || loadingP;
@@ -126,7 +126,7 @@ export function TopCommentsSection({ entities }: TopCommentsSectionProps) {
           </TabsList>
           {entities.map((e) => (
             <TabsContent key={e.id} value={e.id} className="mt-0">
-              <EntityComments entityId={e.id} />
+              <EntityComments entityId={e.id} isPrincipal={!!e.is_principal} />
             </TabsContent>
           ))}
         </Tabs>
