@@ -247,7 +247,7 @@ async function handleEventRegistrationStep(
       event_reg_state: "collecting_evt_email",
     }).eq("id", session.id);
 
-    const msg = `Obrigado, *${userMessage.trim().split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
+    const msg = `Obrigado, *${userMessage.trim().split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*?`;
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_name_collected", tenantId, startTime);
     return { success: true, responseType: "event_reg_name_collected" };
@@ -255,27 +255,21 @@ async function handleEventRegistrationStep(
 
   // State: collecting_evt_email
   if (state === "collecting_evt_email") {
-    let email: string | null = null;
-    const skipWords = ["PULAR", "NAO", "NAO TENHO", "NADA", "PULA", "SEM"];
-    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
-
-    if (!isSkip) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userMessage.trim())) {
-        const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um e-mail válido ou *PULAR* para continuar sem:";
-        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
-        await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_email", tenantId, startTime);
-        return { success: true, responseType: "event_reg_retry_email" };
-      }
-      email = userMessage.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userMessage.trim())) {
+      const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um *e-mail válido* (ex: seunome@email.com):";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_email", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_email" };
     }
+    const email = userMessage.trim().toLowerCase();
 
     await supabase.from("whatsapp_chatbot_sessions").update({
       event_reg_email: email,
       event_reg_state: "collecting_evt_birthday",
     }).eq("id", session.id);
 
-    const msg = `${email ? "E-mail registrado!" : "Tudo bem, sem problemas!"} 👍\n\nQual sua *data de nascimento*? (formato: DD/MM/AAAA)\n\nDigite *PULAR* para não informar.`;
+    const msg = `E-mail registrado! 👍\n\nQual sua *data de nascimento*? (formato: DD/MM/AAAA)`;
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_email_collected", tenantId, startTime);
     return { success: true, responseType: "event_reg_email_collected" };
@@ -283,23 +277,16 @@ async function handleEventRegistrationStep(
 
   // State: collecting_evt_birthday
   if (state === "collecting_evt_birthday") {
-    let dataNascimento: string | null = null;
-    const skipWords = ["PULAR", "NAO", "NADA", "PULA", "SEM"];
-    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
-
-    if (!isSkip) {
-      // Try to parse DD/MM/YYYY
-      const dateMatch = userMessage.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
-      if (dateMatch) {
-        const [, day, month, year] = dateMatch;
-        dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      } else {
-        const msg = "Formato inválido. 🤔 Digite no formato *DD/MM/AAAA* ou *PULAR*:";
-        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
-        await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_birthday", tenantId, startTime);
-        return { success: true, responseType: "event_reg_retry_birthday" };
-      }
+    // Try to parse DD/MM/YYYY
+    const dateMatch = userMessage.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (!dateMatch) {
+      const msg = "Formato inválido. 🤔 Digite sua *data de nascimento* no formato *DD/MM/AAAA* (ex: 15/03/1990):";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_birthday", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_birthday" };
     }
+    const [, day, month, year] = dateMatch;
+    const dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
     await supabase.from("whatsapp_chatbot_sessions").update({
       event_reg_data_nascimento: dataNascimento,
@@ -311,9 +298,9 @@ async function handleEventRegistrationStep(
     let msg = `${dataNascimento ? "Data registrada!" : "Tudo bem!"} 👍\n\nEm qual *cidade/região* você mora?`;
     if (cityOptions.length > 0) {
       msg += `\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
-      msg += `\n\nResponda com o *número* ou o *nome* da cidade/região.\nDigite *PULAR* para continuar sem informar.`;
+      msg += `\n\nResponda com o *número* ou o *nome* da cidade/região.`;
     } else {
-      msg += "\n\nNão encontrei cidades cadastradas no momento. Se preferir, digite *PULAR*.";
+      msg += "\n\nDigite o nome da sua cidade:";
     }
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_birthday_collected", tenantId, startTime);
@@ -324,11 +311,16 @@ async function handleEventRegistrationStep(
   if (state === "collecting_evt_city") {
     let cidadeId: string | null = null;
     let cidadeNomeSelecionada: string | null = null;
-    const skipWords = ["PULAR", "NAO", "NADA", "PULA", "SEM"];
-    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
     const cityOptions = await getEventRegistrationCityOptions(supabase, tenantId, 30);
 
-    if (!isSkip && userMessage.length >= 2) {
+    if (userMessage.length < 2) {
+      const retryMsg = "Por favor, digite o nome da sua *cidade/região*:";
+      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+      await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_city" };
+    }
+
+    {
       const trimmed = userMessage.trim();
       const selectedNumber = Number.parseInt(trimmed, 10);
 
