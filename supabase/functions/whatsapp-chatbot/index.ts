@@ -1163,10 +1163,22 @@ Deno.serve(async (req) => {
     const isCommandLikeMessage = tokenCount <= 5 || messageForKeywordMatch.length <= 35;
 
     // === INTERCEPT VERIFICATION CODES ===
+    // First, check if the message matches any registered keyword - keywords take priority over verification codes
+    const allKeywordNames = new Set<string>();
+    for (const kw of activeKeywords) {
+      allKeywordNames.add(normalizeTextForMatch(kw.keyword));
+      if (kw.aliases) {
+        for (const alias of kw.aliases) {
+          allKeywordNames.add(normalizeTextForMatch(alias));
+        }
+      }
+    }
+    const isRegisteredKeyword = allKeywordNames.has(normalizedMessage);
+
     const confirmMatchChatbot = normalizedMessage.match(/^CONFIRMAR\s+([A-Z0-9]{5,6})$/);
     const bareCodeMatch = normalizedMessage.match(/^[A-Z0-9]{5,6}$/);
 
-    if (confirmMatchChatbot || (bareCodeMatch && normalizedMessage !== "AJUDA" && normalizedMessage !== "PONTOS" && normalizedMessage !== "SIM")) {
+    if (confirmMatchChatbot || (bareCodeMatch && !isRegisteredKeyword && normalizedMessage !== "AJUDA" && normalizedMessage !== "PONTOS" && normalizedMessage !== "SIM")) {
       if (!actor) {
         console.log(`[whatsapp-chatbot] Verification code received from unknown phone ${normalizedPhone}`);
         return new Response(JSON.stringify({ success: false, reason: "leader_not_found_for_code" }),

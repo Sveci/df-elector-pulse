@@ -1,0 +1,1 @@
+DELETE FROM whatsapp_chatbot_sessions WHERE phone = '+5527999161738';
