@@ -89,25 +89,26 @@ function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, d
           p_to: `${toDate}T23:59:59.999Z`,
         }).maybeSingle();
 
-        // Fallback: fetch a small sample for topics
+        const totalCount = sentimentCounts?.total || total || 0;
+        const positive = sentimentCounts?.positive || 0;
+        const negative = sentimentCounts?.negative || 0;
+        const neutral = sentimentCounts?.neutral || 0;
+        const rawAvg = sentimentCounts?.avg_score != null ? Number(sentimentCounts.avg_score) : 0;
+        const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+
+        // Fetch topics from a sample (topics aren't aggregated in the RPC)
         const { data: topicSample } = await supabase
           .from("po_sentiment_analyses")
-          .select("sentiment, sentiment_score, topics")
+          .select("topics")
           .eq("adversary_entity_id", entityId!)
           .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
           .lte("analyzed_at", `${toDate}T23:59:59.999Z`)
+          .not("topics", "is", null)
           .order("analyzed_at", { ascending: false })
           .limit(200);
 
-        const analyses = (topicSample || []).filter(isRelevantAnalysis);
-        const totalCount = total || analyses.length;
-        const positive = sentimentCounts?.positive || analyses.filter((a: any) => a.sentiment === "positivo").length;
-        const negative = sentimentCounts?.negative || analyses.filter((a: any) => a.sentiment === "negativo").length;
-        const neutral = sentimentCounts?.neutral || analyses.filter((a: any) => a.sentiment === "neutro").length;
-        const rawAvg = analyses.length > 0 ? analyses.reduce((s: number, a: any) => s + (Number(a.sentiment_score) || 0), 0) / analyses.length : 0;
-        const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
         const topicCounts: Record<string, number> = {};
-        analyses.forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
+        (topicSample || []).forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
         const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
 
         return { mentions: totalCount, positive_pct: totalCount > 0 ? Math.round((positive / totalCount) * 100) : 0, negative_pct: totalCount > 0 ? Math.round((negative / totalCount) * 100) : 0, neutral_pct: totalCount > 0 ? Math.round((neutral / totalCount) * 100) : 0, sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics };
