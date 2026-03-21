@@ -150,7 +150,7 @@ export function usePoAlerts(entityId?: string) {
             description: `Post de @${top.author_handle || top.author_name || "usuário"} no ${top.source} com ${total.toLocaleString()} interações.`,
             value: total,
             source: top.source,
-            sourceUrl: top.url || undefined,
+            sourceUrl: top.source_url || undefined,
             detectedAt: top.collected_at,
           });
         }
