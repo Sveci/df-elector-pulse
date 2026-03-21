@@ -126,7 +126,7 @@ export function TopCommentsSection({ entities }: TopCommentsSectionProps) {
           </TabsList>
           {entities.map((e) => (
             <TabsContent key={e.id} value={e.id} className="mt-0">
-              <EntityComments entityId={e.id} />
+              <EntityComments entityId={e.id} isPrincipal={!!e.is_principal} />
             </TabsContent>
           ))}
         </Tabs>
