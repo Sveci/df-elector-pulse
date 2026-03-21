@@ -690,10 +690,46 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
     response += `📊 *RANKING* - Ver sua posição\n`;
     response += `👥 *SUBORDINADOS* - Ver equipe direta\n`;
     response += `⏳ *PENDENTES* - Ver subordinados não verificados\n`;
+    response += `📅 *EVENTO* - Inscrever-se em evento\n`;
     response += `❓ *AJUDA* - Ver esta lista\n`;
     response += `\nOu digite sua pergunta e tentarei ajudar! 😊`;
 
     return response;
+  },
+
+  // Cadastro em evento via WhatsApp — starts the multi-step flow
+  cadastro_evento: async (supabase, leader, session, tenantId, phone, provider, intSettings) => {
+    if (!tenantId || !session) return "Erro ao iniciar inscrição. Tente novamente.";
+
+    // Fetch published upcoming events
+    const { data: events } = await supabase
+      .from("events")
+      .select("id, name, date, time, location")
+      .eq("tenant_id", tenantId)
+      .eq("status", "published")
+      .gte("date", new Date().toISOString().split("T")[0])
+      .order("date", { ascending: true })
+      .limit(10);
+
+    if (!events || events.length === 0) {
+      return "📅 Não há eventos disponíveis para inscrição no momento.\n\nFique atento, em breve teremos novidades! 😊";
+    }
+
+    let msg = `📅 *Eventos Disponíveis para Inscrição:*\n\n`;
+    events.forEach((ev: any, i: number) => {
+      const eventDate = new Date(ev.date + "T00:00:00").toLocaleDateString("pt-BR");
+      msg += `*${i + 1}.* ${ev.name}\n`;
+      msg += `   🗓️ ${eventDate} às ${ev.time}\n`;
+      msg += `   📍 ${ev.location}\n\n`;
+    });
+    msg += `Digite o *número* do evento para se inscrever.\nDigite *CANCELAR* para sair.`;
+
+    // Set session state to selecting_event
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_state: "selecting_event",
+    }).eq("id", session.id);
+
+    return msg;
   }
 };
 
