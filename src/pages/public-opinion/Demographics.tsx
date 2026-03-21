@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DEMOGRAPHIC_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities } from "@/hooks/public-opinion/usePublicOpinion";
+import { EntitySelector } from "@/components/public-opinion/EntitySelector";
+import { MentionHeatmap } from "@/components/public-opinion/MentionHeatmap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { BarChart2 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TopCommentsSection } from "@/components/public-opinion/TopCommentsSection";
 const categoryColors = ['#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6b7280', '#84cc16', '#f97316'];
 const sourceColors = ['#E4405F', '#1DA1F2', '#1877F2', '#000000', '#FF0000', '#0088CC', '#8B5CF6', '#059669', '#FF4500', '#6b7280'];
@@ -184,7 +186,9 @@ const sentimentColors = ['#22c55e', '#ef4444', '#94a3b8'];
 const Demographics = () => {
   const { data: entities } = useMonitoredEntities();
   const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const { data: demoData } = useDemographicsData(principalEntity?.id);
+  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>(undefined);
+  const resolvedEntityId = selectedEntityId || principalEntity?.id;
+  const { data: demoData } = useDemographicsData(resolvedEntityId);
 
   const hasRealData = demoData && demoData.total > 0;
 
@@ -214,6 +218,7 @@ const Demographics = () => {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       <PageHeader icon={BarChart2} title="Análise de Conteúdo" subtitle="Categorias, temas e fontes das menções sobre você">
         {!hasRealData && <Badge variant="outline">Demo</Badge>}
+        <EntitySelector value={resolvedEntityId} onChange={setSelectedEntityId} className="w-[200px]" />
       </PageHeader>
 
       {/* Word Cloud - full width */}
@@ -245,6 +250,9 @@ const Demographics = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mention Heatmap - hour x day */}
+      {hasRealData && <MentionHeatmap entityId={resolvedEntityId} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Categories */}

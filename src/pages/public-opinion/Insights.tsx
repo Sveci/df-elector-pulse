@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AI_INSIGHTS } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities, useGenerateInsights } from "@/hooks/public-opinion/usePublicOpinion";
+import { EntitySelector } from "@/components/public-opinion/EntitySelector";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Lightbulb, AlertTriangle, TrendingUp, Target, Sparkles, Loader2, FileDown } from "lucide-react";
+import { Lightbulb, AlertTriangle, TrendingUp, Target, Sparkles, Loader2, FileDown, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
@@ -49,17 +51,27 @@ function usePersistedInsights(entityId?: string) {
   });
 }
 
+const PERIOD_OPTIONS = [
+  { days: 7, label: "7 dias" },
+  { days: 14, label: "14 dias" },
+  { days: 30, label: "30 dias" },
+];
+
 const Insights = () => {
   const { data: entities } = useMonitoredEntities();
   const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
+  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>(undefined);
+  const resolvedEntityId = selectedEntityId || principalEntity?.id;
+  const resolvedEntity = entities?.find(e => e.id === resolvedEntityId) || principalEntity;
+  const [periodDays, setPeriodDays] = useState(7);
   const generateInsights = useGenerateInsights();
   const queryClient = useQueryClient();
-  const { data: persisted, isLoading } = usePersistedInsights(principalEntity?.id);
+  const { data: persisted, isLoading } = usePersistedInsights(resolvedEntityId);
 
   const handleGenerate = async () => {
-    if (!principalEntity) return;
-    await generateInsights.mutateAsync({ entity_id: principalEntity.id, period_days: 7 });
-    queryClient.invalidateQueries({ queryKey: ["po_insights", principalEntity.id] });
+    if (!resolvedEntityId) return;
+    await generateInsights.mutateAsync({ entity_id: resolvedEntityId, period_days: periodDays });
+    queryClient.invalidateQueries({ queryKey: ["po_insights", resolvedEntityId] });
   };
 
   const handleExportPDF = () => {
@@ -87,7 +99,7 @@ const Insights = () => {
         ? format(new Date(persisted.generated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
         : format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
       doc.text(`Gerado em ${dateStr}`, margin, 28);
-      if (principalEntity) doc.text(`Entidade: ${principalEntity.nome}`, margin, 35);
+      if (resolvedEntity) doc.text(`Entidade: ${resolvedEntity.nome}`, margin, 35);
       y = 50;
 
       // Stats summary
@@ -200,14 +212,31 @@ const Insights = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Entity selector */}
+          <EntitySelector value={resolvedEntityId} onChange={setSelectedEntityId} className="w-[200px]" />
+          {/* Period selector */}
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Clock className="h-4 w-4 text-muted-foreground ml-1" />
+            {PERIOD_OPTIONS.map(opt => (
+              <Button
+                key={opt.days}
+                variant={periodDays === opt.days ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setPeriodDays(opt.days)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
           {insights?.length > 0 && (
             <Button variant="outline" onClick={handleExportPDF}>
               <FileDown className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
           )}
-          {principalEntity && (
+          {resolvedEntityId && (
             <Button
               onClick={handleGenerate}
               disabled={generateInsights.isPending}

@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SENTIMENT_TIMELINE, COMMENTS_DATA } from "@/data/public-opinion/demoPublicOpinionData";
 import { useMonitoredEntities, useSentimentAnalyses, useMentions, useDailySnapshots } from "@/hooks/public-opinion/usePublicOpinion";
+import { EntitySelector } from "@/components/public-opinion/EntitySelector";
+import { TrendDeltaBadge } from "@/components/public-opinion/TrendDeltaBadge";
+import { AlertsPanel } from "@/components/public-opinion/AlertsPanel";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import { ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 
@@ -20,17 +23,30 @@ const sentimentIcon = (s: string) => {
   return <Minus className="h-4 w-4 text-gray-400" />;
 };
 
+const DEMO_TIMELINE = [
+  { date: '2026-02-01', positive: 62, negative: 18 },
+  { date: '2026-02-08', positive: 58, negative: 22 },
+  { date: '2026-02-15', positive: 65, negative: 15 },
+  { date: '2026-02-22', positive: 70, negative: 12 },
+  { date: '2026-03-01', positive: 68, negative: 14 },
+];
+
 const SentimentAnalysis = () => {
   const { data: entities } = useMonitoredEntities();
   const principalEntity = entities?.find(e => e.is_principal) || entities?.[0];
-  const { data: analyses } = useSentimentAnalyses(principalEntity?.id);
-  const { data: mentions } = useMentions(principalEntity?.id, undefined, 50);
-  const { data: snapshots } = useDailySnapshots(principalEntity?.id, 30);
+  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>(undefined);
+  const resolvedEntityId = selectedEntityId || principalEntity?.id;
+  const resolvedEntity = entities?.find(e => e.id === resolvedEntityId) || principalEntity;
 
-  const hasRealData = analyses && analyses.length > 0;
+  const { data: analyses } = useSentimentAnalyses(resolvedEntityId);
+  const { data: mentions } = useMentions(resolvedEntityId, undefined, 50);
+  const { data: snapshots } = useDailySnapshots(resolvedEntityId, 30);
+
+  const hasRealAnalyses = analyses && analyses.length > 0;
+  const hasRealSnapshots = snapshots && snapshots.length > 0;
 
   // Build category scores from real analyses or fallback
-  const categoryScores = hasRealData
+  const categoryScores = hasRealAnalyses
     ? (() => {
         const catMap: Record<string, { total: number; sum: number }> = {};
         analyses.forEach(a => {
@@ -42,27 +58,34 @@ const SentimentAnalysis = () => {
         return Object.entries(catMap)
           .map(([category, { total, sum }]) => ({
             category,
-            score: Math.round(((sum / total + 1) * 5) * 10) / 10, // normalize -1..1 to 0..10
+            score: Math.round(((sum / total + 1) * 5) * 10) / 10,
           }))
           .sort((a, b) => b.score - a.score)
           .slice(0, 8);
       })()
     : defaultCategoryScores;
 
-  // Timeline from snapshots or mock
-  const timelineData = snapshots && snapshots.length > 0
+  // Timeline: use real snapshots when available, otherwise demo
+  // Bug fix: was using SENTIMENT_TIMELINE even when snapshots existed
+  const timelineData = hasRealSnapshots
     ? snapshots.map(s => ({
         date: s.snapshot_date,
         positive: s.total_mentions > 0 ? Math.round(s.positive_count / s.total_mentions * 100) : 0,
         negative: s.total_mentions > 0 ? Math.round(s.negative_count / s.total_mentions * 100) : 0,
       }))
-    : SENTIMENT_TIMELINE;
+    : DEMO_TIMELINE;
 
   // Build analysis map for mentions
   const analysisMap = new Map(analyses?.map(a => [a.mention_id, a]) || []);
 
-  // Recent classified comments from real data or mock
-  const recentComments = hasRealData && mentions && mentions.length > 0
+  // Recent classified comments from real data or demo
+  const DEMO_COMMENTS = [
+    { id: '1', author: 'Cidadão DF', source: 'twitter', content: 'Ótimo trabalho na área de saúde! Continue assim.', sentiment: 'positive', category: 'elogio' },
+    { id: '2', author: 'Morador de Ceilândia', source: 'instagram', content: 'Precisamos de mais atenção para a segurança pública.', sentiment: 'negative', category: 'reclamação' },
+    { id: '3', author: 'Estudante', source: 'facebook', content: 'Aprovação do projeto de educação foi importante.', sentiment: 'positive', category: 'notícia' },
+  ];
+
+  const recentComments = hasRealAnalyses && mentions && mentions.length > 0
     ? mentions.slice(0, 5).map(m => {
         const a = analysisMap.get(m.id);
         return {
@@ -74,23 +97,38 @@ const SentimentAnalysis = () => {
           category: a?.category || 'sem categoria',
         };
       })
-    : COMMENTS_DATA.slice(0, 5);
+    : DEMO_COMMENTS;
+
+  const isDemo = !hasRealAnalyses && !hasRealSnapshots;
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Análise de Sentimento</h1>
-        <p className="text-gray-500 mt-1 flex items-center gap-2">
-          Análise detalhada do sentimento público por categoria e ao longo do tempo
-          {!hasRealData && <Badge variant="outline" className="ml-2">Demo</Badge>}
-          {hasRealData && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Ao vivo
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Análise de Sentimento</h1>
+          <p className="text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+            Análise detalhada do sentimento público por categoria e ao longo do tempo
+            {isDemo && <Badge variant="outline" className="ml-2">Demo</Badge>}
+            {!isDemo && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Ao vivo
+              </span>
+            )}
+          </p>
+          {!isDemo && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <TrendDeltaBadge entityId={resolvedEntityId} metric="positive" />
+              <TrendDeltaBadge entityId={resolvedEntityId} metric="negative" />
+              <TrendDeltaBadge entityId={resolvedEntityId} metric="mentions" />
+            </div>
           )}
-        </p>
+        </div>
+        <EntitySelector value={resolvedEntityId} onChange={setSelectedEntityId} className="w-[200px]" />
       </div>
+
+      {/* Alerts */}
+      <AlertsPanel entityId={resolvedEntityId} />
 
       {/* Sentiment by Category (Radar) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -135,15 +173,20 @@ const SentimentAnalysis = () => {
 
       {/* Timeline */}
       <Card>
-        <CardHeader><CardTitle>Evolução Temporal do Sentimento</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Evolução Temporal do Sentimento
+            {isDemo && <Badge variant="outline" className="text-xs font-normal">Demo</Badge>}
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} />
-                <YAxis />
-                <Tooltip />
+                <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                <Tooltip formatter={(v: number) => `${v}%`} />
                 <Area type="monotone" dataKey="positive" stroke="#22c55e" fill="#22c55e" fillOpacity={0.5} name="Positivo %" />
                 <Area type="monotone" dataKey="negative" stroke="#ef4444" fill="#ef4444" fillOpacity={0.5} name="Negativo %" />
                 <Legend />
@@ -155,7 +198,12 @@ const SentimentAnalysis = () => {
 
       {/* Recent classified comments */}
       <Card>
-        <CardHeader><CardTitle>Menções Classificadas Recentes</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Menções Classificadas Recentes
+            {isDemo && <Badge variant="outline" className="text-xs font-normal">Demo</Badge>}
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {recentComments.map((c) => (
@@ -165,7 +213,10 @@ const SentimentAnalysis = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm">{c.author}</span>
                     <Badge variant="outline" className="text-xs">{c.source}</Badge>
-                    <Badge variant={c.sentiment === 'positive' ? 'default' : c.sentiment === 'negative' ? 'destructive' : 'secondary'} className="text-xs capitalize">
+                    <Badge
+                      variant={c.sentiment === 'positive' ? 'default' : c.sentiment === 'negative' ? 'destructive' : 'secondary'}
+                      className="text-xs capitalize"
+                    >
                       {c.category}
                     </Badge>
                   </div>

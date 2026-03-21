@@ -331,6 +331,15 @@ const PublicOpinionSettings = () => {
 };
 
 // Collection configuration sub-component
+const INTERVAL_OPTIONS = [
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 hora' },
+  { value: 120, label: '2 horas' },
+  { value: 360, label: '6 horas' },
+  { value: 720, label: '12 horas' },
+  { value: 1440, label: '24 horas' },
+];
+
 function CollectionConfigCard({ entityId }: { entityId: string }) {
   const { data: configs, isLoading } = useCollectionConfigs(entityId);
   const upsertConfig = useUpsertCollectionConfig();
@@ -353,6 +362,17 @@ function CollectionConfigCard({ entityId }: { entityId: string }) {
     });
   };
 
+  const updateInterval = async (provider: string, interval: number) => {
+    const existing = getConfig(provider);
+    await upsertConfig.mutateAsync({
+      id: existing?.id,
+      entity_id: entityId,
+      provider,
+      is_active: existing?.is_active ?? false,
+      run_interval_minutes: interval,
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -367,19 +387,41 @@ function CollectionConfigCard({ entityId }: { entityId: string }) {
             {providers.map(p => {
               const config = getConfig(p.key);
               const isActive = config?.is_active ?? false;
+              const currentInterval = config?.run_interval_minutes || 60;
               return (
-                <div key={p.key} className="flex items-center justify-between border rounded-lg p-4">
-                  <div>
-                    <h4 className="font-medium">{p.label}</h4>
-                    <p className="text-sm text-muted-foreground">{p.description}</p>
-                    {config?.last_run_at && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Última coleta: {new Date(config.last_run_at).toLocaleString('pt-BR')}
-                        {config.last_error && <span className="text-destructive ml-2">Erro: {config.last_error}</span>}
-                      </p>
-                    )}
+                <div key={p.key} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{p.label}</h4>
+                      <p className="text-sm text-muted-foreground">{p.description}</p>
+                      {config?.last_run_at && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Última coleta: {new Date(config.last_run_at).toLocaleString('pt-BR')}
+                          {config.last_error && <span className="text-destructive ml-2">Erro: {config.last_error}</span>}
+                        </p>
+                      )}
+                    </div>
+                    <Switch checked={isActive} onCheckedChange={v => toggleProvider(p.key, v)} />
                   </div>
-                  <Switch checked={isActive} onCheckedChange={v => toggleProvider(p.key, v)} />
+                  {isActive && (
+                    <div className="flex items-center gap-3">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Frequência:</Label>
+                      <div className="flex gap-1 flex-wrap">
+                        {INTERVAL_OPTIONS.map(opt => (
+                          <Button
+                            key={opt.value}
+                            variant={currentInterval === opt.value ? "default" : "outline"}
+                            size="sm"
+                            className="h-7 text-xs px-2"
+                            onClick={() => updateInterval(p.key, opt.value)}
+                            disabled={upsertConfig.isPending}
+                          >
+                            {opt.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
