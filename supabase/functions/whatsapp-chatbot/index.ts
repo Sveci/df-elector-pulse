@@ -1089,6 +1089,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Check if user is in an EVENT registration flow step
+    if (session?.event_reg_state) {
+      const evtRegResult = await handleEventRegistrationStep(
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+      );
+      if (evtRegResult) {
+        return new Response(JSON.stringify(evtRegResult),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
       .from("whatsapp_chatbot_config")
