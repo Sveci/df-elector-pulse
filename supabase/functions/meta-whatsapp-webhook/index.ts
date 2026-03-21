@@ -423,16 +423,27 @@ async function handleConversationalFlow(
       });
 
       if (matchesKeyword) {
-        // Fall through to chatbot to handle the keyword
-        console.log(`[Meta Webhook] Message "${upperMessage}" matches chatbot keyword, forwarding to chatbot`);
+        // Fall through to chatbot to handle the keyword (AUTOMATION MODE)
+        console.log(`[Meta Webhook] [AUTOMAÇÃO] Message "${upperMessage}" matches chatbot keyword, forwarding to chatbot`);
         return false;
       }
 
-      await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
-      return true;
+      // Check if it's a known menu option (1-4, MENU, etc.) — show menu
+      const menuCommands = ["MENU", "OPCOES", "OPÇÕES", "OI", "OLA", "BOM DIA", "BOA TARDE", "BOA NOITE"];
+      if (menuCommands.includes(upperMessage) || /^[1-4]$/.test(upperMessage.trim())) {
+        // Let menu options be handled above (they already are for 1-4)
+        // For other short non-keyword messages, forward to AI chatbot
+        await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+        return true;
+      }
+
+      // Short message that is NOT a keyword and NOT a menu command → forward to AI chatbot
+      console.log(`[Meta Webhook] [IA] Short message "${upperMessage}" not a keyword/menu, forwarding to AI chatbot`);
+      return false;
     }
 
     // Fall through to AI chatbot for natural language questions
+    console.log(`[Meta Webhook] [IA] Open question detected, forwarding to AI chatbot`);
     return false;
   }
 
