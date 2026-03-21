@@ -332,60 +332,12 @@ async function handleEventRegistrationStep(
         cidadeId = selectedByNumber.id;
         cidadeNomeSelecionada = selectedByNumber.nome;
       } else {
-        const normalizedMessage = normalizeCityText(trimmed);
-
-        const selectedByName = cityOptions.find((c) => {
-          const normalizedOption = normalizeCityText(c.nome);
-          return normalizedOption === normalizedMessage || normalizedOption.includes(normalizedMessage);
-        });
-
-        if (selectedByName) {
-          cidadeId = selectedByName.id;
-          cidadeNomeSelecionada = selectedByName.nome;
-        } else {
-          const { data: matchedOfficeCity } = await supabase
-            .from("office_cities")
-            .select("id, nome")
-            .eq("tenant_id", tenantId)
-            .eq("status", "active")
-            .ilike("nome", `%${trimmed}%`)
-            .limit(1)
-            .maybeSingle();
-
-          if (matchedOfficeCity) {
-            cidadeId = matchedOfficeCity.id;
-            cidadeNomeSelecionada = matchedOfficeCity.nome;
-          } else {
-            const { data: tenant } = await supabase
-              .from("tenants")
-              .select("estado")
-              .eq("id", tenantId)
-              .maybeSingle();
-
-            const tenantUf = tenant?.estado;
-            if (tenantUf) {
-              const { data: matchedIbgeCity } = await supabase
-                .from("ibge_cidades")
-                .select("nome")
-                .eq("uf", tenantUf)
-                .ilike("nome", `%${trimmed}%`)
-                .limit(1)
-                .maybeSingle();
-
-              if (matchedIbgeCity?.nome) {
-                cidadeNomeSelecionada = matchedIbgeCity.nome;
-              }
-            }
-          }
-        }
-      }
-
-      if (!cidadeId && !cidadeNomeSelecionada) {
-        let retryMsg = "Não encontrei essa cidade/região. 🙏\n\n";
+        let retryMsg = "Por favor, responda apenas com o *número* da cidade/região da lista. 🙏\n\n";
         if (cityOptions.length > 0) {
-          retryMsg += `Escolha uma opção da lista abaixo (número ou nome):\n${formatCityOptionsList(cityOptions)}\n\n`;
+          retryMsg += `*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
+        } else {
+          retryMsg += "Nenhuma cidade cadastrada no momento.";
         }
-        retryMsg += "Ou digite *PULAR* para continuar sem informar a cidade.";
 
         await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
         await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
