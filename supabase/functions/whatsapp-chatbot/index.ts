@@ -1273,10 +1273,17 @@ Deno.serve(async (req) => {
           .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
           .replace("{{cadastros}}", String(actor?.cadastros || 0));
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        if (actor) {
+        // Special handling for cadastro_evento: works for both leaders and guests
+        if (matchedKeyword.dynamic_function === "cadastro_evento") {
+          const fn = dynamicFunctions["cadastro_evento"];
+          if (fn) {
+            const result = await fn(supabase, actor as any, session, tenantId, normalizedPhone, provider, null);
+            responseMessage = result || chatbotConfig.fallback_message || "Função não encontrada.";
+          }
+        } else if (actor) {
           const fn = dynamicFunctions[matchedKeyword.dynamic_function];
           if (fn) {
-            responseMessage = await fn(supabase, actor);
+            responseMessage = await fn(supabase, actor) || "";
           } else {
             responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
           }
