@@ -1263,7 +1263,12 @@ Deno.serve(async (req) => {
     let responseType = "unknown";
 
     if (matchedKeyword) {
-      console.log(`[whatsapp-chatbot] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
+      // ============================================================
+      // MODO AUTOMAÇÃO: palavra-chave encontrada → segue a trilha
+      // Nunca mistura IA aqui. Se a função não existe ou o usuário
+      // não tem permissão, retorna mensagem de orientação.
+      // ============================================================
+      console.log(`[whatsapp-chatbot] [AUTOMAÇÃO] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
       responseType = matchedKeyword.response_type;
 
       if (matchedKeyword.response_type === "static" && matchedKeyword.static_response) {
@@ -1272,39 +1277,34 @@ Deno.serve(async (req) => {
           .replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
           .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
           .replace("{{cadastros}}", String(actor?.cadastros || 0));
+
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        // Special handling for cadastro_evento: works for both leaders and guests
-        if (matchedKeyword.dynamic_function === "cadastro_evento") {
-          const fn = dynamicFunctions["cadastro_evento"];
-          if (fn) {
-            const result = await fn(supabase, actor as any, session, tenantId, normalizedPhone, provider, null);
-            responseMessage = result || chatbotConfig.fallback_message || "Função não encontrada.";
-          }
-        } else if (actor) {
-          const fn = dynamicFunctions[matchedKeyword.dynamic_function];
-          if (fn) {
-            responseMessage = await fn(supabase, actor) || "";
-          } else {
-            responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
-          }
-        } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
-          responseType = "ai";
-          responseMessage = await generateAIResponse(
-            lovableApiKey,
-            message,
-            null,
-            matchedKeyword.description || "",
-            chatbotConfig.ai_system_prompt || "",
-            supabase,
-            tenantId,
-            session?.conversation_history
-          );
-        } else {
+        // Dynamic functions that work for everyone (leaders + guests)
+        const guestAllowedFunctions = ["cadastro_evento", "ajuda"];
+        const fnName = matchedKeyword.dynamic_function;
+        const fn = dynamicFunctions[fnName];
+
+        if (!fn) {
           responseType = "fallback";
-          responseMessage = chatbotConfig.fallback_message || "Posso responder perguntas gerais sobre o mandato e os documentos disponíveis.";
+          responseMessage = `Essa função (*${fnName}*) não está disponível no momento. Digite *AJUDA* para ver os comandos disponíveis.`;
+        } else if (guestAllowedFunctions.includes(fnName)) {
+          // Functions that work without being a leader
+          const result = await fn(supabase, actor as any, session, tenantId, normalizedPhone, provider, null);
+          responseMessage = result || "Função não disponível no momento.";
+        } else if (actor) {
+          // Leader-only functions
+          const result = await fn(supabase, actor);
+          responseMessage = result || "Não foi possível obter os dados solicitados. Tente novamente.";
+        } else {
+          // Guest trying a leader-only function
+          responseType = "fallback";
+          responseMessage = `Esse comando é exclusivo para líderes cadastrados. 😊\n\nSe você tiver dúvidas, pode me fazer uma pergunta diretamente que tentarei ajudar!`;
         }
+
       } else if (matchedKeyword.response_type === "ai") {
-        if (lovableApiKey && chatbotConfig.use_ai_for_unknown) {
+        // Keyword explicitly configured as "ai" type — still follows automation,
+        // uses the keyword description as context for a focused AI response
+        if (lovableApiKey) {
           responseMessage = await generateAIResponse(
             lovableApiKey,
             message,
@@ -1319,23 +1319,32 @@ Deno.serve(async (req) => {
           responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
         }
       }
-    } else if (chatbotConfig.use_ai_for_unknown && lovableApiKey) {
-      console.log("[whatsapp-chatbot] No keyword match, using AI");
-      responseType = "ai";
-      responseMessage = await generateAIResponse(
-        lovableApiKey,
-        message,
-        actor,
-        "",
-        chatbotConfig.ai_system_prompt || "",
-        supabase,
-        tenantId,
-        session?.conversation_history
-      );
+
     } else {
-      responseType = "fallback";
-      responseMessage = chatbotConfig.fallback_message ||
-        `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Digite AJUDA para ver os comandos disponíveis.`;
+      // ============================================================
+      // MODO INTELIGENTE: pergunta aberta → IA + Base de Conhecimento + Perplexity
+      // Nenhuma palavra-chave foi encontrada, então o sistema usa toda
+      // a inteligência disponível para responder.
+      // ============================================================
+      console.log("[whatsapp-chatbot] [IA] No keyword match — using AI + KB + Perplexity pipeline");
+      responseType = "ai";
+
+      if (lovableApiKey) {
+        responseMessage = await generateAIResponse(
+          lovableApiKey,
+          message,
+          actor,
+          "",
+          chatbotConfig.ai_system_prompt || "",
+          supabase,
+          tenantId,
+          session?.conversation_history
+        );
+      } else {
+        responseType = "fallback";
+        responseMessage = chatbotConfig.fallback_message ||
+          `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Posso ajudar com informações sobre o mandato. Faça sua pergunta! 😊`;
+      }
     }
 
     // Send response - decide provider (filtered by tenant)
