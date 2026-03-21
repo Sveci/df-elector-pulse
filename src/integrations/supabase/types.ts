@@ -4436,6 +4436,7 @@ export type Database = {
           event_reg_state: string | null
           first_message_at: string
           id: string
+          last_keyword_at: string | null
           phone: string
           registration_asked_at: string | null
           registration_completed_at: string | null
@@ -4457,6 +4458,7 @@ export type Database = {
           event_reg_state?: string | null
           first_message_at?: string
           id?: string
+          last_keyword_at?: string | null
           phone: string
           registration_asked_at?: string | null
           registration_completed_at?: string | null
@@ -4478,6 +4480,7 @@ export type Database = {
           event_reg_state?: string | null
           first_message_at?: string
           id?: string
+          last_keyword_at?: string | null
           phone?: string
           registration_asked_at?: string | null
           registration_completed_at?: string | null
