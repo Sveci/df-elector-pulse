@@ -32,6 +32,9 @@ export function usePoAlerts(entityId?: string) {
       const alerts: PoAlert[] = [];
       if (!snapshots || snapshots.length < 2) return alerts;
 
+      // Find the most recent mention with a URL to use as fallback link
+      const latestMentionUrl = mentions?.find(m => m.source_url)?.source_url || undefined;
+
       const sorted = [...snapshots].sort(
         (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime()
       );
@@ -53,6 +56,7 @@ export function usePoAlerts(entityId?: string) {
             description: `O sentimento positivo caiu ${drop.toFixed(0)}pp em relação ao dia anterior (de ${prevPositivePct.toFixed(0)}% para ${lastPositivePct.toFixed(0)}%). Verifique as menções recentes.`,
             value: Math.round(drop),
             threshold: 20,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         } else if (drop > 10) {
@@ -64,6 +68,7 @@ export function usePoAlerts(entityId?: string) {
             description: `Queda de ${drop.toFixed(0)}pp no sentimento positivo. Acompanhe a tendência.`,
             value: Math.round(drop),
             threshold: 10,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -81,6 +86,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Pico de menções negativas detectado",
             description: `Menções negativas aumentaram ${negRise.toFixed(0)}pp — agora em ${lastNegPct.toFixed(0)}% do total. Ação imediata recomendada.`,
             value: Math.round(lastNegPct),
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -95,6 +101,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Volume de menções muito acima do normal",
             description: `${last.total_mentions} menções hoje — ${mentionRatio.toFixed(1)}x a mais que ontem (${prev.total_mentions}). Evento viral em andamento?`,
             value: last.total_mentions,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -109,6 +116,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Onda positiva detectada!",
             description: `Sentimento positivo subiu ${posRise.toFixed(0)}pp para ${lastPositivePct.toFixed(0)}%. Ótimo momento para ampliar o engajamento.`,
             value: Math.round(lastPositivePct),
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -125,6 +133,7 @@ export function usePoAlerts(entityId?: string) {
           title: "Baixa atividade de menções",
           description: `Média de apenas ${avgMentions.toFixed(0)} menções/dia nos últimos ${recentSnapshots.length} dias. Considere aumentar a frequência de coleta.`,
           value: Math.round(avgMentions),
+          sourceUrl: latestMentionUrl,
           detectedAt: new Date().toISOString(),
         });
       }
