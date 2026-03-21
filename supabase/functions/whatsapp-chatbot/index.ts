@@ -102,6 +102,68 @@ async function withRetry<T>(
   throw lastError;
 }
 
+type EventRegCityOption = {
+  id: string | null;
+  nome: string;
+  source: "office" | "ibge";
+};
+
+function normalizeCityText(value: string): string {
+  return value
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function formatCityOptionsList(options: EventRegCityOption[]): string {
+  return options.map((c, idx) => `${idx + 1}. ${c.nome}`).join("\n");
+}
+
+async function getEventRegistrationCityOptions(
+  supabase: any,
+  tenantId: string,
+  limit = 30,
+): Promise<EventRegCityOption[]> {
+  const { data: officeCities } = await supabase
+    .from("office_cities")
+    .select("id, nome")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .order("nome")
+    .limit(limit);
+
+  if (officeCities && officeCities.length > 0) {
+    return officeCities.map((c: any) => ({
+      id: c.id,
+      nome: c.nome,
+      source: "office" as const,
+    }));
+  }
+
+  const { data: tenant } = await supabase
+    .from("tenants")
+    .select("estado")
+    .eq("id", tenantId)
+    .maybeSingle();
+
+  const uf = tenant?.estado;
+  if (!uf) return [];
+
+  const { data: ibgeCities } = await supabase
+    .from("ibge_cidades")
+    .select("nome")
+    .eq("uf", uf)
+    .order("nome")
+    .limit(limit);
+
+  return (ibgeCities || []).map((c: any) => ({
+    id: null,
+    nome: c.nome,
+    source: "ibge" as const,
+  }));
+}
+
 // =====================================================
 // EVENT REGISTRATION FLOW HANDLER (via WhatsApp)
 // =====================================================
@@ -244,19 +306,14 @@ async function handleEventRegistrationStep(
       event_reg_state: "collecting_evt_city",
     }).eq("id", session.id);
 
-    // Fetch cities for options
-    const { data: cities } = await supabase
-      .from("office_cities")
-      .select("id, nome")
-      .eq("tenant_id", tenantId)
-      .eq("status", "active")
-      .order("nome")
-      .limit(30);
+    const cityOptions = await getEventRegistrationCityOptions(supabase, tenantId, 30);
 
     let msg = `${dataNascimento ? "Data registrada!" : "Tudo bem!"} 👍\n\nEm qual *cidade/região* você mora?`;
-    if (cities && cities.length > 0) {
-      msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
-      msg += `\n\nDigite o nome ou *PULAR*:`;
+    if (cityOptions.length > 0) {
+      msg += `\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
+      msg += `\n\nResponda com o *número* ou o *nome* da cidade/região.\nDigite *PULAR* para continuar sem informar.`;
+    } else {
+      msg += "\n\nNão encontrei cidades cadastradas no momento. Se preferir, digite *PULAR*.";
     }
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_birthday_collected", tenantId, startTime);
@@ -266,20 +323,82 @@ async function handleEventRegistrationStep(
   // State: collecting_evt_city
   if (state === "collecting_evt_city") {
     let cidadeId: string | null = null;
+    let cidadeNomeSelecionada: string | null = null;
     const skipWords = ["PULAR", "NAO", "NADA", "PULA", "SEM"];
     const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
+    const cityOptions = await getEventRegistrationCityOptions(supabase, tenantId, 30);
 
     if (!isSkip && userMessage.length >= 2) {
-      const { data: matchedCity } = await supabase
-        .from("office_cities")
-        .select("id, nome")
-        .eq("tenant_id", tenantId)
-        .eq("status", "active")
-        .ilike("nome", `%${userMessage.trim()}%`)
-        .limit(1)
-        .maybeSingle();
+      const trimmed = userMessage.trim();
+      const selectedNumber = Number.parseInt(trimmed, 10);
 
-      cidadeId = matchedCity?.id || null;
+      const selectedByNumber = Number.isNaN(selectedNumber)
+        ? null
+        : cityOptions[selectedNumber - 1] || null;
+
+      if (selectedByNumber) {
+        cidadeId = selectedByNumber.id;
+        cidadeNomeSelecionada = selectedByNumber.nome;
+      } else {
+        const normalizedMessage = normalizeCityText(trimmed);
+
+        const selectedByName = cityOptions.find((c) => {
+          const normalizedOption = normalizeCityText(c.nome);
+          return normalizedOption === normalizedMessage || normalizedOption.includes(normalizedMessage);
+        });
+
+        if (selectedByName) {
+          cidadeId = selectedByName.id;
+          cidadeNomeSelecionada = selectedByName.nome;
+        } else {
+          const { data: matchedOfficeCity } = await supabase
+            .from("office_cities")
+            .select("id, nome")
+            .eq("tenant_id", tenantId)
+            .eq("status", "active")
+            .ilike("nome", `%${trimmed}%`)
+            .limit(1)
+            .maybeSingle();
+
+          if (matchedOfficeCity) {
+            cidadeId = matchedOfficeCity.id;
+            cidadeNomeSelecionada = matchedOfficeCity.nome;
+          } else {
+            const { data: tenant } = await supabase
+              .from("tenants")
+              .select("estado")
+              .eq("id", tenantId)
+              .maybeSingle();
+
+            const tenantUf = tenant?.estado;
+            if (tenantUf) {
+              const { data: matchedIbgeCity } = await supabase
+                .from("ibge_cidades")
+                .select("nome")
+                .eq("uf", tenantUf)
+                .ilike("nome", `%${trimmed}%`)
+                .limit(1)
+                .maybeSingle();
+
+              if (matchedIbgeCity?.nome) {
+                cidadeNomeSelecionada = matchedIbgeCity.nome;
+              }
+            }
+          }
+        }
+      }
+
+      if (!cidadeId && !cidadeNomeSelecionada) {
+        let retryMsg = "Não encontrei essa cidade/região. 🙏\n\n";
+        if (cityOptions.length > 0) {
+          retryMsg += `Escolha uma opção da lista abaixo (número ou nome):\n${formatCityOptionsList(cityOptions)}\n\n`;
+        }
+        retryMsg += "Ou digite *PULAR* para continuar sem informar a cidade.";
+
+        await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+        await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
+        return { success: true, responseType: "event_reg_retry_city" };
+      }
     }
 
     // Now we have all data — perform the registration
@@ -325,7 +444,15 @@ async function handleEventRegistrationStep(
       }
 
       const resultRow = Array.isArray(regResult) ? regResult[0] : regResult;
+      const registrationId = resultRow?.id || resultRow?.registration_id || null;
       const qrCode = resultRow?.qr_code;
+
+      if (registrationId && !cidadeId && cidadeNomeSelecionada) {
+        await supabase
+          .from("event_registrations")
+          .update({ localidade: cidadeNomeSelecionada })
+          .eq("id", registrationId);
+      }
 
       // Fetch event details for confirmation message
       const { data: eventData } = await supabase
