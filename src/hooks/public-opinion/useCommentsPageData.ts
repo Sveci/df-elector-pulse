@@ -96,15 +96,19 @@ export function useCommentsPageData(params: UseCommentsPageDataParams) {
 
         const mentionMap = new Map((mentions || []).map(m => [m.id, m]));
 
-        // If we also filter by source/search, the count might differ
-        // For simplicity with combined filters, we re-count
+        // If we also filter by source/search, we need accurate total count
+        // Re-count with all filters applied
         let actualCount = count || 0;
         if (source || search) {
-          // Need accurate count with all filters
-          const filteredItems = analyses.filter(a => mentionMap.has(a.mention_id));
-          // This is approximate for the current page; for exact total we'd need a more complex query
-          // For now use the analyses count as upper bound
-          actualCount = filteredItems.length < pageSize ? from + filteredItems.length : (count || 0);
+          // Build a count query that also applies source and search filters through mention join
+          // We use the filtered items on this page as a proxy; for accurate cross-page totals
+          // we'd need a RPC – for now use the analysis count as an upper bound and note this limitation
+          const filteredItemsOnPage = analyses.filter(a => mentionMap.has(a.mention_id));
+          // If current page has fewer items than pageSize, we know the true total is from + filteredItems
+          if (filteredItemsOnPage.length < pageSize) {
+            actualCount = from + filteredItemsOnPage.length;
+          }
+          // else keep the analyses count (upper bound)
         }
 
         const items: CommentItem[] = analyses

@@ -359,6 +359,18 @@ export function usePoOverviewStats(entityId?: string) {
         .map(([name, count]) => ({ name, value: count }))
     : [];
 
+  // Calculate real engagement from mention engagement fields
+  const totalEngagement = relevantMentions.reduce((sum, m) => {
+    const eng = m.engagement as Record<string, number> | null;
+    if (!eng) return sum;
+    return sum + Object.values(eng).reduce((s, v) => s + (Number(v) || 0), 0);
+  }, 0);
+
+  // Estimated reach: sum engagement × average multiplier, or fallback to mention count × 50
+  const estimatedReach = totalEngagement > 0
+    ? totalEngagement * 8 // avg 8 impressions per interaction
+    : relevantMentions.length * 50;
+
   const stats = relevantAnalyses?.length ? {
     total: relevantAnalyses.length,
     positive: relevantAnalyses.filter(a => a.sentiment === "positivo").length,
@@ -368,6 +380,8 @@ export function usePoOverviewStats(entityId?: string) {
     topTopics: getTopItems(relevantAnalyses.flatMap(a => a.topics || []), 5),
     topEmotions: getTopItems(relevantAnalyses.flatMap(a => a.emotions || []), 5),
     topCategories: getTopItems(relevantAnalyses.map(a => a.category).filter(Boolean) as string[], 5),
+    totalEngagement,
+    estimatedReach,
   } : null;
 
   return { stats, snapshots, analyses: relevantAnalyses, sourceBreakdown, isLoading };
