@@ -184,6 +184,52 @@ async function handleConversationalFlow(
   const cleanMessage = messageText.trim();
   const upperMessage = cleanMessage.toUpperCase();
 
+  // === CHECK IF MESSAGE IS A KEYWORD — keywords always take priority over conversational flow ===
+  const { data: activeKeywords } = await supabase
+    .from('whatsapp_chatbot_keywords')
+    .select('keyword, aliases')
+    .eq('is_active', true)
+    .eq('tenant_id', tenantId);
+
+  if (activeKeywords && activeKeywords.length > 0) {
+    const normalizedUpper = upperMessage.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    for (const kw of activeKeywords) {
+      const kwNorm = (kw.keyword || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+      if (kwNorm && normalizedUpper === kwNorm) {
+        console.log(`[Meta Webhook] Keyword "${kw.keyword}" detected, skipping conversational flow`);
+        // If new contact, create chat state as registered so next time flow doesn't trigger welcome again
+        if (!chatState) {
+          await supabase.from('whatsapp_chat_state').insert({
+            phone: from,
+            tenant_id: tenantId,
+            state: 'registered',
+          });
+        } else if (chatState.state === 'awaiting_municipality') {
+          await supabase.from('whatsapp_chat_state').update({ state: 'registered', updated_at: new Date().toISOString() }).eq('id', chatState.id);
+        }
+        return false;
+      }
+      // Check aliases too
+      const aliases = (kw.aliases || []) as string[];
+      for (const alias of aliases) {
+        const aliasNorm = alias.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+        if (aliasNorm && normalizedUpper === aliasNorm) {
+          console.log(`[Meta Webhook] Keyword alias "${alias}" detected, skipping conversational flow`);
+          if (!chatState) {
+            await supabase.from('whatsapp_chat_state').insert({
+              phone: from,
+              tenant_id: tenantId,
+              state: 'registered',
+            });
+          } else if (chatState.state === 'awaiting_municipality') {
+            await supabase.from('whatsapp_chat_state').update({ state: 'registered', updated_at: new Date().toISOString() }).eq('id', chatState.id);
+          }
+          return false;
+        }
+      }
+    }
+  }
+
   // === STATE: NEW CONTACT (no chat state yet) ===
   if (!chatState) {
     // Check if this is an existing leader — if so, skip flow and let chatbot handle
