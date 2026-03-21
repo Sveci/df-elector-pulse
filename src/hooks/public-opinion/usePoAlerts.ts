@@ -32,6 +32,9 @@ export function usePoAlerts(entityId?: string) {
       const alerts: PoAlert[] = [];
       if (!snapshots || snapshots.length < 2) return alerts;
 
+      // Find the most recent mention with a URL to use as fallback link
+      const latestMentionUrl = mentions?.find(m => m.source_url)?.source_url || undefined;
+
       const sorted = [...snapshots].sort(
         (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime()
       );
