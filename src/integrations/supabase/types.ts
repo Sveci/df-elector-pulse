@@ -4804,6 +4804,16 @@ export type Database = {
       generate_survey_slug: { Args: { base_name: string }; Returns: string }
       generate_verification_code: { Args: never; Returns: string }
       generate_visit_qr_code: { Args: never; Returns: string }
+      get_adversary_sentiment_counts: {
+        Args: { p_entity_id: string; p_from: string; p_to: string }
+        Returns: {
+          avg_score: number
+          negative: number
+          neutral: number
+          positive: number
+          total: number
+        }[]
+      }
       get_all_coordinators_with_stats: {
         Args: never
         Returns: {
