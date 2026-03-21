@@ -1,4 +1,4 @@
-import { AlertTriangle, TrendingDown, TrendingUp, Zap, Activity, Info, X } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Zap, Activity, Info, X, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePoAlerts, type PoAlert, type AlertLevel } from "@/hooks/public-opinion/usePoAlerts";
