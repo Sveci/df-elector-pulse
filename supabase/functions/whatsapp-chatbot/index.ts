@@ -1648,14 +1648,18 @@ async function sendWhatsAppMessageMetaCloud(
       console.log("[whatsapp-chatbot] Message sent via Meta Cloud API:", wamid);
 
       if (supabase && wamid) {
-        await supabase.from("whatsapp_messages").insert({
-          phone: cleanPhone,
-          message: part,
-          direction: "outgoing",
-          status: "sent",
-          provider: "meta_cloud",
-          metadata: { wamid },
-        }).catch((e: Error) => console.warn("[whatsapp-chatbot] Failed to log Meta message:", e));
+        try {
+          await supabase.from("whatsapp_messages").insert({
+            phone: cleanPhone,
+            message: part,
+            direction: "outgoing",
+            status: "sent",
+            provider: "meta_cloud",
+            metadata: { wamid },
+          });
+        } catch (e) {
+          console.warn("[whatsapp-chatbot] Failed to log Meta message:", e);
+        }
       }
       return true;
     }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud send').catch(err => {
