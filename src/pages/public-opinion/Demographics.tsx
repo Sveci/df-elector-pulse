@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { BarChart2 } from "lucide-react";
 import { useMemo } from "react";
-
+import { TopCommentsSection } from "@/components/public-opinion/TopCommentsSection";
 const categoryColors = ['#3b82f6', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6b7280', '#84cc16', '#f97316'];
 const sourceColors = ['#E4405F', '#1DA1F2', '#1877F2', '#000000', '#FF0000', '#0088CC', '#8B5CF6', '#059669', '#FF4500', '#6b7280'];
 const topicColors = ['#06b6d4', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#6b7280'];
