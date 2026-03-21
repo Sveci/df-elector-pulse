@@ -322,6 +322,7 @@ export const AVAILABLE_DYNAMIC_FUNCTIONS = [
   { value: "minha_posicao", label: "Minha Posição", description: "Mostra posição no ranking geral" },
   { value: "meus_subordinados", label: "Meus Subordinados", description: "Lista líderes diretamente abaixo" },
   { value: "pendentes", label: "Pendentes", description: "Lista subordinados pendentes de verificação" },
+  { value: "cadastro_evento", label: "Cadastro em Evento", description: "Inscrição em evento com envio de QR Code para check-in" },
   { value: "ajuda", label: "Ajuda", description: "Lista de comandos disponíveis" },
 ];
 
