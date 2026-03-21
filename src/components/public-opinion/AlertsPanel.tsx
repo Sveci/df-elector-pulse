@@ -1,4 +1,4 @@
-import { AlertTriangle, TrendingDown, TrendingUp, Zap, Activity, Info, X } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Zap, Activity, Info, X, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePoAlerts, type PoAlert, type AlertLevel } from "@/hooks/public-opinion/usePoAlerts";
@@ -95,9 +95,22 @@ export function AlertsPanel({ entityId, maxVisible = 5 }: AlertsPanelProps) {
                     <TypeIcon className={`h-3.5 w-3.5 ${cfg.iconColor}`} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    Detectado: {format(new Date(alert.detectedAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-xs text-muted-foreground/70">
+                      Detectado: {format(new Date(alert.detectedAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                    {alert.sourceUrl && (
+                      <a
+                        href={alert.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Ver conteúdo
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
