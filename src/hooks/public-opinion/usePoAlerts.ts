@@ -56,6 +56,7 @@ export function usePoAlerts(entityId?: string) {
             description: `O sentimento positivo caiu ${drop.toFixed(0)}pp em relação ao dia anterior (de ${prevPositivePct.toFixed(0)}% para ${lastPositivePct.toFixed(0)}%). Verifique as menções recentes.`,
             value: Math.round(drop),
             threshold: 20,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         } else if (drop > 10) {
