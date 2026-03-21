@@ -32,9 +32,6 @@ export function usePoAlerts(entityId?: string) {
       const alerts: PoAlert[] = [];
       if (!snapshots || snapshots.length < 2) return alerts;
 
-      // Find the most recent mention with a URL to use as fallback link
-      const latestMentionUrl = mentions?.find(m => m.source_url)?.source_url || undefined;
-
       const sorted = [...snapshots].sort(
         (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime()
       );
@@ -43,8 +40,8 @@ export function usePoAlerts(entityId?: string) {
 
       // ── Sentiment Drop ──────────────────────────────────────────
       if (last && prev && prev.total_mentions > 0 && last.total_mentions > 0) {
-        const lastPositivePct = last.total_mentions > 0 ? (last.positive_count / last.total_mentions) * 100 : 0;
-        const prevPositivePct = prev.total_mentions > 0 ? (prev.positive_count / prev.total_mentions) * 100 : 0;
+        const lastPositivePct = (last.positive_count / last.total_mentions) * 100;
+        const prevPositivePct = (prev.positive_count / prev.total_mentions) * 100;
         const drop = prevPositivePct - lastPositivePct;
 
         if (drop > 20) {
@@ -56,7 +53,6 @@ export function usePoAlerts(entityId?: string) {
             description: `O sentimento positivo caiu ${drop.toFixed(0)}pp em relação ao dia anterior (de ${prevPositivePct.toFixed(0)}% para ${lastPositivePct.toFixed(0)}%). Verifique as menções recentes.`,
             value: Math.round(drop),
             threshold: 20,
-            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         } else if (drop > 10) {
@@ -68,14 +64,13 @@ export function usePoAlerts(entityId?: string) {
             description: `Queda de ${drop.toFixed(0)}pp no sentimento positivo. Acompanhe a tendência.`,
             value: Math.round(drop),
             threshold: 10,
-            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
 
         // ── Negative Spike ───────────────────────────────────────
-        const lastNegPct = last.total_mentions > 0 ? (last.negative_count / last.total_mentions) * 100 : 0;
-        const prevNegPct = prev.total_mentions > 0 ? (prev.negative_count / prev.total_mentions) * 100 : 0;
+        const lastNegPct = (last.negative_count / last.total_mentions) * 100;
+        const prevNegPct = (prev.negative_count / prev.total_mentions) * 100;
         const negRise = lastNegPct - prevNegPct;
 
         if (negRise > 25) {
@@ -86,7 +81,6 @@ export function usePoAlerts(entityId?: string) {
             title: "Pico de menções negativas detectado",
             description: `Menções negativas aumentaram ${negRise.toFixed(0)}pp — agora em ${lastNegPct.toFixed(0)}% do total. Ação imediata recomendada.`,
             value: Math.round(lastNegPct),
-            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -101,7 +95,6 @@ export function usePoAlerts(entityId?: string) {
             title: "Volume de menções muito acima do normal",
             description: `${last.total_mentions} menções hoje — ${mentionRatio.toFixed(1)}x a mais que ontem (${prev.total_mentions}). Evento viral em andamento?`,
             value: last.total_mentions,
-            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -116,7 +109,6 @@ export function usePoAlerts(entityId?: string) {
             title: "Onda positiva detectada!",
             description: `Sentimento positivo subiu ${posRise.toFixed(0)}pp para ${lastPositivePct.toFixed(0)}%. Ótimo momento para ampliar o engajamento.`,
             value: Math.round(lastPositivePct),
-            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
@@ -133,35 +125,47 @@ export function usePoAlerts(entityId?: string) {
           title: "Baixa atividade de menções",
           description: `Média de apenas ${avgMentions.toFixed(0)} menções/dia nos últimos ${recentSnapshots.length} dias. Considere aumentar a frequência de coleta.`,
           value: Math.round(avgMentions),
-          sourceUrl: latestMentionUrl,
           detectedAt: new Date().toISOString(),
         });
       }
 
-      // ── Viral content from mentions ─────────────────────────────
-      if (mentions && mentions.length > 0) {
-        const highEngagement = mentions.filter((m) => {
-          const eng = m.engagement as Record<string, number> | null;
-          if (!eng) return false;
-          const total = Object.values(eng).reduce((s, v) => s + v, 0);
-          return total > 500;
-        });
+      // ── Viral content: query DB for top engagement WITH source_url ──
+      if (entityId) {
+        const { data: viralMentions } = await supabase
+          .from("po_mentions")
+          .select("id, source, source_url, author_name, author_handle, engagement, collected_at")
+          .eq("entity_id", entityId)
+          .not("source_url", "is", null)
+          .order("collected_at", { ascending: false })
+          .limit(100);
 
-        if (highEngagement.length > 0) {
-          const top = highEngagement[0];
-          const eng = top.engagement as Record<string, number>;
-          const total = Object.values(eng).reduce((s, v) => s + v, 0);
-          alerts.push({
-            id: `viral-${top.id}`,
-            level: "info",
-            type: "viral_content",
-            title: "Conteúdo viral identificado",
-            description: `Post de @${top.author_handle || top.author_name || "usuário"} no ${top.source} com ${total.toLocaleString()} interações.`,
-            value: total,
-            source: top.source,
-            sourceUrl: top.source_url || undefined,
-            detectedAt: top.collected_at,
-          });
+        if (viralMentions && viralMentions.length > 0) {
+          // Find the one with highest engagement that has a URL
+          let bestMention: any = null;
+          let bestEngagement = 0;
+          for (const m of viralMentions) {
+            const eng = m.engagement as Record<string, number> | null;
+            if (!eng) continue;
+            const total = Object.values(eng).reduce((s, v) => s + (Number(v) || 0), 0);
+            if (total > bestEngagement) {
+              bestEngagement = total;
+              bestMention = m;
+            }
+          }
+
+          if (bestMention && bestEngagement > 500) {
+            alerts.push({
+              id: `viral-${bestMention.id}`,
+              level: "info",
+              type: "viral_content",
+              title: "Conteúdo viral identificado",
+              description: `Post de @${bestMention.author_handle || bestMention.author_name || "usuário"} no ${bestMention.source} com ${bestEngagement.toLocaleString()} interações.`,
+              value: bestEngagement,
+              source: bestMention.source,
+              sourceUrl: bestMention.source_url,
+              detectedAt: bestMention.collected_at,
+            });
+          }
         }
       }
 
