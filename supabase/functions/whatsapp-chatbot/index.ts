@@ -140,12 +140,12 @@ async function handleEventRegistrationStep(
   if (state === "selecting_event") {
     const num = parseInt(userMessage.trim());
 
-    // Fetch published events to validate selection
+    // Fetch active/published events to validate selection
     const { data: events } = await supabase
       .from("events")
       .select("id, name, date, time, location, address, status")
       .eq("tenant_id", tenantId)
-      .eq("status", "published")
+      .in("status", ["active", "published"])
       .gte("date", new Date().toISOString().split("T")[0])
       .order("date", { ascending: true })
       .limit(10);
@@ -701,12 +701,12 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
   cadastro_evento: async (supabase, leader, session, tenantId, phone, provider, intSettings) => {
     if (!tenantId || !session) return "Erro ao iniciar inscrição. Tente novamente.";
 
-    // Fetch published upcoming events
+    // Fetch active/published upcoming events
     const { data: events } = await supabase
       .from("events")
       .select("id, name, date, time, location")
       .eq("tenant_id", tenantId)
-      .eq("status", "published")
+      .in("status", ["active", "published"])
       .gte("date", new Date().toISOString().split("T")[0])
       .order("date", { ascending: true })
       .limit(10);
