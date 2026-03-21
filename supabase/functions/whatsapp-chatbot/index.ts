@@ -62,6 +62,7 @@ const SESSION_EXPIRY_HOURS = 24;   // Sessions expire after 24h of inactivity
 const REGISTRATION_INVITE_MIN_INTERVAL_MIN = 60; // Min minutes between registration invites
 const SEND_RETRY_ATTEMPTS = 3;     // Retry failed sends up to 3 times
 const SEND_RETRY_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
+const KEYWORD_COOLDOWN_MINUTES = 30; // After a keyword trigger, ignore free-text for N minutes
 
 // =====================================================
 // UTILITIES
@@ -1361,6 +1362,13 @@ Deno.serve(async (req) => {
       console.log(`[whatsapp-chatbot] [AUTOMAÇÃO] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
       responseType = matchedKeyword.response_type;
 
+      // Mark keyword activation timestamp on the session
+      if (session?.id) {
+        await supabase.from("whatsapp_chatbot_sessions").update({
+          last_keyword_at: new Date().toISOString(),
+        }).eq("id", session.id);
+      }
+
       if (matchedKeyword.response_type === "static" && matchedKeyword.static_response) {
         responseMessage = matchedKeyword.static_response
           .replace("{{nome}}", getFirstName(actor))
@@ -1416,7 +1424,17 @@ Deno.serve(async (req) => {
       // Nenhuma palavra-chave foi encontrada, então o sistema usa toda
       // a inteligência disponível para responder.
       // ============================================================
-      if (isEventRegistrationStatusIntent(message)) {
+
+      // Check keyword cooldown: if a keyword was triggered within KEYWORD_COOLDOWN_MINUTES,
+      // do NOT activate AI — the session is in "automation mode"
+      const lastKeywordAt = session?.last_keyword_at ? new Date(session.last_keyword_at).getTime() : 0;
+      const cooldownActive = lastKeywordAt > 0 && (Date.now() - lastKeywordAt) < KEYWORD_COOLDOWN_MINUTES * 60 * 1000;
+
+      if (cooldownActive) {
+        console.log(`[whatsapp-chatbot] Keyword cooldown active (${KEYWORD_COOLDOWN_MINUTES}min). Ignoring free-text AI.`);
+        responseType = "cooldown_hint";
+        responseMessage = "Não entendi. 🤔\n\nDigite *AJUDA* para ver a lista de comandos disponíveis ou aguarde alguns minutos para fazer uma pergunta aberta.";
+      } else if (isEventRegistrationStatusIntent(message)) {
         console.log("[whatsapp-chatbot] [AUTOMAÇÃO] Event registration status intent detected");
         responseType = "event_reg_status";
         responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
