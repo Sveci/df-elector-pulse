@@ -1179,6 +1179,12 @@ Deno.serve(async (req) => {
     const bareCodeMatch = normalizedMessage.match(/^[A-Z0-9]{5,6}$/);
 
     if (confirmMatchChatbot || (bareCodeMatch && !isRegisteredKeyword && normalizedMessage !== "AJUDA" && normalizedMessage !== "PONTOS" && normalizedMessage !== "SIM")) {
+      // Extra safety: skip common dynamic-function trigger words that look like verification codes
+      const dynamicTriggerWords = new Set(["EVENTO", "PONTOS", "AJUDA", "ARVORE"]);
+      if (bareCodeMatch && dynamicTriggerWords.has(normalizedMessage)) {
+        console.log(`[whatsapp-chatbot] Skipping verification intercept for dynamic trigger word: ${normalizedMessage}`);
+        // Fall through to keyword matching below
+      } else {
       if (!actor) {
         console.log(`[whatsapp-chatbot] Verification code received from unknown phone ${normalizedPhone}`);
         return new Response(JSON.stringify({ success: false, reason: "leader_not_found_for_code" }),
@@ -1257,6 +1263,7 @@ Deno.serve(async (req) => {
       console.log(`[whatsapp-chatbot] Code matches leader, deferring to verification flow`);
       return new Response(JSON.stringify({ success: false, reason: "deferred_to_verification" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     let matchedKeyword: ChatbotKeyword | null = null;

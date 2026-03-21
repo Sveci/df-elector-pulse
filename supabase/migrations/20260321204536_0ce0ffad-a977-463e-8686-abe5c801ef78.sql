@@ -1,0 +1,1 @@
+UPDATE public.whatsapp_chatbot_keywords SET aliases = array_append(aliases, 'EVENTO') WHERE id = '66c44aa0-bc3d-4659-aaf3-263800a4028d' AND NOT ('EVENTO' = ANY(aliases));
