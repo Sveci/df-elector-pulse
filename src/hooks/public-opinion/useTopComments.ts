@@ -15,17 +15,26 @@ export interface TopComment {
 
 async function fetchTopComments(
   entityId: string,
+  isPrincipal: boolean,
   order: "asc" | "desc",
   limit: number
 ): Promise<TopComment[]> {
-  // Get analyses sorted by sentiment_score
-  const { data: analyses, error: aErr } = await supabase
+  // Principal entities: filter by entity_id
+  // Adversary entities: filter by adversary_entity_id
+  let query = supabase
     .from("po_sentiment_analyses")
     .select("mention_id, sentiment, sentiment_score, category")
-    .eq("entity_id", entityId)
     .not("sentiment_score", "is", null)
     .order("sentiment_score", { ascending: order === "asc" })
     .limit(limit);
+
+  if (isPrincipal) {
+    query = query.eq("entity_id", entityId);
+  } else {
+    query = query.eq("adversary_entity_id", entityId);
+  }
+
+  const { data: analyses, error: aErr } = await query;
 
   if (aErr) throw aErr;
   if (!analyses || analyses.length === 0) return [];
@@ -58,18 +67,18 @@ async function fetchTopComments(
     });
 }
 
-export function useTopHeavyComments(entityId?: string, limit = 15) {
+export function useTopHeavyComments(entityId?: string, isPrincipal = true, limit = 15) {
   return useQuery({
-    queryKey: ["po_top_heavy", entityId, limit],
+    queryKey: ["po_top_heavy", entityId, isPrincipal, limit],
     enabled: !!entityId,
-    queryFn: () => fetchTopComments(entityId!, "asc", limit),
+    queryFn: () => fetchTopComments(entityId!, isPrincipal, "asc", limit),
   });
 }
 
-export function useTopPraiseComments(entityId?: string, limit = 15) {
+export function useTopPraiseComments(entityId?: string, isPrincipal = true, limit = 15) {
   return useQuery({
-    queryKey: ["po_top_praise", entityId, limit],
+    queryKey: ["po_top_praise", entityId, isPrincipal, limit],
     enabled: !!entityId,
-    queryFn: () => fetchTopComments(entityId!, "desc", limit),
+    queryFn: () => fetchTopComments(entityId!, isPrincipal, "desc", limit),
   });
 }
