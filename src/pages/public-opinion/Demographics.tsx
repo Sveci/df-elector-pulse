@@ -338,7 +338,7 @@ const Demographics = () => {
       {/* Top Comments Section */}
       {entities && entities.length > 0 && (
         <TopCommentsSection
-          entities={entities.map(e => ({ id: e.id, name: e.name, is_principal: e.is_principal }))}
+          entities={entities.map(e => ({ id: e.id, name: e.nome, is_principal: e.is_principal }))}
         />
       )}
     </div>
