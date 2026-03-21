@@ -1338,24 +1338,30 @@ Deno.serve(async (req) => {
       // Nenhuma palavra-chave foi encontrada, então o sistema usa toda
       // a inteligência disponível para responder.
       // ============================================================
-      console.log("[whatsapp-chatbot] [IA] No keyword match — using AI + KB + Perplexity pipeline");
-      responseType = "ai";
-
-      if (lovableApiKey) {
-        responseMessage = await generateAIResponse(
-          lovableApiKey,
-          message,
-          actor,
-          "",
-          chatbotConfig.ai_system_prompt || "",
-          supabase,
-          tenantId,
-          session?.conversation_history
-        );
+      if (isEventRegistrationStatusIntent(message)) {
+        console.log("[whatsapp-chatbot] [AUTOMAÇÃO] Event registration status intent detected");
+        responseType = "event_reg_status";
+        responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
       } else {
-        responseType = "fallback";
-        responseMessage = chatbotConfig.fallback_message ||
-          `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Posso ajudar com informações sobre o mandato. Faça sua pergunta! 😊`;
+        console.log("[whatsapp-chatbot] [IA] No keyword match — using AI + KB + Perplexity pipeline");
+        responseType = "ai";
+
+        if (lovableApiKey) {
+          responseMessage = await generateAIResponse(
+            lovableApiKey,
+            message,
+            actor,
+            "",
+            chatbotConfig.ai_system_prompt || "",
+            supabase,
+            tenantId,
+            session?.conversation_history
+          );
+        } else {
+          responseType = "fallback";
+          responseMessage = chatbotConfig.fallback_message ||
+            `${actor ? `Olá ${getFirstName(actor)}!` : "Olá!"} Posso ajudar com informações sobre o mandato. Faça sua pergunta! 😊`;
+        }
       }
     }
 
@@ -1533,6 +1539,156 @@ function isKeywordMatch(
 
     return false;
   });
+}
+
+function isEventRegistrationStatusIntent(message: string): boolean {
+  const normalized = normalizeTextForMatch(message)
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const explicitPhrases = [
+    "EM QUAL EVENTO ESTOU CADASTRADO",
+    "EM QUAL EVENTO ESTOU INSCRITO",
+    "QUAL EVENTO ESTOU CADASTRADO",
+    "QUAL EVENTO ESTOU INSCRITO",
+    "EM QUE EVENTO ESTOU CADASTRADO",
+    "EM QUE EVENTO ESTOU INSCRITO",
+    "QUAIS EVENTOS ESTOU CADASTRADO",
+    "QUAIS EVENTOS ESTOU INSCRITO",
+    "MEUS EVENTOS",
+    "MINHAS INSCRICOES",
+    "MINHAS INSCRICOES EM EVENTOS",
+  ];
+
+  if (explicitPhrases.some((phrase) => normalized.includes(phrase))) {
+    return true;
+  }
+
+  const hasEventContext =
+    normalized.includes("EVENTO") ||
+    normalized.includes("INSCRICAO") ||
+    normalized.includes("CADASTRADO") ||
+    normalized.includes("INSCRITO");
+
+  const hasLookupIntent =
+    normalized.includes("QUAL") ||
+    normalized.includes("QUAIS") ||
+    normalized.includes("ESTOU") ||
+    normalized.includes("TENHO");
+
+  return hasEventContext && hasLookupIntent;
+}
+
+function buildPhoneLookupVariants(phone: string): string[] {
+  const digitsOnly = phone.replace(/[^0-9]/g, "");
+  if (!digitsOnly) return [];
+
+  const withCountry = digitsOnly.startsWith("55") ? digitsOnly : `55${digitsOnly}`;
+  const withoutCountry = withCountry.startsWith("55") ? withCountry.slice(2) : withCountry;
+
+  return Array.from(new Set([
+    `+${withCountry}`,
+    withCountry,
+    withoutCountry,
+  ].filter(Boolean)));
+}
+
+async function getEventRegistrationStatusResponse(
+  supabase: any,
+  tenantId: string,
+  normalizedPhone: string,
+): Promise<string> {
+  const phoneVariants = buildPhoneLookupVariants(normalizedPhone);
+  const phoneOrFilter = phoneVariants.map((p) => `whatsapp.eq.${p}`).join(",");
+
+  let registrations: any[] = [];
+
+  if (phoneOrFilter) {
+    const { data: byWhatsapp, error: byWhatsappError } = await supabase
+      .from("event_registrations")
+      .select("id, event_id, created_at, event:events(name, date, time, location)")
+      .eq("tenant_id", tenantId)
+      .or(phoneOrFilter)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (byWhatsappError) {
+      console.error("[whatsapp-chatbot] Error querying registrations by whatsapp:", byWhatsappError);
+    }
+
+    registrations = byWhatsapp || [];
+  }
+
+  // Fallback: lookup by linked contact_id if no direct whatsapp match
+  if (registrations.length === 0 && phoneVariants.length > 0) {
+    const contactFilter = phoneVariants.map((p) => `telefone_norm.eq.${p}`).join(",");
+    const { data: contact, error: contactError } = await supabase
+      .from("office_contacts")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .or(contactFilter)
+      .limit(1)
+      .maybeSingle();
+
+    if (contactError) {
+      console.error("[whatsapp-chatbot] Error querying contact for event status:", contactError);
+    }
+
+    if (contact?.id) {
+      const { data: byContact, error: byContactError } = await supabase
+        .from("event_registrations")
+        .select("id, event_id, created_at, event:events(name, date, time, location)")
+        .eq("tenant_id", tenantId)
+        .eq("contact_id", contact.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (byContactError) {
+        console.error("[whatsapp-chatbot] Error querying registrations by contact_id:", byContactError);
+      }
+
+      registrations = byContact || [];
+    }
+  }
+
+  if (!registrations || registrations.length === 0) {
+    return "No momento, não encontrei nenhuma inscrição de evento para este número.\n\nSe quiser se inscrever agora, digite *EVENTO*.";
+  }
+
+  const uniqueByEvent: any[] = [];
+  const seenEvents = new Set<string>();
+
+  for (const reg of registrations) {
+    const eventId = reg?.event_id || reg?.id;
+    if (!eventId || seenEvents.has(eventId)) continue;
+    seenEvents.add(eventId);
+    uniqueByEvent.push(reg);
+  }
+
+  const maxRows = 5;
+  const lines = uniqueByEvent.slice(0, maxRows).map((reg: any, idx: number) => {
+    const eventData = Array.isArray(reg.event) ? reg.event[0] : reg.event;
+    const eventName = eventData?.name || "Evento sem nome";
+
+    let dateText = "Data não informada";
+    if (eventData?.date) {
+      const parsed = new Date(`${eventData.date}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime())) {
+        dateText = parsed.toLocaleDateString("pt-BR");
+      }
+    }
+
+    const timeText = eventData?.time ? ` às ${String(eventData.time).slice(0, 5)}` : "";
+    const locationText = eventData?.location ? `\n   📍 ${eventData.location}` : "";
+
+    return `${idx + 1}. *${eventName}*\n   🗓️ ${dateText}${timeText}${locationText}`;
+  });
+
+  const extraCount = uniqueByEvent.length - maxRows;
+  const extraLine = extraCount > 0 ? `\n\n... e mais ${extraCount} inscrição(ões).` : "";
+
+  return `📌 *Encontrei suas inscrições em evento:*\n\n${lines.join("\n\n")}${extraLine}\n\nSe quiser fazer uma nova inscrição, digite *EVENTO*.`;
 }
 
 // Normalize phone number
