@@ -129,42 +129,55 @@ export function usePoAlerts(entityId?: string) {
         });
       }
 
-      // ── Viral content: query DB for top engagement WITH source_url ──
+      // ── Viral content: only mentions confirmed relevant by sentiment analysis ──
       if (entityId) {
-        const { data: viralMentions } = await supabase
-          .from("po_mentions")
-          .select("id, source, source_url, author_name, author_handle, engagement, collected_at")
+        // Get mention IDs that have a relevant sentiment analysis (confirmed about the entity)
+        const { data: relevantMentions } = await supabase
+          .from("po_sentiment_analyses")
+          .select("mention_id")
           .eq("entity_id", entityId)
-          .not("source_url", "is", null)
-          .order("collected_at", { ascending: false })
-          .limit(100);
+          .not("mention_id", "is", null)
+          .limit(500);
 
-        if (viralMentions && viralMentions.length > 0) {
-          // Find the one with highest engagement that has a URL
-          let bestMention: any = null;
-          let bestEngagement = 0;
-          for (const m of viralMentions) {
-            const eng = m.engagement as Record<string, number> | null;
-            if (!eng) continue;
-            const total = Object.values(eng).reduce((s, v) => s + (Number(v) || 0), 0);
-            if (total > bestEngagement) {
-              bestEngagement = total;
-              bestMention = m;
+        const relevantIds = new Set((relevantMentions || []).map((r: any) => r.mention_id));
+
+        if (relevantIds.size > 0) {
+          const { data: viralCandidates } = await supabase
+            .from("po_mentions")
+            .select("id, source, source_url, author_name, author_handle, engagement, collected_at")
+            .eq("entity_id", entityId)
+            .not("source_url", "is", null)
+            .order("collected_at", { ascending: false })
+            .limit(200);
+
+          if (viralCandidates && viralCandidates.length > 0) {
+            let bestMention: any = null;
+            let bestEngagement = 0;
+            for (const m of viralCandidates) {
+              // Only consider mentions confirmed as relevant
+              if (!relevantIds.has(m.id)) continue;
+              const eng = m.engagement as Record<string, number> | null;
+              if (!eng) continue;
+              const total = Object.values(eng).reduce((s, v) => s + (Number(v) || 0), 0);
+              if (total > bestEngagement && total > 0) {
+                bestEngagement = total;
+                bestMention = m;
+              }
             }
-          }
 
-          if (bestMention && bestEngagement > 500) {
-            alerts.push({
-              id: `viral-${bestMention.id}`,
-              level: "info",
-              type: "viral_content",
-              title: "Conteúdo viral identificado",
-              description: `Post de @${bestMention.author_handle || bestMention.author_name || "usuário"} no ${bestMention.source} com ${bestEngagement.toLocaleString()} interações.`,
-              value: bestEngagement,
-              source: bestMention.source,
-              sourceUrl: bestMention.source_url,
-              detectedAt: bestMention.collected_at,
-            });
+            if (bestMention && bestEngagement > 500) {
+              alerts.push({
+                id: `viral-${bestMention.id}`,
+                level: "info",
+                type: "viral_content",
+                title: "Conteúdo viral identificado",
+                description: `Post de @${bestMention.author_handle || bestMention.author_name || "usuário"} no ${bestMention.source} com ${bestEngagement.toLocaleString()} interações.`,
+                value: bestEngagement,
+                source: bestMention.source,
+                sourceUrl: bestMention.source_url,
+                detectedAt: bestMention.collected_at,
+              });
+            }
           }
         }
       }
