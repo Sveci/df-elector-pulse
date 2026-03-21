@@ -338,14 +338,32 @@ export function usePoOverviewStats(entityId?: string) {
   const { data: snapshots, isLoading: isLoadingSnapshots } = useDailySnapshots(entityId, 30);
   const { data: mentions, isLoading: isLoadingMentions } = useMentions(entityId, undefined, 1000);
 
-  const isLoading = isLoadingAnalyses || isLoadingSnapshots || isLoadingMentions;
+  // Use server-side aggregation for accurate counts (bypasses 1000 limit)
+  const { data: serverCounts, isLoading: isLoadingCounts } = useQuery({
+    queryKey: ["po_entity_sentiment_counts", entityId],
+    enabled: !!entityId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const { data, error } = await (supabase as any).rpc("get_entity_sentiment_counts", {
+        p_entity_id: entityId,
+        p_from: since.toISOString(),
+        p_to: new Date().toISOString(),
+        p_is_principal: true,
+      }).maybeSingle();
+      if (error) throw error;
+      return data as { positive: number; negative: number; neutral: number; total: number; avg_score: number } | null;
+    },
+  });
 
-  // Filter out irrelevant analyses
+  const isLoading = isLoadingAnalyses || isLoadingSnapshots || isLoadingMentions || isLoadingCounts;
+
+  // Filter out irrelevant analyses (for topics/emotions extraction only)
   const relevantAnalyses = analyses?.filter(isRelevantAnalysis);
 
   // Build a set of relevant mention IDs for source breakdown filtering
   const relevantMentionIds = new Set(relevantAnalyses?.map(a => a.mention_id) || []);
-
   const relevantMentions = mentions?.filter(m => relevantMentionIds.has(m.id)) || [];
 
   const sourceBreakdown = relevantMentions.length
@@ -366,20 +384,27 @@ export function usePoOverviewStats(entityId?: string) {
     return sum + Object.values(eng).reduce((s, v) => s + (Number(v) || 0), 0);
   }, 0);
 
+  // Use server counts for primary metrics (accurate, no limit), client data for topics/emotions
+  const total = serverCounts?.total || relevantAnalyses?.length || 0;
+  const positive = serverCounts?.positive || relevantAnalyses?.filter(a => a.sentiment === "positivo").length || 0;
+  const negative = serverCounts?.negative || relevantAnalyses?.filter(a => a.sentiment === "negativo").length || 0;
+  const neutral = serverCounts?.neutral || relevantAnalyses?.filter(a => a.sentiment === "neutro").length || 0;
+  const avgScore = serverCounts?.avg_score != null ? Number(serverCounts.avg_score) : (relevantAnalyses?.length ? relevantAnalyses.reduce((s, a) => s + (a.sentiment_score || 0), 0) / relevantAnalyses.length : 0);
+
   // Estimated reach: sum engagement × average multiplier, or fallback to mention count × 50
   const estimatedReach = totalEngagement > 0
-    ? totalEngagement * 8 // avg 8 impressions per interaction
-    : relevantMentions.length * 50;
+    ? totalEngagement * 8
+    : total * 50;
 
-  const stats = relevantAnalyses?.length ? {
-    total: relevantAnalyses.length,
-    positive: relevantAnalyses.filter(a => a.sentiment === "positivo").length,
-    negative: relevantAnalyses.filter(a => a.sentiment === "negativo").length,
-    neutral: relevantAnalyses.filter(a => a.sentiment === "neutro").length,
-    avgScore: relevantAnalyses.reduce((s, a) => s + (a.sentiment_score || 0), 0) / relevantAnalyses.length,
-    topTopics: getTopItems(relevantAnalyses.flatMap(a => a.topics || []), 5),
-    topEmotions: getTopItems(relevantAnalyses.flatMap(a => a.emotions || []), 5),
-    topCategories: getTopItems(relevantAnalyses.map(a => a.category).filter(Boolean) as string[], 5),
+  const stats = total > 0 ? {
+    total,
+    positive,
+    negative,
+    neutral,
+    avgScore,
+    topTopics: getTopItems(relevantAnalyses?.flatMap(a => a.topics || []) || [], 5),
+    topEmotions: getTopItems(relevantAnalyses?.flatMap(a => a.emotions || []) || [], 5),
+    topCategories: getTopItems(relevantAnalyses?.map(a => a.category).filter(Boolean) as string[] || [], 5),
     totalEngagement,
     estimatedReach,
   } : null;

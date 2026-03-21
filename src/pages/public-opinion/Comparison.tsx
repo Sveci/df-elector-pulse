@@ -63,7 +63,7 @@ const ASPECT_KEYS = [
   "entrega_resultados", "atuacao_federal", "cultura_local",
 ];
 
-// ── Fast stats using po_daily_snapshots (pre-aggregated) ──
+// ── Fast stats using unified RPC (consistent with Overview) ──
 function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, dateRange?: { from: Date; to: Date }) {
   return useQuery({
     queryKey: ["po_comparison_stats_fast", entityId, isPrincipal, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
@@ -72,85 +72,47 @@ function useEntityStatsFromSnapshots(entityId?: string, isPrincipal?: boolean, d
     queryFn: async () => {
       const fromDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : format(subDays(new Date(), 30), "yyyy-MM-dd");
       const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
-      const isAdversary = !isPrincipal;
 
-      if (isAdversary) {
-        // Adversaries don't have snapshots, use a single count query
-        const { count: total } = await supabase
-          .from("po_sentiment_analyses")
-          .select("id", { count: "exact", head: true })
-          .eq("adversary_entity_id", entityId!)
-          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
-          .lte("analyzed_at", `${toDate}T23:59:59.999Z`);
+      // Use the unified RPC with relevance filtering for both principal and adversary
+      const { data: sentimentCounts } = await (supabase as any).rpc("get_entity_sentiment_counts", {
+        p_entity_id: entityId,
+        p_from: `${fromDate}T00:00:00.000Z`,
+        p_to: `${toDate}T23:59:59.999Z`,
+        p_is_principal: !!isPrincipal,
+      }).maybeSingle();
 
-        const { data: sentimentCounts } = await (supabase as any).rpc("get_adversary_sentiment_counts", {
-          p_entity_id: entityId,
-          p_from: `${fromDate}T00:00:00.000Z`,
-          p_to: `${toDate}T23:59:59.999Z`,
-        }).maybeSingle();
-
-        const totalCount = sentimentCounts?.total || total || 0;
-        const positive = sentimentCounts?.positive || 0;
-        const negative = sentimentCounts?.negative || 0;
-        const neutral = sentimentCounts?.neutral || 0;
-        const rawAvg = sentimentCounts?.avg_score != null ? Number(sentimentCounts.avg_score) : 0;
-        const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
-
-        // Fetch topics from a sample (topics aren't aggregated in the RPC)
-        const { data: topicSample } = await supabase
-          .from("po_sentiment_analyses")
-          .select("topics")
-          .eq("adversary_entity_id", entityId!)
-          .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
-          .lte("analyzed_at", `${toDate}T23:59:59.999Z`)
-          .not("topics", "is", null)
-          .order("analyzed_at", { ascending: false })
-          .limit(200);
-
-        const topicCounts: Record<string, number> = {};
-        (topicSample || []).forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
-        const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
-
-        return { mentions: totalCount, positive_pct: totalCount > 0 ? Math.round((positive / totalCount) * 100) : 0, negative_pct: totalCount > 0 ? Math.round((negative / totalCount) * 100) : 0, neutral_pct: totalCount > 0 ? Math.round((neutral / totalCount) * 100) : 0, sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics };
-      }
-
-      // Principal entity: use po_daily_snapshots for speed
-      const { data: snapshots } = await supabase
-        .from("po_daily_snapshots")
-        .select("total_mentions, positive_count, negative_count, neutral_count, avg_sentiment_score, top_topics")
-        .eq("entity_id", entityId!)
-        .gte("snapshot_date", fromDate)
-        .lte("snapshot_date", toDate);
-
-      if (!snapshots || snapshots.length === 0) {
-        return { mentions: 0, positive_pct: 0, negative_pct: 0, neutral_pct: 0, sentiment_score: 0, engagement_total: 0, engagement_rate: 0, top_topics: [] };
-      }
-
-      let totalMentions = 0, totalPos = 0, totalNeg = 0, totalNeu = 0, totalScore = 0, scoreCount = 0;
-      const topicCounts: Record<string, number> = {};
-      snapshots.forEach((s: any) => {
-        totalMentions += s.total_mentions || 0;
-        totalPos += s.positive_count || 0;
-        totalNeg += s.negative_count || 0;
-        totalNeu += s.neutral_count || 0;
-        if (s.avg_sentiment_score != null) { totalScore += s.avg_sentiment_score * (s.total_mentions || 1); scoreCount += (s.total_mentions || 1); }
-        (s.top_topics || []).forEach((t: any) => {
-          const name = typeof t === "string" ? t : t.name;
-          const count = typeof t === "string" ? 1 : (t.count || 1);
-          if (name) topicCounts[name] = (topicCounts[name] || 0) + count;
-        });
-      });
-
-      const total = totalPos + totalNeg + totalNeu || totalMentions;
-      const rawAvg = scoreCount > 0 ? totalScore / scoreCount : 0;
+      const totalCount = Number(sentimentCounts?.total || 0);
+      const positive = Number(sentimentCounts?.positive || 0);
+      const negative = Number(sentimentCounts?.negative || 0);
+      const neutral = Number(sentimentCounts?.neutral || 0);
+      const rawAvg = sentimentCounts?.avg_score != null ? Number(sentimentCounts.avg_score) : 0;
       const sentimentScore = Math.round(((rawAvg + 1) / 2) * 100) / 10;
+
+      // Fetch topics from a sample
+      const topicFilter = isPrincipal ? "entity_id" : "adversary_entity_id";
+      const { data: topicSample } = await supabase
+        .from("po_sentiment_analyses")
+        .select("topics")
+        .eq(topicFilter, entityId!)
+        .gte("analyzed_at", `${fromDate}T00:00:00.000Z`)
+        .lte("analyzed_at", `${toDate}T23:59:59.999Z`)
+        .not("topics", "is", null)
+        .order("analyzed_at", { ascending: false })
+        .limit(200);
+
+      const topicCounts: Record<string, number> = {};
+      (topicSample || []).forEach((a: any) => (a.topics || []).forEach((t: string) => topicCounts[t] = (topicCounts[t] || 0) + 1));
       const topTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
 
       return {
-        mentions: totalMentions, positive_pct: total > 0 ? Math.round((totalPos / total) * 100) : 0,
-        negative_pct: total > 0 ? Math.round((totalNeg / total) * 100) : 0,
-        neutral_pct: total > 0 ? Math.round((totalNeu / total) * 100) : 0,
-        sentiment_score: sentimentScore, engagement_total: 0, engagement_rate: 0, top_topics: topTopics,
+        mentions: totalCount,
+        positive_pct: totalCount > 0 ? Math.round((positive / totalCount) * 100) : 0,
+        negative_pct: totalCount > 0 ? Math.round((negative / totalCount) * 100) : 0,
+        neutral_pct: totalCount > 0 ? Math.round((neutral / totalCount) * 100) : 0,
+        sentiment_score: sentimentScore,
+        engagement_total: 0,
+        engagement_rate: 0,
+        top_topics: topTopics,
       };
     },
   });
