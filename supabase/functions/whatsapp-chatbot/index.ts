@@ -102,8 +102,374 @@ async function withRetry<T>(
   throw lastError;
 }
 
+// =====================================================
+// EVENT REGISTRATION FLOW HANDLER (via WhatsApp)
+// =====================================================
+async function handleEventRegistrationStep(
+  supabase: any,
+  session: any,
+  phone: string,
+  userMessage: string,
+  tenantId: string,
+  provider: string | undefined,
+  startTime: number
+): Promise<any | null> {
+  const { data: intSettings } = await supabase
+    .from("integrations_settings")
+    .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active")
+    .eq("tenant_id", tenantId)
+    .limit(1)
+    .single();
+
+  const normalizedInput = userMessage.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const state = session.event_reg_state;
+
+  // Allow cancellation at any step
+  if (["CANCELAR", "SAIR", "VOLTAR", "CANCEL"].includes(normalizedInput)) {
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
+      event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null, event_reg_endereco: null,
+    }).eq("id", session.id);
+    const msg = "Inscrição cancelada. ❌\n\nSe quiser se inscrever depois, é só digitar *EVENTO* novamente!";
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logEventReg(supabase, phone, userMessage, msg, "event_reg_cancelled", tenantId, startTime);
+    return { success: true, responseType: "event_reg_cancelled" };
+  }
+
+  // State: selecting_event
+  if (state === "selecting_event") {
+    const num = parseInt(userMessage.trim());
+
+    // Fetch published events to validate selection
+    const { data: events } = await supabase
+      .from("events")
+      .select("id, name, date, time, location, address, status")
+      .eq("tenant_id", tenantId)
+      .eq("status", "published")
+      .gte("date", new Date().toISOString().split("T")[0])
+      .order("date", { ascending: true })
+      .limit(10);
+
+    if (!events || events.length === 0 || isNaN(num) || num < 1 || num > events.length) {
+      const msg = `Por favor, digite o *número* do evento desejado (1 a ${events?.length || '?'}).`;
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_select", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_select" };
+    }
+
+    const selectedEvent = events[num - 1];
+
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_event_id: selectedEvent.id,
+      event_reg_state: "collecting_evt_name",
+    }).eq("id", session.id);
+
+    const eventDate = new Date(selectedEvent.date + "T00:00:00").toLocaleDateString("pt-BR");
+    const msg = `Ótimo! Você escolheu:\n\n📅 *${selectedEvent.name}*\n🗓️ ${eventDate} às ${selectedEvent.time}\n📍 ${selectedEvent.location}\n\nVamos fazer sua inscrição! 📝\n\nPor favor, me diga seu *nome completo*:`;
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logEventReg(supabase, phone, userMessage, msg, "event_reg_event_selected", tenantId, startTime);
+    return { success: true, responseType: "event_reg_event_selected" };
+  }
+
+  // State: collecting_evt_name
+  if (state === "collecting_evt_name") {
+    if (userMessage.length < 3 || userMessage.length > 100) {
+      const msg = "Por favor, digite seu *nome completo* (mínimo 3 caracteres):";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_name", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_name" };
+    }
+
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_nome: userMessage.trim(),
+      event_reg_state: "collecting_evt_email",
+    }).eq("id", session.id);
+
+    const msg = `Obrigado, *${userMessage.trim().split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logEventReg(supabase, phone, userMessage, msg, "event_reg_name_collected", tenantId, startTime);
+    return { success: true, responseType: "event_reg_name_collected" };
+  }
+
+  // State: collecting_evt_email
+  if (state === "collecting_evt_email") {
+    let email: string | null = null;
+    const skipWords = ["PULAR", "NAO", "NAO TENHO", "NADA", "PULA", "SEM"];
+    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
+
+    if (!isSkip) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userMessage.trim())) {
+        const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um e-mail válido ou *PULAR* para continuar sem:";
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_email", tenantId, startTime);
+        return { success: true, responseType: "event_reg_retry_email" };
+      }
+      email = userMessage.trim().toLowerCase();
+    }
+
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_email: email,
+      event_reg_state: "collecting_evt_birthday",
+    }).eq("id", session.id);
+
+    const msg = `${email ? "E-mail registrado!" : "Tudo bem, sem problemas!"} 👍\n\nQual sua *data de nascimento*? (formato: DD/MM/AAAA)\n\nDigite *PULAR* para não informar.`;
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logEventReg(supabase, phone, userMessage, msg, "event_reg_email_collected", tenantId, startTime);
+    return { success: true, responseType: "event_reg_email_collected" };
+  }
+
+  // State: collecting_evt_birthday
+  if (state === "collecting_evt_birthday") {
+    let dataNascimento: string | null = null;
+    const skipWords = ["PULAR", "NAO", "NADA", "PULA", "SEM"];
+    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
+
+    if (!isSkip) {
+      // Try to parse DD/MM/YYYY
+      const dateMatch = userMessage.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+      if (dateMatch) {
+        const [, day, month, year] = dateMatch;
+        dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      } else {
+        const msg = "Formato inválido. 🤔 Digite no formato *DD/MM/AAAA* ou *PULAR*:";
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_birthday", tenantId, startTime);
+        return { success: true, responseType: "event_reg_retry_birthday" };
+      }
+    }
+
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_data_nascimento: dataNascimento,
+      event_reg_state: "collecting_evt_city",
+    }).eq("id", session.id);
+
+    // Fetch cities for options
+    const { data: cities } = await supabase
+      .from("office_cities")
+      .select("id, nome")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .order("nome")
+      .limit(30);
+
+    let msg = `${dataNascimento ? "Data registrada!" : "Tudo bem!"} 👍\n\nEm qual *cidade/região* você mora?`;
+    if (cities && cities.length > 0) {
+      msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
+      msg += `\n\nDigite o nome ou *PULAR*:`;
+    }
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await logEventReg(supabase, phone, userMessage, msg, "event_reg_birthday_collected", tenantId, startTime);
+    return { success: true, responseType: "event_reg_birthday_collected" };
+  }
+
+  // State: collecting_evt_city
+  if (state === "collecting_evt_city") {
+    let cidadeId: string | null = null;
+    const skipWords = ["PULAR", "NAO", "NADA", "PULA", "SEM"];
+    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
+
+    if (!isSkip && userMessage.length >= 2) {
+      const { data: matchedCity } = await supabase
+        .from("office_cities")
+        .select("id, nome")
+        .eq("tenant_id", tenantId)
+        .eq("status", "active")
+        .ilike("nome", `%${userMessage.trim()}%`)
+        .limit(1)
+        .maybeSingle();
+
+      cidadeId = matchedCity?.id || null;
+    }
+
+    // Now we have all data — perform the registration
+    const updatedSession = {
+      ...session,
+      event_reg_cidade_id: cidadeId,
+      event_reg_nome: session.event_reg_nome,
+      event_reg_email: session.event_reg_email,
+      event_reg_data_nascimento: session.event_reg_data_nascimento,
+      event_reg_event_id: session.event_reg_event_id,
+    };
+
+    // Normalize phone for registration
+    const phoneNorm = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
+
+    // Call create_event_registration RPC
+    try {
+      const { data: regResult, error: regError } = await supabase.rpc('create_event_registration', {
+        _event_id: updatedSession.event_reg_event_id,
+        _nome: updatedSession.event_reg_nome,
+        _email: updatedSession.event_reg_email || 'whatsapp@evento.com',
+        _whatsapp: phoneNorm,
+        _cidade_id: cidadeId || null,
+        _data_nascimento: updatedSession.event_reg_data_nascimento || null,
+        _endereco: null,
+        _leader_id: null,
+        _utm_source: 'whatsapp',
+        _utm_medium: 'chatbot',
+        _utm_campaign: null,
+        _utm_content: null,
+      });
+
+      if (regError) {
+        console.error("[whatsapp-chatbot] Event registration error:", regError);
+        const msg = `Ops, ocorreu um erro na inscrição: ${regError.message}\n\nTente novamente digitando *EVENTO*.`;
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await supabase.from("whatsapp_chatbot_sessions").update({
+          event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
+          event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null,
+        }).eq("id", session.id);
+        await logEventReg(supabase, phone, userMessage, msg, "event_reg_error", tenantId, startTime);
+        return { success: true, responseType: "event_reg_error" };
+      }
+
+      const resultRow = Array.isArray(regResult) ? regResult[0] : regResult;
+      const qrCode = resultRow?.qr_code;
+
+      // Fetch event details for confirmation message
+      const { data: eventData } = await supabase
+        .from("events")
+        .select("name, date, time, location, address")
+        .eq("id", updatedSession.event_reg_event_id)
+        .single();
+
+      const eventDate = eventData ? new Date(eventData.date + "T00:00:00").toLocaleDateString("pt-BR") : "";
+      const firstName = (updatedSession.event_reg_nome || "").split(" ")[0];
+
+      // Build success message
+      let msg = `✅ *Inscrição Confirmada!*\n\n`;
+      msg += `👤 ${updatedSession.event_reg_nome}\n`;
+      if (eventData) {
+        msg += `📅 *${eventData.name}*\n`;
+        msg += `🗓️ ${eventDate} às ${eventData.time}\n`;
+        msg += `📍 ${eventData.location}\n`;
+        if (eventData.address) msg += `🏠 ${eventData.address}\n`;
+      }
+      msg += `\n🎫 Seu QR Code de entrada será enviado em seguida. Apresente-o na chegada para fazer o check-in!\n`;
+      msg += `\n${firstName}, esperamos você lá! 🎉`;
+
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+
+      // Send QR Code image
+      if (qrCode) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+        const baseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
+        const checkInUrl = `${baseUrl}/checkin/${qrCode}`;
+        const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(checkInUrl)}`;
+
+        // Wait a bit to ensure first message is delivered
+        await sleep(2000);
+
+        // Send QR code as image
+        const useMetaCloud = provider === 'meta_cloud' ||
+          (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
+
+        if (!useMetaCloud && intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
+          // Z-API: send image directly
+          const zapiImageUrl = `https://api.z-api.io/instances/${intSettings.zapi_instance_id}/token/${intSettings.zapi_token}/send-image`;
+          try {
+            await fetch(zapiImageUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(intSettings.zapi_client_token && { "Client-Token": intSettings.zapi_client_token }),
+              },
+              body: JSON.stringify({
+                phone: phone.replace(/[^0-9]/g, ""),
+                image: qrCodeImageUrl,
+                caption: "🎫 QR Code para Check-in no Evento",
+              }),
+            });
+            console.log("[whatsapp-chatbot] QR code image sent via Z-API");
+          } catch (imgErr) {
+            console.error("[whatsapp-chatbot] Error sending QR image via Z-API:", imgErr);
+            // Fallback: send as link
+            await sendResponseToUser(supabase, intSettings, provider, phone,
+              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+          }
+        } else if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
+          // Meta Cloud: send image via API
+          const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+          if (metaAccessToken) {
+            const apiVersion = intSettings.meta_cloud_api_version || "v20.0";
+            const graphUrl = `https://graph.facebook.com/${apiVersion}/${intSettings.meta_cloud_phone_number_id}/messages`;
+            let cleanPhone = phone.replace(/[^0-9]/g, "");
+            if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
+              cleanPhone = "55" + cleanPhone;
+            }
+            try {
+              await fetch(graphUrl, {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${metaAccessToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  messaging_product: "whatsapp",
+                  recipient_type: "individual",
+                  to: cleanPhone,
+                  type: "image",
+                  image: {
+                    link: qrCodeImageUrl,
+                    caption: "🎫 QR Code para Check-in no Evento",
+                  },
+                }),
+              });
+              console.log("[whatsapp-chatbot] QR code image sent via Meta Cloud");
+            } catch (imgErr) {
+              console.error("[whatsapp-chatbot] Error sending QR image via Meta Cloud:", imgErr);
+              await sendResponseToUser(supabase, intSettings, provider, phone,
+                `🎫 *Seu QR Code:*\n${checkInUrl}`);
+            }
+          } else {
+            await sendResponseToUser(supabase, intSettings, provider, phone,
+              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+          }
+        } else {
+          // No image capability, send link
+          await sendResponseToUser(supabase, intSettings, provider, phone,
+            `🎫 *Seu QR Code:*\n${checkInUrl}`);
+        }
+      }
+
+      // Clean up session state
+      await supabase.from("whatsapp_chatbot_sessions").update({
+        event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
+        event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null,
+      }).eq("id", session.id);
+
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_completed", tenantId, startTime);
+      console.log(`[whatsapp-chatbot] Event registration completed for ${phone}`);
+      return { success: true, responseType: "event_reg_completed" };
+
+    } catch (err) {
+      console.error("[whatsapp-chatbot] Event registration exception:", err);
+      const msg = "Ops, ocorreu um erro inesperado. 😔 Tente novamente digitando *EVENTO*.";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await supabase.from("whatsapp_chatbot_sessions").update({
+        event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
+        event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null,
+      }).eq("id", session.id);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_exception", tenantId, startTime);
+      return { success: true, responseType: "event_reg_exception" };
+    }
+  }
+
+  return null;
+}
+
+async function logEventReg(supabase: any, phone: string, msgIn: string, msgOut: string, type: string, tenantId: string, startTime: number) {
+  await supabase.from("whatsapp_chatbot_logs").insert({
+    leader_id: null, phone, message_in: msgIn, message_out: msgOut,
+    keyword_matched: "EVENTO", response_type: type,
+    processing_time_ms: Date.now() - startTime,
+    tenant_id: tenantId,
+  });
+}
+
 // Dynamic function implementations
-const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promise<string>> = {
+const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?: any, tenantId?: string, phone?: string, provider?: string, intSettings?: any) => Promise<string | null>> = {
 
   // Mostra estatísticas da árvore do líder
   minha_arvore: async (supabase, leader) => {
@@ -324,10 +690,46 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader) => Promis
     response += `📊 *RANKING* - Ver sua posição\n`;
     response += `👥 *SUBORDINADOS* - Ver equipe direta\n`;
     response += `⏳ *PENDENTES* - Ver subordinados não verificados\n`;
+    response += `📅 *EVENTO* - Inscrever-se em evento\n`;
     response += `❓ *AJUDA* - Ver esta lista\n`;
     response += `\nOu digite sua pergunta e tentarei ajudar! 😊`;
 
     return response;
+  },
+
+  // Cadastro em evento via WhatsApp — starts the multi-step flow
+  cadastro_evento: async (supabase, leader, session, tenantId, phone, provider, intSettings) => {
+    if (!tenantId || !session) return "Erro ao iniciar inscrição. Tente novamente.";
+
+    // Fetch published upcoming events
+    const { data: events } = await supabase
+      .from("events")
+      .select("id, name, date, time, location")
+      .eq("tenant_id", tenantId)
+      .eq("status", "published")
+      .gte("date", new Date().toISOString().split("T")[0])
+      .order("date", { ascending: true })
+      .limit(10);
+
+    if (!events || events.length === 0) {
+      return "📅 Não há eventos disponíveis para inscrição no momento.\n\nFique atento, em breve teremos novidades! 😊";
+    }
+
+    let msg = `📅 *Eventos Disponíveis para Inscrição:*\n\n`;
+    events.forEach((ev: any, i: number) => {
+      const eventDate = new Date(ev.date + "T00:00:00").toLocaleDateString("pt-BR");
+      msg += `*${i + 1}.* ${ev.name}\n`;
+      msg += `   🗓️ ${eventDate} às ${ev.time}\n`;
+      msg += `   📍 ${ev.location}\n\n`;
+    });
+    msg += `Digite o *número* do evento para se inscrever.\nDigite *CANCELAR* para sair.`;
+
+    // Set session state to selecting_event
+    await supabase.from("whatsapp_chatbot_sessions").update({
+      event_reg_state: "selecting_event",
+    }).eq("id", session.id);
+
+    return msg;
   }
 };
 
@@ -687,6 +1089,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Check if user is in an EVENT registration flow step
+    if (session?.event_reg_state) {
+      const evtRegResult = await handleEventRegistrationStep(
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+      );
+      if (evtRegResult) {
+        return new Response(JSON.stringify(evtRegResult),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Check chatbot configuration - filtered by tenant
     let configQuery = supabase
       .from("whatsapp_chatbot_config")
@@ -860,10 +1273,17 @@ Deno.serve(async (req) => {
           .replace("{{pontos}}", String(actor?.pontuacao_total || 0))
           .replace("{{cadastros}}", String(actor?.cadastros || 0));
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
-        if (actor) {
+        // Special handling for cadastro_evento: works for both leaders and guests
+        if (matchedKeyword.dynamic_function === "cadastro_evento") {
+          const fn = dynamicFunctions["cadastro_evento"];
+          if (fn) {
+            const result = await fn(supabase, actor as any, session, tenantId, normalizedPhone, provider, null);
+            responseMessage = result || chatbotConfig.fallback_message || "Função não encontrada.";
+          }
+        } else if (actor) {
           const fn = dynamicFunctions[matchedKeyword.dynamic_function];
           if (fn) {
-            responseMessage = await fn(supabase, actor);
+            responseMessage = await fn(supabase, actor) || "";
           } else {
             responseMessage = chatbotConfig.fallback_message || "Função não encontrada.";
           }

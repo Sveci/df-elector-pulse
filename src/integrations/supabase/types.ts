@@ -4427,6 +4427,13 @@ export type Database = {
           collected_email: string | null
           collected_name: string | null
           created_at: string
+          event_reg_cidade_id: string | null
+          event_reg_data_nascimento: string | null
+          event_reg_email: string | null
+          event_reg_endereco: string | null
+          event_reg_event_id: string | null
+          event_reg_nome: string | null
+          event_reg_state: string | null
           first_message_at: string
           id: string
           phone: string
@@ -4441,6 +4448,13 @@ export type Database = {
           collected_email?: string | null
           collected_name?: string | null
           created_at?: string
+          event_reg_cidade_id?: string | null
+          event_reg_data_nascimento?: string | null
+          event_reg_email?: string | null
+          event_reg_endereco?: string | null
+          event_reg_event_id?: string | null
+          event_reg_nome?: string | null
+          event_reg_state?: string | null
           first_message_at?: string
           id?: string
           phone: string
@@ -4455,6 +4469,13 @@ export type Database = {
           collected_email?: string | null
           collected_name?: string | null
           created_at?: string
+          event_reg_cidade_id?: string | null
+          event_reg_data_nascimento?: string | null
+          event_reg_email?: string | null
+          event_reg_endereco?: string | null
+          event_reg_event_id?: string | null
+          event_reg_nome?: string | null
+          event_reg_state?: string | null
           first_message_at?: string
           id?: string
           phone?: string
