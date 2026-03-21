@@ -856,24 +856,26 @@ serve(async (req) => {
                 continue;
               }
 
-              // === CHECK ACTIVE REGISTRATION FLOW (before consent/verification) ===
+              // === CHECK ACTIVE REGISTRATION OR EVENT REGISTRATION FLOW ===
               let inRegistrationFlow = false;
               if (tenantId) {
                 const phoneWithPlus = from.startsWith('+') ? from : `+${from}`;
                 const phoneWithoutPlus = from.startsWith('+') ? from.substring(1) : from;
                 const { data: regSession } = await supabase
                   .from('whatsapp_chatbot_sessions')
-                  .select('registration_state')
+                  .select('registration_state, event_reg_state')
                   .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithoutPlus}`)
                   .eq('tenant_id', tenantId)
-                  .is('registration_completed_at', null)
-                  .not('registration_state', 'is', null)
                   .limit(1)
                   .maybeSingle();
 
                 if (regSession?.registration_state) {
                   inRegistrationFlow = true;
                   console.log(`[Meta Webhook] User ${from} is in registration flow (state: ${regSession.registration_state}), forwarding to chatbot`);
+                }
+                if (regSession?.event_reg_state) {
+                  inRegistrationFlow = true;
+                  console.log(`[Meta Webhook] User ${from} is in event registration flow (state: ${regSession.event_reg_state}), forwarding to chatbot`);
                 }
               }
 
