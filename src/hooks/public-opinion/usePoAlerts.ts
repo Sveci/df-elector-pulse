@@ -86,6 +86,7 @@ export function usePoAlerts(entityId?: string) {
             title: "Pico de menções negativas detectado",
             description: `Menções negativas aumentaram ${negRise.toFixed(0)}pp — agora em ${lastNegPct.toFixed(0)}% do total. Ação imediata recomendada.`,
             value: Math.round(lastNegPct),
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
