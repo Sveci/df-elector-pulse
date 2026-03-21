@@ -68,6 +68,7 @@ export function usePoAlerts(entityId?: string) {
             description: `Queda de ${drop.toFixed(0)}pp no sentimento positivo. Acompanhe a tendência.`,
             value: Math.round(drop),
             threshold: 10,
+            sourceUrl: latestMentionUrl,
             detectedAt: last.snapshot_date,
           });
         }
