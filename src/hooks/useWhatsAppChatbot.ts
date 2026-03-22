@@ -315,6 +315,30 @@ export function useChatbotStats() {
   });
 }
 
+// Hook for deleting a chatbot session
+export function useDeleteChatbotSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await (supabase as any)
+        .from("whatsapp_chatbot_sessions")
+        .delete()
+        .eq("id", sessionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chatbot-sessions"] });
+      toast.success("Sessão encerrada com sucesso!");
+    },
+    onError: (error) => {
+      console.error("Error deleting session:", error);
+      toast.error("Erro ao encerrar sessão");
+    }
+  });
+}
+
 // Available dynamic functions for reference
 export const AVAILABLE_DYNAMIC_FUNCTIONS = [
   { value: "minha_arvore", label: "Minha Árvore", description: "Mostra estatísticas da rede do líder" },
