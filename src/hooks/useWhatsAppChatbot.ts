@@ -50,15 +50,16 @@ export interface ChatbotSession {
   phone: string;
   tenant_id: string;
   first_message_at: string;
-  last_activity_at: string | null;
   registration_state: string | null;
   registration_completed_at: string | null;
+  registration_asked_at: string | null;
   collected_name: string | null;
   collected_email: string | null;
   collected_city: string | null;
-  invite_sent_count: number;
-  conversation_history: Array<{ role: string; content: string; ts?: number }>;
+  last_keyword_at: string | null;
+  event_reg_state: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface ChatbotStats {
