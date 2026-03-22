@@ -663,19 +663,32 @@ const WhatsAppChatbot = () => {
                             : '-'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            disabled={deleteSession.isPending}
-                            onClick={() => {
-                              if (confirm(`Encerrar sessão de ${s.phone ? `***${s.phone.slice(-4)}` : 'usuário'}? O usuário poderá reiniciar a conversa.`)) {
-                                deleteSession.mutate(s.id!);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                disabled={deleteSession.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Encerrar sessão?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Deseja encerrar a sessão de {s.phone ? `***${s.phone.slice(-4)}` : 'usuário'}? O usuário poderá reiniciar a conversa do zero.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteSession.mutate(s.id!)}>
+                                  Encerrar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     ))}
