@@ -64,6 +64,7 @@ import {
   useChatbotLogs,
   useChatbotSessions,
   useChatbotStats,
+  useDeleteChatbotSession,
   ChatbotKeyword,
   AVAILABLE_DYNAMIC_FUNCTIONS
 } from "@/hooks/useWhatsAppChatbot";
