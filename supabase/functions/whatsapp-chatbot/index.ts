@@ -299,9 +299,9 @@ async function handleEventRegistrationStep(
     let msg = `${dataNascimento ? "Data registrada!" : "Tudo bem!"} 👍\n\nEm qual *cidade/região* você mora?`;
     if (cityOptions.length > 0) {
       msg += `\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
-      msg += `\n\nResponda com o *número* ou o *nome* da cidade/região.`;
+      msg += `\n\nResponda apenas com o *número* da cidade/região.`;
     } else {
-      msg += "\n\nDigite o nome da sua cidade:";
+      msg += "\n\nNo momento não há cidades/regiões disponíveis para seleção. Tente novamente digitando *EVENTO* em instantes.";
     }
     await sendResponseToUser(supabase, intSettings, provider, phone, msg);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_birthday_collected", tenantId, startTime);
@@ -313,16 +313,23 @@ async function handleEventRegistrationStep(
     let cidadeId: string | null = null;
     let cidadeNomeSelecionada: string | null = null;
     const cityOptions = await getEventRegistrationCityOptions(supabase, tenantId, 30);
+    const trimmed = userMessage.trim();
 
-    if (userMessage.length < 2) {
-      const retryMsg = "Por favor, digite o nome da sua *cidade/região*:";
+    if (cityOptions.length === 0) {
+      const retryMsg = "No momento não há cidades/regiões disponíveis para seleção. Tente novamente digitando *EVENTO* em instantes.";
+      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+      await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
+      return { success: true, responseType: "event_reg_retry_city" };
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+      const retryMsg = `Por favor, responda apenas com o *número* da cidade/região da lista. 🙏\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
       await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
       await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_city" };
     }
 
     {
-      const trimmed = userMessage.trim();
       const selectedNumber = Number.parseInt(trimmed, 10);
 
       const selectedByNumber = Number.isNaN(selectedNumber)
