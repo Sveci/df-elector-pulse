@@ -50,15 +50,16 @@ export interface ChatbotSession {
   phone: string;
   tenant_id: string;
   first_message_at: string;
-  last_activity_at: string | null;
   registration_state: string | null;
   registration_completed_at: string | null;
+  registration_asked_at: string | null;
   collected_name: string | null;
   collected_email: string | null;
   collected_city: string | null;
-  invite_sent_count: number;
-  conversation_history: Array<{ role: string; content: string; ts?: number }>;
+  last_keyword_at: string | null;
+  event_reg_state: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface ChatbotStats {
@@ -255,8 +256,8 @@ export function useChatbotSessions(limit = 50) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("whatsapp_chatbot_sessions")
-        .select("id, phone, first_message_at, last_activity_at, registration_state, registration_completed_at, collected_name, invite_sent_count, created_at")
-        .order("last_activity_at", { ascending: false, nullsFirst: false })
+        .select("id, phone, first_message_at, registration_state, registration_completed_at, registration_asked_at, collected_name, collected_email, last_keyword_at, event_reg_state, created_at, updated_at")
+        .order("updated_at", { ascending: false, nullsFirst: false })
         .limit(limit);
 
       if (error) throw error;

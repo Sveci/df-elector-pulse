@@ -607,10 +607,10 @@ const WhatsAppChatbot = () => {
                     <TableRow>
                       <TableHead>Telefone</TableHead>
                       <TableHead>Nome Coletado</TableHead>
-                      <TableHead>Status de Cadastro</TableHead>
-                      <TableHead>Invites Enviados</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Fluxo Evento</TableHead>
                       <TableHead>Primeira Mensagem</TableHead>
-                      <TableHead>Última Atividade</TableHead>
+                      <TableHead>Atualizado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -632,9 +632,11 @@ const WhatsAppChatbot = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={(s.invite_sent_count || 0) > 0 ? "text-orange-600 font-medium" : "text-muted-foreground"}>
-                            {s.invite_sent_count || 0}
-                          </span>
+                          {s.event_reg_state ? (
+                            <Badge variant="outline" className="text-blue-600">{s.event_reg_state}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {s.first_message_at
@@ -642,8 +644,8 @@ const WhatsAppChatbot = () => {
                             : '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {s.last_activity_at
-                            ? formatDistanceToNow(new Date(s.last_activity_at), { addSuffix: true, locale: ptBR })
+                          {s.updated_at
+                            ? formatDistanceToNow(new Date(s.updated_at), { addSuffix: true, locale: ptBR })
                             : '-'}
                         </TableCell>
                       </TableRow>
