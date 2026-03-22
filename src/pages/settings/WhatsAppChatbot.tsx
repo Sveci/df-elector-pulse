@@ -117,6 +117,7 @@ const WhatsAppChatbot = () => {
   const updateKeyword = useUpdateChatbotKeyword();
   const deleteKeyword = useDeleteChatbotKeyword();
   const updateCommunity = useUpdateCommunity();
+  const deleteSession = useDeleteChatbotSession();
 
   const handleConfigChange = (field: string, value: any) => {
     updateConfig.mutate({ [field]: value });
