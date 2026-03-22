@@ -613,6 +613,7 @@ const WhatsAppChatbot = () => {
                       <TableHead>Fluxo Evento</TableHead>
                       <TableHead>Primeira Mensagem</TableHead>
                       <TableHead>Atualizado</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -649,6 +650,21 @@ const WhatsAppChatbot = () => {
                           {s.updated_at
                             ? formatDistanceToNow(new Date(s.updated_at), { addSuffix: true, locale: ptBR })
                             : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={deleteSession.isPending}
+                            onClick={() => {
+                              if (confirm(`Encerrar sessão de ${s.phone ? `***${s.phone.slice(-4)}` : 'usuário'}? O usuário poderá reiniciar a conversa.`)) {
+                                deleteSession.mutate(s.id!);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
