@@ -350,7 +350,7 @@ export function DelayNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function EndNode({ data, selected }: NodeProps) {
+export function EndNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const endLabels: Record<string, string> = {
     close: "Encerrar conversa",
@@ -359,7 +359,7 @@ export function EndNode({ data, selected }: NodeProps) {
     nothing: "Aguardar próxima mensagem",
   };
   return (
-    <NodeShell type="end" data={d} selected={selected} showSourceHandle={false}>
+    <NodeShell nodeId={id} type="end" data={d} selected={selected} showSourceHandle={false}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         {endLabels[d.endAction || "nothing"]}
       </p>
