@@ -333,6 +333,14 @@ const App = () => (
                           }
                         />
                         <Route
+                          path="/whatsapp/inbox"
+                          element={
+                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
+                              <WhatsAppInbox />
+                            </RoleProtectedRoute>
+                          }
+                        />
+                        <Route
                           path="/email"
                           element={
                             <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
