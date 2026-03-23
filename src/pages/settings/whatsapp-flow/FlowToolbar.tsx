@@ -25,6 +25,7 @@ interface FlowToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitView: () => void;
+  onAutoLayout?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   isSaving?: boolean;
