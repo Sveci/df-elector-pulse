@@ -222,6 +222,36 @@ async function handleEventRegistrationStep(
 
     const selectedEvent = events[num - 1];
 
+    // ── Check if user is already registered for this event ──
+    const normalizedPhone = phone.replace(/\D/g, "");
+    const phoneVariants = [normalizedPhone];
+    if (normalizedPhone.startsWith("55") && normalizedPhone.length >= 12) {
+      phoneVariants.push(normalizedPhone.slice(2)); // without country code
+    }
+
+    const { data: existingReg } = await supabase
+      .from("event_registrations")
+      .select("id, nome, qr_code")
+      .eq("event_id", selectedEvent.id)
+      .eq("tenant_id", tenantId)
+      .or(phoneVariants.map(p => `whatsapp.ilike.%${p}%`).join(","))
+      .limit(1);
+
+    if (existingReg && existingReg.length > 0) {
+      const reg = existingReg[0];
+      const msg = `⚠️ Você já está inscrito(a) neste evento!\n\n📅 *${selectedEvent.name}*\n👤 Nome: *${reg.nome}*\n\nSeu QR Code de check-in já foi enviado anteriormente. Se precisar de ajuda, digite *AJUDA*.`;
+      
+      // Clear session state
+      await supabase.from("whatsapp_chatbot_sessions").update({
+        event_reg_state: null,
+        event_reg_event_id: null,
+      }).eq("id", session.id);
+      
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await logEventReg(supabase, phone, userMessage, msg, "event_reg_already_registered", tenantId, startTime);
+      return { success: true, responseType: "event_reg_already_registered" };
+    }
+
     await supabase.from("whatsapp_chatbot_sessions").update({
       event_reg_event_id: selectedEvent.id,
       event_reg_state: "collecting_evt_name",
