@@ -2214,7 +2214,13 @@ async function generateAIResponse(apiKey: string, userMessage: string, leader: L
     const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
 
-    if (responseIsOutOfScope(aiAnswer)) { console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope"); return aiAnswer; }
+    if (responseIsOutOfScope(aiAnswer)) {
+      console.log("[whatsapp-chatbot] AI rejected as out-of-scope");
+      // Clean the FORA_DO_ESCOPO tag before sending, or use a friendly message
+      const cleanedScope = aiAnswer.replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "").replace(/^[\s❌]+/, "").trim();
+      if (cleanedScope.length > 30) return cleanedScope;
+      return "Desculpe, só posso responder sobre assuntos relacionados ao mandato e temas legislativos. 😊 Posso ajudar com algo nesse tema?";
+    }
     if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
       const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
       if (groundedFallback) { console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback"); return groundedFallback; }
