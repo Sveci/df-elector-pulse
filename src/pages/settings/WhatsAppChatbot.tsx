@@ -1,4 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
+import { WhatsAppInboxContent } from "@/pages/WhatsAppInbox";
+import { Inbox } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
