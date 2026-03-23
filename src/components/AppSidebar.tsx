@@ -10,7 +10,7 @@ import {
   Building, LogOut, UserPlus, List, History as HistoryIcon, MessageSquare, Mail, HelpCircle,
   Ticket, Map, ClipboardList, Smartphone, GitBranch, Clock, CalendarDays, Globe,
   ChevronDown, Eye, Heart, GitCompare, UsersRound, MessageCircle, Sparkles, CalendarCheck, FileBarChart, Settings2,
-  Package, Brain
+  Package, Brain, Inbox
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import {
@@ -61,6 +61,7 @@ const publicOpinionSubItems: SubMenuItem[] = [
 const communicationItems: MenuItem[] = [
   { title: "Agente IA", url: "/ai-agent", icon: Bot, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "WhatsApp", url: "/whatsapp", icon: MessageSquare, roles: ['super_admin', 'admin', 'atendente'] },
+  { title: "Inbox WhatsApp", url: "/whatsapp/inbox", icon: Inbox, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "Email", url: "/email", icon: Mail, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "SMS", url: "/sms", icon: Smartphone, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "Agendados", url: "/scheduled", icon: Clock, roles: ['super_admin', 'admin', 'atendente'] },
