@@ -1187,6 +1187,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // =====================================================
+    // GLOBAL EXIT COMMAND — clears any active flow
+    // =====================================================
+    const normalizedMsgUpper = message.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (["SAIR", "CANCELAR", "CANCEL", "EXIT"].includes(normalizedMsgUpper)) {
+      const hasActiveFlow = session?.registration_state || session?.event_reg_state;
+      if (hasActiveFlow) {
+        // Clear all flow states
+        await supabase.from("whatsapp_chatbot_sessions").update({
+          registration_state: null,
+          event_reg_state: null,
+          event_reg_event_id: null,
+          event_reg_nome: null,
+          event_reg_email: null,
+          event_reg_cidade_id: null,
+          event_reg_data_nascimento: null,
+          event_reg_endereco: null,
+        }).eq("id", session.id);
+
+        const exitMsg = "✅ Você saiu do fluxo atual.\n\nSe precisar de algo, é só digitar:\n📋 *AJUDA* — ver comandos disponíveis\n📅 *EVENTO* — inscrever-se em eventos\n🤖 Ou envie qualquer pergunta!";
+        await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, exitMsg);
+        return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Check if user is in a registration flow step
     if (session?.registration_state && !session.registration_completed_at) {
       const regResult = await handleRegistrationStep(
