@@ -174,14 +174,14 @@ export function NodeConfigPanel({ node, onClose, onChange, onDelete }: NodeConfi
             <div className="space-y-1.5">
               <Label>Tipo de mídia (opcional)</Label>
               <Select
-                value={form.mediaType || ""}
-                onValueChange={(v) => update("mediaType", v || undefined)}
+                value={form.mediaType || "none"}
+                onValueChange={(v) => update("mediaType", v === "none" ? undefined : v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sem mídia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem mídia</SelectItem>
+                  <SelectItem value="none">Sem mídia</SelectItem>
                   <SelectItem value="image">🖼 Imagem</SelectItem>
                   <SelectItem value="video">🎬 Vídeo</SelectItem>
                   <SelectItem value="document">📄 Documento</SelectItem>
