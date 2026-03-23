@@ -108,6 +108,7 @@ interface NodeShellProps {
 
 export function NodeShell({
   nodeId,
+  type,
   data,
   selected,
   showTargetHandle = true,
@@ -122,7 +123,7 @@ export function NodeShell({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteElements({ nodes: [{ id: data.__nodeId as string }] });
+    deleteElements({ nodes: [{ id: nodeId }] });
   };
 
   return (
