@@ -95,6 +95,7 @@ export const NODE_CONFIG: Record<FlowNodeType, {
 // ─── Shared Node Shell ─────────────────────────────────────────────────────────
 
 interface NodeShellProps {
+  nodeId: string;
   type: FlowNodeType;
   data: FlowNodeData;
   selected?: boolean;
