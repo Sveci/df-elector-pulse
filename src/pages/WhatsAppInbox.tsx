@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { PageHeader } from "@/components/PageHeader";
 import { MessageSquare, Search, Send, User, Phone, MapPin, Calendar, Mail, Clock, ArrowDown, Check, CheckCheck, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -136,7 +134,6 @@ function ChatPanel({ phone }: { phone: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -160,7 +157,6 @@ function ChatPanel({ phone }: { phone: string }) {
     }
   };
 
-  // Group messages by date
   const groupedMessages: { date: string; messages: InboxMessage[] }[] = [];
   let currentDate = "";
   for (const msg of messages) {
@@ -181,7 +177,6 @@ function ChatPanel({ phone }: { phone: string }) {
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1 bg-muted/20">
         {isLoading ? (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -234,7 +229,6 @@ function ChatPanel({ phone }: { phone: string }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
       <div className="border-t p-3 bg-background">
         <div className="flex gap-2 items-end">
           <Textarea
@@ -342,51 +336,41 @@ function ContactPanel({ phone }: { phone: string }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Exported Inbox Content (embeddable, no DashboardLayout) ──────────────────
 
-export default function WhatsAppInbox() {
+export function WhatsAppInboxContent() {
   const { data: conversations = [], isLoading } = useInboxConversations();
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-64px)]">
-        <div className="px-4 py-3 border-b">
-          <PageHeader
-            icon={MessageSquare}
-            title="Inbox WhatsApp"
-            subtitle="Gerencie todas as conversas em tempo real"
-          />
-        </div>
+    <div className="flex h-[calc(100vh-220px)] border rounded-lg overflow-hidden">
+      <ConversationsList
+        conversations={conversations}
+        selectedPhone={selectedPhone}
+        onSelect={setSelectedPhone}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
-        <div className="flex flex-1 overflow-hidden">
-          <ConversationsList
-            conversations={conversations}
-            selectedPhone={selectedPhone}
-            onSelect={setSelectedPhone}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
-
-          {selectedPhone ? (
-            <>
-              <ChatPanel phone={selectedPhone} />
-              <ContactPanel phone={selectedPhone} />
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center space-y-3">
-                <div className="text-5xl">💬</div>
-                <h3 className="font-semibold text-lg">Selecione uma conversa</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Escolha uma conversa no painel à esquerda para visualizar as mensagens e responder em tempo real.
-                </p>
-              </div>
-            </div>
-          )}
+      {selectedPhone ? (
+        <>
+          <ChatPanel phone={selectedPhone} />
+          <ContactPanel phone={selectedPhone} />
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="text-5xl">💬</div>
+            <h3 className="font-semibold text-lg">Selecione uma conversa</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Escolha uma conversa no painel à esquerda para visualizar as mensagens e responder em tempo real.
+            </p>
+          </div>
         </div>
-      </div>
-    </DashboardLayout>
+      )}
+    </div>
   );
 }
+
+export default WhatsAppInboxContent;
