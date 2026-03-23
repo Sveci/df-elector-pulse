@@ -312,7 +312,7 @@ export function AutomationNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function ConditionNode({ data, selected }: NodeProps) {
+export function ConditionNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const opLabels: Record<string, string> = {
     equals: "=",
@@ -323,7 +323,7 @@ export function ConditionNode({ data, selected }: NodeProps) {
     is_not_empty: "não vazio",
   };
   return (
-    <NodeShell type="condition" data={d} selected={selected} showTrueHandle showFalseHandle showSourceHandle={false}>
+    <NodeShell nodeId={id} type="condition" data={d} selected={selected} showTrueHandle showFalseHandle showSourceHandle={false}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         <span className="font-mono text-orange-600">{d.conditionField || "campo"}</span>
         {" "}{opLabels[d.conditionOperator || "equals"] || "="}{" "}
