@@ -337,12 +337,12 @@ export function ConditionNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function DelayNode({ data, selected }: NodeProps) {
+export function DelayNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const secs = d.delaySeconds || 0;
   const display = secs >= 60 ? `${Math.round(secs / 60)}min` : `${secs}s`;
   return (
-    <NodeShell type="delay" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="delay" data={d} selected={selected}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         ⏱ Aguardar <span className="font-semibold text-foreground">{display}</span>
       </p>
