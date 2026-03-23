@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Save, Upload, Play, Undo2, Redo2, ZoomIn, ZoomOut, Maximize2,
-  Plus, Download, Settings2, Info, ChevronDown
+  Plus, Download, Settings2, Info, ChevronDown, LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
