@@ -10,7 +10,7 @@ import {
   Building, LogOut, UserPlus, List, History as HistoryIcon, MessageSquare, Mail, HelpCircle,
   Ticket, Map, ClipboardList, Smartphone, GitBranch, Clock, CalendarDays, Globe,
   ChevronDown, Eye, Heart, GitCompare, UsersRound, MessageCircle, Sparkles, CalendarCheck, FileBarChart, Settings2,
-  Package, Brain
+  Package, Brain, Inbox
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import {
