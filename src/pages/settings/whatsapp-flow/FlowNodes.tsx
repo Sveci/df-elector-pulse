@@ -226,10 +226,10 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function KeywordNode({ data, selected }: NodeProps) {
+export function KeywordNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   return (
-    <NodeShell type="keyword" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="keyword" data={d} selected={selected}>
       <div className="flex flex-wrap gap-1 mt-0.5">
         <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
           {d.keyword || "..."}
