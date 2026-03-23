@@ -263,6 +263,97 @@ function FlowBuilderInner() {
   const handleZoomOut = () => reactFlowInstance.zoomOut({ duration: 200 });
   const handleFitView = () => reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
 
+  // ── Auto-layout (simple layered/tree layout) ───────────────────────────────
+  const handleAutoLayout = useCallback(() => {
+    if (nodes.length === 0) return;
+
+    const NODE_WIDTH = 220;
+    const NODE_HEIGHT = 80;
+    const HORIZONTAL_GAP = 80;
+    const VERTICAL_GAP = 60;
+
+    // Build adjacency from edges
+    const childrenMap = new Map<string, string[]>();
+    const parentSet = new Set<string>();
+    const allIds = new Set(nodes.map((n) => n.id));
+
+    edges.forEach((e) => {
+      if (!childrenMap.has(e.source)) childrenMap.set(e.source, []);
+      childrenMap.get(e.source)!.push(e.target);
+      parentSet.add(e.target);
+    });
+
+    // Find roots (nodes with no incoming edges)
+    const roots = nodes.filter((n) => !parentSet.has(n.id)).map((n) => n.id);
+    if (roots.length === 0) roots.push(nodes[0].id);
+
+    // BFS to assign layers
+    const layerMap = new Map<string, number>();
+    const visited = new Set<string>();
+    let queue = roots.map((id) => ({ id, layer: 0 }));
+    roots.forEach((id) => { visited.add(id); layerMap.set(id, 0); });
+
+    while (queue.length > 0) {
+      const next: typeof queue = [];
+      for (const { id, layer } of queue) {
+        const children = childrenMap.get(id) || [];
+        for (const child of children) {
+          if (!visited.has(child)) {
+            visited.add(child);
+            layerMap.set(child, layer + 1);
+            next.push({ id: child, layer: layer + 1 });
+          }
+        }
+      }
+      queue = next;
+    }
+
+    // Place unvisited nodes in an extra layer
+    const maxLayer = Math.max(0, ...Array.from(layerMap.values()));
+    nodes.forEach((n) => {
+      if (!layerMap.has(n.id)) {
+        layerMap.set(n.id, maxLayer + 1);
+      }
+    });
+
+    // Group nodes by layer
+    const layers = new Map<number, string[]>();
+    layerMap.forEach((layer, id) => {
+      if (!layers.has(layer)) layers.set(layer, []);
+      layers.get(layer)!.push(id);
+    });
+
+    // Position nodes
+    const positions = new Map<string, { x: number; y: number }>();
+    const sortedLayers = Array.from(layers.keys()).sort((a, b) => a - b);
+
+    sortedLayers.forEach((layerIdx) => {
+      const ids = layers.get(layerIdx)!;
+      const totalHeight = ids.length * NODE_HEIGHT + (ids.length - 1) * VERTICAL_GAP;
+      const startY = -totalHeight / 2;
+
+      ids.forEach((id, i) => {
+        positions.set(id, {
+          x: layerIdx * (NODE_WIDTH + HORIZONTAL_GAP),
+          y: startY + i * (NODE_HEIGHT + VERTICAL_GAP),
+        });
+      });
+    });
+
+    setNodes((nds) =>
+      nds.map((n) => {
+        const pos = positions.get(n.id);
+        return pos ? { ...n, position: pos } : n;
+      })
+    );
+
+    isDirtyRef.current = true;
+    setIsDirty(true);
+
+    setTimeout(() => reactFlowInstance.fitView({ padding: 0.2, duration: 300 }), 50);
+    toast.success("Nós organizados automaticamente!");
+  }, [nodes, edges, setNodes, reactFlowInstance]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Top navigation bar */}
@@ -300,6 +391,7 @@ function FlowBuilderInner() {
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
               onFitView={handleFitView}
+              onAutoLayout={handleAutoLayout}
               isSaving={updateFlow.isPending || publishFlow.isPending}
             />
 

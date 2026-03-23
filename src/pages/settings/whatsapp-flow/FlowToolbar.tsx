@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Save, Upload, Play, Undo2, Redo2, ZoomIn, ZoomOut, Maximize2,
-  Plus, Download, Settings2, Info, ChevronDown
+  Plus, Download, Settings2, Info, ChevronDown, LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ interface FlowToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitView: () => void;
+  onAutoLayout?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   isSaving?: boolean;
@@ -49,6 +50,7 @@ export function FlowToolbar({
   onZoomIn,
   onZoomOut,
   onFitView,
+  onAutoLayout,
   onUndo,
   onRedo,
   isSaving,
@@ -159,6 +161,14 @@ export function FlowToolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>Ajustar à tela</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onAutoLayout} disabled={!onAutoLayout}>
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Organizar nós automaticamente</TooltipContent>
       </Tooltip>
 
       {/* Spacer */}
