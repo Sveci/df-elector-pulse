@@ -117,16 +117,31 @@ export function NodeShell({
 }: NodeShellProps) {
   const cfg = NODE_CONFIG[type];
   const Icon = cfg.icon;
+  const { deleteElements } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteElements({ nodes: [{ id: data.__nodeId as string }] });
+  };
 
   return (
     <div
       className={cn(
-        "rounded-xl border-2 shadow-md min-w-[220px] max-w-[280px] transition-all duration-150",
+        "group relative rounded-xl border-2 shadow-md min-w-[220px] max-w-[280px] transition-all duration-150",
         cfg.bg,
         cfg.border,
         selected && "ring-2 ring-offset-1 ring-primary shadow-lg scale-[1.02]"
       )}
     >
+      {/* Delete button - visible on hover */}
+      <button
+        onClick={handleDelete}
+        className="absolute -top-2 -right-2 z-10 hidden group-hover:flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-md hover:scale-110 transition-transform"
+        title="Remover nó"
+      >
+        <X className="h-3 w-3" />
+      </button>
+
       {/* Target handle (input) */}
       {showTargetHandle && (
         <Handle
