@@ -162,6 +162,14 @@ export function FlowToolbar({
         </TooltipTrigger>
         <TooltipContent>Ajustar à tela</TooltipContent>
       </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onAutoLayout} disabled={!onAutoLayout}>
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Organizar nós automaticamente</TooltipContent>
+      </Tooltip>
 
       {/* Spacer */}
       <div className="flex-1" />
