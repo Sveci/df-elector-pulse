@@ -278,6 +278,9 @@ const WhatsAppChatbot = () => {
           <TabsTrigger value="stats" className="gap-2">
             <BarChart2 className="h-4 w-4" /> Estatísticas
           </TabsTrigger>
+          <TabsTrigger value="inbox" className="gap-2">
+            <Inbox className="h-4 w-4" /> Inbox
+          </TabsTrigger>
         </TabsList>
 
 
