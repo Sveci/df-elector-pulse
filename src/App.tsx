@@ -85,6 +85,7 @@ const Segments = lazy(() => import("./pages/Segments"));
 const AIAgent = lazy(() => import("./pages/AIAgent"));
 const WhatsAppMarketing = lazy(() => import("./pages/WhatsAppMarketing"));
 const WhatsAppHistory = lazy(() => import("./pages/WhatsAppHistory"));
+const WhatsAppFlowBuilder = lazy(() => import("./pages/settings/whatsapp-flow/WhatsAppFlowBuilder"));
 const EmailMarketing = lazy(() => import("./pages/EmailMarketing"));
 const SMSMarketing = lazy(() => import("./pages/SMSMarketing"));
 const ScheduledMessages = lazy(() => import("./pages/ScheduledMessages"));
@@ -405,6 +406,7 @@ const App = () => (
                         <Route path="/settings/leader-form" element={<RP roles={[...ALL_ROLES]}><LeaderFormSettings /></RP>} />
                         <Route path="/settings/gamification" element={<RP roles={[...ADMIN_ROLES]}><Gamification /></RP>} />
                         <Route path="/settings/whatsapp-chatbot" element={<RP roles={[...ADMIN_ROLES]}><WhatsAppChatbot /></RP>} />
+                        <Route path="/settings/whatsapp-flow-builder" element={<RP roles={[...ADMIN_ROLES]}><WhatsAppFlowBuilder /></RP>} />
                         <Route path="/settings/region-materials" element={<RP roles={[...ADMIN_ROLES]}><RegionMaterials /></RP>} />
                         <Route path="/settings/reports" element={<RP roles={[...ALL_ROLES]}><Reports /></RP>} />
                         <Route path="/settings/duplicates" element={<RP roles={[...ADMIN_ROLES]}><DuplicateContacts /></RP>} />

@@ -60,7 +60,8 @@ import {
   Clock,
   TrendingUp,
   RefreshCw,
-  Activity
+  Activity,
+  GitBranch
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
@@ -220,6 +221,12 @@ const WhatsAppChatbot = () => {
           </Button>
         </Link>
         <PageHeader icon={Bot} title="Assistente Virtual WhatsApp" subtitle="Configure o chatbot para atender automaticamente os líderes via WhatsApp" className="flex-1" />
+        <Link to="/settings/whatsapp-flow-builder">
+          <Button className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-sm">
+            <GitBranch className="h-4 w-4" />
+            Abrir Whiteboard de Fluxos
+          </Button>
+        </Link>
         <TutorialButton onClick={restartTutorial} />
       </div>
 
