@@ -1994,8 +1994,20 @@ function normalizeForKb(text: string): string {
 }
 
 function extractSearchTerms(question: string): string[] {
+  // Extract composite legislative references FIRST (e.g., "PEC 47", "PL 123/2024")
+  const legislativeRefs: string[] = [];
+  const legPattern = /\b(PEC|PL|PLP|PDL|MPV|EC)\s*(\d+(?:[\s\/\-]\d{4})?)/gi;
+  let match;
+  while ((match = legPattern.exec(question)) !== null) {
+    legislativeRefs.push(match[0].replace(/\s+/g, " ").trim().toLowerCase());
+    // Also add the number part separately
+    const numPart = match[2].replace(/[\s\/\-]/g, "");
+    if (numPart.length >= 2) legislativeRefs.push(numPart);
+  }
+
   const rawTerms = question.toLowerCase().replace(/[^\w\sáéíóúãõâêîôûç]/g, " ").split(/\s+/).filter((w: string) => w.length > 2 && !KB_STOP_WORDS.has(w));
   const termSet = new Set<string>();
+  for (const ref of legislativeRefs) termSet.add(ref);
   for (const term of rawTerms) { termSet.add(term); const normalized = term.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); if (normalized !== term) termSet.add(normalized); }
   return Array.from(termSet);
 }
