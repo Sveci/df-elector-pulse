@@ -4345,7 +4345,7 @@ export type Database = {
           nodes?: Json
           published_at?: string | null
           tags?: string[]
-          tenant_id: string
+          tenant_id?: string
           trigger_count?: number
           updated_at?: string
           version?: number
