@@ -86,6 +86,7 @@ const AIAgent = lazy(() => import("./pages/AIAgent"));
 const WhatsAppMarketing = lazy(() => import("./pages/WhatsAppMarketing"));
 const WhatsAppHistory = lazy(() => import("./pages/WhatsAppHistory"));
 const WhatsAppFlowBuilder = lazy(() => import("./pages/settings/whatsapp-flow/WhatsAppFlowBuilder"));
+const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
 const EmailMarketing = lazy(() => import("./pages/EmailMarketing"));
 const SMSMarketing = lazy(() => import("./pages/SMSMarketing"));
 const ScheduledMessages = lazy(() => import("./pages/ScheduledMessages"));
