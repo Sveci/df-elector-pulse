@@ -2112,7 +2112,19 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
       body: JSON.stringify({
         model: "sonar-pro",
         messages: [
-          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Responda perguntas sobre ${scopeEntity}, mandato parlamentar, projetos de lei (PECs, PLs, etc.), ações políticas, legislação, políticas públicas e temas de interesse público. Temas legislativos como PECs, PLs e proposições são SEMPRE válidos, mesmo que ${scopeEntity} não seja autor. Apenas retorne FORA_DO_ESCOPO para temas completamente fora da política (ex: receitas, jogos, entretenimento). Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
+          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}.
+
+REGRA OBRIGATÓRIA DE ESCOPO:
+- Você SÓ pode responder se a informação estiver DIRETAMENTE relacionada a ${scopeEntity} ou ao seu mandato/atuação parlamentar.
+- Se ${scopeEntity} for autor, relator, votante ou tiver qualquer envolvimento direto com o tema (PEC, PL, projeto, comissão, etc.), responda normalmente.
+- Se o tema NÃO tiver NENHUMA relação comprovada com ${scopeEntity}, retorne EXATAMENTE: SEM_VINCULO_TENANT
+- Não responda sobre temas genéricos de política ou legislação que não envolvam ${scopeEntity}.
+- Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.
+
+Exemplos de SEM_VINCULO_TENANT:
+- Pergunta sobre PEC de outro deputado sem relação com ${scopeEntity} → SEM_VINCULO_TENANT
+- Pergunta sobre legislação que ${scopeEntity} votou ou relatou → Responda normalmente
+- Pergunta genérica sobre política sem menção a ${scopeEntity} → SEM_VINCULO_TENANT` },
           { role: "user", content: question },
         ],
         max_tokens: 500,
@@ -2123,9 +2135,13 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
     const cleanAnswer = answer.replace(/[*_`#]/g, "").replace(/_/g, " ").trim();
-    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
-    // Also filter if the response starts with rejection patterns
-    if (/^(FORA|❌|nao tem relacao)/i.test(cleanAnswer)) return null;
+    // Filter out responses with no tenant relation
+    if (!answer || answer.length < 15) return null;
+    if (cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || cleanAnswer.includes("SEM_VINCULO_TENANT")) {
+      console.log("[whatsapp-chatbot] Perplexity response filtered: no tenant relation");
+      return null;
+    }
+    if (/^(FORA|❌|SEM_VINCULO|nao tem relacao)/i.test(cleanAnswer)) return null;
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
     return `${answer}${citationSuffix}`;
   } catch (err) { console.error("[whatsapp-chatbot] Perplexity fallback error:", err); return null; }
@@ -2184,7 +2200,14 @@ async function generateAIResponse(apiKey: string, userMessage: string, leader: L
     : "";
 
   const scopeRestriction = orgScope
-    ? `\nCONTEXTO: Você é o assistente do gabinete de ${orgScope}. Seu foco principal são temas relacionados a ${orgScope}, ao mandato parlamentar, projetos de lei (PECs, PLs, PDLs, etc.), ações políticas, eventos, legislação, políticas públicas e temas de interesse público. Perguntas sobre legislação, proposições, PECs e projetos de lei são SEMPRE consideradas dentro do escopo, mesmo que não mencionem ${orgScope} diretamente. Apenas rejeite perguntas claramente fora do contexto político/legislativo (ex: receitas de bolo, piadas, jogos). Nesse caso responda: "Desculpe, só posso responder sobre assuntos relacionados ao mandato e temas legislativos. 😊 Posso ajudar com algo nesse tema?"`
+    ? `\nCONTEXTO: Você é o assistente do gabinete de ${orgScope}. 
+
+REGRA DE ESCOPO VINCULADA AO TENANT:
+- Você SÓ pode responder sobre temas DIRETAMENTE relacionados a ${orgScope}, ao seu mandato, suas ações, projetos de lei de sua autoria/relatoria, comissões das quais participa, eventos do gabinete e temas de interesse público em que ${orgScope} esteja envolvido.
+- Se a BASE DE CONHECIMENTO contém informações sobre o tema, responda normalmente citando a fonte.
+- Se a Base de Conhecimento NÃO contém informações e o tema NÃO tem relação comprovada com ${orgScope}, responda: "Desculpe, não encontrei informações sobre esse tema na nossa base. Posso ajudar com algo relacionado ao mandato de ${orgScope}? 😊"
+- NUNCA responda sobre temas genéricos de política, legislação ou proposições que NÃO tenham vínculo direto com ${orgScope}, a menos que a informação esteja na Base de Conhecimento.
+- Rejeite perguntas claramente fora do contexto político (ex: receitas, jogos, entretenimento).`
     : "";
 
   const fullPrompt = `${systemPrompt}\n${scopeRestriction}\n${leaderContext}\n${keywordContext ? `Contexto adicional: ${keywordContext}` : ""}\n${kbSection}\n\nREGRAS OBRIGATÓRIAS:\n- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.\n- ${kbContext ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}\n- REGRA CRÍTICA SOBRE ESPECIFICIDADE: Se o usuário perguntar sobre algo ESPECÍFICO e a base de conhecimento NÃO contém informação sobre esse item específico, diga EXATAMENTE: "Não encontrei informação específica sobre [item] na base disponível."\n- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que é exclusivo para líderes cadastrados."}\n- ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas. Responda APENAS sobre o conteúdo institucional." : ""}\n- NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema".\n- Se o líder não tem cadastros, diga que pode compartilhar seu link de indicação.\n- NUNCA faça suposições sobre dados que você não tem.`;
