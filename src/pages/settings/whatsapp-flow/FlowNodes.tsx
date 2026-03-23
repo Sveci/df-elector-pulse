@@ -249,11 +249,11 @@ export function KeywordNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function MessageNode({ data, selected }: NodeProps) {
+export function MessageNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const preview = (d.messageText || "").slice(0, 80);
   return (
-    <NodeShell type="message" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="message" data={d} selected={selected}>
       <p className="text-[11px] text-muted-foreground line-clamp-2 whitespace-pre-wrap">
         {preview || "Sem mensagem definida"}
         {(d.messageText || "").length > 80 ? "…" : ""}
