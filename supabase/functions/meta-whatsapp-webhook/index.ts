@@ -634,8 +634,49 @@ serve(async (req) => {
                 .trim()
                 .toUpperCase();
 
-              // === OPT-OUT COMMANDS ===
-              const optOutCommands = ["SAIR", "PARAR", "CANCELAR", "DESCADASTRAR", "STOP", "UNSUBSCRIBE"];
+              // === EXIT FLOW COMMANDS (SAIR/CANCELAR) ===
+              const exitFlowCommands = ["SAIR", "CANCELAR", "CANCEL", "EXIT"];
+              if (exitFlowCommands.includes(cleanMessage)) {
+                console.log(`[Meta Webhook] Exit flow command detected: ${cleanMessage}`);
+                
+                // Check if user has an active chatbot session/flow
+                let sessionQuery = supabase
+                  .from('whatsapp_chatbot_sessions')
+                  .select('id, registration_state, event_reg_state')
+                  .eq('phone', normalizedPhone);
+                if (tenantId) sessionQuery = sessionQuery.eq('tenant_id', tenantId);
+                const { data: activeSession } = await sessionQuery.single();
+                
+                const hasActiveFlow = activeSession && (activeSession.registration_state || activeSession.event_reg_state);
+                
+                if (hasActiveFlow) {
+                  // Clear session flow states
+                  await supabase
+                    .from('whatsapp_chatbot_sessions')
+                    .update({
+                      registration_state: null,
+                      event_reg_state: null,
+                    })
+                    .eq('id', activeSession.id);
+                  
+                  await sendMetaCloudMessage(supabase, normalizedPhone,
+                    `✅ Você saiu do fluxo atual.\n\nSe precisar de algo, é só digitar:\n📋 *AJUDA* - Ver comandos disponíveis\n🎫 *EVENTO* - Inscrição em eventos\n\nOu envie qualquer pergunta que responderei com prazer! 😊`,
+                    tenantId
+                  );
+                  console.log(`[Meta Webhook] Active flow cleared for ${normalizedPhone}`);
+                } else {
+                  // No active flow - just acknowledge
+                  await sendMetaCloudMessage(supabase, normalizedPhone,
+                    `Não há nenhum fluxo ativo no momento.\n\nDigite *AJUDA* para ver os comandos disponíveis. 😊`,
+                    tenantId
+                  );
+                  console.log(`[Meta Webhook] No active flow for ${normalizedPhone}, sent info message`);
+                }
+                continue;
+              }
+
+              // === OPT-OUT COMMANDS (unsubscribe from list) ===
+              const optOutCommands = ["PARAR", "DESCADASTRAR", "STOP", "UNSUBSCRIBE"];
               if (optOutCommands.includes(cleanMessage)) {
                 console.log(`[Meta Webhook] Opt-out command detected: ${cleanMessage}`);
                 if (contact && contact.is_active !== false) {
