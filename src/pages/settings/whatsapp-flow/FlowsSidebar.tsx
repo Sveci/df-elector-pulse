@@ -135,7 +135,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
   };
 
   return (
-    <div className="h-full flex flex-col w-[280px] flex-shrink-0 border-r bg-background">
+    <div className="h-full flex flex-col w-[320px] flex-shrink-0 border-r bg-background overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
