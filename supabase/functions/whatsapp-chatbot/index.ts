@@ -2024,9 +2024,15 @@ async function searchKnowledgeBase(supabase: any, question: string, tenantId: st
 
     const { data: chunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).textSearch("content", searchPattern, { config: "simple" });
     let allChunks = chunks || [];
+    // Fallback: try ILIKE for each search term if text search returns nothing
     if (allChunks.length === 0 && searchTerms.length > 0) {
-      const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${searchTerms[0]}%`).limit(20);
-      allChunks = ilikeChunks || [];
+      for (const term of searchTerms.slice(0, 3)) {
+        const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${term}%`).limit(20);
+        if (ilikeChunks && ilikeChunks.length > 0) { allChunks = [...allChunks, ...ilikeChunks]; }
+      }
+      // Deduplicate by content
+      const seen = new Set<string>();
+      allChunks = allChunks.filter((c: any) => { if (seen.has(c.content)) return false; seen.add(c.content); return true; });
     }
     if (allChunks.length === 0) return { context: "", sources: [], rankedChunks: [] };
 
