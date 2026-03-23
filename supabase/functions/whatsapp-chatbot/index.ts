@@ -2287,12 +2287,19 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
     const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
 
-    if (responseIsOutOfScope(aiAnswer)) {
-      console.log("[whatsapp-chatbot] AI rejected as out-of-scope");
-      // Clean the FORA_DO_ESCOPO tag before sending, or use a friendly message
-      const cleanedScope = aiAnswer.replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "").replace(/^[\s❌]+/, "").trim();
-      if (cleanedScope.length > 30) return cleanedScope;
-      return "Desculpe, só posso responder sobre assuntos relacionados ao mandato e temas legislativos. 😊 Posso ajudar com algo nesse tema?";
+    // Sanitize ALL internal tags before checking scope
+    let sanitizedAnswer = aiAnswer
+      .replace(/\*?SEM_VINCULO_TENANT\*?\s*/gi, "")
+      .replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "")
+      .replace(/\*?NO_RESULT\*?\s*/gi, "")
+      .replace(/^[\s❌*]+/, "")
+      .trim();
+
+    if (responseIsOutOfScope(aiAnswer) || aiAnswer.toUpperCase().includes("SEM_VINCULO_TENANT")) {
+      console.log("[whatsapp-chatbot] AI rejected as out-of-scope or no tenant link");
+      // If after cleaning tags there's still useful content, send it cleaned
+      if (sanitizedAnswer.length > 50 && !sanitizedAnswer.toLowerCase().includes("sem vinculo") && !sanitizedAnswer.toLowerCase().includes("fora do escopo")) return sanitizedAnswer;
+      return `Desculpe, não encontrei informações sobre esse tema na nossa base. 😊 Posso ajudar com algo relacionado ao mandato${orgScope ? ` de ${orgScope}` : ""}?`;
     }
     if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
       const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
