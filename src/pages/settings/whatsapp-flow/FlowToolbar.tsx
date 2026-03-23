@@ -50,6 +50,7 @@ export function FlowToolbar({
   onZoomIn,
   onZoomOut,
   onFitView,
+  onAutoLayout,
   onUndo,
   onRedo,
   isSaving,
