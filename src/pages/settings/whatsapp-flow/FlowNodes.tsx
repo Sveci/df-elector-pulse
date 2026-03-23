@@ -292,7 +292,7 @@ export function AiResponseNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function AutomationNode({ data, selected }: NodeProps) {
+export function AutomationNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const fnLabels: Record<string, string> = {
     minha_arvore: "Minha Árvore",
@@ -304,7 +304,7 @@ export function AutomationNode({ data, selected }: NodeProps) {
     ajuda: "Ajuda",
   };
   return (
-    <NodeShell type="automation" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="automation" data={d} selected={selected}>
       <Badge className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0 border-0 mt-0.5">
         ⚡ {fnLabels[d.automationFunction || ""] || d.automationFunction || "Selecione a função"}
       </Badge>
