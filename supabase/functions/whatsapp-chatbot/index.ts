@@ -62,7 +62,7 @@ const SESSION_EXPIRY_HOURS = 24;   // Sessions expire after 24h of inactivity
 const REGISTRATION_INVITE_MIN_INTERVAL_MIN = 60; // Min minutes between registration invites
 const SEND_RETRY_ATTEMPTS = 3;     // Retry failed sends up to 3 times
 const SEND_RETRY_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
-const KEYWORD_COOLDOWN_MINUTES = 30; // After a keyword trigger, ignore free-text for N minutes
+const KEYWORD_COOLDOWN_MINUTES = 2; // After a keyword trigger, ignore free-text for N minutes
 
 // =====================================================
 // UTILITIES
