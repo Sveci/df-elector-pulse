@@ -2112,7 +2112,19 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
       body: JSON.stringify({
         model: "sonar-pro",
         messages: [
-          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Responda perguntas sobre ${scopeEntity}, mandato parlamentar, projetos de lei (PECs, PLs, etc.), ações políticas, legislação, políticas públicas e temas de interesse público. Temas legislativos como PECs, PLs e proposições são SEMPRE válidos, mesmo que ${scopeEntity} não seja autor. Apenas retorne FORA_DO_ESCOPO para temas completamente fora da política (ex: receitas, jogos, entretenimento). Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
+          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}.
+
+REGRA OBRIGATÓRIA DE ESCOPO:
+- Você SÓ pode responder se a informação estiver DIRETAMENTE relacionada a ${scopeEntity} ou ao seu mandato/atuação parlamentar.
+- Se ${scopeEntity} for autor, relator, votante ou tiver qualquer envolvimento direto com o tema (PEC, PL, projeto, comissão, etc.), responda normalmente.
+- Se o tema NÃO tiver NENHUMA relação comprovada com ${scopeEntity}, retorne EXATAMENTE: SEM_VINCULO_TENANT
+- Não responda sobre temas genéricos de política ou legislação que não envolvam ${scopeEntity}.
+- Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.
+
+Exemplos de SEM_VINCULO_TENANT:
+- Pergunta sobre PEC de outro deputado sem relação com ${scopeEntity} → SEM_VINCULO_TENANT
+- Pergunta sobre legislação que ${scopeEntity} votou ou relatou → Responda normalmente
+- Pergunta genérica sobre política sem menção a ${scopeEntity} → SEM_VINCULO_TENANT` },
           { role: "user", content: question },
         ],
         max_tokens: 500,
@@ -2123,9 +2135,13 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
     const cleanAnswer = answer.replace(/[*_`#]/g, "").replace(/_/g, " ").trim();
-    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
-    // Also filter if the response starts with rejection patterns
-    if (/^(FORA|❌|nao tem relacao)/i.test(cleanAnswer)) return null;
+    // Filter out responses with no tenant relation
+    if (!answer || answer.length < 15) return null;
+    if (cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || cleanAnswer.includes("SEM_VINCULO_TENANT")) {
+      console.log("[whatsapp-chatbot] Perplexity response filtered: no tenant relation");
+      return null;
+    }
+    if (/^(FORA|❌|SEM_VINCULO|nao tem relacao)/i.test(cleanAnswer)) return null;
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
     return `${answer}${citationSuffix}`;
   } catch (err) { console.error("[whatsapp-chatbot] Perplexity fallback error:", err); return null; }
