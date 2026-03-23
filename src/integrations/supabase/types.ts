@@ -4311,6 +4311,66 @@ export type Database = {
           },
         ]
       }
+      whatsapp_chatbot_flows: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          edges: Json
+          execution_count: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_published: boolean
+          name: string
+          nodes: Json
+          published_at: string | null
+          tags: string[]
+          tenant_id: string
+          trigger_count: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          execution_count?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_published?: boolean
+          name: string
+          nodes?: Json
+          published_at?: string | null
+          tags?: string[]
+          tenant_id?: string
+          trigger_count?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          execution_count?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_published?: boolean
+          name?: string
+          nodes?: Json
+          published_at?: string | null
+          tags?: string[]
+          tenant_id?: string
+          trigger_count?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       whatsapp_chatbot_keywords: {
         Row: {
           aliases: string[] | null
