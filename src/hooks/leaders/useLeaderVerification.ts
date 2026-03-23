@@ -129,18 +129,17 @@ export function useMarkLeaderVerifiedManually() {
 
       if (error) throw error;
 
-      // Após verificação bem-sucedida, chamar edge function para enviar links de afiliado
-      console.log("[useMarkLeaderVerifiedManually] Calling send-leader-affiliate-links for leader:", leaderId);
-
-      const { error: sendError } = await supabase.functions.invoke("send-leader-affiliate-links", {
+      // Dispara envio de links em background (fire-and-forget) para não bloquear a UI
+      console.log("[useMarkLeaderVerifiedManually] Firing send-leader-affiliate-links in background for leader:", leaderId);
+      supabase.functions.invoke("send-leader-affiliate-links", {
         body: { leader_id: leaderId },
+      }).then(({ error: sendError }) => {
+        if (sendError) {
+          console.error("[useMarkLeaderVerifiedManually] Error sending affiliate links:", sendError);
+        } else {
+          console.log("[useMarkLeaderVerifiedManually] Affiliate links sent successfully");
+        }
       });
-
-      if (sendError) {
-        console.error("[useMarkLeaderVerifiedManually] Error sending affiliate links:", sendError);
-        // Não lançar erro aqui - a verificação foi bem-sucedida, apenas o envio falhou
-        // O usuário pode reenviar manualmente depois
-      }
 
       return data;
     },
