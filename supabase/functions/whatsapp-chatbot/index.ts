@@ -1994,8 +1994,20 @@ function normalizeForKb(text: string): string {
 }
 
 function extractSearchTerms(question: string): string[] {
+  // Extract composite legislative references FIRST (e.g., "PEC 47", "PL 123/2024")
+  const legislativeRefs: string[] = [];
+  const legPattern = /\b(PEC|PL|PLP|PDL|MPV|EC)\s*(\d+(?:[\s\/\-]\d{4})?)/gi;
+  let match;
+  while ((match = legPattern.exec(question)) !== null) {
+    legislativeRefs.push(match[0].replace(/\s+/g, " ").trim().toLowerCase());
+    // Also add the number part separately
+    const numPart = match[2].replace(/[\s\/\-]/g, "");
+    if (numPart.length >= 2) legislativeRefs.push(numPart);
+  }
+
   const rawTerms = question.toLowerCase().replace(/[^\w\sáéíóúãõâêîôûç]/g, " ").split(/\s+/).filter((w: string) => w.length > 2 && !KB_STOP_WORDS.has(w));
   const termSet = new Set<string>();
+  for (const ref of legislativeRefs) termSet.add(ref);
   for (const term of rawTerms) { termSet.add(term); const normalized = term.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); if (normalized !== term) termSet.add(normalized); }
   return Array.from(termSet);
 }
@@ -2012,9 +2024,15 @@ async function searchKnowledgeBase(supabase: any, question: string, tenantId: st
 
     const { data: chunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).textSearch("content", searchPattern, { config: "simple" });
     let allChunks = chunks || [];
+    // Fallback: try ILIKE for each search term if text search returns nothing
     if (allChunks.length === 0 && searchTerms.length > 0) {
-      const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${searchTerms[0]}%`).limit(20);
-      allChunks = ilikeChunks || [];
+      for (const term of searchTerms.slice(0, 3)) {
+        const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${term}%`).limit(20);
+        if (ilikeChunks && ilikeChunks.length > 0) { allChunks = [...allChunks, ...ilikeChunks]; }
+      }
+      // Deduplicate by content
+      const seen = new Set<string>();
+      allChunks = allChunks.filter((c: any) => { if (seen.has(c.content)) return false; seen.add(c.content); return true; });
     }
     if (allChunks.length === 0) return { context: "", sources: [], rankedChunks: [] };
 
@@ -2059,6 +2077,8 @@ function responseDeniesKnowledge(answer: string): boolean {
 
 function responseIsOutOfScope(answer: string): boolean {
   const normalized = normalizeForKb(answer);
+  // Check for FORA_DO_ESCOPO literally (before normalization removes underscores)
+  if (answer.toUpperCase().includes("FORA_DO_ESCOPO")) return true;
   return ["so posso responder sobre assuntos relacionados ao mandato", "desculpe so posso responder", "fora do escopo", "nao tenho como ajudar com esse tema"].some((pattern) => normalized.includes(pattern));
 }
 
@@ -2092,7 +2112,7 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
       body: JSON.stringify({
         model: "sonar-pro",
         messages: [
-          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Você SOMENTE responde perguntas relacionadas a ${scopeEntity}, mandato parlamentar, projetos de lei, ações políticas, eventos ou temas legislativos. Se NÃO tem relação, retorne EXATAMENTE: FORA_DO_ESCOPO. Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
+          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Responda perguntas sobre ${scopeEntity}, mandato parlamentar, projetos de lei (PECs, PLs, etc.), ações políticas, legislação, políticas públicas e temas de interesse público. Temas legislativos como PECs, PLs e proposições são SEMPRE válidos, mesmo que ${scopeEntity} não seja autor. Apenas retorne FORA_DO_ESCOPO para temas completamente fora da política (ex: receitas, jogos, entretenimento). Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
           { role: "user", content: question },
         ],
         max_tokens: 500,
@@ -2102,8 +2122,10 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
     const data = await response.json();
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
-    const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
-    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
+    const cleanAnswer = answer.replace(/[*_`#]/g, "").replace(/_/g, " ").trim();
+    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
+    // Also filter if the response starts with rejection patterns
+    if (/^(FORA|❌|nao tem relacao)/i.test(cleanAnswer)) return null;
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
     return `${answer}${citationSuffix}`;
   } catch (err) { console.error("[whatsapp-chatbot] Perplexity fallback error:", err); return null; }
@@ -2192,7 +2214,13 @@ async function generateAIResponse(apiKey: string, userMessage: string, leader: L
     const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
     const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
 
-    if (responseIsOutOfScope(aiAnswer)) { console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope"); return aiAnswer; }
+    if (responseIsOutOfScope(aiAnswer)) {
+      console.log("[whatsapp-chatbot] AI rejected as out-of-scope");
+      // Clean the FORA_DO_ESCOPO tag before sending, or use a friendly message
+      const cleanedScope = aiAnswer.replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "").replace(/^[\s❌]+/, "").trim();
+      if (cleanedScope.length > 30) return cleanedScope;
+      return "Desculpe, só posso responder sobre assuntos relacionados ao mandato e temas legislativos. 😊 Posso ajudar com algo nesse tema?";
+    }
     if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
       const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
       if (groundedFallback) { console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback"); return groundedFallback; }
