@@ -2110,7 +2110,7 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
       body: JSON.stringify({
         model: "sonar-pro",
         messages: [
-          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Você SOMENTE responde perguntas relacionadas a ${scopeEntity}, mandato parlamentar, projetos de lei, ações políticas, eventos ou temas legislativos. Se NÃO tem relação, retorne EXATAMENTE: FORA_DO_ESCOPO. Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
+          { role: "system", content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Responda perguntas sobre ${scopeEntity}, mandato parlamentar, projetos de lei (PECs, PLs, etc.), ações políticas, legislação, políticas públicas e temas de interesse público. Temas legislativos como PECs, PLs e proposições são SEMPRE válidos, mesmo que ${scopeEntity} não seja autor. Apenas retorne FORA_DO_ESCOPO para temas completamente fora da política (ex: receitas, jogos, entretenimento). Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.` },
           { role: "user", content: question },
         ],
         max_tokens: 500,
