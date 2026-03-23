@@ -267,10 +267,10 @@ export function MessageNode({ id, data, selected }: NodeProps) {
   );
 }
 
-export function AiResponseNode({ data, selected }: NodeProps) {
+export function AiResponseNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   return (
-    <NodeShell type="ai_response" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="ai_response" data={d} selected={selected}>
       <div className="flex gap-1 flex-wrap mt-0.5">
         {d.useKnowledgeBase && (
           <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0 border-0">
