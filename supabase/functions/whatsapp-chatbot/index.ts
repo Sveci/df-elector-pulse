@@ -2310,7 +2310,13 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
       if (perplexityResult) { console.log("[whatsapp-chatbot] Using Perplexity web search fallback"); return perplexityResult; }
     }
     if (!aiAnswer) { const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks); if (groundedFallback) return groundedFallback; }
-    return aiAnswer || "Não consegui processar sua mensagem.";
+    // Final safety: strip any internal tags that may have leaked through
+    const finalAnswer = (aiAnswer || "Não consegui processar sua mensagem.")
+      .replace(/\*?SEM_VINCULO_TENANT\*?\s*/gi, "")
+      .replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "")
+      .replace(/\*?NO_RESULT\*?\s*/gi, "")
+      .trim();
+    return finalAnswer || "Não consegui processar sua mensagem.";
   } catch (err) {
     console.error("[whatsapp-chatbot] AI error:", err);
     const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
