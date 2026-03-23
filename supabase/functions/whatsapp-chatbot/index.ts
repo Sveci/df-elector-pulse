@@ -2016,25 +2016,48 @@ async function searchKnowledgeBase(supabase: any, question: string, tenantId: st
   try {
     const searchTerms = extractSearchTerms(question);
     if (searchTerms.length === 0) return { context: "", sources: [], rankedChunks: [] };
-    const searchPattern = searchTerms.join(" | ");
+
     const { data: documents } = await supabase.from("kb_documents").select("id, title, category").eq("tenant_id", tenantId).eq("status", "processed");
     if (!documents || documents.length === 0) return { context: "", sources: [], rankedChunks: [] };
     const docMap = new Map<string, { title: string; category: string }>();
     for (const doc of documents) docMap.set(doc.id, { title: doc.title, category: doc.category });
 
-    const { data: chunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).textSearch("content", searchPattern, { config: "simple" });
-    let allChunks = chunks || [];
-    // Fallback: try ILIKE for each search term if text search returns nothing
-    if (allChunks.length === 0 && searchTerms.length > 0) {
-      for (const term of searchTerms.slice(0, 3)) {
-        const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${term}%`).limit(20);
-        if (ilikeChunks && ilikeChunks.length > 0) { allChunks = [...allChunks, ...ilikeChunks]; }
+    // Strategy 1: Full-text search with simple config
+    const searchPattern = searchTerms.join(" | ");
+    const { data: ftsChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).textSearch("content", searchPattern, { config: "simple" });
+    let allChunks = ftsChunks || [];
+
+    // Strategy 2: ILIKE fallback for ALL search terms (not just first 3)
+    if (allChunks.length < 5) {
+      for (const term of searchTerms) {
+        if (term.length < 2) continue;
+        const { data: ilikeChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("tenant_id", tenantId).ilike("content", `%${term}%`).limit(30);
+        if (ilikeChunks && ilikeChunks.length > 0) allChunks = [...allChunks, ...ilikeChunks];
       }
-      // Deduplicate by content
-      const seen = new Set<string>();
-      allChunks = allChunks.filter((c: any) => { if (seen.has(c.content)) return false; seen.add(c.content); return true; });
     }
+
+    // Strategy 3: Search document titles for relevance and pull their chunks
+    const normalizedQuestion = normalizeForKb(question);
+    const matchingDocIds: string[] = [];
+    for (const [docId, docInfo] of docMap) {
+      const normalizedTitle = normalizeForKb(docInfo.title);
+      for (const term of searchTerms) {
+        if (normalizedTitle.includes(normalizeForKb(term))) { matchingDocIds.push(docId); break; }
+      }
+    }
+    if (matchingDocIds.length > 0 && allChunks.length < 15) {
+      for (const docId of matchingDocIds.slice(0, 5)) {
+        const { data: docChunks } = await supabase.from("kb_chunks").select("content, document_id, metadata").eq("document_id", docId).limit(20);
+        if (docChunks) allChunks = [...allChunks, ...docChunks];
+      }
+    }
+
+    // Deduplicate by content
+    const seen = new Set<string>();
+    allChunks = allChunks.filter((c: any) => { if (seen.has(c.content)) return false; seen.add(c.content); return true; });
+
     if (allChunks.length === 0) return { context: "", sources: [], rankedChunks: [] };
+    console.log(`[whatsapp-chatbot] KB raw chunks found: ${allChunks.length}`);
 
     const intentBonusTerms: Record<string, string[]> = {
       nascimento: ["nascimento", "nasceu", "nascido", "nascida", "data de nascimento"],
@@ -2043,24 +2066,51 @@ async function searchKnowledgeBase(supabase: any, question: string, tenantId: st
       cargo: ["cargo", "eleito", "mandato", "deputado", "senador", "vereador"],
       comissao: ["comissao", "comissoes", "membro", "presidente"],
       projeto: ["projeto", "pl", "pec", "plp", "proposta", "autoria"],
+      legislacao: ["pec", "pl", "plp", "emenda", "constitucional", "projeto de lei", "proposicao"],
     };
 
     const rankedChunks: RankedKBChunk[] = allChunks.map((chunk: any) => {
       const normalizedContent = normalizeForKb(chunk.content);
       let score = 0;
-      for (const term of searchTerms) { if (normalizedContent.includes(normalizeForKb(term))) score += 10; }
+
+      // Term matching with graduated scoring
+      for (const term of searchTerms) {
+        const normalizedTerm = normalizeForKb(term);
+        if (normalizedContent.includes(normalizedTerm)) {
+          score += normalizedTerm.length > 4 ? 15 : 10;
+          // Bonus for exact phrase matches (multi-word terms like "pec 47")
+          if (term.includes(" ") && normalizedContent.includes(normalizedTerm)) score += 25;
+        }
+      }
+
+      // Metadata topic matching (double weight)
       const metadata = chunk.metadata as any;
       if (metadata?.topics) {
         const topics = Array.isArray(metadata.topics) ? metadata.topics : [metadata.topics];
-        for (const topic of topics) { const normalizedTopic = normalizeForKb(String(topic)); for (const term of searchTerms) { if (normalizedTopic.includes(normalizeForKb(term))) score += 20; } }
+        for (const topic of topics) {
+          const normalizedTopic = normalizeForKb(String(topic));
+          for (const term of searchTerms) {
+            if (normalizedTopic.includes(normalizeForKb(term))) score += 20;
+          }
+        }
       }
+
+      // Intent bonus
       for (const [, bonusTerms] of Object.entries(intentBonusTerms)) {
-        const questionNorm = normalizeForKb(question);
-        if (bonusTerms.some(bt => questionNorm.includes(bt)) && bonusTerms.some(bt => normalizedContent.includes(bt))) score += 30;
+        if (bonusTerms.some(bt => normalizedQuestion.includes(bt)) && bonusTerms.some(bt => normalizedContent.includes(bt))) score += 30;
       }
+
+      // Document title relevance bonus
       const docInfo = docMap.get(chunk.document_id);
+      if (docInfo) {
+        const normalizedTitle = normalizeForKb(docInfo.title);
+        for (const term of searchTerms) {
+          if (normalizedTitle.includes(normalizeForKb(term))) score += 15;
+        }
+      }
+
       return { content: chunk.content, source: docInfo?.title || "Documento", score };
-    }).filter((c: RankedKBChunk) => c.score > 0).sort((a: RankedKBChunk, b: RankedKBChunk) => b.score - a.score).slice(0, 5);
+    }).filter((c: RankedKBChunk) => c.score > 0).sort((a: RankedKBChunk, b: RankedKBChunk) => b.score - a.score).slice(0, 8);
 
     if (rankedChunks.length === 0) return { context: "", sources: [], rankedChunks: [] };
     console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
