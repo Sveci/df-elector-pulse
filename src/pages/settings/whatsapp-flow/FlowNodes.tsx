@@ -1,8 +1,8 @@
-import { Handle, Position, NodeProps } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import {
   Zap, MessageSquare, Brain, Settings2, GitBranch,
-  Clock, XCircle, Hash, Play
+  Clock, XCircle, Hash, Play, X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { FlowNodeData, FlowNodeType } from "@/hooks/useWhatsAppFlows";
@@ -95,6 +95,7 @@ export const NODE_CONFIG: Record<FlowNodeType, {
 // ─── Shared Node Shell ─────────────────────────────────────────────────────────
 
 interface NodeShellProps {
+  nodeId: string;
   type: FlowNodeType;
   data: FlowNodeData;
   selected?: boolean;
@@ -106,6 +107,7 @@ interface NodeShellProps {
 }
 
 export function NodeShell({
+  nodeId,
   type,
   data,
   selected,
@@ -117,16 +119,31 @@ export function NodeShell({
 }: NodeShellProps) {
   const cfg = NODE_CONFIG[type];
   const Icon = cfg.icon;
+  const { deleteElements } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteElements({ nodes: [{ id: nodeId }] });
+  };
 
   return (
     <div
       className={cn(
-        "rounded-xl border-2 shadow-md min-w-[220px] max-w-[280px] transition-all duration-150",
+        "group relative rounded-xl border-2 shadow-md min-w-[220px] max-w-[280px] transition-all duration-150",
         cfg.bg,
         cfg.border,
         selected && "ring-2 ring-offset-1 ring-primary shadow-lg scale-[1.02]"
       )}
     >
+      {/* Delete button - visible on hover */}
+      <button
+        onClick={handleDelete}
+        className="absolute -top-2 -right-2 z-10 hidden group-hover:flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-md hover:scale-110 transition-transform"
+        title="Remover nó"
+      >
+        <X className="h-3 w-3" />
+      </button>
+
       {/* Target handle (input) */}
       {showTargetHandle && (
         <Handle
@@ -192,7 +209,7 @@ export function NodeShell({
 
 // ─── Individual Node Components ────────────────────────────────────────────────
 
-export function TriggerNode({ data, selected }: NodeProps) {
+export function TriggerNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const triggerLabels: Record<string, string> = {
     any_message: "Qualquer mensagem",
@@ -201,7 +218,7 @@ export function TriggerNode({ data, selected }: NodeProps) {
     schedule: "Agendado",
   };
   return (
-    <NodeShell type="trigger" data={d} selected={selected} showTargetHandle={false}>
+    <NodeShell nodeId={id} type="trigger" data={d} selected={selected} showTargetHandle={false}>
       <span className="text-[11px] text-muted-foreground">
         {triggerLabels[d.triggerType || "any_message"]}
       </span>
@@ -209,10 +226,10 @@ export function TriggerNode({ data, selected }: NodeProps) {
   );
 }
 
-export function KeywordNode({ data, selected }: NodeProps) {
+export function KeywordNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   return (
-    <NodeShell type="keyword" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="keyword" data={d} selected={selected}>
       <div className="flex flex-wrap gap-1 mt-0.5">
         <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
           {d.keyword || "..."}
@@ -232,11 +249,11 @@ export function KeywordNode({ data, selected }: NodeProps) {
   );
 }
 
-export function MessageNode({ data, selected }: NodeProps) {
+export function MessageNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const preview = (d.messageText || "").slice(0, 80);
   return (
-    <NodeShell type="message" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="message" data={d} selected={selected}>
       <p className="text-[11px] text-muted-foreground line-clamp-2 whitespace-pre-wrap">
         {preview || "Sem mensagem definida"}
         {(d.messageText || "").length > 80 ? "…" : ""}
@@ -250,10 +267,10 @@ export function MessageNode({ data, selected }: NodeProps) {
   );
 }
 
-export function AiResponseNode({ data, selected }: NodeProps) {
+export function AiResponseNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   return (
-    <NodeShell type="ai_response" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="ai_response" data={d} selected={selected}>
       <div className="flex gap-1 flex-wrap mt-0.5">
         {d.useKnowledgeBase && (
           <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0 border-0">
@@ -275,7 +292,7 @@ export function AiResponseNode({ data, selected }: NodeProps) {
   );
 }
 
-export function AutomationNode({ data, selected }: NodeProps) {
+export function AutomationNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const fnLabels: Record<string, string> = {
     minha_arvore: "Minha Árvore",
@@ -287,7 +304,7 @@ export function AutomationNode({ data, selected }: NodeProps) {
     ajuda: "Ajuda",
   };
   return (
-    <NodeShell type="automation" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="automation" data={d} selected={selected}>
       <Badge className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0 border-0 mt-0.5">
         ⚡ {fnLabels[d.automationFunction || ""] || d.automationFunction || "Selecione a função"}
       </Badge>
@@ -295,7 +312,7 @@ export function AutomationNode({ data, selected }: NodeProps) {
   );
 }
 
-export function ConditionNode({ data, selected }: NodeProps) {
+export function ConditionNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const opLabels: Record<string, string> = {
     equals: "=",
@@ -306,7 +323,7 @@ export function ConditionNode({ data, selected }: NodeProps) {
     is_not_empty: "não vazio",
   };
   return (
-    <NodeShell type="condition" data={d} selected={selected} showTrueHandle showFalseHandle showSourceHandle={false}>
+    <NodeShell nodeId={id} type="condition" data={d} selected={selected} showTrueHandle showFalseHandle showSourceHandle={false}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         <span className="font-mono text-orange-600">{d.conditionField || "campo"}</span>
         {" "}{opLabels[d.conditionOperator || "equals"] || "="}{" "}
@@ -320,12 +337,12 @@ export function ConditionNode({ data, selected }: NodeProps) {
   );
 }
 
-export function DelayNode({ data, selected }: NodeProps) {
+export function DelayNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const secs = d.delaySeconds || 0;
   const display = secs >= 60 ? `${Math.round(secs / 60)}min` : `${secs}s`;
   return (
-    <NodeShell type="delay" data={d} selected={selected}>
+    <NodeShell nodeId={id} type="delay" data={d} selected={selected}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         ⏱ Aguardar <span className="font-semibold text-foreground">{display}</span>
       </p>
@@ -333,7 +350,7 @@ export function DelayNode({ data, selected }: NodeProps) {
   );
 }
 
-export function EndNode({ data, selected }: NodeProps) {
+export function EndNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const endLabels: Record<string, string> = {
     close: "Encerrar conversa",
@@ -342,7 +359,7 @@ export function EndNode({ data, selected }: NodeProps) {
     nothing: "Aguardar próxima mensagem",
   };
   return (
-    <NodeShell type="end" data={d} selected={selected} showSourceHandle={false}>
+    <NodeShell nodeId={id} type="end" data={d} selected={selected} showSourceHandle={false}>
       <p className="text-[11px] text-muted-foreground mt-0.5">
         {endLabels[d.endAction || "nothing"]}
       </p>

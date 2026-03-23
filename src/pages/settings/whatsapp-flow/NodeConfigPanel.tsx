@@ -309,6 +309,7 @@ export function NodeConfigPanel({ node, onClose, onChange, onDelete }: NodeConfi
                   <SelectItem value="state">Estado da sessão</SelectItem>
                   <SelectItem value="municipio">Município</SelectItem>
                   <SelectItem value="registration_state">Status de cadastro</SelectItem>
+                  <SelectItem value="already_registered">Já inscrito no evento</SelectItem>
                   <SelectItem value="invite_sent_count">Convites enviados</SelectItem>
                 </SelectContent>
               </Select>
