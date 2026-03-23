@@ -802,6 +802,11 @@ const WhatsAppChatbot = () => {
             </>
           )}
         </TabsContent>
+
+        {/* Inbox Tab */}
+        <TabsContent value="inbox">
+          <WhatsAppInboxContent />
+        </TabsContent>
       </Tabs>
 
       {/* Keyword Dialog */}
