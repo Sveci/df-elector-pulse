@@ -2077,6 +2077,8 @@ function responseDeniesKnowledge(answer: string): boolean {
 
 function responseIsOutOfScope(answer: string): boolean {
   const normalized = normalizeForKb(answer);
+  // Check for FORA_DO_ESCOPO literally (before normalization removes underscores)
+  if (answer.toUpperCase().includes("FORA_DO_ESCOPO")) return true;
   return ["so posso responder sobre assuntos relacionados ao mandato", "desculpe so posso responder", "fora do escopo", "nao tenho como ajudar com esse tema"].some((pattern) => normalized.includes(pattern));
 }
 
