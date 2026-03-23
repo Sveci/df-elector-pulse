@@ -209,7 +209,7 @@ export function NodeShell({
 
 // ─── Individual Node Components ────────────────────────────────────────────────
 
-export function TriggerNode({ data, selected }: NodeProps) {
+export function TriggerNode({ id, data, selected }: NodeProps) {
   const d = data as FlowNodeData;
   const triggerLabels: Record<string, string> = {
     any_message: "Qualquer mensagem",
@@ -218,7 +218,7 @@ export function TriggerNode({ data, selected }: NodeProps) {
     schedule: "Agendado",
   };
   return (
-    <NodeShell type="trigger" data={d} selected={selected} showTargetHandle={false}>
+    <NodeShell nodeId={id} type="trigger" data={d} selected={selected} showTargetHandle={false}>
       <span className="text-[11px] text-muted-foreground">
         {triggerLabels[d.triggerType || "any_message"]}
       </span>
