@@ -162,8 +162,8 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
       </div>
 
       {/* List */}
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-2 space-y-1.5">
           {isLoading && (
             <div className="space-y-2 p-2">
               {[1, 2, 3].map((i) => (
