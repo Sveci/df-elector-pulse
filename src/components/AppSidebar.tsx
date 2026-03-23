@@ -61,7 +61,7 @@ const publicOpinionSubItems: SubMenuItem[] = [
 const communicationItems: MenuItem[] = [
   { title: "Agente IA", url: "/ai-agent", icon: Bot, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "WhatsApp", url: "/whatsapp", icon: MessageSquare, roles: ['super_admin', 'admin', 'atendente'] },
-  { title: "Inbox WhatsApp", url: "/whatsapp/inbox", icon: Inbox, roles: ['super_admin', 'admin', 'atendente'] },
+  
   { title: "Email", url: "/email", icon: Mail, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "SMS", url: "/sms", icon: Smartphone, roles: ['super_admin', 'admin', 'atendente'] },
   { title: "Agendados", url: "/scheduled", icon: Clock, roles: ['super_admin', 'admin', 'atendente'] },
