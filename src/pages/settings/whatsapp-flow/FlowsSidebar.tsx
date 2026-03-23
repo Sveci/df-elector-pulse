@@ -135,7 +135,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
   };
 
   return (
-    <div className="h-full flex flex-col w-[280px] flex-shrink-0 border-r bg-background">
+    <div className="h-full flex flex-col w-[320px] flex-shrink-0 border-r bg-background overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
@@ -162,8 +162,8 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
       </div>
 
       {/* List */}
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-2 space-y-1.5">
           {isLoading && (
             <div className="space-y-2 p-2">
               {[1, 2, 3].map((i) => (
@@ -392,10 +392,10 @@ function FlowCard({ flow, active, onSelect, onDuplicate, onDelete, onEdit, onTog
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-sm">{flow.icon || "📋"}</span>
-            <p className="font-medium text-sm truncate">{flow.name}</p>
+            <p className="font-medium text-sm leading-snug break-words">{flow.name}</p>
           </div>
           {flow.description && (
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+            <p className="text-[11px] text-muted-foreground leading-relaxed break-words mt-0.5">
               {flow.description}
             </p>
           )}
