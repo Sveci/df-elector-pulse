@@ -1345,16 +1345,141 @@ Deno.serve(async (req) => {
       }
     }
 
-    let matchedKeyword: ChatbotKeyword | null = null;
+    // =====================================================
+    // FLOW-BASED EXECUTION ENGINE
+    // Load published flows and use as primary routing
+    // =====================================================
+    let matchedFlowId: string | null = null;
+    let matchedFlowName: string | null = null;
 
+    // Load all published flows for this tenant
+    const { data: publishedFlows } = await supabase
+      .from("whatsapp_chatbot_flows")
+      .select("id, name, nodes, edges, is_active, is_published")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true)
+      .eq("is_published", true);
+
+    const flows = (publishedFlows || []) as Array<{
+      id: string;
+      name: string;
+      nodes: Array<{ id: string; type: string; data: Record<string, any> }>;
+      edges: Array<{ id: string; source: string; target: string; sourceHandle?: string; label?: string }>;
+      is_active: boolean;
+      is_published: boolean;
+    }>;
+
+    console.log(`[whatsapp-chatbot] [FLUXOS] Loaded ${flows.length} published flows for tenant ${tenantId}`);
+
+    // ── FLOW MATCHING: find the right flow for this message ──
+    // Priority 1: Keyword flows (match against keyword nodes)
+    // Priority 2: AI/fallback flow (any_message trigger)
+    let matchedKeyword: ChatbotKeyword | null = null;
+    let flowMatchedKeyword = false;
+
+    // First try keyword matching via flows
+    for (const flow of flows) {
+      if (!flow.nodes || !Array.isArray(flow.nodes)) continue;
+
+      // Find keyword nodes in this flow
+      const keywordNodes = flow.nodes.filter((n: any) => n.type === "keyword");
+      for (const kwNode of keywordNodes) {
+        const kwData = kwNode.data || {};
+        const keyword = kwData.keyword || "";
+        const aliases = kwData.aliases || [];
+        if (!keyword) continue;
+
+        const keywordNorm = normalizeTextForMatch(keyword);
+        const aliasesNorm = (aliases as string[]).map(normalizeTextForMatch);
+
+        if (isKeywordMatch(messageForKeywordMatch, keywordNorm, aliasesNorm, isCommandLikeMessage)) {
+          matchedFlowId = flow.id;
+          matchedFlowName = flow.name;
+          flowMatchedKeyword = true;
+          console.log(`[whatsapp-chatbot] [FLUXOS] Matched flow "${flow.name}" via keyword "${keyword}"`);
+          break;
+        }
+      }
+
+      // Also check trigger nodes with keyword type
+      if (!flowMatchedKeyword) {
+        const triggerNodes = flow.nodes.filter((n: any) => n.type === "trigger" && n.data?.triggerType === "keyword");
+        for (const trigNode of triggerNodes) {
+          const trigKeyword = trigNode.data?.keyword || "";
+          if (!trigKeyword) continue;
+          const keywordNorm = normalizeTextForMatch(trigKeyword);
+          if (isKeywordMatch(messageForKeywordMatch, keywordNorm, [], isCommandLikeMessage)) {
+            matchedFlowId = flow.id;
+            matchedFlowName = flow.name;
+            flowMatchedKeyword = true;
+            console.log(`[whatsapp-chatbot] [FLUXOS] Matched flow "${flow.name}" via trigger keyword "${trigKeyword}"`);
+            break;
+          }
+        }
+      }
+
+      if (flowMatchedKeyword) break;
+    }
+
+    // Also try matching via legacy keywords table (backwards compatibility)
     for (const kw of activeKeywords) {
       const keywordNorm = normalizeTextForMatch(kw.keyword);
       const aliasesNorm = (kw.aliases || []).map(normalizeTextForMatch);
 
       if (isKeywordMatch(messageForKeywordMatch, keywordNorm, aliasesNorm, isCommandLikeMessage)) {
         matchedKeyword = kw;
+        if (!matchedFlowId) {
+          // Try to find a flow that matches this keyword name
+          const matchingFlow = flows.find(f => {
+            return f.nodes?.some((n: any) =>
+              (n.type === "keyword" && normalizeTextForMatch(n.data?.keyword || "") === keywordNorm) ||
+              (n.type === "automation" && n.data?.automationFunction === kw.dynamic_function)
+            );
+          });
+          if (matchingFlow) {
+            matchedFlowId = matchingFlow.id;
+            matchedFlowName = matchingFlow.name;
+          }
+        }
         break;
       }
+    }
+
+    // If no keyword matched, find AI/fallback flow
+    if (!matchedKeyword && !flowMatchedKeyword) {
+      const aiFlow = flows.find(f =>
+        f.nodes?.some((n: any) =>
+          n.type === "trigger" && n.data?.triggerType === "any_message"
+        ) &&
+        f.nodes?.some((n: any) => n.type === "ai_response")
+      );
+      if (aiFlow) {
+        matchedFlowId = aiFlow.id;
+        matchedFlowName = aiFlow.name;
+        console.log(`[whatsapp-chatbot] [FLUXOS] Using AI fallback flow "${aiFlow.name}"`);
+      }
+
+      // Check for the specific "Saudação IA" flow
+      const greetingFlow = flows.find(f => f.name?.includes("Saudação IA"));
+      if (greetingFlow) {
+        matchedFlowId = greetingFlow.id;
+        matchedFlowName = greetingFlow.name;
+        console.log(`[whatsapp-chatbot] [FLUXOS] Using Saudação IA flow "${greetingFlow.name}"`);
+      }
+    }
+
+    // Update flow execution count
+    if (matchedFlowId) {
+      try {
+        await supabase.rpc('increment_counter', { row_id: matchedFlowId, table_name: 'whatsapp_chatbot_flows', column_name: 'execution_count' })
+          .then(() => {}).catch(() => {
+            // Fallback: direct update if RPC doesn't exist
+            supabase.from("whatsapp_chatbot_flows")
+              .update({ execution_count: supabase.rpc ? undefined : 1 })
+              .eq("id", matchedFlowId)
+              .then(() => {}).catch(() => {});
+          });
+      } catch { /* ignore counter update failures */ }
     }
 
     let responseMessage = "";
@@ -1363,10 +1488,9 @@ Deno.serve(async (req) => {
     if (matchedKeyword) {
       // ============================================================
       // MODO AUTOMAÇÃO: palavra-chave encontrada → segue a trilha
-      // Nunca mistura IA aqui. Se a função não existe ou o usuário
-      // não tem permissão, retorna mensagem de orientação.
+      // Processado via fluxo: ${matchedFlowName || 'legado'}
       // ============================================================
-      console.log(`[whatsapp-chatbot] [AUTOMAÇÃO] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
+      console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'legado'}] [AUTOMAÇÃO] Matched keyword: ${matchedKeyword.keyword} (${matchedKeyword.response_type})`);
       responseType = matchedKeyword.response_type;
 
       // Mark keyword activation timestamp on the session
@@ -1407,8 +1531,6 @@ Deno.serve(async (req) => {
         }
 
       } else if (matchedKeyword.response_type === "ai") {
-        // Keyword explicitly configured as "ai" type — still follows automation,
-        // uses the keyword description as context for a focused AI response
         if (lovableApiKey) {
           responseMessage = await generateAIResponse(
             lovableApiKey,
@@ -1428,25 +1550,23 @@ Deno.serve(async (req) => {
     } else {
       // ============================================================
       // MODO INTELIGENTE: pergunta aberta → IA + Base de Conhecimento + Perplexity
-      // Nenhuma palavra-chave foi encontrada, então o sistema usa toda
-      // a inteligência disponível para responder.
+      // Processado via fluxo: ${matchedFlowName || 'Saudação IA'}
       // ============================================================
 
-      // Check keyword cooldown: if a keyword was triggered within KEYWORD_COOLDOWN_MINUTES,
-      // do NOT activate AI — the session is in "automation mode"
+      // Check keyword cooldown
       const lastKeywordAt = session?.last_keyword_at ? new Date(session.last_keyword_at).getTime() : 0;
       const cooldownActive = lastKeywordAt > 0 && (Date.now() - lastKeywordAt) < KEYWORD_COOLDOWN_MINUTES * 60 * 1000;
 
       if (cooldownActive) {
-        console.log(`[whatsapp-chatbot] Keyword cooldown active (${KEYWORD_COOLDOWN_MINUTES}min). Ignoring free-text AI.`);
+        console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] Keyword cooldown active (${KEYWORD_COOLDOWN_MINUTES}min). Ignoring free-text AI.`);
         responseType = "cooldown_hint";
         responseMessage = "Não entendi. 🤔\n\nDigite *AJUDA* para ver a lista de comandos disponíveis ou aguarde alguns minutos para fazer uma pergunta aberta.";
       } else if (isEventRegistrationStatusIntent(message)) {
-        console.log("[whatsapp-chatbot] [AUTOMAÇÃO] Event registration status intent detected");
+        console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Inscrição em Evento'}] Event registration status intent detected`);
         responseType = "event_reg_status";
         responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
       } else {
-        console.log("[whatsapp-chatbot] [IA] No keyword match — using AI + KB + Perplexity pipeline");
+        console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] [IA] No keyword match — using AI + KB + Perplexity pipeline`);
         responseType = "ai";
 
         if (lovableApiKey) {
@@ -1467,1009 +1587,4 @@ Deno.serve(async (req) => {
         }
       }
     }
-
-    // Send response - decide provider (filtered by tenant)
-    let intSettingsQuery = supabase
-      .from("integrations_settings")
-      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
-    if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
-    const { data: integrationSettings } = await intSettingsQuery.limit(1).single();
-
-    const useMetaCloud = provider === 'meta_cloud' ||
-      (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
-
-    let messageSent = false;
-
-    if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
-      const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-      if (metaAccessToken) {
-        messageSent = await sendWhatsAppMessageMetaCloud(
-          integrationSettings.meta_cloud_phone_number_id,
-          integrationSettings.meta_cloud_api_version || "v20.0",
-          metaAccessToken,
-          normalizedPhone,
-          responseMessage,
-          supabase
-        );
-      } else {
-        console.log("[whatsapp-chatbot] META_WA_ACCESS_TOKEN not configured");
-      }
-    }
-
-    if (!messageSent && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
-      await sendWhatsAppMessage(
-        integrationSettings.zapi_instance_id,
-        integrationSettings.zapi_token,
-        integrationSettings.zapi_client_token,
-        normalizedPhone,
-        responseMessage
-      );
-      messageSent = true;
-    }
-
-    if (!messageSent) {
-      console.log("[whatsapp-chatbot] No WhatsApp provider configured, skipping send");
-    }
-
-    // ── UPDATE CONVERSATION HISTORY (for AI context in future turns) ──
-    if (session?.id && responseMessage) {
-      // Append user turn
-      await (supabase.rpc as any)('append_conversation_turn', {
-        p_session_id: session.id,
-        p_role: 'user',
-        p_content: message,
-        p_max_turns: MAX_CONVERSATION_TURNS,
-      }).then(() => {}).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append user turn:', e));
-
-      // Append assistant turn
-      await (supabase.rpc as any)('append_conversation_turn', {
-        p_session_id: session.id,
-        p_role: 'assistant',
-        p_content: responseMessage,
-        p_max_turns: MAX_CONVERSATION_TURNS,
-      }).then(() => {}).catch((e: Error) => console.warn('[whatsapp-chatbot] Failed to append assistant turn:', e));
-    }
-
-    // Log the interaction
-    await supabase.from("whatsapp_chatbot_logs").insert({
-      leader_id: actor?.id || null,
-      phone: normalizedPhone,
-      message_in: message,
-      message_out: responseMessage,
-      keyword_matched: matchedKeyword?.keyword || null,
-      response_type: responseType,
-      processing_time_ms: Date.now() - startTime,
-      ...(tenantId ? { tenant_id: tenantId } : {}),
-    });
-
-    console.log(`[whatsapp-chatbot] Response sent in ${Date.now() - startTime}ms`);
-
-    // POST-RESPONSE: Check if we should trigger registration invite
-    // Guard: only invite if session has no registration state AND no invite was sent recently
-    if (session && !session.registration_state && !session.registration_completed_at && !resolvedLeader) {
-      const firstMsgTime = new Date(session.first_message_at).getTime();
-      const minutesSinceFirst = (Date.now() - firstMsgTime) / (1000 * 60);
-
-      // Check when last invite was sent (prevent double-send / spam)
-      const lastInviteAt = session.last_invite_at ? new Date(session.last_invite_at).getTime() : 0;
-      const minutesSinceLastInvite = lastInviteAt > 0 ? (Date.now() - lastInviteAt) / (1000 * 60) : Infinity;
-      const inviteSentCount = session.invite_sent_count || 0;
-
-      // Only invite after 30 min first interaction, max 2 invites per session, at least 60 min apart
-      const shouldInvite =
-        minutesSinceFirst >= 30 &&
-        minutesSinceLastInvite >= REGISTRATION_INVITE_MIN_INTERVAL_MIN &&
-        inviteSentCount < 2;
-
-      if (shouldInvite) {
-        console.log(`[whatsapp-chatbot] 30+ min passed, triggering registration invite for ${normalizedPhone}`);
-
-        const regInviteMsg = `Que bom que você está por aqui! 😊\n\nGostaria de se cadastrar para ficar por dentro de mais notícias, informações e ações que podem te ajudar e beneficiar?\n\nResponda *SIM* para se cadastrar! ✅`;
-
-        // Update session FIRST to prevent race conditions (mark invite as sent before sending)
-        await supabase
-          .from("whatsapp_chatbot_sessions")
-          .update({
-            registration_state: "awaiting_confirmation",
-            registration_asked_at: new Date().toISOString(),
-            last_invite_at: new Date().toISOString(),
-            invite_sent_count: inviteSentCount + 1,
-          })
-          .eq("id", session.id);
-
-        // Then send the invite
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
-
-        // Log
-        await supabase.from("whatsapp_chatbot_logs").insert({
-          leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
-          message_out: regInviteMsg, keyword_matched: null, response_type: "registration_invite",
-          processing_time_ms: Date.now() - startTime,
-          ...(tenantId ? { tenant_id: tenantId } : {}),
-        });
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        responseType,
-        keywordMatched: matchedKeyword?.keyword || null
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-  } catch (error) {
-    console.error("[whatsapp-chatbot] Error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-});
-
-function getFirstName(leader: Leader | null): string {
-  if (!leader?.nome_completo) return "amigo(a)";
-  return leader.nome_completo.split(" ")[0] || "amigo(a)";
-}
-
-function normalizeTextForMatch(value: string): string {
-  return value.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
-
-function sanitizeKeywordCandidate(value: string): string {
-  return value.replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function isKeywordMatch(
-  messageForMatch: string,
-  keyword: string,
-  aliases: string[],
-  isCommandLikeMessage: boolean
-): boolean {
-  const candidates = [keyword, ...aliases]
-    .map(sanitizeKeywordCandidate)
-    .filter((candidate, index, arr) => candidate.length >= 2 && arr.indexOf(candidate) === index);
-
-  const messageTokens = new Set(messageForMatch.split(" ").filter(Boolean));
-
-  return candidates.some((candidate) => {
-    if (messageForMatch === candidate) return true;
-    if (messageTokens.has(candidate)) return true;
-
-    // Partial matching only for short command-like inputs to avoid false positives on natural questions
-    if (isCommandLikeMessage && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
-
-    return false;
-  });
-}
-
-function isEventRegistrationStatusIntent(message: string): boolean {
-  const normalized = normalizeTextForMatch(message)
-    .replace(/[^A-Z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const explicitPhrases = [
-    "EM QUAL EVENTO ESTOU CADASTRADO",
-    "EM QUAL EVENTO ESTOU INSCRITO",
-    "QUAL EVENTO ESTOU CADASTRADO",
-    "QUAL EVENTO ESTOU INSCRITO",
-    "EM QUE EVENTO ESTOU CADASTRADO",
-    "EM QUE EVENTO ESTOU INSCRITO",
-    "QUAIS EVENTOS ESTOU CADASTRADO",
-    "QUAIS EVENTOS ESTOU INSCRITO",
-    "MEUS EVENTOS",
-    "MINHAS INSCRICOES",
-    "MINHAS INSCRICOES EM EVENTOS",
-  ];
-
-  if (explicitPhrases.some((phrase) => normalized.includes(phrase))) {
-    return true;
-  }
-
-  const hasEventContext =
-    normalized.includes("EVENTO") ||
-    normalized.includes("INSCRICAO") ||
-    normalized.includes("CADASTRADO") ||
-    normalized.includes("INSCRITO");
-
-  const hasLookupIntent =
-    normalized.includes("QUAL") ||
-    normalized.includes("QUAIS") ||
-    normalized.includes("ESTOU") ||
-    normalized.includes("TENHO");
-
-  return hasEventContext && hasLookupIntent;
-}
-
-function buildPhoneLookupVariants(phone: string): string[] {
-  const digitsOnly = phone.replace(/[^0-9]/g, "");
-  if (!digitsOnly) return [];
-
-  const withCountry = digitsOnly.startsWith("55") ? digitsOnly : `55${digitsOnly}`;
-  const withoutCountry = withCountry.startsWith("55") ? withCountry.slice(2) : withCountry;
-
-  return Array.from(new Set([
-    `+${withCountry}`,
-    withCountry,
-    withoutCountry,
-  ].filter(Boolean)));
-}
-
-async function getEventRegistrationStatusResponse(
-  supabase: any,
-  tenantId: string,
-  normalizedPhone: string,
-): Promise<string> {
-  const phoneVariants = buildPhoneLookupVariants(normalizedPhone);
-  const phoneOrFilter = phoneVariants.map((p) => `whatsapp.eq.${p}`).join(",");
-
-  let registrations: any[] = [];
-
-  if (phoneOrFilter) {
-    const { data: byWhatsapp, error: byWhatsappError } = await supabase
-      .from("event_registrations")
-      .select("id, event_id, created_at, event:events(name, date, time, location)")
-      .eq("tenant_id", tenantId)
-      .or(phoneOrFilter)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (byWhatsappError) {
-      console.error("[whatsapp-chatbot] Error querying registrations by whatsapp:", byWhatsappError);
-    }
-
-    registrations = byWhatsapp || [];
-  }
-
-  // Fallback: lookup by linked contact_id if no direct whatsapp match
-  if (registrations.length === 0 && phoneVariants.length > 0) {
-    const contactFilter = phoneVariants.map((p) => `telefone_norm.eq.${p}`).join(",");
-    const { data: contact, error: contactError } = await supabase
-      .from("office_contacts")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .or(contactFilter)
-      .limit(1)
-      .maybeSingle();
-
-    if (contactError) {
-      console.error("[whatsapp-chatbot] Error querying contact for event status:", contactError);
-    }
-
-    if (contact?.id) {
-      const { data: byContact, error: byContactError } = await supabase
-        .from("event_registrations")
-        .select("id, event_id, created_at, event:events(name, date, time, location)")
-        .eq("tenant_id", tenantId)
-        .eq("contact_id", contact.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (byContactError) {
-        console.error("[whatsapp-chatbot] Error querying registrations by contact_id:", byContactError);
-      }
-
-      registrations = byContact || [];
-    }
-  }
-
-  if (!registrations || registrations.length === 0) {
-    return "No momento, não encontrei nenhuma inscrição de evento para este número.\n\nSe quiser se inscrever agora, digite *EVENTO*.";
-  }
-
-  const uniqueByEvent: any[] = [];
-  const seenEvents = new Set<string>();
-
-  for (const reg of registrations) {
-    const eventId = reg?.event_id || reg?.id;
-    if (!eventId || seenEvents.has(eventId)) continue;
-    seenEvents.add(eventId);
-    uniqueByEvent.push(reg);
-  }
-
-  const maxRows = 5;
-  const lines = uniqueByEvent.slice(0, maxRows).map((reg: any, idx: number) => {
-    const eventData = Array.isArray(reg.event) ? reg.event[0] : reg.event;
-    const eventName = eventData?.name || "Evento sem nome";
-
-    let dateText = "Data não informada";
-    if (eventData?.date) {
-      const parsed = new Date(`${eventData.date}T00:00:00`);
-      if (!Number.isNaN(parsed.getTime())) {
-        dateText = parsed.toLocaleDateString("pt-BR");
-      }
-    }
-
-    const timeText = eventData?.time ? ` às ${String(eventData.time).slice(0, 5)}` : "";
-    const locationText = eventData?.location ? `\n   📍 ${eventData.location}` : "";
-
-    return `${idx + 1}. *${eventName}*\n   🗓️ ${dateText}${timeText}${locationText}`;
-  });
-
-  const extraCount = uniqueByEvent.length - maxRows;
-  const extraLine = extraCount > 0 ? `\n\n... e mais ${extraCount} inscrição(ões).` : "";
-
-  return `📌 *Encontrei suas inscrições em evento:*\n\n${lines.join("\n\n")}${extraLine}\n\nSe quiser fazer uma nova inscrição, digite *EVENTO*.`;
-}
-
-// Normalize phone number
-function normalizePhone(phone: string): string {
-  let clean = phone.replace(/[^0-9]/g, "");
-
-  if (clean.startsWith("55") && clean.length > 11) {
-    clean = clean.substring(2);
-  }
-
-  // Add 9 if missing for Brasília
-  if (clean.length === 10 && clean.startsWith("61")) {
-    clean = "61" + "9" + clean.substring(2);
-  }
-
-  return "+55" + clean;
-}
-
-// Send WhatsApp message via Z-API (with retry)
-async function sendWhatsAppMessage(
-  instanceId: string,
-  token: string,
-  clientToken: string | null,
-  phone: string,
-  message: string
-): Promise<boolean> {
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
-  const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json"
-  };
-
-  if (clientToken) {
-    headers["Client-Token"] = clientToken;
-  }
-
-  // Split messages longer than 1000 chars to avoid WhatsApp truncation
-  const messageParts = splitLongMessage(message);
-
-  for (const part of messageParts) {
-    const sent = await withRetry(async () => {
-      const response = await fetch(zapiUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ phone: cleanPhone, message: part })
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Z-API HTTP ${response.status}: ${errorText}`);
-      }
-      return true;
-    }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Z-API send').catch(err => {
-      console.error("[whatsapp-chatbot] Z-API send failed after retries:", err);
-      return false;
-    });
-
-    if (!sent) return false;
-    // Small delay between parts
-    if (messageParts.length > 1) await sleep(500);
-  }
-
-  console.log("[whatsapp-chatbot] Message sent successfully via Z-API");
-  return true;
-}
-
-/** Split messages longer than 1500 chars at natural boundaries */
-function splitLongMessage(message: string, maxLen = 1500): string[] {
-  if (message.length <= maxLen) return [message];
-
-  const parts: string[] = [];
-  let remaining = message;
-
-  while (remaining.length > maxLen) {
-    // Find last newline before maxLen
-    let cutAt = remaining.lastIndexOf('\n', maxLen);
-    if (cutAt < maxLen * 0.5) {
-      // No good newline, cut at last space
-      cutAt = remaining.lastIndexOf(' ', maxLen);
-    }
-    if (cutAt < maxLen * 0.5) {
-      // No good space either, hard cut
-      cutAt = maxLen;
-    }
-    parts.push(remaining.substring(0, cutAt).trim());
-    remaining = remaining.substring(cutAt).trim();
-  }
-
-  if (remaining.length > 0) parts.push(remaining);
-  return parts;
-}
-
-// Send WhatsApp message via Meta Cloud API (with retry)
-async function sendWhatsAppMessageMetaCloud(
-  phoneNumberId: string,
-  apiVersion: string,
-  accessToken: string,
-  phone: string,
-  message: string,
-  supabase?: any
-): Promise<boolean> {
-  let cleanPhone = phone.replace(/[^0-9]/g, "");
-  if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
-    cleanPhone = "55" + cleanPhone;
-  }
-
-  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
-  const messageParts = splitLongMessage(message);
-
-  for (const part of messageParts) {
-    const sent = await withRetry(async () => {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: cleanPhone,
-          type: "text",
-          text: { body: part },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Meta Cloud HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      const wamid = result.messages?.[0]?.id;
-      console.log("[whatsapp-chatbot] Message sent via Meta Cloud API:", wamid);
-
-      if (supabase && wamid) {
-        try {
-          await supabase.from("whatsapp_messages").insert({
-            phone: cleanPhone,
-            message: part,
-            direction: "outgoing",
-            status: "sent",
-            provider: "meta_cloud",
-            metadata: { wamid },
-          });
-        } catch (e) {
-          console.warn("[whatsapp-chatbot] Failed to log Meta message:", e);
-        }
-      }
-      return true;
-    }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud send').catch(err => {
-      console.error("[whatsapp-chatbot] Meta Cloud send failed after retries:", err);
-      return false;
-    });
-
-    if (!sent) return false;
-    if (messageParts.length > 1) await sleep(500);
-  }
-
-  return true;
-}
-
-// Search Knowledge Base for relevant context
-interface RankedKBChunk {
-  content: string;
-  source: string;
-  score: number;
-}
-
-const KB_STOP_WORDS = new Set([
-  "que", "como", "para", "por", "com", "uma", "dos", "das", "nos", "nas", "foi", "ser", "ter", "seu", "sua", "são", "tem", "mais", "quando", "onde", "qual", "quem", "ele", "ela", "sobre", "essa", "esse", "isso", "esta", "este", "isto", "muito", "pode", "pelo", "pela", "ainda", "bem", "sem", "data",
-  "mas", "não", "nao", "sim", "nao", "voce", "você", "meu", "minha", "tudo", "aqui", "ali", "tambem", "também", "porque", "pois", "então", "entao", "depois", "antes", "agora", "sempre", "nunca", "outro", "outra", "cada", "todo", "toda", "entre", "acho", "quero", "saber", "favor", "diga", "fale", "conte", "explique"
-]);
-
-function normalizeForKb(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function extractSearchTerms(question: string): string[] {
-  const rawTerms = question
-    .toLowerCase()
-    .replace(/[^\w\sáéíóúãõâêîôûç]/g, " ")
-    .split(/\s+/)
-    .filter((w: string) => w.length > 2 && !KB_STOP_WORDS.has(w));
-
-  const termSet = new Set<string>();
-  for (const term of rawTerms) {
-    termSet.add(term);
-    const normalized = normalizeForKb(term);
-    if (normalized && normalized !== term) {
-      termSet.add(normalized);
-    }
-  }
-
-  return Array.from(termSet).slice(0, 12);
-}
-
-function countOccurrences(text: string, term: string): number {
-  if (!term) return 0;
-  let count = 0;
-  let fromIndex = 0;
-  while (true) {
-    const index = text.indexOf(term, fromIndex);
-    if (index === -1) break;
-    count += 1;
-    fromIndex = index + term.length;
-  }
-  return count;
-}
-
-function getIntentKeywords(question: string): string[] {
-  const normalized = normalizeForKb(question);
-  const intentKeywords = new Set<string>();
-
-  if (/(nascimento|nasceu|nascido|nascida|idade)/.test(normalized)) {
-    ["nascimento", "nasceu", "nascido", "nascida", "data de nascimento"].forEach((k) => intentKeywords.add(k));
-  }
-
-  if (/(presidente|comissao|comissão|eleito|eleicao|eleição)/.test(normalized)) {
-    ["presidente", "comissao", "eleito", "eleicao", "desenvolvimento urbano"].forEach((k) => intentKeywords.add(k));
-  }
-
-  return Array.from(intentKeywords);
-}
-
-async function searchKnowledgeBase(
-  supabase: any,
-  question: string,
-  tenantId: string
-): Promise<{ context: string; sources: string[]; rankedChunks: RankedKBChunk[] }> {
-  try {
-    const searchTerms = extractSearchTerms(question);
-    if (searchTerms.length === 0) return { context: "", sources: [], rankedChunks: [] };
-
-    console.log(`[whatsapp-chatbot] KB search terms: ${searchTerms.join(", ")}`);
-
-    const ilikeConditions = searchTerms.map((term) => `content.ilike.%${term}%`);
-
-    const { data: chunks } = await supabase
-      .from("kb_chunks")
-      .select(`
-        content, metadata,
-        document:kb_documents(title, category)
-      `)
-      .eq("tenant_id", tenantId)
-      .or(ilikeConditions.join(","))
-      .limit(30);
-
-    if (!chunks || chunks.length === 0) {
-      return { context: "", sources: [], rankedChunks: [] };
-    }
-
-    const normalizedQuestion = normalizeForKb(question);
-    const intentKeywords = getIntentKeywords(question).map((k) => normalizeForKb(k));
-
-    const rankedChunks = chunks
-      .map((chunk: any) => {
-        const doc = Array.isArray(chunk.document) ? chunk.document[0] : chunk.document;
-        const source = doc?.title || "Documento";
-        const content = chunk.content || "";
-
-        const contentNorm = normalizeForKb(content);
-        const topicNorm = normalizeForKb(chunk.metadata?.topic || "");
-        const summaryNorm = normalizeForKb(chunk.metadata?.summary || "");
-
-        let score = 0;
-
-        for (const term of searchTerms.map((t) => normalizeForKb(t))) {
-          if (!term) continue;
-          score += countOccurrences(contentNorm, term) * 3;
-          if (topicNorm.includes(term)) score += 8;
-          if (summaryNorm.includes(term)) score += 5;
-        }
-
-        for (const intent of intentKeywords) {
-          if (!intent) continue;
-          if (contentNorm.includes(intent)) score += 12;
-          if (topicNorm.includes(intent)) score += 15;
-          if (summaryNorm.includes(intent)) score += 10;
-        }
-
-        if (/(nascimento|nasceu|nascido|nascida)/.test(normalizedQuestion) && /(nascimento|nasceu|nascido|nascida)/.test(contentNorm)) {
-          score += 30;
-        }
-
-        if (contentNorm.includes("tabela") && contentNorm.includes("armazena") && score > 0) {
-          score -= 4;
-        }
-
-        return { content, source, score } as RankedKBChunk;
-      })
-      .filter((chunk: RankedKBChunk) => chunk.score > 0)
-      .sort((a: RankedKBChunk, b: RankedKBChunk) => b.score - a.score)
-      .slice(0, 5);
-
-    if (rankedChunks.length === 0) {
-      return { context: "", sources: [], rankedChunks: [] };
-    }
-
-    console.log(`[whatsapp-chatbot] KB ranked: ${rankedChunks.map((c: RankedKBChunk) => `score=${c.score}`).join(", ")}`);
-
-    const sources = [...new Set<string>(rankedChunks.map((c: RankedKBChunk) => c.source))];
-    const context = rankedChunks.map((c: RankedKBChunk) => c.content).join("\n\n");
-
-    return { context, sources, rankedChunks };
-  } catch (err) {
-    console.error("[whatsapp-chatbot] KB search error:", err);
-    return { context: "", sources: [], rankedChunks: [] };
-  }
-}
-
-function responseDeniesKnowledge(answer: string): boolean {
-  const normalized = normalizeForKb(answer);
-  return [
-    "nao tenho informacao",
-    "nao encontrei informacao",
-    "informacao nao esta disponivel",
-    "nao esta disponivel na minha base",
-    "nao consta na base",
-    "nao tenho dados",
-    "nao possuo informacao",
-    "nao ha informacao",
-    "nao encontrei dados",
-    "nao tenho detalhes",
-    "nao possuo detalhes",
-    "nao localizei informacao",
-    "nao disponivel na base",
-    "nao consta na minha base",
-    "nao tenho essa informacao",
-    "fora do meu conhecimento",
-    "alem do meu conhecimento",
-    "nao tenho acesso a essa informacao",
-    "base de conhecimento nao contem",
-    "documentos disponiveis nao mencionam",
-    "nao ha mencao",
-    "nao foi possivel encontrar",
-  ].some((pattern) => normalized.includes(pattern));
-}
-
-// Detect if AI correctly rejected as out-of-scope (should NOT trigger Perplexity)
-function responseIsOutOfScope(answer: string): boolean {
-  const normalized = normalizeForKb(answer);
-  return [
-    "so posso responder sobre assuntos relacionados ao mandato",
-    "desculpe so posso responder",
-    "fora do escopo",
-    "nao tenho como ajudar com esse tema",
-  ].some((pattern) => normalized.includes(pattern));
-}
-
-// Check if KB chunks actually contain the specific topic the user asked about
-function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[]): boolean {
-  if (!rankedChunks.length) return true;
-
-  // Extract specific identifiers from user message (numbers, acronyms+numbers, proper nouns)
-  const specificPatterns = userMessage.match(/\b(?:PEC|PL|PLP|PDL|MPV|EC)\s*\d+[\w\/]*/gi) || [];
-  const numberPatterns = userMessage.match(/\b\d{2,}\b/g) || [];
-  const allSpecifics = [...specificPatterns, ...numberPatterns];
-
-  if (allSpecifics.length === 0) return false; // No specific identifiers to check
-
-  // Check if any top KB chunk actually contains the specific identifier
-  const topChunks = rankedChunks.slice(0, 3);
-  const chunksText = topChunks.map(c => normalizeForKb(c.content)).join(" ");
-
-  for (const specific of allSpecifics) {
-    const normalizedSpecific = normalizeForKb(specific);
-    if (chunksText.includes(normalizedSpecific)) {
-      return false; // Found specific match in KB
-    }
-  }
-
-  console.log(`[whatsapp-chatbot] KB lacks specific answer for: ${allSpecifics.join(", ")}`);
-  return true; // KB has generic content but not the specific topic
-}
-
-// Perplexity web search fallback - restricted to tenant/political scope
-async function searchPerplexityFallback(question: string, supabase?: any, tenantId?: string): Promise<string | null> {
-  const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
-  if (!perplexityKey) return null;
-
-  // Fetch org name to scope the search
-  let orgName = "";
-  let orgCargo = "";
-  if (supabase && tenantId) {
-    try {
-      const { data: org } = await supabase
-        .from("organization")
-        .select("nome, cargo")
-        .eq("tenant_id", tenantId)
-        .limit(1)
-        .single();
-      orgName = org?.nome || "";
-      orgCargo = org?.cargo || "";
-    } catch { /* ignore */ }
-  }
-
-  const scopeEntity = orgName ? `${orgCargo} ${orgName}`.trim() : "";
-
-  // Check if question is related to the political scope
-  // If there's no org context, we can't scope - skip fallback
-  if (!scopeEntity) {
-    console.log("[whatsapp-chatbot] Perplexity skipped: no org context for scoping");
-    return null;
-  }
-
-  try {
-    console.log("[whatsapp-chatbot] Trying Perplexity fallback (scoped to: " + scopeEntity + ")...");
-    const response = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${perplexityKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        messages: [
-          {
-            role: "system",
-            content: `Você é o assistente virtual do gabinete de ${scopeEntity}. Você SOMENTE responde perguntas que sejam diretamente relacionadas a ${scopeEntity}, ao mandato parlamentar, projetos de lei, ações políticas, eventos ou temas legislativos que envolvam ${scopeEntity}. Se a pergunta NÃO tem relação com ${scopeEntity} ou com política/legislação brasileira no contexto do mandato, retorne EXATAMENTE: FORA_DO_ESCOPO. Responda de forma clara e objetiva (máximo 800 caracteres). Cite fontes quando possível. Use emojis moderadamente.`,
-          },
-          { role: "user", content: question },
-        ],
-        max_tokens: 500,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("[whatsapp-chatbot] Perplexity error:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    const answer = (data.choices?.[0]?.message?.content || "").trim();
-    const citations = data.citations || [];
-
-    // Detect out-of-scope or NO_RESULT responses
-    const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
-    if (!answer || cleanAnswer.startsWith("NO_RESULT") || cleanAnswer.includes("NO_RESULT") ||
-        cleanAnswer.startsWith("FORA_DO_ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") ||
-        answer.length < 15) {
-      console.log("[whatsapp-chatbot] Perplexity: out of scope or no result");
-      return null;
-    }
-
-    const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
-    console.log(`[whatsapp-chatbot] Perplexity fallback success: ${answer.length} chars`);
-    return `${answer}${citationSuffix}`;
-  } catch (err) {
-    console.error("[whatsapp-chatbot] Perplexity fallback error:", err);
-    return null;
-  }
-}
-
-function extractBestSentence(content: string, searchTerms: string[]): string {
-  const compactContent = content.replace(/\s+/g, " ").trim();
-  const sentences = compactContent
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  if (sentences.length === 0) return compactContent.slice(0, 320);
-
-  const normalizedTerms = searchTerms.map((t) => normalizeForKb(t)).filter((t) => t.length > 2);
-
-  let bestSentence = sentences[0];
-  let bestScore = -1;
-
-  for (const sentence of sentences) {
-    const normalizedSentence = normalizeForKb(sentence);
-    let score = 0;
-
-    for (const term of normalizedTerms) {
-      if (normalizedSentence.includes(term)) score += 2;
-    }
-
-    if (/(nascimento|nasceu|nascido|nascida|presidente|comissao|eleito)/.test(normalizedSentence)) {
-      score += 4;
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestSentence = sentence;
-    }
-  }
-
-  return bestSentence.length > 320 ? `${bestSentence.slice(0, 317)}...` : bestSentence;
-}
-
-function buildGroundedFallbackResponse(userMessage: string, rankedChunks: RankedKBChunk[]): string | null {
-  if (!rankedChunks.length) return null;
-
-  const topChunk = rankedChunks[0];
-  const sentence = extractBestSentence(topChunk.content, extractSearchTerms(userMessage));
-  if (!sentence) return null;
-
-  return `${sentence} (Fonte: ${topChunk.source})`;
-}
-
-// Generate AI response using Lovable AI + Knowledge Base
-async function generateAIResponse(
-  apiKey: string,
-  userMessage: string,
-  leader: Leader | null,
-  keywordContext: string,
-  systemPrompt: string,
-  supabase?: any,
-  tenantId?: string,
-  conversationHistory?: Array<{ role: string; content: string; ts?: number }>
-): Promise<string> {
-  // Fetch org name for scope restriction
-  let orgScope = "";
-  if (supabase && tenantId) {
-    try {
-      const { data: org } = await supabase
-        .from("organization")
-        .select("nome, cargo")
-        .eq("tenant_id", tenantId)
-        .limit(1)
-        .single();
-      if (org?.nome) {
-        orgScope = `${org.cargo || ""} ${org.nome}`.trim();
-      }
-    } catch { /* ignore */ }
-  }
-
-  // Search Knowledge Base for relevant context
-  let kbContext = "";
-  let kbSources: string[] = [];
-  let kbRankedChunks: RankedKBChunk[] = [];
-
-  if (supabase && tenantId) {
-    const kb = await searchKnowledgeBase(supabase, userMessage, tenantId);
-    kbContext = kb.context;
-    kbSources = kb.sources;
-    kbRankedChunks = kb.rankedChunks;
-    if (kbContext) {
-      console.log(`[whatsapp-chatbot] KB context found: ${kbSources.length} sources, ${kbContext.length} chars`);
-    }
-  }
-
-  const hasLeader = !!leader;
-  const leaderName = getFirstName(leader);
-  const fullLeaderName = leader?.nome_completo || "Visitante";
-  const cadastros = leader?.cadastros || 0;
-  const pontuacao = leader?.pontuacao_total || 0;
-  const isCoordinator = !!leader?.is_coordinator;
-
-  const leaderContext = hasLeader
-    ? `
-O usuário é ${fullLeaderName}, um líder político com:
-- ${cadastros} cadastros realizados
-- ${pontuacao} pontos de gamificação
-- ${isCoordinator ? "É coordenador" : "Não é coordenador"}
-`
-    : `
-O usuário é um contato do WhatsApp já registrado no fluxo de atendimento, mas não está cadastrado como líder.
-Responda com foco institucional, sem mencionar dados internos de liderança ou gamificação.
-`;
-
-  const kbSection = kbContext
-    ? `\n\nBASE DE CONHECIMENTO (INFORMAÇÕES VERIFICADAS - USE OBRIGATORIAMENTE):\n${kbContext}\nFontes: ${kbSources.join(", ")}\n\nREGRA ABSOLUTA: As informações acima são VERIFICADAS e CONFIÁVEIS. Você DEVE usá-las para responder. Se a resposta está na base de conhecimento acima, responda com base nela. NUNCA diga que "não tem a informação" se ela aparece no texto acima. Cite a fonte no formato (Fonte: Nome do Documento).`
-    : "";
-
-  const scopeRestriction = orgScope
-    ? `\nREGRA DE ESCOPO ABSOLUTA: Você é o assistente exclusivo do gabinete de ${orgScope}. Você SOMENTE pode responder perguntas que sejam diretamente relacionadas a ${orgScope}, ao mandato parlamentar, projetos de lei, ações políticas, eventos, legislação ou temas que envolvam ${orgScope}. Se a pergunta NÃO tem relação com ${orgScope} ou com o mandato, responda EXATAMENTE: "Desculpe, só posso responder sobre assuntos relacionados ao mandato de ${orgScope}. 😊 Posso ajudar com algo nesse tema?"`
-    : "";
-
-  const fullPrompt = `${systemPrompt}
-${scopeRestriction}
-
-${leaderContext}
-
-${keywordContext ? `Contexto adicional: ${keywordContext}` : ""}
-${kbSection}
-
-REGRAS OBRIGATÓRIAS:
-- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.
-- ${kbContext ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}
-- REGRA CRÍTICA SOBRE ESPECIFICIDADE: Se o usuário perguntar sobre algo ESPECÍFICO (ex: "PEC 47", "PL 1234", uma pessoa, uma data) e a base de conhecimento NÃO contém informação sobre esse item específico, diga EXATAMENTE: "Não encontrei informação específica sobre [item] na base disponível." NÃO tente dar uma resposta genérica usando informações sobre tópicos similares mas diferentes.
-- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que esse tipo de consulta é exclusivo para líderes cadastrados."}
-- ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas como ver pontuação, ver mensagens, ver contatos, ranking, cadastros, árvore, subordinados ou qualquer recurso exclusivo de líderes. NÃO inclua listas de sugestões com emojis de funcionalidades internas. Responda APENAS sobre o conteúdo institucional da base de conhecimento." : ""}
-- NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema". Os cadastros são feitos por terceiros que se cadastram através do link de indicação do líder, NÃO pelo líder manualmente.
-- NUNCA sugira que o líder pode buscar, encontrar ou adicionar contatos/pessoas no sistema. O sistema NÃO permite isso.
-- Se o líder não tem cadastros ainda, diga apenas que ele pode compartilhar seu link de indicação para que novas pessoas se cadastrem.
-- NUNCA faça suposições sobre dados que você não tem. Se não sabe, diga que não tem a informação.
-- Se a mensagem parecer ser um código de verificação (ex: "CONFIRMAR ABC123"), NÃO responda como conversa normal. Informe que o sistema de verificação tratará a solicitação.
-- Ignore chunks que descrevem estrutura de tabelas SQL (ex: "A tabela X armazena..."). Foque no conteúdo factual e informativo.`;
-
-  try {
-    // Build messages array with conversation history for context
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: fullPrompt },
-    ];
-
-    // Add conversation history (last N turns, excluding system messages)
-    if (conversationHistory && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-MAX_CONVERSATION_TURNS * 2);
-      for (const turn of recentHistory) {
-        if (turn.role === 'user' || turn.role === 'assistant') {
-          messages.push({ role: turn.role, content: turn.content });
-        }
-      }
-    }
-
-    // Add current user message
-    messages.push({ role: "user", content: userMessage });
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        max_tokens: 600
-      })
-    });
-
-    if (!response.ok) {
-      console.error("[whatsapp-chatbot] AI API error:", await response.text());
-      const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
-      if (groundedFallback) return groundedFallback;
-      return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
-    }
-
-    const data = await response.json();
-    const aiAnswer = (data.choices?.[0]?.message?.content || "").trim();
-
-    // Check if KB actually has specific info for this query
-    const kbMissesSpecific = kbLacksSpecificAnswer(userMessage, kbRankedChunks);
-
-    // If AI correctly rejected as out-of-scope, return as-is (do NOT send to Perplexity)
-    if (responseIsOutOfScope(aiAnswer)) {
-      console.log("[whatsapp-chatbot] AI correctly rejected as out-of-scope, returning as-is");
-      return aiAnswer;
-    }
-
-    // If AI denies having info but KB has it AND KB has specific content, use grounded fallback
-    if (kbContext && responseDeniesKnowledge(aiAnswer) && !kbMissesSpecific) {
-      const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
-      if (groundedFallback) {
-        console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback");
-        return groundedFallback;
-      }
-    }
-
-    // If AI denies knowledge OR KB lacks specific answer, try Perplexity web search
-    if (responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbMissesSpecific) {
-      const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
-      if (perplexityResult) {
-        console.log("[whatsapp-chatbot] Using Perplexity web search fallback");
-        return perplexityResult;
-      }
-    }
-
-    if (!aiAnswer) {
-      const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
-      if (groundedFallback) return groundedFallback;
-    }
-
-    return aiAnswer || "Não consegui processar sua mensagem.";
-  } catch (err) {
-    console.error("[whatsapp-chatbot] AI error:", err);
-    const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
-    if (groundedFallback) return groundedFallback;
-    // Try Perplexity as last resort
-    const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
-    if (perplexityResult) return perplexityResult;
-    return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
-  }
-}
 
