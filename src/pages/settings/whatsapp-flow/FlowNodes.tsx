@@ -107,7 +107,7 @@ interface NodeShellProps {
 }
 
 export function NodeShell({
-  type,
+  nodeId,
   data,
   selected,
   showTargetHandle = true,
