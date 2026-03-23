@@ -2120,8 +2120,10 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
     const data = await response.json();
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
-    const cleanAnswer = answer.replace(/[*_`#]/g, "").trim();
-    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
+    const cleanAnswer = answer.replace(/[*_`#]/g, "").replace(/_/g, " ").trim();
+    if (!answer || cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || answer.length < 15) return null;
+    // Also filter if the response starts with rejection patterns
+    if (/^(FORA|❌|nao tem relacao)/i.test(cleanAnswer)) return null;
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
     return `${answer}${citationSuffix}`;
   } catch (err) { console.error("[whatsapp-chatbot] Perplexity fallback error:", err); return null; }
