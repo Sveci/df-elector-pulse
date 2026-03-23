@@ -1,8 +1,8 @@
-import { Handle, Position, NodeProps } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import {
   Zap, MessageSquare, Brain, Settings2, GitBranch,
-  Clock, XCircle, Hash, Play
+  Clock, XCircle, Hash, Play, X
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { FlowNodeData, FlowNodeType } from "@/hooks/useWhatsAppFlows";
