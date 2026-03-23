@@ -86,7 +86,7 @@ const AIAgent = lazy(() => import("./pages/AIAgent"));
 const WhatsAppMarketing = lazy(() => import("./pages/WhatsAppMarketing"));
 const WhatsAppHistory = lazy(() => import("./pages/WhatsAppHistory"));
 const WhatsAppFlowBuilder = lazy(() => import("./pages/settings/whatsapp-flow/WhatsAppFlowBuilder"));
-const WhatsAppInbox = lazy(() => import("./pages/WhatsAppInbox"));
+
 const EmailMarketing = lazy(() => import("./pages/EmailMarketing"));
 const SMSMarketing = lazy(() => import("./pages/SMSMarketing"));
 const ScheduledMessages = lazy(() => import("./pages/ScheduledMessages"));
@@ -329,14 +329,6 @@ const App = () => (
                           element={
                             <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
                               <DashboardLayout><WhatsAppHistory /></DashboardLayout>
-                            </RoleProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/whatsapp/inbox"
-                          element={
-                            <RoleProtectedRoute allowedRoles={[...ALL_ROLES]}>
-                              <WhatsAppInbox />
                             </RoleProtectedRoute>
                           }
                         />

@@ -1,4 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
+import { WhatsAppInboxContent } from "@/pages/WhatsAppInbox";
+import { Inbox } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -275,6 +277,9 @@ const WhatsAppChatbot = () => {
           </TabsTrigger>
           <TabsTrigger value="stats" className="gap-2">
             <BarChart2 className="h-4 w-4" /> Estatísticas
+          </TabsTrigger>
+          <TabsTrigger value="inbox" className="gap-2">
+            <Inbox className="h-4 w-4" /> Inbox
           </TabsTrigger>
         </TabsList>
 
@@ -796,6 +801,11 @@ const WhatsAppChatbot = () => {
               )}
             </>
           )}
+        </TabsContent>
+
+        {/* Inbox Tab */}
+        <TabsContent value="inbox">
+          <WhatsAppInboxContent />
         </TabsContent>
       </Tabs>
 
