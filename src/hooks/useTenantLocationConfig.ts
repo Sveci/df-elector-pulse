@@ -21,24 +21,14 @@ export interface TenantLocationConfig {
  * Hook that returns location configuration based on the current organization/tenant's cargo.
  * This determines what location field (RA, bairro, cidade, estado+cidade) to show in forms.
  */
-export function useTenantLocationConfig(): TenantLocationConfig {
+export function useTenantLocationConfig(orgOverride?: { cargo?: string | null; estado?: string | null; cidade?: string | null } | null, orgOverrideLoading?: boolean): TenantLocationConfig {
   const { data: organization, isLoading: orgLoading } = useOrganization();
 
-  let tenantLoading = false;
-  try {
-    const ctx = useTenantContext();
-    // Only consider tenant loading if org data hasn't loaded yet
-    // This prevents eternal loading on public pages where tenant auth isn't available
-    if (orgLoading) {
-      tenantLoading = ctx.isLoading;
-    }
-  } catch {
-    // Outside TenantProvider
-  }
+  // Use override if provided (for public pages), otherwise use context-based org
+  const effectiveOrg = orgOverride !== undefined ? orgOverride : organization;
+  const isLoading = orgOverride !== undefined ? (orgOverrideLoading ?? false) : orgLoading;
 
-  const isLoading = orgLoading;
-
-  const cargo = organization?.cargo || null;
+  const cargo = effectiveOrg?.cargo || null;
   const fieldType = getLocationFieldType(cargo);
   const estado = organization?.estado || null;
   const cidade = organization?.cidade || null;
