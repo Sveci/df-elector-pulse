@@ -1,7 +1,7 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useEvent } from "@/hooks/events/useEvents";
 import { useCreateRegistration } from "@/hooks/events/useEventRegistrations";
-import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { LocationSelect } from "@/components/office/LocationSelect";
 import { useLeaderByToken } from "@/hooks/events/useLeaderByToken";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
