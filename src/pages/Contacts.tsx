@@ -330,7 +330,7 @@ const Contacts = () => {
 
       const lideresMap = new Map((lideresData.data || []).map((l: any) => [l.id, l]));
       const campanhasMap = new Map((campanhasData.data || []).map((c: any) => [c.id, c]));
-      const eventosMap = new Map((eventosData.data || []).map((e: any) => [e.id, e]));
+      const eventosMap = new Map((eventosData.data || []).map((e: any) => [e.id, { id: e.id, name: (e.events as any)?.name }]));
       const captacaoMap = new Map((captacaoCampanhasData.data || []).map((c: any) => [c.id, c]));
       const visitasMap = new Map((visitasData.data || []).map((v: any) => [v.id, v]));
 
