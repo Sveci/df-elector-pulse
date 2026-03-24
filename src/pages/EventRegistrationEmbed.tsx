@@ -198,12 +198,18 @@ export default function EventRegistrationEmbed() {
           />
         </div>
         <div>
-          <Label className="text-sm">Região</Label>
-          <ResponsiveSelect
-            options={cityOptions}
+          <LocationSelect
             value={formData.cidade_id}
-            onValueChange={(v) => setFormData(prev => ({ ...prev, cidade_id: v }))}
-            placeholder="Selecione sua região"
+            localidadeValue={formData.localidade}
+            onLocationChange={({ cidadeId, localidade }) => {
+              setFormData(prev => ({
+                ...prev,
+                cidade_id: cidadeId || "",
+                localidade: localidade || "",
+              }));
+            }}
+            showLabel
+            tenantId={event?.tenant_id}
           />
         </div>
         <div>
