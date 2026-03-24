@@ -686,15 +686,18 @@ export default function EventRegistration() {
                   </div>
 
                   <div>
-                    <Label htmlFor="cidade_id">Cidade</Label>
-                    <ResponsiveSelect
+                    <LocationSelect
                       value={formData.cidade_id}
-                      onValueChange={(value) => setFormData({ ...formData, cidade_id: value })}
-                      placeholder="Selecione sua cidade"
-                      options={cities?.map((city) => ({
-                        value: city.id,
-                        label: city.nome,
-                      })) || []}
+                      localidadeValue={formData.localidade}
+                      onLocationChange={({ cidadeId, localidade }) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          cidade_id: cidadeId || "",
+                          localidade: localidade || "",
+                        }));
+                      }}
+                      showLabel
+                      tenantId={event?.tenant_id}
                     />
                   </div>
 
