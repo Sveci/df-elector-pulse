@@ -234,6 +234,7 @@ const SMS_PUBLIC_TEMPLATES = [
   "verificacao-link-sms",
   "verificacao-sms-fallback",
   "link-indicacao-sms-fallback",
+  "lider-cadastro-confirmado-sms",
 ];
 
 Deno.serve(async (req) => {
