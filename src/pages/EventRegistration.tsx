@@ -1,14 +1,14 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useEvent } from "@/hooks/events/useEvents";
 import { useCreateRegistration } from "@/hooks/events/useEventRegistrations";
-import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { LocationSelect } from "@/components/office/LocationSelect";
 import { useLeaderByToken } from "@/hooks/events/useLeaderByToken";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertTriangle, UserCheck, ShieldCheck, CalendarX2 } from "lucide-react";
 import { isEventDeadlinePassed } from "@/lib/eventUtils";
@@ -29,7 +29,7 @@ export default function EventRegistration() {
   const affiliateToken = searchParams.get("ref");
 
   const { data: event, isLoading } = useEvent(slug || "");
-  const { data: cities } = useOfficeCities();
+  // LocationSelect handles city/location resolution via tenantId
   const { data: leader } = useLeaderByToken(affiliateToken || undefined);
   const { data: categories = [] } = useEventCategories();
   const createRegistration = useCreateRegistration();
@@ -39,6 +39,7 @@ export default function EventRegistration() {
     email: "",
     whatsapp: "",
     cidade_id: "",
+    localidade: "",
     data_nascimento: "",
     endereco: "",
   });
@@ -101,6 +102,7 @@ export default function EventRegistration() {
         email: formData.email,
         whatsapp: formData.whatsapp,
         cidade_id: formData.cidade_id || undefined,
+        localidade: formData.localidade || undefined,
         leader_id: leader?.id || undefined,
         utm_source: searchParams.get("utm_source") || undefined,
         utm_medium: searchParams.get("utm_medium") || undefined,
@@ -684,15 +686,18 @@ export default function EventRegistration() {
                   </div>
 
                   <div>
-                    <Label htmlFor="cidade_id">Cidade</Label>
-                    <ResponsiveSelect
+                    <LocationSelect
                       value={formData.cidade_id}
-                      onValueChange={(value) => setFormData({ ...formData, cidade_id: value })}
-                      placeholder="Selecione sua cidade"
-                      options={cities?.map((city) => ({
-                        value: city.id,
-                        label: city.nome,
-                      })) || []}
+                      localidadeValue={formData.localidade}
+                      onLocationChange={({ cidadeId, localidade }) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          cidade_id: cidadeId || "",
+                          localidade: localidade || "",
+                        }));
+                      }}
+                      showLabel
+                      tenantId={event?.tenant_id}
                     />
                   </div>
 

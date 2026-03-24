@@ -31,6 +31,7 @@ type CreateRegistrationData = {
   email: string;
   whatsapp: string;
   cidade_id?: string;
+  localidade?: string;
   leader_id?: string;
   utm_source?: string;
   utm_medium?: string;
@@ -59,6 +60,7 @@ export function useCreateRegistration() {
         _utm_content: data.utm_content || null,
         _data_nascimento: data.data_nascimento || null,
         _endereco: data.endereco || null,
+        _localidade: data.localidade || null,
       });
 
       if (error) throw error;

@@ -1,14 +1,14 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useEvent } from "@/hooks/events/useEvents";
 import { useCreateRegistration } from "@/hooks/events/useEventRegistrations";
-import { useOfficeCities } from "@/hooks/office/useOfficeCities";
+import { LocationSelect } from "@/components/office/LocationSelect";
 import { useLeaderByToken } from "@/hooks/events/useLeaderByToken";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertTriangle, CalendarX2 } from "lucide-react";
 import { isEventDeadlinePassed } from "@/lib/eventUtils";
@@ -25,7 +25,7 @@ export default function EventRegistrationEmbed() {
   const affiliateToken = searchParams.get("ref");
 
   const { data: event, isLoading } = useEvent(slug || "");
-  const { data: cities } = useOfficeCities();
+  // LocationSelect handles city/location resolution via tenantId
   const { data: leader } = useLeaderByToken(affiliateToken || undefined);
   const { data: categories = [] } = useEventCategories();
   const createRegistration = useCreateRegistration();
@@ -35,6 +35,7 @@ export default function EventRegistrationEmbed() {
     email: "",
     whatsapp: "",
     cidade_id: "",
+    localidade: "",
     data_nascimento: "",
     endereco: "",
   });
@@ -125,6 +126,7 @@ export default function EventRegistrationEmbed() {
         email: formData.email,
         whatsapp: normalizePhoneToE164(formData.whatsapp),
         cidade_id: formData.cidade_id || undefined,
+        localidade: formData.localidade || undefined,
         data_nascimento: formData.data_nascimento || undefined,
         endereco: formData.endereco || undefined,
         leader_id: leader?.id || undefined,
@@ -139,7 +141,7 @@ export default function EventRegistrationEmbed() {
     }
   };
 
-  const cityOptions = (cities || []).map((c: any) => ({ value: c.id, label: c.nome }));
+  // LocationSelect handles city options internally
 
   return (
     <div className="p-4 max-w-lg mx-auto font-sans">
@@ -196,12 +198,18 @@ export default function EventRegistrationEmbed() {
           />
         </div>
         <div>
-          <Label className="text-sm">Região</Label>
-          <ResponsiveSelect
-            options={cityOptions}
+          <LocationSelect
             value={formData.cidade_id}
-            onValueChange={(v) => setFormData(prev => ({ ...prev, cidade_id: v }))}
-            placeholder="Selecione sua região"
+            localidadeValue={formData.localidade}
+            onLocationChange={({ cidadeId, localidade }) => {
+              setFormData(prev => ({
+                ...prev,
+                cidade_id: cidadeId || "",
+                localidade: localidade || "",
+              }));
+            }}
+            showLabel
+            tenantId={event?.tenant_id}
           />
         </div>
         <div>
