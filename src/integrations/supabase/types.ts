@@ -4828,6 +4828,28 @@ export type Database = {
               _email: string
               _endereco?: string
               _event_id: string
+              _leader_id?: string
+              _localidade?: string
+              _nome: string
+              _utm_campaign?: string
+              _utm_content?: string
+              _utm_medium?: string
+              _utm_source?: string
+              _whatsapp: string
+            }
+            Returns: {
+              created_at: string
+              id: string
+              qr_code: string
+            }[]
+          }
+        | {
+            Args: {
+              _cidade_id?: string
+              _data_nascimento?: string
+              _email: string
+              _endereco?: string
+              _event_id: string
               _leader_token?: string
               _nome: string
               _utm_campaign?: string
