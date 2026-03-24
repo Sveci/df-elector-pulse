@@ -1235,6 +1235,15 @@ const ContactDetails = ({ contact }: { contact: any }) => {
                   {format(new Date(contact.data_nascimento + "T00:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </p>
               </div>
+             )}
+            {contact.endereco && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Endereço</label>
+                <p className="text-sm flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  {contact.endereco}
+                </p>
+              </div>
             )}
           </div>
           <div className="space-y-3">
