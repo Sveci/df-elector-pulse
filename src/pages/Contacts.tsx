@@ -318,7 +318,7 @@ const Contacts = () => {
           ? supabase.from("campaigns").select("id, nome, utm_campaign").in("id", campanhaIds)
           : Promise.resolve({ data: [] }),
         eventoIds.length > 0
-          ? supabase.from("events").select("id, name").in("id", eventoIds)
+          ? supabase.from("event_registrations").select("id, event_id, events:event_id(id, name)").in("id", eventoIds)
           : Promise.resolve({ data: [] }),
         captacaoIds.length > 0
           ? supabase.from("lead_funnels").select("id, nome").in("id", captacaoIds)
@@ -330,7 +330,7 @@ const Contacts = () => {
 
       const lideresMap = new Map((lideresData.data || []).map((l: any) => [l.id, l]));
       const campanhasMap = new Map((campanhasData.data || []).map((c: any) => [c.id, c]));
-      const eventosMap = new Map((eventosData.data || []).map((e: any) => [e.id, e]));
+      const eventosMap = new Map((eventosData.data || []).map((e: any) => [e.id, { id: e.id, name: (e.events as any)?.name }]));
       const captacaoMap = new Map((captacaoCampanhasData.data || []).map((c: any) => [c.id, c]));
       const visitasMap = new Map((visitasData.data || []).map((v: any) => [v.id, v]));
 
@@ -395,6 +395,7 @@ const Contacts = () => {
           opted_out_at: contact.opted_out_at,
           opt_out_reason: contact.opt_out_reason,
           opt_out_channel: contact.opt_out_channel,
+          endereco: contact.endereco,
           is_promoted: false, // será atualizado após a query
         };
       });
@@ -1232,6 +1233,15 @@ const ContactDetails = ({ contact }: { contact: any }) => {
                 <p className="text-sm flex items-center gap-1.5">
                   <Cake className="h-4 w-4 text-muted-foreground" />
                   {format(new Date(contact.data_nascimento + "T00:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+              </div>
+             )}
+            {contact.endereco && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Endereço</label>
+                <p className="text-sm flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  {contact.endereco}
                 </p>
               </div>
             )}
