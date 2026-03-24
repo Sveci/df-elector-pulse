@@ -141,7 +141,7 @@ export default function EventRegistrationEmbed() {
     }
   };
 
-  const cityOptions = (cities || []).map((c: any) => ({ value: c.id, label: c.nome }));
+  // LocationSelect handles city options internally
 
   return (
     <div className="p-4 max-w-lg mx-auto font-sans">
