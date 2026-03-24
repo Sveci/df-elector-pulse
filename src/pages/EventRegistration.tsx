@@ -102,6 +102,7 @@ export default function EventRegistration() {
         email: formData.email,
         whatsapp: formData.whatsapp,
         cidade_id: formData.cidade_id || undefined,
+        localidade: formData.localidade || undefined,
         leader_id: leader?.id || undefined,
         utm_source: searchParams.get("utm_source") || undefined,
         utm_medium: searchParams.get("utm_medium") || undefined,
