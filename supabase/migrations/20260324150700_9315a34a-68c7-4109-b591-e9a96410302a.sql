@@ -1,0 +1,1 @@
+DELETE FROM lideres WHERE telefone = '+5500000000001' AND nome_completo = 'Teste Tenant Fix';
