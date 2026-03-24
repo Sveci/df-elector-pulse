@@ -395,6 +395,7 @@ const Contacts = () => {
           opted_out_at: contact.opted_out_at,
           opt_out_reason: contact.opt_out_reason,
           opt_out_channel: contact.opt_out_channel,
+          endereco: contact.endereco,
           is_promoted: false, // será atualizado após a query
         };
       });
