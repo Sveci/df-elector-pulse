@@ -48,7 +48,7 @@ export default function VerifyLeader() {
             console.log("[VerifyLeader] Líder verificado! Chamando send-leader-affiliate-links para:", verificationResult.leader_id);
             try {
               const { error: sendError } = await supabase.functions.invoke("send-leader-affiliate-links", {
-                body: { leader_id: verificationResult.leader_id },
+                body: { leader_id: verificationResult.leader_id, verification_code: codigo },
               });
               if (sendError) {
                 console.error("[VerifyLeader] Erro ao enviar links de afiliado:", sendError);

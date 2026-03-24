@@ -20,41 +20,61 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ── Auth: require valid JWT ────────────────────────────────────────
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    // ── End Auth ──────────────────────────────────────────────────────
-
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let leaderId: string | null = null;
     let leaderIds: string[] | null = null;
+    let verificationCode: string | null = null;
 
     try {
       const body = await req.json();
       leaderId = body?.leader_id || null;
       leaderIds = body?.leader_ids || null;
+      verificationCode = body?.verification_code || null;
     } catch {
       // No body provided
     }
+
+    // ── Auth: allow public calls with verification_code, otherwise require JWT ──
+    if (verificationCode && leaderId) {
+      // Public flow: validate verification_code matches the leader
+      const { data: leaderCheck, error: checkError } = await supabase
+        .from("lideres")
+        .select("id, verification_code, is_verified")
+        .eq("id", leaderId)
+        .single();
+
+      if (checkError || !leaderCheck || leaderCheck.verification_code !== verificationCode) {
+        return new Response(JSON.stringify({ error: "Invalid verification code" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log(`[send-leader-affiliate-links] Public auth via verification_code for leader ${leaderId}`);
+    } else {
+      // Authenticated flow: require valid JWT
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: authError } = await authClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    // ── End Auth ──────────────────────────────────────────────────────
 
     console.log(`[send-leader-affiliate-links] Mode: ${leaderId ? 'single leader: ' + leaderId : leaderIds ? 'batch: ' + leaderIds.length + ' leaders' : 'batch processing (disabled)'}`);
 
