@@ -42,8 +42,14 @@ export function LocationSelect({
   required = false,
   disabled = false,
   showLabel = false,
+  tenantId,
 }: LocationSelectProps) {
-  const config = useTenantLocationConfig();
+  // For public pages, resolve org from tenantId directly
+  const { data: publicOrg, isLoading: publicOrgLoading } = usePublicOrganization(tenantId);
+  const config = useTenantLocationConfig(
+    tenantId ? publicOrg : undefined,
+    tenantId ? publicOrgLoading : undefined,
+  );
   const [selectedEstado, setSelectedEstado] = useState("");
   const [selectedCidade, setSelectedCidade] = useState(localidadeValue || "");
 
