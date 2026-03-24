@@ -29,6 +29,8 @@ interface LocationSelectProps {
   required?: boolean;
   disabled?: boolean;
   showLabel?: boolean;
+  /** For public pages: pass the tenant_id to resolve org config without auth context */
+  tenantId?: string | null;
 }
 
 export function LocationSelect({
