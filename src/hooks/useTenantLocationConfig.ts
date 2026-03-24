@@ -1,6 +1,5 @@
 import { useOrganization } from "@/hooks/useOrganization";
-import { useTenantContext } from "@/contexts/TenantContext";
-import { getCargoConfig, getLocationFieldType, type LocationFieldType } from "@/constants/brazilPolitics";
+import { getLocationFieldType, type LocationFieldType } from "@/constants/brazilPolitics";
 
 export interface TenantLocationConfig {
   /** What field type to show in forms */
