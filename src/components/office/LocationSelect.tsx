@@ -13,6 +13,7 @@ import { RegionSelect } from "@/components/office/RegionSelect";
 import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
 import { useBrazilCities, useBrazilDistricts } from "@/hooks/useBrazilCities";
 import { ESTADOS_BR } from "@/constants/brazilPolitics";
+import { usePublicOrganization } from "@/hooks/usePublicOrganization";
 
 export interface LocationValue {
   cidadeId?: string;
