@@ -29,8 +29,8 @@ export function useTenantLocationConfig(orgOverride?: { cargo?: string | null; e
 
   const cargo = effectiveOrg?.cargo || null;
   const fieldType = getLocationFieldType(cargo);
-  const estado = organization?.estado || null;
-  const cidade = organization?.cidade || null;
+  const estado = effectiveOrg?.estado || null;
+  const cidade = effectiveOrg?.cidade || null;
 
   let label: string;
   let placeholder: string;
