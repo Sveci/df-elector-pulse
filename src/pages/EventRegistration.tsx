@@ -29,7 +29,7 @@ export default function EventRegistration() {
   const affiliateToken = searchParams.get("ref");
 
   const { data: event, isLoading } = useEvent(slug || "");
-  const { data: cities } = useOfficeCities();
+  // LocationSelect handles city/location resolution via tenantId
   const { data: leader } = useLeaderByToken(affiliateToken || undefined);
   const { data: categories = [] } = useEventCategories();
   const createRegistration = useCreateRegistration();
