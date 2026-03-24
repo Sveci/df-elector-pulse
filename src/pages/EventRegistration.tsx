@@ -39,6 +39,7 @@ export default function EventRegistration() {
     email: "",
     whatsapp: "",
     cidade_id: "",
+    localidade: "",
     data_nascimento: "",
     endereco: "",
   });
