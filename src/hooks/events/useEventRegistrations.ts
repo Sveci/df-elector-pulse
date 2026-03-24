@@ -31,6 +31,7 @@ type CreateRegistrationData = {
   email: string;
   whatsapp: string;
   cidade_id?: string;
+  localidade?: string;
   leader_id?: string;
   utm_source?: string;
   utm_medium?: string;
