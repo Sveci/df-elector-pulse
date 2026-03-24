@@ -126,6 +126,7 @@ export default function EventRegistrationEmbed() {
         email: formData.email,
         whatsapp: normalizePhoneToE164(formData.whatsapp),
         cidade_id: formData.cidade_id || undefined,
+        localidade: formData.localidade || undefined,
         data_nascimento: formData.data_nascimento || undefined,
         endereco: formData.endereco || undefined,
         leader_id: leader?.id || undefined,
