@@ -318,7 +318,7 @@ const Contacts = () => {
           ? supabase.from("campaigns").select("id, nome, utm_campaign").in("id", campanhaIds)
           : Promise.resolve({ data: [] }),
         eventoIds.length > 0
-          ? supabase.from("events").select("id, name").in("id", eventoIds)
+          ? supabase.from("event_registrations").select("id, event_id, events:event_id(id, name)").in("id", eventoIds)
           : Promise.resolve({ data: [] }),
         captacaoIds.length > 0
           ? supabase.from("lead_funnels").select("id, nome").in("id", captacaoIds)
