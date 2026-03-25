@@ -202,7 +202,7 @@ export function AdicionarProposicaoModal({
 
         {/* Success message */}
         {addedCount > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             {addedCount} proposição(ões) adicionada(s) ao monitoramento!
           </div>
