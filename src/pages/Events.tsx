@@ -1462,15 +1462,15 @@ function CheckInSection({ events }: { events: any[] }) {
         <title>Etiqueta - ${reg.nome}</title>
         <style>
           @page {
-            size: 80mm 40mm;
+            size: 100mm 40mm;
             margin: 0;
           }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
-            width: 80mm;
+            width: 100mm;
             height: 40mm;
             font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
-            padding: 2.5mm 3.5mm;
+            padding: 2.5mm 2mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
