@@ -26,7 +26,7 @@ export function useAlertasConfig() {
   return useQuery({
     queryKey: ["alertas-config", activeTenant?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("proposicoes_alertas_config")
         .select("*")
         .eq("tenant_id", activeTenant!.id)
@@ -46,7 +46,7 @@ export function useCreateAlerta() {
 
   return useMutation({
     mutationFn: async (input: AlertaConfigInput) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("proposicoes_alertas_config")
         .insert({ ...input, tenant_id: activeTenant!.id })
         .select()
@@ -71,7 +71,7 @@ export function useUpdateAlerta() {
 
   return useMutation({
     mutationFn: async ({ id, ...input }: Partial<AlertaConfig> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("proposicoes_alertas_config")
         .update(input)
         .eq("id", id)
@@ -97,7 +97,7 @@ export function useDeleteAlerta() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("proposicoes_alertas_config")
         .delete()
         .eq("id", id);
@@ -120,7 +120,7 @@ export function useToggleAlerta() {
 
   return useMutation({
     mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("proposicoes_alertas_config")
         .update({ ativo })
         .eq("id", id);
