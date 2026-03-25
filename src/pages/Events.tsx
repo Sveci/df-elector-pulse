@@ -1475,29 +1475,6 @@ function CheckInSection({ events }: { events: any[] }) {
             flex-direction: column;
             justify-content: space-between;
           }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 0.6pt solid #222;
-            padding-bottom: 1.5mm;
-          }
-          .event-name {
-            font-size: 6.5pt;
-            font-weight: 600;
-            color: #333;
-            text-transform: uppercase;
-            letter-spacing: 0.3pt;
-            max-width: 55mm;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-          .event-date {
-            font-size: 6pt;
-            color: #666;
-            white-space: nowrap;
-          }
           .main {
             flex: 1;
             display: flex;
@@ -1550,9 +1527,6 @@ function CheckInSection({ events }: { events: any[] }) {
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="event-name">${eventName}</div>
-        </div>
         <div class="main">
           <div class="name">${reg.nome}</div>
           ${cityName ? `<div class="city">📍 ${cityName}</div>` : ""}
