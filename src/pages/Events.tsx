@@ -1451,6 +1451,10 @@ function CheckInSection({ events }: { events: any[] }) {
       return;
     }
 
+    const checkinTime = reg.checked_in_at
+      ? format(new Date(reg.checked_in_at), "HH:mm", { locale: ptBR })
+      : format(new Date(), "HH:mm", { locale: ptBR });
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -1465,36 +1469,77 @@ function CheckInSection({ events }: { events: any[] }) {
           body {
             width: 80mm;
             height: 40mm;
-            font-family: Arial, Helvetica, sans-serif;
-            padding: 2mm 3mm;
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            padding: 2.5mm 3.5mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 0.6pt solid #222;
+            padding-bottom: 1.5mm;
+          }
+          .event-name {
+            font-size: 6.5pt;
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.3pt;
+            max-width: 55mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .event-date {
+            font-size: 6pt;
+            color: #666;
+            white-space: nowrap;
+          }
+          .main {
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            padding: 1mm 0;
           }
           .name {
-            font-size: 14pt;
-            font-weight: bold;
-            line-height: 1.2;
-            margin-bottom: 1mm;
+            font-size: 15pt;
+            font-weight: 700;
+            line-height: 1.15;
+            color: #111;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
           .city {
-            font-size: 9pt;
-            color: #555;
-            margin-bottom: 1.5mm;
+            font-size: 8.5pt;
+            color: #444;
+            margin-top: 0.8mm;
+            font-weight: 500;
           }
-          .divider {
-            border-top: 0.5pt solid #ccc;
-            margin: 1mm 0;
+          .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 0.4pt solid #ccc;
+            padding-top: 1mm;
           }
-          .event {
-            font-size: 7pt;
+          .badge {
+            font-size: 5.5pt;
+            background: #222;
+            color: #fff;
+            padding: 0.4mm 1.5mm;
+            border-radius: 1mm;
+            text-transform: uppercase;
+            letter-spacing: 0.4pt;
+            font-weight: 600;
+          }
+          .checkin-time {
+            font-size: 5.5pt;
             color: #888;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
           }
           @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1502,10 +1547,18 @@ function CheckInSection({ events }: { events: any[] }) {
         </style>
       </head>
       <body>
-        <div class="name">${reg.nome}</div>
-        ${cityName ? `<div class="city">${cityName}</div>` : ""}
-        <div class="divider"></div>
-        <div class="event">${eventName} • ${eventDate}</div>
+        <div class="header">
+          <div class="event-name">${eventName}</div>
+          <div class="event-date">${eventDate}</div>
+        </div>
+        <div class="main">
+          <div class="name">${reg.nome}</div>
+          ${cityName ? `<div class="city">📍 ${cityName}</div>` : ""}
+        </div>
+        <div class="footer">
+          <div class="badge">✓ Credenciado</div>
+          <div class="checkin-time">Check-in: ${checkinTime}</div>
+        </div>
       </body>
       </html>
     `);
