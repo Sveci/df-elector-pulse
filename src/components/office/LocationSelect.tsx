@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
@@ -44,7 +38,6 @@ export function LocationSelect({
   showLabel = false,
   tenantId,
 }: LocationSelectProps) {
-  // For public pages, resolve org from tenantId directly
   const { data: publicOrg, isLoading: publicOrgLoading } = usePublicOrganization(tenantId);
   const config = useTenantLocationConfig(
     tenantId ? publicOrg : undefined,
@@ -118,18 +111,20 @@ export function LocationSelect({
     const hasDistricts = districts && districts.length > 1;
     if (hasDistricts) {
       return (
-        <SelectField
-          label={showLabel ? effectiveLabel : undefined}
-          required={required}
-          value={selectedCidade}
-          onValueChange={(v) => {
-            setSelectedCidade(v);
-            onLocationChange({ cidadeId: undefined, localidade: v });
-          }}
-          placeholder="Selecione o bairro/distrito"
-          options={districts}
-          disabled={disabled}
-        />
+        <div className="space-y-2">
+          {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
+          <NativeSelect
+            value={selectedCidade}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSelectedCidade(v);
+              onLocationChange({ cidadeId: undefined, localidade: v });
+            }}
+            placeholder="Selecione o bairro/distrito"
+            options={districts}
+            disabled={disabled}
+          />
+        </div>
       );
     }
 
@@ -157,74 +152,62 @@ export function LocationSelect({
     }
 
     return (
-      <SelectField
-        label={showLabel ? effectiveLabel : undefined}
-        required={required}
-        value={selectedCidade}
-        onValueChange={(v) => {
-          setSelectedCidade(v);
-          onLocationChange({ cidadeId: undefined, localidade: v });
-        }}
-        placeholder="Selecione a cidade"
-        options={cities || []}
-        disabled={disabled}
-      />
+      <div className="space-y-2">
+        {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
+        <NativeSelect
+          value={selectedCidade}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSelectedCidade(v);
+            onLocationChange({ cidadeId: undefined, localidade: v });
+          }}
+          placeholder="Selecione a cidade"
+          options={cities || []}
+          disabled={disabled}
+        />
+      </div>
     );
   }
 
   // Estado + Cidade mode
   if (config.fieldType === "estado_cidade") {
+    const estadoOptions = ESTADOS_BR.map((e) => ({ value: e.uf, label: e.nome }));
+
     return (
       <div className="space-y-3">
         {showLabel && <Label>{effectiveLabel}{required && " *"}</Label>}
-        <Select
+        <NativeSelect
           value={selectedEstado}
-          onValueChange={(v) => {
+          onChange={(e) => {
+            const v = e.target.value;
             setSelectedEstado(v);
             setSelectedCidade("");
             onLocationChange({ cidadeId: undefined, localidade: "" });
           }}
+          placeholder="Selecione o estado"
+          options={estadoOptions}
           disabled={disabled}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o estado" />
-          </SelectTrigger>
-          <SelectContent>
-            {ESTADOS_BR.map((e) => (
-              <SelectItem key={e.uf} value={e.uf}>
-                {e.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
 
         {selectedEstado && (
           <div className="space-y-2">
             {citiesLoading ? (
               <LoadingField />
             ) : (
-              <Select
+              <NativeSelect
                 value={selectedCidade}
-                onValueChange={(v) => {
+                onChange={(e) => {
+                  const v = e.target.value;
                   setSelectedCidade(v);
                   onLocationChange({
                     cidadeId: undefined,
                     localidade: `${selectedEstado} - ${v}`,
                   });
                 }}
+                placeholder="Selecione a cidade"
+                options={(cities || []).map((c) => ({ value: c.value, label: c.label }))}
                 disabled={disabled}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(cities || []).map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             )}
           </div>
         )}
@@ -244,42 +227,6 @@ function LoadingField({ label, required }: { label?: string; required?: boolean 
       <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  required,
-  value,
-  onValueChange,
-  placeholder,
-  options,
-  disabled,
-}: {
-  label?: string;
-  required?: boolean;
-  value: string;
-  onValueChange: (v: string) => void;
-  placeholder: string;
-  options: { value: string; label: string }[];
-  disabled?: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      {label && <Label>{label}{required && " *"}</Label>}
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
