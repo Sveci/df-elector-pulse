@@ -3169,6 +3169,276 @@ export type Database = {
           },
         ]
       }
+      proposicoes_alertas_config: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          destino: string
+          destino_nome: string | null
+          eventos_criticos_only: boolean
+          id: string
+          nome: string
+          provider: string
+          tenant_id: string
+          tipo_destino: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          destino: string
+          destino_nome?: string | null
+          eventos_criticos_only?: boolean
+          id?: string
+          nome: string
+          provider?: string
+          tenant_id?: string
+          tipo_destino?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          destino?: string
+          destino_nome?: string | null
+          eventos_criticos_only?: boolean
+          id?: string
+          nome?: string
+          provider?: string
+          tenant_id?: string
+          tipo_destino?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      proposicoes_monitoradas: {
+        Row: {
+          ano: number
+          apreciacao: string | null
+          ativo: boolean
+          autor_nome: string | null
+          autor_partido: string | null
+          autor_uf: string | null
+          camara_id: number | null
+          casa: string
+          cod_situacao: number | null
+          created_at: string
+          data_situacao: string | null
+          descricao_situacao: string | null
+          ementa: string | null
+          ementa_detalhada: string | null
+          id: string
+          keywords: string[] | null
+          numero: number
+          regime: string | null
+          senado_codigo: number | null
+          sigla_orgao_situacao: string | null
+          sigla_tipo: string
+          tenant_id: string
+          ultima_data_tramitacao: string | null
+          ultima_sequencia_camara: number
+          ultima_verificacao_em: string | null
+          updated_at: string
+          url_inteiro_teor: string | null
+        }
+        Insert: {
+          ano: number
+          apreciacao?: string | null
+          ativo?: boolean
+          autor_nome?: string | null
+          autor_partido?: string | null
+          autor_uf?: string | null
+          camara_id?: number | null
+          casa?: string
+          cod_situacao?: number | null
+          created_at?: string
+          data_situacao?: string | null
+          descricao_situacao?: string | null
+          ementa?: string | null
+          ementa_detalhada?: string | null
+          id?: string
+          keywords?: string[] | null
+          numero: number
+          regime?: string | null
+          senado_codigo?: number | null
+          sigla_orgao_situacao?: string | null
+          sigla_tipo: string
+          tenant_id?: string
+          ultima_data_tramitacao?: string | null
+          ultima_sequencia_camara?: number
+          ultima_verificacao_em?: string | null
+          updated_at?: string
+          url_inteiro_teor?: string | null
+        }
+        Update: {
+          ano?: number
+          apreciacao?: string | null
+          ativo?: boolean
+          autor_nome?: string | null
+          autor_partido?: string | null
+          autor_uf?: string | null
+          camara_id?: number | null
+          casa?: string
+          cod_situacao?: number | null
+          created_at?: string
+          data_situacao?: string | null
+          descricao_situacao?: string | null
+          ementa?: string | null
+          ementa_detalhada?: string | null
+          id?: string
+          keywords?: string[] | null
+          numero?: number
+          regime?: string | null
+          senado_codigo?: number | null
+          sigla_orgao_situacao?: string | null
+          sigla_tipo?: string
+          tenant_id?: string
+          ultima_data_tramitacao?: string | null
+          ultima_sequencia_camara?: number
+          ultima_verificacao_em?: string | null
+          updated_at?: string
+          url_inteiro_teor?: string | null
+        }
+        Relationships: []
+      }
+      proposicoes_notificacoes_log: {
+        Row: {
+          alerta_config_id: string | null
+          created_at: string
+          destino: string | null
+          erro: string | null
+          id: string
+          mensagem_enviada: string | null
+          proposicao_id: string | null
+          provider_usado: string | null
+          status: string | null
+          tenant_id: string
+          tramitacao_id: string | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          alerta_config_id?: string | null
+          created_at?: string
+          destino?: string | null
+          erro?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          proposicao_id?: string | null
+          provider_usado?: string | null
+          status?: string | null
+          tenant_id?: string
+          tramitacao_id?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          alerta_config_id?: string | null
+          created_at?: string
+          destino?: string | null
+          erro?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          proposicao_id?: string | null
+          provider_usado?: string | null
+          status?: string | null
+          tenant_id?: string
+          tramitacao_id?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposicoes_notificacoes_log_alerta_config_id_fkey"
+            columns: ["alerta_config_id"]
+            isOneToOne: false
+            referencedRelation: "proposicoes_alertas_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposicoes_notificacoes_log_proposicao_id_fkey"
+            columns: ["proposicao_id"]
+            isOneToOne: false
+            referencedRelation: "proposicoes_monitoradas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposicoes_notificacoes_log_tramitacao_id_fkey"
+            columns: ["tramitacao_id"]
+            isOneToOne: false
+            referencedRelation: "proposicoes_tramitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposicoes_tramitacoes: {
+        Row: {
+          cod_situacao: number | null
+          cod_tipo_tramitacao: number | null
+          created_at: string
+          data_hora: string | null
+          descricao_situacao: string | null
+          descricao_tramitacao: string | null
+          despacho: string | null
+          eh_evento_critico: boolean | null
+          grupo_situacao: string | null
+          id: string
+          notificado_em: string | null
+          proposicao_id: string
+          regime: string | null
+          sequencia: number
+          sigla_orgao: string | null
+          tenant_id: string
+          uri_orgao: string | null
+          url_documento: string | null
+        }
+        Insert: {
+          cod_situacao?: number | null
+          cod_tipo_tramitacao?: number | null
+          created_at?: string
+          data_hora?: string | null
+          descricao_situacao?: string | null
+          descricao_tramitacao?: string | null
+          despacho?: string | null
+          eh_evento_critico?: boolean | null
+          grupo_situacao?: string | null
+          id?: string
+          notificado_em?: string | null
+          proposicao_id: string
+          regime?: string | null
+          sequencia: number
+          sigla_orgao?: string | null
+          tenant_id?: string
+          uri_orgao?: string | null
+          url_documento?: string | null
+        }
+        Update: {
+          cod_situacao?: number | null
+          cod_tipo_tramitacao?: number | null
+          created_at?: string
+          data_hora?: string | null
+          descricao_situacao?: string | null
+          descricao_tramitacao?: string | null
+          despacho?: string | null
+          eh_evento_critico?: boolean | null
+          grupo_situacao?: string | null
+          id?: string
+          notificado_em?: string | null
+          proposicao_id?: string
+          regime?: string | null
+          sequencia?: number
+          sigla_orgao?: string | null
+          tenant_id?: string
+          uri_orgao?: string | null
+          url_documento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposicoes_tramitacoes_proposicao_id_fkey"
+            columns: ["proposicao_id"]
+            isOneToOne: false
+            referencedRelation: "proposicoes_monitoradas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regiao_administrativa: {
         Row: {
           cadastros: number
