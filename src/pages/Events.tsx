@@ -1503,6 +1503,8 @@ function CheckInSection({ events }: { events: any[] }) {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
             padding: 1mm 0;
           }
           .name {
@@ -1513,6 +1515,7 @@ function CheckInSection({ events }: { events: any[] }) {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            max-width: 94mm;
           }
           .city {
             font-size: 8.5pt;
@@ -1549,7 +1552,6 @@ function CheckInSection({ events }: { events: any[] }) {
       <body>
         <div class="header">
           <div class="event-name">${eventName}</div>
-          <div class="event-date">${eventDate}</div>
         </div>
         <div class="main">
           <div class="name">${reg.nome}</div>
@@ -1557,7 +1559,6 @@ function CheckInSection({ events }: { events: any[] }) {
         </div>
         <div class="footer">
           <div class="badge">✓ Credenciado</div>
-          <div class="checkin-time">Check-in: ${checkinTime}</div>
         </div>
       </body>
       </html>
