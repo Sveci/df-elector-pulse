@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { useDemoMask } from "@/contexts/DemoModeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +44,8 @@ import {
   Repeat,
   Camera,
   Crown,
-  Code
+  Code,
+  Printer
 } from "lucide-react";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useCreateEvent } from "@/hooks/events/useCreateEvent";
