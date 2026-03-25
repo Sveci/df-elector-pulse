@@ -109,9 +109,9 @@ export function TramitacoesTimeline({
                     </Badge>
                   )}
                   {tram.notificado_em ? (
-                    <Bell className="h-3.5 w-3.5 text-green-600" title="Notificado via WhatsApp" />
+                    <Bell className="h-3.5 w-3.5 text-green-600" />
                   ) : tram.eh_evento_critico ? (
-                    <BellOff className="h-3.5 w-3.5 text-muted-foreground" title="Não notificado" />
+                    <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
                   ) : null}
                 </div>
               </div>
