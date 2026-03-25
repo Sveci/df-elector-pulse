@@ -1390,17 +1390,132 @@ function CheckInSection({ events }: { events: any[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const { isDemoMode, m } = useDemoMask();
   const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const { data: registrations = [] } = useEventRegistrations(selectedEventId);
+  const { data: registrations = [], isLoading } = useEventRegistrations(selectedEventId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for check-in updates
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    const channel = supabase
+      .channel(`checkin-realtime-${selectedEventId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_registrations',
+          filter: `event_id=eq.${selectedEventId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["event_registrations", selectedEventId] });
+          queryClient.invalidateQueries({ queryKey: ["events"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedEventId, queryClient]);
 
   const selectedEvent = events.find(e => e.id === selectedEventId);
-  const checkedInCount = registrations.filter((r: any) => r.checked_in).length;
+  const checkedInList = registrations.filter((r: any) => r.checked_in).sort((a: any, b: any) => {
+    // Most recent check-in first
+    const aTime = a.checked_in_at ? new Date(a.checked_in_at).getTime() : 0;
+    const bTime = b.checked_in_at ? new Date(b.checked_in_at).getTime() : 0;
+    return bTime - aTime;
+  });
+  const checkedInCount = checkedInList.length;
   const pendingCount = registrations.length - checkedInCount;
 
   const filteredRegistrations = registrations.filter((reg: any) =>
     reg.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     reg.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handlePrintLabel = useCallback((reg: any) => {
+    const eventName = selectedEvent?.name || "Evento";
+    const eventDate = selectedEvent?.date
+      ? format(new Date(selectedEvent.date), "dd/MM/yyyy", { locale: ptBR })
+      : "";
+
+    const cityName = reg.cidade?.nome || reg.localidade || "";
+
+    // Open a print window with label-sized content
+    const printWindow = window.open("", "_blank", "width=400,height=300");
+    if (!printWindow) {
+      toast({ title: "Erro", description: "Permita pop-ups para imprimir etiquetas.", variant: "destructive" });
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Etiqueta - ${reg.nome}</title>
+        <style>
+          @page {
+            size: 80mm 40mm;
+            margin: 0;
+          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            width: 80mm;
+            height: 40mm;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 2mm 3mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
+          .name {
+            font-size: 14pt;
+            font-weight: bold;
+            line-height: 1.2;
+            margin-bottom: 1mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .city {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 1.5mm;
+          }
+          .divider {
+            border-top: 0.5pt solid #ccc;
+            margin: 1mm 0;
+          }
+          .event {
+            font-size: 7pt;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="name">${reg.nome}</div>
+        ${cityName ? `<div class="city">${cityName}</div>` : ""}
+        <div class="divider"></div>
+        <div class="event">${eventName} • ${eventDate}</div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    // Wait for content to render then trigger print
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.onafterprint = () => printWindow.close();
+    }, 250);
+  }, [selectedEvent, toast]);
 
   const handleExportCheckInPDF = () => {
     if (!selectedEvent || registrations.length === 0) {
@@ -1416,13 +1531,11 @@ function CheckInSection({ events }: { events: any[] }) {
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPos = 20;
 
-    // Header
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
     doc.text("Lista de Check-in", pageWidth / 2, yPos, { align: "center" });
     yPos += 10;
 
-    // Event info
     doc.setFontSize(14);
     doc.text(selectedEvent.name, pageWidth / 2, yPos, { align: "center" });
     yPos += 8;
@@ -1433,7 +1546,6 @@ function CheckInSection({ events }: { events: any[] }) {
     doc.text(`${eventDate} às ${selectedEvent.time || ""} - ${selectedEvent.location || ""}`, pageWidth / 2, yPos, { align: "center" });
     yPos += 12;
 
-    // Statistics
     doc.setFillColor(240, 240, 240);
     doc.rect(14, yPos - 4, pageWidth - 28, 14, "F");
     doc.setFontSize(11);
@@ -1441,14 +1553,12 @@ function CheckInSection({ events }: { events: any[] }) {
     doc.text(`Total: ${registrations.length}  |  Check-ins: ${checkedInCount}  |  Pendentes: ${pendingCount}`, pageWidth / 2, yPos + 4, { align: "center" });
     yPos += 18;
 
-    // Separate registrations
     const checkedIn = registrations.filter((r: any) => r.checked_in).sort((a: any, b: any) => a.nome.localeCompare(b.nome));
     const pending = registrations.filter((r: any) => !r.checked_in).sort((a: any, b: any) => a.nome.localeCompare(b.nome));
 
     const addSection = (title: string, items: any[], isCheckedIn: boolean) => {
       if (items.length === 0) return;
 
-      // Section title
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       if (isCheckedIn) {
@@ -1460,7 +1570,6 @@ function CheckInSection({ events }: { events: any[] }) {
       doc.setTextColor(0, 0, 0);
       yPos += 6;
 
-      // Table header
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setFillColor(isCheckedIn ? 220 : 255, isCheckedIn ? 255 : 250, isCheckedIn ? 220 : 220);
@@ -1475,7 +1584,6 @@ function CheckInSection({ events }: { events: any[] }) {
       }
       yPos += 6;
 
-      // Table rows
       doc.setFont("helvetica", "normal");
       items.forEach((reg: any, index: number) => {
         if (yPos > 270) {
@@ -1492,7 +1600,6 @@ function CheckInSection({ events }: { events: any[] }) {
         doc.text(reg.whatsapp?.substring(0, 14) || "", 80, yPos);
         doc.text(reg.email?.substring(0, 22) || "", 115, yPos);
 
-        // Data de inscrição
         if (reg.created_at) {
           const inscricaoDate = format(new Date(reg.created_at), "dd/MM HH:mm", { locale: ptBR });
           doc.text(inscricaoDate, 155, yPos);
@@ -1500,7 +1607,6 @@ function CheckInSection({ events }: { events: any[] }) {
           doc.text("-", 155, yPos);
         }
 
-        // Horário do check-in
         if (isCheckedIn && reg.checked_in_at) {
           const checkTime = format(new Date(reg.checked_in_at), "HH:mm", { locale: ptBR });
           doc.text(checkTime, 187, yPos);
@@ -1512,13 +1618,9 @@ function CheckInSection({ events }: { events: any[] }) {
       yPos += 8;
     };
 
-    // Add checked-in section first
     addSection("✓ Check-in Realizado", checkedIn, true);
-
-    // Add pending section
     addSection("○ Aguardando Check-in", pending, false);
 
-    // Footer
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 285, { align: "center" });
@@ -1585,6 +1687,51 @@ function CheckInSection({ events }: { events: any[] }) {
         </CardContent>
       </Card>
 
+      {/* Realtime checked-in list */}
+      {selectedEventId && checkedInList.length > 0 && (
+        <Card className="border-green-200 dark:border-green-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+              Check-ins em Tempo Real
+              <Badge variant="secondary" className="ml-auto text-xs">{checkedInCount}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {checkedInList.map((reg: any) => (
+                <div key={reg.id} className="flex items-center justify-between p-3 border border-green-100 dark:border-green-900 rounded-lg bg-green-50/50 dark:bg-green-950/20">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{m.name(reg.nome)}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {reg.cidade?.nome && <span>{reg.cidade.nome}</span>}
+                      {reg.localidade && !reg.cidade?.nome && <span>{reg.localidade}</span>}
+                      {reg.checked_in_at && (
+                        <span className="text-green-600">
+                          ✓ {format(new Date(reg.checked_in_at), "HH:mm", { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 gap-1.5"
+                    onClick={() => handlePrintLabel(reg)}
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Etiqueta
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {selectedEventId && (
         <div className="grid gap-4">
           {filteredRegistrations.map((reg: any) => (
@@ -1607,9 +1754,21 @@ function CheckInSection({ events }: { events: any[] }) {
                       )}
                     </div>
                   </div>
-                  <Badge variant={reg.checked_in ? "default" : "secondary"} className={reg.checked_in ? "bg-green-500" : ""}>
-                    {reg.checked_in ? "Check-in feito" : "Aguardando"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {reg.checked_in && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handlePrintLabel(reg)}
+                        title="Imprimir etiqueta"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Badge variant={reg.checked_in ? "default" : "secondary"} className={reg.checked_in ? "bg-green-500" : ""}>
+                      {reg.checked_in ? "Check-in feito" : "Aguardando"}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
