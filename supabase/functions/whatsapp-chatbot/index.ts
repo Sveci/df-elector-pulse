@@ -1207,7 +1207,11 @@ Deno.serve(async (req) => {
         }).eq("id", session.id);
 
         const exitMsg = "✅ Você saiu do fluxo atual.\n\nSe precisar de algo, é só digitar:\n📋 *AJUDA* — ver comandos disponíveis\n📅 *EVENTO* — inscrever-se em eventos\n🤖 Ou envie qualquer pergunta!";
-        await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, exitMsg);
+        let exitIntQuery = supabase.from("integrations_settings")
+          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+        if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
+        const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
+        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg);
         return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -1527,14 +1531,13 @@ Deno.serve(async (req) => {
     // Update flow execution count
     if (matchedFlowId) {
       try {
-        await supabase.rpc('increment_counter', { row_id: matchedFlowId, table_name: 'whatsapp_chatbot_flows', column_name: 'execution_count' })
-          .then(() => {}).catch(() => {
-            // Fallback: direct update if RPC doesn't exist
-            supabase.from("whatsapp_chatbot_flows")
-              .update({ execution_count: supabase.rpc ? undefined : 1 })
-              .eq("id", matchedFlowId)
-              .then(() => {}).catch(() => {});
-          });
+        const rpcResult = await supabase.rpc('increment_counter', { row_id: matchedFlowId, table_name: 'whatsapp_chatbot_flows', column_name: 'execution_count' });
+        if (rpcResult.error) {
+          // Fallback: direct update if RPC doesn't exist
+          await supabase.from("whatsapp_chatbot_flows")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", matchedFlowId);
+        }
       } catch { /* ignore counter update failures */ }
     }
 
