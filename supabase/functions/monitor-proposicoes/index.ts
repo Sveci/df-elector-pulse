@@ -48,10 +48,10 @@ async function fetchTramitacoesCamara(
   camaraId: number,
   ultimaData: string | null
 ): Promise<any[]> {
-  let url = `https://dadosabertos.camara.leg.br/api/v2/proposicoes/${camaraId}/tramitacoes?ordem=ASC&ordenarPor=sequencia&itens=100`;
+  let url = `https://dadosabertos.camara.leg.br/api/v2/proposicoes/${camaraId}/tramitacoes`;
   if (ultimaData) {
     const dataInicio = ultimaData.split("T")[0];
-    url += `&dataInicio=${dataInicio}`;
+    url += `?dataInicio=${dataInicio}`;
   }
 
   const resp = await fetch(url, {
