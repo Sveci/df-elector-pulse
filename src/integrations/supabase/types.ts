@@ -3086,6 +3086,249 @@ export type Database = {
           },
         ]
       }
+      proposicoes_alertas_config: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          destino: string
+          destino_nome: string | null
+          eventos_criticos_only: boolean
+          id: string
+          nome: string
+          provider: string
+          tenant_id: string
+          tipo_destino: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          destino: string
+          destino_nome?: string | null
+          eventos_criticos_only?: boolean
+          id?: string
+          nome: string
+          provider: string
+          tenant_id: string
+          tipo_destino: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          destino?: string
+          destino_nome?: string | null
+          eventos_criticos_only?: boolean
+          id?: string
+          nome?: string
+          provider?: string
+          tenant_id?: string
+          tipo_destino?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      proposicoes_monitoradas: {
+        Row: {
+          ativo: boolean
+          ano: number
+          apreciacao: string | null
+          autor_nome: string | null
+          autor_partido: string | null
+          autor_uf: string | null
+          camara_id: number | null
+          casa: string
+          cod_situacao: number | null
+          created_at: string
+          criado_por: string | null
+          data_situacao: string | null
+          descricao_situacao: string | null
+          ementa: string | null
+          ementa_detalhada: string | null
+          id: string
+          keywords: string[] | null
+          numero: number
+          regime: string | null
+          senado_codigo: number | null
+          sigla_orgao_situacao: string | null
+          sigla_tipo: string
+          tenant_id: string
+          ultima_data_tramitacao: string | null
+          ultima_sequencia_camara: number
+          ultima_verificacao_em: string | null
+          updated_at: string
+          url_inteiro_teor: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          ano: number
+          apreciacao?: string | null
+          autor_nome?: string | null
+          autor_partido?: string | null
+          autor_uf?: string | null
+          camara_id?: number | null
+          casa: string
+          cod_situacao?: number | null
+          created_at?: string
+          criado_por?: string | null
+          data_situacao?: string | null
+          descricao_situacao?: string | null
+          ementa?: string | null
+          ementa_detalhada?: string | null
+          id?: string
+          keywords?: string[] | null
+          numero: number
+          regime?: string | null
+          senado_codigo?: number | null
+          sigla_orgao_situacao?: string | null
+          sigla_tipo: string
+          tenant_id: string
+          ultima_data_tramitacao?: string | null
+          ultima_sequencia_camara?: number
+          ultima_verificacao_em?: string | null
+          updated_at?: string
+          url_inteiro_teor?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          ano?: number
+          apreciacao?: string | null
+          autor_nome?: string | null
+          autor_partido?: string | null
+          autor_uf?: string | null
+          camara_id?: number | null
+          casa?: string
+          cod_situacao?: number | null
+          created_at?: string
+          criado_por?: string | null
+          data_situacao?: string | null
+          descricao_situacao?: string | null
+          ementa?: string | null
+          ementa_detalhada?: string | null
+          id?: string
+          keywords?: string[] | null
+          numero?: number
+          regime?: string | null
+          senado_codigo?: number | null
+          sigla_orgao_situacao?: string | null
+          sigla_tipo?: string
+          tenant_id?: string
+          ultima_data_tramitacao?: string | null
+          ultima_sequencia_camara?: number
+          ultima_verificacao_em?: string | null
+          updated_at?: string
+          url_inteiro_teor?: string | null
+        }
+        Relationships: []
+      }
+      proposicoes_tramitacoes: {
+        Row: {
+          cod_situacao: number | null
+          cod_tipo_tramitacao: number | null
+          created_at: string
+          despacho: string | null
+          descricao_situacao: string | null
+          descricao_tramitacao: string | null
+          eh_evento_critico: boolean
+          grupo_situacao: string | null
+          id: string
+          notificado_em: string | null
+          data_hora: string
+          proposicao_id: string
+          regime: string | null
+          sequencia: number | null
+          sigla_orgao: string | null
+          tenant_id: string
+          uri_orgao: string | null
+          url_documento: string | null
+        }
+        Insert: {
+          cod_situacao?: number | null
+          cod_tipo_tramitacao?: number | null
+          created_at?: string
+          despacho?: string | null
+          descricao_situacao?: string | null
+          descricao_tramitacao?: string | null
+          eh_evento_critico?: boolean
+          grupo_situacao?: string | null
+          id?: string
+          notificado_em?: string | null
+          data_hora: string
+          proposicao_id: string
+          regime?: string | null
+          sequencia?: number | null
+          sigla_orgao?: string | null
+          tenant_id: string
+          uri_orgao?: string | null
+          url_documento?: string | null
+        }
+        Update: {
+          cod_situacao?: number | null
+          cod_tipo_tramitacao?: number | null
+          created_at?: string
+          despacho?: string | null
+          descricao_situacao?: string | null
+          descricao_tramitacao?: string | null
+          eh_evento_critico?: boolean
+          grupo_situacao?: string | null
+          id?: string
+          notificado_em?: string | null
+          data_hora?: string
+          proposicao_id?: string
+          regime?: string | null
+          sequencia?: number | null
+          sigla_orgao?: string | null
+          tenant_id?: string
+          uri_orgao?: string | null
+          url_documento?: string | null
+        }
+        Relationships: []
+      }
+      proposicoes_notificacoes_log: {
+        Row: {
+          alerta_config_id: string | null
+          destino: string | null
+          enviado_em: string
+          erro: string | null
+          id: string
+          mensagem_enviada: string | null
+          proposicao_id: string
+          provider_usado: string | null
+          status: string
+          tenant_id: string
+          tramitacao_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          alerta_config_id?: string | null
+          destino?: string | null
+          enviado_em?: string
+          erro?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          proposicao_id: string
+          provider_usado?: string | null
+          status: string
+          tenant_id: string
+          tramitacao_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          alerta_config_id?: string | null
+          destino?: string | null
+          enviado_em?: string
+          erro?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          proposicao_id?: string
+          provider_usado?: string | null
+          status?: string
+          tenant_id?: string
+          tramitacao_id?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

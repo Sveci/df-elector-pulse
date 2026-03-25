@@ -98,6 +98,7 @@ const Materials = lazy(() => import("./pages/Materials"));
 const InstagramFollowers = lazy(() => import("./pages/InstagramFollowers"));
 const DownloadCoordinatorReport = lazy(() => import("./pages/DownloadCoordinatorReport"));
 const DispatchRegionMaterials = lazy(() => import("./pages/DispatchRegionMaterials"));
+const Proposicoes = lazy(() => import("./pages/Proposicoes"));
 
 // Settings pages
 const Settings = lazy(() => import("./pages/Settings"));
@@ -303,6 +304,9 @@ const App = () => (
 
                         {/* ── Projects ──────────────────────────────── */}
                         <Route path="/projects" element={<RP roles={[...ALL_ROLES]}><Projects /></RP>} />
+
+                        {/* ── Proposições Legislativas ──────────────── */}
+                        <Route path="/proposicoes" element={<RP roles={[...ALL_ROLES]}><Proposicoes /></RP>} />
 
                         {/* ── Knowledge Base ────────────────────────── */}
                         <Route path="/knowledge-base" element={<RP roles={[...ADMIN_ROLES]}><KnowledgeBase /></RP>} />
