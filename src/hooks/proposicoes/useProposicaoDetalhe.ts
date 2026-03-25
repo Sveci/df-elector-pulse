@@ -61,7 +61,7 @@ export function useTramitacoesCamara(camaraId: number | null) {
     queryKey: ["tramitacoes-camara-live", camaraId],
     queryFn: async () => {
       const resp = await fetch(
-        `https://dadosabertos.camara.leg.br/api/v2/proposicoes/${camaraId}/tramitacoes?ordem=DESC&ordenarPor=sequencia&itens=50`,
+        `https://dadosabertos.camara.leg.br/api/v2/proposicoes/${camaraId}/tramitacoes`,
         { headers: { Accept: "application/json" } }
       );
       if (!resp.ok) throw new Error("Falha ao buscar tramitações na Câmara");
