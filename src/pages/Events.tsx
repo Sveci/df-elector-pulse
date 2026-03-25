@@ -52,6 +52,7 @@ import { useCreateEvent } from "@/hooks/events/useCreateEvent";
 import { useUpdateEvent } from "@/hooks/events/useUpdateEvent";
 import { useDeleteEvent } from "@/hooks/events/useDeleteEvent";
 import { useEventRegistrations, useUpdateCheckIn } from "@/hooks/events/useEventRegistrations";
+import { useQueryClient } from "@tanstack/react-query";
 import { useOfficeCities } from "@/hooks/office/useOfficeCities";
 import { LocationSelect } from "@/components/office/LocationSelect";
 import { useTenantLocationConfig } from "@/hooks/useTenantLocationConfig";
