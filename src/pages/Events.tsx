@@ -126,8 +126,9 @@ const Events = () => {
   // Calcula equipe necessária para check-in (1 pessoa a cada 30 participantes esperados)
   const getCheckInStaffNeeded = (registrations: number, eventConversionRate?: number) => {
     const RATIO = 30;
-    // Usa taxa do evento específico ou taxa média geral; fallback de 70% se taxa for 0 ou indefinida
-    const rate = eventConversionRate || eventStats?.overallConversionRate || 70;
+    // Usa taxa do evento específico ou taxa média geral; mínimo de 50% para planejamento seguro
+    const rawRate = eventConversionRate || eventStats?.overallConversionRate || 70;
+    const rate = Math.max(rawRate, 50); // Nunca planeja para menos de 50% de presença
     const expectedAttendees = Math.round(registrations * (rate / 100));
     return Math.max(1, Math.ceil(expectedAttendees / RATIO));
   };
