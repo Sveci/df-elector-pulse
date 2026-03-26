@@ -843,8 +843,8 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
 
   // Enviar documento PEC 47 via WhatsApp
   enviar_pec47: async (supabase: any, leader: any, session: any, tenantId: string, phone: string, provider: string, _intSettings: any) => {
-    const PEC47_DOC_URL = "https://gzqzfqmmudxcnwkjjgux.supabase.co/storage/v1/object/public/whatsapp-media/documentos/PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
-    const PEC47_FILENAME = "PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
+    const PEC47_DOC_URL = "https://gzqzfqmmudxcnwkjjgux.supabase.co/storage/v1/object/public/whatsapp-media/documentos/PEC47_AMAPA_ESPECIFICO_V5_FINAL.pptx";
+    const PEC47_FILENAME = "PEC47_AMAPA_ESPECIFICO_V5_FINAL.pptx";
     const PEC47_CAPTION = "📄 Aqui está o material sobre a PEC 47. Boa leitura! 📖";
     const nome = leader?.nome_completo?.split(" ")[0] || "Olá";
 
