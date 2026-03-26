@@ -194,7 +194,7 @@ async function handleEventRegistrationStep(
       event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null, event_reg_endereco: null,
     }).eq("id", session.id);
     const msg = "Inscrição cancelada. ❌\n\nSe quiser se inscrever depois, é só digitar *EVENTO* novamente!";
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_cancelled", tenantId, startTime);
     return { success: true, responseType: "event_reg_cancelled" };
   }
@@ -215,7 +215,7 @@ async function handleEventRegistrationStep(
 
     if (!events || events.length === 0 || isNaN(num) || num < 1 || num > events.length) {
       const msg = `Por favor, digite o *número* do evento desejado (1 a ${events?.length || '?'}).`;
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_select", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_select" };
     }
@@ -247,7 +247,7 @@ async function handleEventRegistrationStep(
         event_reg_event_id: null,
       }).eq("id", session.id);
       
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logEventReg(supabase, phone, userMessage, msg, "event_reg_already_registered", tenantId, startTime);
       return { success: true, responseType: "event_reg_already_registered" };
     }
@@ -259,7 +259,7 @@ async function handleEventRegistrationStep(
 
     const eventDate = new Date(selectedEvent.date + "T00:00:00").toLocaleDateString("pt-BR");
     const msg = `Ótimo! Você escolheu:\n\n📅 *${selectedEvent.name}*\n🗓️ ${eventDate} às ${selectedEvent.time}\n📍 ${selectedEvent.location}\n\nVamos fazer sua inscrição! 📝\n\nPor favor, me diga seu *nome completo*:`;
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_event_selected", tenantId, startTime);
     return { success: true, responseType: "event_reg_event_selected" };
   }
@@ -268,7 +268,7 @@ async function handleEventRegistrationStep(
   if (state === "collecting_evt_name") {
     if (userMessage.length < 3 || userMessage.length > 100) {
       const msg = "Por favor, digite seu *nome completo* (mínimo 3 caracteres):";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_name", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_name" };
     }
@@ -279,7 +279,7 @@ async function handleEventRegistrationStep(
     }).eq("id", session.id);
 
     const msg = `Obrigado, *${userMessage.trim().split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*?`;
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_name_collected", tenantId, startTime);
     return { success: true, responseType: "event_reg_name_collected" };
   }
@@ -289,7 +289,7 @@ async function handleEventRegistrationStep(
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userMessage.trim())) {
       const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um *e-mail válido* (ex: seunome@email.com):";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_email", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_email" };
     }
@@ -301,7 +301,7 @@ async function handleEventRegistrationStep(
     }).eq("id", session.id);
 
     const msg = `E-mail registrado! 👍\n\nQual sua *data de nascimento*? (formato: DD/MM/AAAA)`;
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_email_collected", tenantId, startTime);
     return { success: true, responseType: "event_reg_email_collected" };
   }
@@ -312,7 +312,7 @@ async function handleEventRegistrationStep(
     const dateMatch = userMessage.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
     if (!dateMatch) {
       const msg = "Formato inválido. 🤔 Digite sua *data de nascimento* no formato *DD/MM/AAAA* (ex: 15/03/1990):";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logEventReg(supabase, phone, userMessage, msg, "event_reg_retry_birthday", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_birthday" };
     }
@@ -333,7 +333,7 @@ async function handleEventRegistrationStep(
     } else {
       msg += "\n\nNo momento não há cidades/regiões disponíveis para seleção. Tente novamente digitando *EVENTO* em instantes.";
     }
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logEventReg(supabase, phone, userMessage, msg, "event_reg_birthday_collected", tenantId, startTime);
     return { success: true, responseType: "event_reg_birthday_collected" };
   }
@@ -347,14 +347,14 @@ async function handleEventRegistrationStep(
 
     if (cityOptions.length === 0) {
       const retryMsg = "No momento não há cidades/regiões disponíveis para seleção. Tente novamente digitando *EVENTO* em instantes.";
-      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg, tenantId);
       await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_city" };
     }
 
     if (!/^\d+$/.test(trimmed)) {
       const retryMsg = `Por favor, responda apenas com o *número* da cidade/região da lista. 🙏\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
-      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg, tenantId);
       await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
       return { success: true, responseType: "event_reg_retry_city" };
     }
@@ -377,7 +377,7 @@ async function handleEventRegistrationStep(
           retryMsg += "Nenhuma cidade cadastrada no momento.";
         }
 
-        await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg);
+        await sendResponseToUser(supabase, intSettings, provider, phone, retryMsg, tenantId);
         await logEventReg(supabase, phone, userMessage, retryMsg, "event_reg_retry_city", tenantId, startTime);
         return { success: true, responseType: "event_reg_retry_city" };
       }
@@ -416,7 +416,7 @@ async function handleEventRegistrationStep(
       if (regError) {
         console.error("[whatsapp-chatbot] Event registration error:", regError);
         const msg = `Ops, ocorreu um erro na inscrição: ${regError.message}\n\nTente novamente digitando *EVENTO*.`;
-        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
         await supabase.from("whatsapp_chatbot_sessions").update({
           event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
           event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null,
@@ -458,7 +458,7 @@ async function handleEventRegistrationStep(
       msg += `\n🎫 Seu QR Code de entrada será enviado em seguida. Apresente-o na chegada para fazer o check-in!\n`;
       msg += `\n${firstName}, esperamos você lá! 🎉`;
 
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
 
       // Send QR Code image
       if (qrCode) {
@@ -495,7 +495,7 @@ async function handleEventRegistrationStep(
             console.error("[whatsapp-chatbot] Error sending QR image via Z-API:", imgErr);
             // Fallback: send as link
             await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
         } else if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           // Meta Cloud: send image via API
@@ -529,16 +529,16 @@ async function handleEventRegistrationStep(
             } catch (imgErr) {
               console.error("[whatsapp-chatbot] Error sending QR image via Meta Cloud:", imgErr);
               await sendResponseToUser(supabase, intSettings, provider, phone,
-                `🎫 *Seu QR Code:*\n${checkInUrl}`);
+                `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
             }
           } else {
             await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
         } else {
           // No image capability, send link
           await sendResponseToUser(supabase, intSettings, provider, phone,
-            `🎫 *Seu QR Code:*\n${checkInUrl}`);
+            `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
         }
       }
 
@@ -555,7 +555,7 @@ async function handleEventRegistrationStep(
     } catch (err) {
       console.error("[whatsapp-chatbot] Event registration exception:", err);
       const msg = "Ops, ocorreu um erro inesperado. 😔 Tente novamente digitando *EVENTO*.";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await supabase.from("whatsapp_chatbot_sessions").update({
         event_reg_state: null, event_reg_event_id: null, event_reg_nome: null,
         event_reg_email: null, event_reg_cidade_id: null, event_reg_data_nascimento: null,
@@ -850,7 +850,8 @@ async function sendResponseToUser(
   integrationSettings: any,
   provider: string | undefined,
   phone: string,
-  message: string
+  message: string,
+  tenantId?: string | null
 ): Promise<boolean> {
   const useMetaCloud = provider === 'meta_cloud' ||
     (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
@@ -861,7 +862,7 @@ async function sendResponseToUser(
       return await sendWhatsAppMessageMetaCloud(
         integrationSettings.meta_cloud_phone_number_id,
         integrationSettings.meta_cloud_api_version || "v20.0",
-        metaAccessToken, phone, message, supabase
+        metaAccessToken, phone, message, supabase, tenantId
       );
     }
   }
@@ -907,13 +908,13 @@ async function handleRegistrationStep(
 
     if (isPositive) {
       const msg = "Ótimo! Vamos fazer seu cadastro rapidinho! 📝\n\nPor favor, me diga seu *nome completo*:";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await supabase.from("whatsapp_chatbot_sessions").update({ registration_state: "collecting_name" }).eq("id", session.id);
       await logRegistration(supabase, phone, userMessage, msg, "registration_confirm", tenantId, startTime);
       return { success: true, responseType: "registration_confirm" };
     } else {
       const msg = "Sem problemas! 😊 Se mudar de ideia, é só me dizer que quer se cadastrar.";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await supabase.from("whatsapp_chatbot_sessions").update({ registration_state: "declined", registration_completed_at: new Date().toISOString() }).eq("id", session.id);
       await logRegistration(supabase, phone, userMessage, msg, "registration_declined", tenantId, startTime);
       return { success: true, responseType: "registration_declined" };
@@ -924,14 +925,14 @@ async function handleRegistrationStep(
   if (state === "collecting_name") {
     if (userMessage.length < 3 || userMessage.length > 100) {
       const msg = "Por favor, digite seu *nome completo* (mínimo 3 caracteres):";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logRegistration(supabase, phone, userMessage, msg, "registration_retry_name", tenantId, startTime);
       return { success: true, responseType: "registration_retry_name" };
     }
 
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_name: userMessage, registration_state: "collecting_email" }).eq("id", session.id);
     const msg = `Obrigado, *${userMessage.split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logRegistration(supabase, phone, userMessage, msg, "registration_name_collected", tenantId, startTime);
     return { success: true, responseType: "registration_name_collected" };
   }
@@ -946,7 +947,7 @@ async function handleRegistrationStep(
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(userMessage.trim())) {
         const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um e-mail válido ou *PULAR* para continuar sem:";
-        await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+        await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
         await logRegistration(supabase, phone, userMessage, msg, "registration_retry_email", tenantId, startTime);
         return { success: true, responseType: "registration_retry_email" };
       }
@@ -969,7 +970,7 @@ async function handleRegistrationStep(
       msg += `\n\nDigite o nome da sua cidade:`;
     }
 
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logRegistration(supabase, phone, userMessage, msg, "registration_email_collected", tenantId, startTime);
     return { success: true, responseType: "registration_email_collected" };
   }
@@ -978,7 +979,7 @@ async function handleRegistrationStep(
   if (state === "collecting_city") {
     if (userMessage.length < 2) {
       const msg = "Por favor, digite o nome da sua *cidade*:";
-      await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logRegistration(supabase, phone, userMessage, msg, "registration_retry_city", tenantId, startTime);
       return { success: true, responseType: "registration_retry_city" };
     }
@@ -1052,7 +1053,7 @@ async function handleRegistrationStep(
       `📍 Cidade: ${cityName}\n\n` +
       `Obrigado, ${firstName}! Agora você receberá informações e novidades que podem te ajudar. 😊`;
 
-    await sendResponseToUser(supabase, intSettings, provider, phone, msg);
+    await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logRegistration(supabase, phone, userMessage, msg, "registration_completed", tenantId, startTime);
 
     console.log(`[whatsapp-chatbot] Registration completed for ${phone}: ${session.collected_name}`);
@@ -1211,7 +1212,7 @@ Deno.serve(async (req) => {
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
         const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
-        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg);
+        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId);
         return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -1353,7 +1354,7 @@ Deno.serve(async (req) => {
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseAlready, supabase);
+          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseAlready, supabase, tenantId);
         } else if (intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
           await sendWhatsAppMessage(intSettings.zapi_instance_id, intSettings.zapi_token, intSettings.zapi_client_token, normalizedPhone, responseAlready);
         }
@@ -1383,7 +1384,7 @@ Deno.serve(async (req) => {
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseWrongCode, supabase);
+          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseWrongCode, supabase, tenantId);
         } else if (intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
           await sendWhatsAppMessage(intSettings.zapi_instance_id, intSettings.zapi_token, intSettings.zapi_client_token, normalizedPhone, responseWrongCode);
         }
@@ -1668,7 +1669,8 @@ Deno.serve(async (req) => {
           metaAccessToken,
           normalizedPhone,
           responseMessage,
-          supabase
+          supabase,
+          tenantId
         );
       } else {
         console.log("[whatsapp-chatbot] META_WA_ACCESS_TOKEN not configured");
@@ -1750,7 +1752,7 @@ Deno.serve(async (req) => {
           })
           .eq("id", session.id);
 
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg, tenantId);
 
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
@@ -1956,7 +1958,7 @@ function splitLongMessage(message: string, maxLen = 1500): string[] {
   return parts;
 }
 
-async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any): Promise<boolean> {
+async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
   let cleanPhone = phone.replace(/[^0-9]/g, "");
   if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
@@ -1974,7 +1976,11 @@ async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: s
       const wamid = result.messages?.[0]?.id;
       console.log("[whatsapp-chatbot] Message sent via Meta Cloud API:", wamid);
       if (supabase && wamid) {
-        try { await supabase.from("whatsapp_messages").insert({ phone: cleanPhone, message: part, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid } }); } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta message:", e); }
+        try {
+          const insertData: Record<string, any> = { phone: cleanPhone, message: part, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid } };
+          if (tenantId) insertData.tenant_id = tenantId;
+          await supabase.from("whatsapp_messages").insert(insertData);
+        } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta message:", e); }
       }
       return true;
     }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud send').catch(err => { console.error("[whatsapp-chatbot] Meta Cloud send failed after retries:", err); return false; });
