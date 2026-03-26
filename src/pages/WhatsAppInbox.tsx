@@ -344,7 +344,7 @@ export function WhatsAppInboxContent() {
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
-    <div className="flex h-[calc(100vh-220px)] border rounded-lg overflow-hidden relative">
+    <div className="flex h-[calc(100vh-280px)] min-h-[400px] border rounded-lg overflow-hidden relative">
       <ConversationsList
         conversations={conversations}
         selectedPhone={selectedPhone}
