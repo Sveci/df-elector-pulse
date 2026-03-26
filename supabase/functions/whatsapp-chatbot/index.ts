@@ -543,11 +543,26 @@ async function handleEventRegistrationStep(
           }
         }
 
+        // Mark QR as sent if successful
+        if (qrSent && registrationId) {
+          await supabase
+            .from("event_registrations")
+            .update({ qr_sent_at: new Date().toISOString() })
+            .eq("id", registrationId);
+        }
+
         // Fallback: always send link if image failed
         if (!qrSent) {
           console.log("[whatsapp-chatbot] QR image failed, sending link fallback");
           await sendResponseToUser(supabase, intSettings, provider, phone,
             `🎫 *Seu QR Code de Check-in:*\n${checkInUrl}\n\nApresente este link na entrada do evento.`, tenantId);
+          // Mark as sent even for fallback (user received the link)
+          if (registrationId) {
+            await supabase
+              .from("event_registrations")
+              .update({ qr_sent_at: new Date().toISOString() })
+              .eq("id", registrationId);
+          }
         }
       } else {
         console.warn("[whatsapp-chatbot] No qr_code returned from registration RPC");
