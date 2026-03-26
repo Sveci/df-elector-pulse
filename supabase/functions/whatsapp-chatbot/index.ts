@@ -2193,16 +2193,34 @@ Exemplos de SEM_VINCULO_TENANT:
     const data = await response.json();
     const answer = (data.choices?.[0]?.message?.content || "").trim();
     const citations = data.citations || [];
-    const cleanAnswer = answer.replace(/[*_`#]/g, "").replace(/_/g, " ").trim();
+    const normalizedAnswer = answer
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase();
+    const sanitizedAnswer = answer
+      .replace(/\*?SEM[_\s]?VINCULO[_\s]?TENANT\*?/gi, "")
+      .replace(/\*?SEM[_\s]?VINCULO\*?/gi, "")
+      .replace(/\*?FORA[_\s]?DO[_\s]?ESCOPO\*?/gi, "")
+      .replace(/\*?NO[_\s]?RESULT\*?/gi, "")
+      .replace(/^[\s❌*_-]+/, "")
+      .trim();
+
     // Filter out responses with no tenant relation
     if (!answer || answer.length < 15) return null;
-    if (cleanAnswer.includes("NO_RESULT") || cleanAnswer.includes("FORA DO ESCOPO") || cleanAnswer.includes("FORA_DO_ESCOPO") || cleanAnswer.includes("SEM_VINCULO_TENANT")) {
+    if (
+      normalizedAnswer.includes("NO_RESULT") ||
+      normalizedAnswer.includes("FORA_DO_ESCOPO") ||
+      normalizedAnswer.includes("FORA DO ESCOPO") ||
+      normalizedAnswer.includes("SEM_VINCULO_TENANT") ||
+      normalizedAnswer.includes("SEM VINCULO TENANT") ||
+      normalizedAnswer.includes("SEM_VINCULO") ||
+      normalizedAnswer.includes("SEM VINCULO")
+    ) {
       console.log("[whatsapp-chatbot] Perplexity response filtered: no tenant relation");
       return null;
     }
-    if (/^(FORA|❌|SEM_VINCULO|nao tem relacao)/i.test(cleanAnswer)) return null;
+    if (/^(FORA|❌|SEM[_\s]?VINCULO|NAO TEM RELACAO)/i.test(sanitizedAnswer)) return null;
     const citationSuffix = citations.length > 0 ? `\n\n🔗 Fonte: ${citations[0]}` : "";
-    return `${answer}${citationSuffix}`;
+    return `${sanitizedAnswer}${citationSuffix}`.trim();
   } catch (err) { console.error("[whatsapp-chatbot] Perplexity fallback error:", err); return null; }
 }
 
