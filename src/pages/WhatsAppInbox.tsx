@@ -89,24 +89,24 @@ function ConversationsList({
               key={conv.phone}
               onClick={() => onSelect(conv.phone)}
               className={cn(
-                "w-full text-left p-3 hover:bg-muted/50 transition-colors border-b border-border/50 flex gap-3",
+                "w-full overflow-hidden text-left p-3 hover:bg-muted/50 transition-colors border-b border-border/50 flex gap-3",
                 selectedPhone === conv.phone && "bg-muted"
               )}
             >
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <User className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm truncate">
+              <div className="flex-1 min-w-0 overflow-hidden pr-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-medium text-sm flex-1 min-w-0 truncate">
                     {conv.contactName || formatPhoneToBR(conv.phone)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">
+                  <span className="text-[10px] text-muted-foreground flex-shrink-0">
                     {formatMessageTime(conv.lastMessageAt)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <p className="text-xs text-muted-foreground truncate pr-2">
+                <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                  <p className="text-xs text-muted-foreground flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis pr-2">
                     {conv.lastDirection === "outgoing" && "Você: "}
                     {conv.lastMessage.slice(0, 60)}
                   </p>
