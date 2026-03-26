@@ -1235,12 +1235,42 @@ const Events = () => {
 // Event Details Dialog Component
 function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: () => void }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isResendingQR, setIsResendingQR] = useState(false);
   const { isDemoMode, m } = useDemoMask();
   const { data: registrations = [], isLoading } = useEventRegistrations(eventId);
   const updateCheckIn = useUpdateCheckIn();
   const { data: events = [] } = useEvents();
   const { toast } = useToast();
   const event = events.find(e => e.id === eventId);
+
+  const handleResendQRCodes = async () => {
+    if (!event) return;
+    setIsResendingQR(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const tenantId = (session?.session?.user?.user_metadata as any)?.tenant_id;
+      if (!tenantId) {
+        toast({ title: "Erro", description: "Tenant não identificado", variant: "destructive" });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("resend-event-qrcodes", {
+        body: { eventId, tenantId },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast({
+          title: "QR Codes reenviados!",
+          description: `${data.sent} enviados com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ""}.`,
+        });
+      } else {
+        toast({ title: "Erro", description: data?.error || "Falha ao reenviar", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message || "Erro ao reenviar QR Codes", variant: "destructive" });
+    } finally {
+      setIsResendingQR(false);
+    }
+  };
 
   const filteredRegistrations = registrations.filter((reg: any) => {
     if (!searchTerm) return true;
@@ -1327,14 +1357,29 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Inscrições</CardTitle>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, email ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendQRCodes}
+                  disabled={isResendingQR || registrations.length === 0}
+                >
+                  {isResendingQR ? (
+                    <Repeat className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <QrCode className="h-4 w-4 mr-2" />
+                  )}
+                  Reenviar QR Codes
+                </Button>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome, email ou telefone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>

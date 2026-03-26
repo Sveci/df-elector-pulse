@@ -463,13 +463,14 @@ async function handleEventRegistrationStep(
 
       // Send QR Code image
       if (qrCode) {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
         const baseUrl = Deno.env.get("APP_BASE_URL") || "https://app.eleitor360.ai";
         const checkInUrl = `${baseUrl}/checkin/${qrCode}`;
         const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(checkInUrl)}`;
 
         // Wait a bit to ensure first message is delivered
-        await sleep(2000);
+        await sleep(1500);
+
+        let qrSent = false;
 
         // Send QR code as image
         const useMetaCloud = provider === 'meta_cloud' ||
@@ -479,7 +480,7 @@ async function handleEventRegistrationStep(
           // Z-API: send image directly
           const zapiImageUrl = `https://api.z-api.io/instances/${intSettings.zapi_instance_id}/token/${intSettings.zapi_token}/send-image`;
           try {
-            await fetch(zapiImageUrl, {
+            const zapiRes = await fetch(zapiImageUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -491,12 +492,15 @@ async function handleEventRegistrationStep(
                 caption: "🎫 QR Code para Check-in no Evento",
               }),
             });
-            console.log("[whatsapp-chatbot] QR code image sent via Z-API");
+            const zapiResText = await zapiRes.text();
+            if (zapiRes.ok) {
+              console.log("[whatsapp-chatbot] QR code image sent via Z-API:", zapiResText);
+              qrSent = true;
+            } else {
+              console.error("[whatsapp-chatbot] Z-API QR send failed:", zapiRes.status, zapiResText);
+            }
           } catch (imgErr) {
             console.error("[whatsapp-chatbot] Error sending QR image via Z-API:", imgErr);
-            // Fallback: send as link
-            await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
         } else if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           // Meta Cloud: send image via API
@@ -509,7 +513,7 @@ async function handleEventRegistrationStep(
               cleanPhone = "55" + cleanPhone;
             }
             try {
-              await fetch(graphUrl, {
+              const metaRes = await fetch(graphUrl, {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${metaAccessToken}`,
@@ -526,21 +530,27 @@ async function handleEventRegistrationStep(
                   },
                 }),
               });
-              console.log("[whatsapp-chatbot] QR code image sent via Meta Cloud");
+              const metaResBody = await metaRes.text();
+              if (metaRes.ok) {
+                console.log("[whatsapp-chatbot] QR code image sent via Meta Cloud:", metaResBody);
+                qrSent = true;
+              } else {
+                console.error("[whatsapp-chatbot] Meta Cloud QR send failed:", metaRes.status, metaResBody);
+              }
             } catch (imgErr) {
               console.error("[whatsapp-chatbot] Error sending QR image via Meta Cloud:", imgErr);
-              await sendResponseToUser(supabase, intSettings, provider, phone,
-                `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
             }
-          } else {
-            await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
-        } else {
-          // No image capability, send link
-          await sendResponseToUser(supabase, intSettings, provider, phone,
-            `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
         }
+
+        // Fallback: always send link if image failed
+        if (!qrSent) {
+          console.log("[whatsapp-chatbot] QR image failed, sending link fallback");
+          await sendResponseToUser(supabase, intSettings, provider, phone,
+            `🎫 *Seu QR Code de Check-in:*\n${checkInUrl}\n\nApresente este link na entrada do evento.`, tenantId);
+        }
+      } else {
+        console.warn("[whatsapp-chatbot] No qr_code returned from registration RPC");
       }
 
       // Clean up session state
