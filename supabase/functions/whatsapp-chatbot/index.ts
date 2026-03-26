@@ -411,6 +411,7 @@ async function handleEventRegistrationStep(
         _utm_medium: 'chatbot',
         _utm_campaign: null,
         _utm_content: null,
+        _localidade: cidadeNomeSelecionada || null,
       });
 
       if (regError) {
@@ -952,16 +953,18 @@ async function handleRegistrationStep(
 
     const { data: cities } = await supabase
       .from("office_cities")
-      .select("nome")
+      .select("id, nome")
       .eq("tenant_id", tenantId)
       .eq("status", "active")
       .order("nome")
       .limit(30);
 
-    let msg = `E-mail registrado! 👍\n\nAgora, em qual *cidade* você mora?`;
+    let msg = `E-mail registrado! 👍\n\nAgora, em qual *cidade/região* você mora?`;
     if (cities && cities.length > 0) {
-      msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
-      msg += `\n\nDigite o nome da sua cidade:`;
+      msg += `\n\n*Cidades cadastradas:*\n${cities.map((c: any, i: number) => `${i + 1}. ${c.nome}`).join("\n")}`;
+      msg += `\n\nResponda apenas com o *número* da cidade/região.`;
+    } else {
+      msg += "\n\nNo momento não há cidades/regiões disponíveis. Tente novamente em instantes.";
     }
 
     await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
@@ -971,24 +974,41 @@ async function handleRegistrationStep(
 
   // State: collecting_city
   if (state === "collecting_city") {
-    if (userMessage.length < 2) {
-      const msg = "Por favor, digite o nome da sua *cidade*:";
+    const { data: cities } = await supabase
+      .from("office_cities")
+      .select("id, nome")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .order("nome")
+      .limit(30);
+
+    if (!cities || cities.length === 0) {
+      const msg = "No momento não há cidades/regiões disponíveis. Tente novamente em instantes.";
       await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await logRegistration(supabase, phone, userMessage, msg, "registration_retry_city", tenantId, startTime);
       return { success: true, responseType: "registration_retry_city" };
     }
 
-    const { data: matchedCity } = await supabase
-      .from("office_cities")
-      .select("id, nome")
-      .eq("tenant_id", tenantId)
-      .eq("status", "active")
-      .ilike("nome", `%${userMessage.trim()}%`)
-      .limit(1)
-      .maybeSingle();
+    const trimmed = userMessage.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      const msg = `Por favor, responda apenas com o *número* da cidade/região da lista. 🙏\n\n*Cidades cadastradas:*\n${cities.map((c: any, i: number) => `${i + 1}. ${c.nome}`).join("\n")}`;
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_retry_city", tenantId, startTime);
+      return { success: true, responseType: "registration_retry_city" };
+    }
+
+    const selectedNumber = Number.parseInt(trimmed, 10);
+    const selectedCity = cities[selectedNumber - 1] || null;
+
+    if (!selectedCity) {
+      const msg = `Número inválido. Responda com um número de *1* a *${cities.length}*. 🙏\n\n*Cidades cadastradas:*\n${cities.map((c: any, i: number) => `${i + 1}. ${c.nome}`).join("\n")}`;
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_retry_city", tenantId, startTime);
+      return { success: true, responseType: "registration_retry_city" };
+    }
 
     await supabase.from("whatsapp_chatbot_sessions").update({
-      collected_city: userMessage.trim(),
+      collected_city: selectedCity.nome,
       registration_state: "completed",
       registration_completed_at: new Date().toISOString()
     }).eq("id", session.id);
@@ -996,7 +1016,6 @@ async function handleRegistrationStep(
     // Create/update contact in office_contacts
     const phoneNorm = phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`;
 
-    // Search without tenant filter due to global unique constraint on telefone_norm
     const { data: existingContact } = await supabase
       .from("office_contacts")
       .select("id, tenant_id")
@@ -1011,9 +1030,8 @@ async function handleRegistrationStep(
         opted_out_at: null,
         opt_out_reason: null,
         opt_out_channel: null,
-        // Always update city fields: use matched city or store as text
-        cidade_id: matchedCity?.id || null,
-        localidade: matchedCity ? matchedCity.nome : userMessage.trim(),
+        cidade_id: selectedCity.id,
+        localidade: selectedCity.nome,
       };
       if (session.collected_email) updateData.email = session.collected_email;
       if (existingContact.tenant_id !== tenantId) {
@@ -1026,8 +1044,8 @@ async function handleRegistrationStep(
         nome: session.collected_name,
         telefone_norm: phoneNorm,
         email: session.collected_email || null,
-        cidade_id: matchedCity?.id || null,
-        localidade: matchedCity ? matchedCity.nome : userMessage.trim(),
+        cidade_id: selectedCity.id,
+        localidade: selectedCity.nome,
         source_type: "whatsapp",
         tenant_id: tenantId,
         is_active: true,
@@ -1037,14 +1055,13 @@ async function handleRegistrationStep(
       }
     }
 
-    const cityName = matchedCity?.nome || userMessage.trim();
     const firstName = (session.collected_name || "").split(" ")[0];
     const msg = `Cadastro realizado com sucesso! 🎉\n\n` +
       `📋 *Seus dados:*\n` +
       `👤 Nome: ${session.collected_name}\n` +
       `📱 WhatsApp: ${phone}\n` +
       `${session.collected_email ? `📧 E-mail: ${session.collected_email}\n` : ""}` +
-      `📍 Cidade: ${cityName}\n\n` +
+      `📍 Cidade: ${selectedCity.nome}\n\n` +
       `Obrigado, ${firstName}! Agora você receberá informações e novidades que podem te ajudar. 😊`;
 
     await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
