@@ -1,7 +1,7 @@
 # CLAUDE.md — df-elector-pulse
 
 > Arquivo de referência para o Claude Code. Atualizado a cada sprint/mudança.
-> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 01 — Concluída
+> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 02 — Concluída
 
 ---
 
@@ -116,6 +116,36 @@ Toda demanda é dividida em sprints. Cada sprint contém:
 ---
 
 ## 📊 Histórico de Sprints
+
+### Sprint 02 — Auditoria Completa: Tela Proposições
+**Status:** ✅ Concluída
+**Data:** 2026-03-26
+
+**Achados principais:**
+1. 🔴 Real-Time AUSENTE — nenhum Supabase channel/subscription
+2. 🔴 Todas queries usavam `(supabase as any)` — zero type-safety
+3. 🟡 `useRunMonitor` não invalidava cache após monitoramento
+4. 🟡 Exclusão de alerta sem confirmação (hard delete)
+5. 🟡 Sem paginação nas queries
+
+**Correções aplicadas:**
+- Implementado Supabase Realtime para `proposicoes_monitoradas` e `proposicoes_tramitacoes`
+- Hook `useProposicoesRealtime` com cleanup e filtro por tenant_id
+- Migration para REPLICA IDENTITY FULL e publication
+- `useRunMonitor` agora invalida caches de proposições e tramitações
+- AlertDialog de confirmação antes de excluir alertas
+- staleTime configurado nos hooks principais
+- Input de busca visível com 1+ proposição
+
+**Real-Time Status:** ✅ Implementado — INSERT/UPDATE/DELETE em proposicoes_monitoradas + tramitacoes
+
+**Tabelas do módulo:**
+- `proposicoes_monitoradas` — proposições com status e metadados
+- `proposicoes_tramitacoes` — cache de tramitações detectadas
+- `proposicoes_alertas_config` — config de alertas WhatsApp
+- `proposicoes_notificacoes_log` — log de notificações enviadas
+
+---
 
 ### Sprint 01 — Fix: Reenviar QR Codes (Tenant)
 **Status:** ✅ Concluída
