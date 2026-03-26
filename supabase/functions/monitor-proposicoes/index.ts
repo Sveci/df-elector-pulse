@@ -173,6 +173,50 @@ function buildNotificationMessage(
 }
 
 // =====================================================
+// =====================================================
+// Monta o payload do Meta Template para envio fora da janela 24h
+// =====================================================
+function buildMetaTemplatePayload(
+  proposicao: any,
+  tramitacao: any
+): { name: string; language: { code: string }; components: any[] } {
+  const sigla = `${proposicao.sigla_tipo} ${proposicao.numero}/${proposicao.ano}`;
+  const situacao = `${tramitacao.descricaoSituacao || tramitacao.descricao_situacao || "Nova movimentação"} - ${tramitacao.siglaOrgao || tramitacao.sigla_orgao || ""}`.trim().replace(/ -\s*$/, "");
+  const dataHora = tramitacao.dataHora || tramitacao.data_hora || "";
+  const dataBR = dataHora
+    ? new Date(dataHora).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : new Date().toLocaleDateString("pt-BR");
+  const despacho = (
+    tramitacao.despacho ||
+    tramitacao.TextoMovimentacao ||
+    tramitacao.descricaoTramitacao ||
+    tramitacao.descricao_tramitacao ||
+    "Movimentação registrada"
+  ).substring(0, 200);
+
+  return {
+    name: "alerta_legislativo",
+    language: { code: "pt_BR" },
+    components: [
+      {
+        type: "body",
+        parameters: [
+          { type: "text", text: sigla },
+          { type: "text", text: situacao },
+          { type: "text", text: dataBR },
+          { type: "text", text: despacho },
+        ],
+      },
+    ],
+  };
+}
+
+// =====================================================
 // Envia notificação WhatsApp via send-whatsapp function
 // =====================================================
 async function sendWhatsAppNotification(
@@ -180,22 +224,30 @@ async function sendWhatsAppNotification(
   serviceKey: string,
   alerta: any,
   message: string,
-  tenantId: string
+  tenantId: string,
+  metaTemplate?: { name: string; language: { code: string }; components: any[] }
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    const payload: Record<string, any> = {
+      phone: alerta.destino,
+      message,
+      tenantId,
+      providerOverride: alerta.provider,
+      bypassAutoCheck: true,
+    };
+
+    // Use Meta template for delivery outside 24h window
+    if (metaTemplate && alerta.provider === "meta_cloud") {
+      payload.metaTemplate = metaTemplate;
+    }
+
     const resp = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify({
-        phone: alerta.destino,
-        message,
-        tenantId,
-        providerOverride: alerta.provider,
-        bypassAutoCheck: true,
-      }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(20000),
     });
 
@@ -349,13 +401,15 @@ Deno.serve(async (req) => {
             if (alerta.eventos_criticos_only && !isCritico) continue;
 
             const message = buildNotificationMessage(prop, tram, isCritico);
+            const metaTemplate = buildMetaTemplatePayload(prop, tram);
 
             const sendResult = await sendWhatsAppNotification(
               supabaseUrl,
               serviceKey,
               alerta,
               message,
-              prop.tenant_id
+              prop.tenant_id,
+              metaTemplate
             );
 
             // Registra no log
