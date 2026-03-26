@@ -1357,14 +1357,29 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Inscrições</CardTitle>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, email ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendQRCodes}
+                  disabled={isResendingQR || registrations.length === 0}
+                >
+                  {isResendingQR ? (
+                    <Repeat className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <QrCode className="h-4 w-4 mr-2" />
+                  )}
+                  Reenviar QR Codes
+                </Button>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome, email ou telefone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
