@@ -39,13 +39,14 @@ serve(async (req) => {
       );
     }
 
-    // Get registrations with QR codes
+    // Get registrations with QR codes that haven't been sent yet
     let query = supabase
       .from("event_registrations")
       .select("id, nome, whatsapp, qr_code")
       .eq("event_id", eventId)
       .eq("tenant_id", tenantId)
-      .not("qr_code", "is", null);
+      .not("qr_code", "is", null)
+      .is("qr_sent_at", null);
 
     if (registrationIds && registrationIds.length > 0) {
       query = query.in("id", registrationIds);
@@ -144,6 +145,11 @@ serve(async (req) => {
 
         if (imageSent) {
           sent++;
+          // Mark as sent
+          await supabase
+            .from("event_registrations")
+            .update({ qr_sent_at: new Date().toISOString() })
+            .eq("id", reg.id);
         } else {
           failed++;
           errors.push(`${reg.nome} (${reg.whatsapp})`);

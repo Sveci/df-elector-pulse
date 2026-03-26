@@ -822,6 +822,7 @@ export type Database = {
           localidade: string | null
           nome: string
           qr_code: string | null
+          qr_sent_at: string | null
           tenant_id: string
           utm_campaign: string | null
           utm_content: string | null
@@ -844,6 +845,7 @@ export type Database = {
           localidade?: string | null
           nome: string
           qr_code?: string | null
+          qr_sent_at?: string | null
           tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -866,6 +868,7 @@ export type Database = {
           localidade?: string | null
           nome?: string
           qr_code?: string | null
+          qr_sent_at?: string | null
           tenant_id?: string
           utm_campaign?: string | null
           utm_content?: string | null

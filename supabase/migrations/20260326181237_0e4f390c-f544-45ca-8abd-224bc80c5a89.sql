@@ -1,0 +1,1 @@
+ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS qr_sent_at timestamptz DEFAULT NULL;
