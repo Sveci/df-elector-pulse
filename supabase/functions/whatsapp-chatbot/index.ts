@@ -2320,12 +2320,14 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
     }
     if (!aiAnswer) { const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks); if (groundedFallback) return groundedFallback; }
     // Final safety: strip any internal tags that may have leaked through
-    const finalAnswer = (aiAnswer || "Não consegui processar sua mensagem.")
+    const finalAnswer = (sanitizedAnswer || "Não consegui processar sua mensagem.")
       .replace(/\*?SEM_VINCULO_TENANT\*?\s*/gi, "")
+      .replace(/\*?SEM_VINCULO\*?\s*/gi, "")
       .replace(/\*?FORA_DO_ESCOPO\*?\s*/gi, "")
       .replace(/\*?NO_RESULT\*?\s*/gi, "")
+      .replace(/sem[_\s]?vinculo[_\s]?tenant/gi, "")
       .trim();
-    return finalAnswer || "Não consegui processar sua mensagem.";
+    return finalAnswer || `Desculpe, não encontrei informações sobre esse tema. 😊 Posso ajudar com algo relacionado ao mandato${orgScope ? ` de ${orgScope}` : ""}?`;
   } catch (err) {
     console.error("[whatsapp-chatbot] AI error:", err);
     const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
