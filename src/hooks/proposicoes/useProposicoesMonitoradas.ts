@@ -94,9 +94,10 @@ export function useAddProposicao() {
 
   return useMutation({
     mutationFn: async (payload: Partial<ProposicaoMonitorada>) => {
+      const row = { ...payload, tenant_id: activeTenant!.id } as any;
       const { data, error } = await supabase
         .from("proposicoes_monitoradas")
-        .insert({ ...payload, tenant_id: activeTenant!.id })
+        .insert(row)
         .select()
         .single();
 
