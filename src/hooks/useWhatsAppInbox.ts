@@ -81,29 +81,40 @@ export function useInboxConversations() {
       // Fallback: resolve contact names by normalized phone key (last 11 digits)
       const unnamed = Array.from(phoneMap.entries()).filter(([, c]) => !c.contactName);
       if (unnamed.length > 0) {
-        let cq = (supabase as any)
-          .from("office_contacts")
-          .select("telefone_norm, nome")
-          .range(0, 4999);
+        const unnamedKeys = Array.from(
+          new Set(unnamed.map(([phone]) => toPhoneKey(phone)).filter((key) => key.length === 11))
+        );
 
-        if (tenantId) cq = cq.eq("tenant_id", tenantId);
+        if (unnamedKeys.length > 0) {
+          const suffixFilters = unnamedKeys
+            .map((key) => `telefone_norm.ilike.%${key}`)
+            .join(",");
 
-        const { data: contacts, error: contactsError } = await cq;
-        if (!contactsError && contacts) {
-          const namesByPhoneKey = new Map<string, string>();
+          let cq = (supabase as any)
+            .from("office_contacts")
+            .select("telefone_norm, nome")
+            .or(suffixFilters)
+            .limit(Math.max(unnamedKeys.length * 3, 50));
 
-          for (const contact of contacts) {
-            const key = toPhoneKey(contact.telefone_norm || "");
-            if (key && contact.nome && !namesByPhoneKey.has(key)) {
-              namesByPhoneKey.set(key, contact.nome);
+          if (tenantId) cq = cq.eq("tenant_id", tenantId);
+
+          const { data: contacts, error: contactsError } = await cq;
+          if (!contactsError && contacts) {
+            const namesByPhoneKey = new Map<string, string>();
+
+            for (const contact of contacts) {
+              const key = toPhoneKey(contact.telefone_norm || "");
+              if (key && contact.nome && !namesByPhoneKey.has(key)) {
+                namesByPhoneKey.set(key, contact.nome);
+              }
             }
-          }
 
-          for (const [phone, conv] of unnamed) {
-            const key = toPhoneKey(phone);
-            const resolvedName = key ? namesByPhoneKey.get(key) : null;
-            if (resolvedName) {
-              conv.contactName = resolvedName;
+            for (const [phone, conv] of unnamed) {
+              const key = toPhoneKey(phone);
+              const resolvedName = key ? namesByPhoneKey.get(key) : null;
+              if (resolvedName) {
+                conv.contactName = resolvedName;
+              }
             }
           }
         }
