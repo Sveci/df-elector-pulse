@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useTenantContext } from "@/contexts/TenantContext";
+import { useProposicoesRealtime } from "@/hooks/proposicoes/useProposicoesRealtime";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,6 +298,9 @@ function AlertasTab() {
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function Proposicoes() {
+  const { activeTenant } = useTenantContext();
+  useProposicoesRealtime(activeTenant?.id);
+
   const { data: proposicoes, isLoading, refetch } = useProposicoesMonitoradas();
   const removeProposicao = useRemoveProposicao();
   const runMonitor = useRunMonitor();

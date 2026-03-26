@@ -71,7 +71,7 @@ export function useProposicoesMonitoradas() {
   return useQuery({
     queryKey: ["proposicoes-monitoradas", activeTenant?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("proposicoes_monitoradas")
         .select("*")
         .eq("tenant_id", activeTenant!.id)
@@ -92,7 +92,7 @@ export function useAddProposicao() {
 
   return useMutation({
     mutationFn: async (payload: Partial<ProposicaoMonitorada>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("proposicoes_monitoradas")
         .insert({ ...payload, tenant_id: activeTenant!.id })
         .select()
@@ -121,7 +121,7 @@ export function useRemoveProposicao() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("proposicoes_monitoradas")
         .update({ ativo: false })
         .eq("id", id);

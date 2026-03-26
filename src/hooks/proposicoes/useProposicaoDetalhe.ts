@@ -24,7 +24,7 @@ export function useTramitacoesCached(proposicaoId: string | null) {
   return useQuery({
     queryKey: ["tramitacoes-cached", proposicaoId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("proposicoes_tramitacoes")
         .select("*")
         .eq("proposicao_id", proposicaoId!)
@@ -96,7 +96,7 @@ export function useNotificacoesLog(proposicaoId: string | null) {
   return useQuery({
     queryKey: ["notificacoes-log", proposicaoId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("proposicoes_notificacoes_log")
         .select(`
           *,
