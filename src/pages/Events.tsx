@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,7 +47,8 @@ import {
   Camera,
   Crown,
   Code,
-  Printer
+  Printer,
+  Loader2
 } from "lucide-react";
 import { useEvents } from "@/hooks/events/useEvents";
 import { useCreateEvent } from "@/hooks/events/useCreateEvent";
@@ -1237,6 +1239,7 @@ const Events = () => {
 function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: () => void }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isResendingQR, setIsResendingQR] = useState(false);
+  const [showResendConfirm, setShowResendConfirm] = useState(false);
   const { isDemoMode, m } = useDemoMask();
   const { data: registrations = [], isLoading } = useEventRegistrations(eventId);
   const updateCheckIn = useUpdateCheckIn();
@@ -1247,10 +1250,11 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
 
   const handleResendQRCodes = async () => {
     if (!event) return;
+    setShowResendConfirm(false);
     setIsResendingQR(true);
     try {
       if (!tenantId) {
-        toast({ title: "Erro", description: "Tenant não identificado. Selecione uma organização e tente novamente.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível identificar a organização. Selecione uma organização e tente novamente.", variant: "destructive" });
         return;
       }
       const { data, error } = await supabase.functions.invoke("resend-event-qrcodes", {
@@ -1259,14 +1263,15 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
       if (error) throw error;
       if (data?.success) {
         toast({
-          title: "QR Codes reenviados!",
-          description: `${data.sent} enviados com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ""}.`,
+          title: "QR Codes reenviados com sucesso!",
+          description: `${data.sent} enviado${data.sent !== 1 ? "s" : ""} com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ""}.`,
         });
       } else {
-        toast({ title: "Erro", description: data?.error || "Falha ao reenviar", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível reenviar os QR Codes. Tente novamente mais tarde.", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message || "Erro ao reenviar QR Codes", variant: "destructive" });
+      console.error("[resend-qrcodes] Error:", err);
+      toast({ title: "Erro", description: "Não foi possível reenviar os QR Codes. Tente novamente mais tarde.", variant: "destructive" });
     } finally {
       setIsResendingQR(false);
     }
@@ -1358,19 +1363,47 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Inscrições</CardTitle>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResendQRCodes}
-                  disabled={isResendingQR || registrations.length === 0}
-                >
-                  {isResendingQR ? (
-                    <Repeat className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <QrCode className="h-4 w-4 mr-2" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={registrations.length === 0 ? 0 : undefined}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowResendConfirm(true)}
+                        disabled={isResendingQR || registrations.length === 0}
+                      >
+                        {isResendingQR ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <QrCode className="h-4 w-4 mr-2" />
+                        )}
+                        {isResendingQR ? "Reenviando..." : "Reenviar QR Codes"}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {registrations.length === 0 && (
+                    <TooltipContent>Nenhum inscrito para reenviar</TooltipContent>
                   )}
-                  Reenviar QR Codes
-                </Button>
+                </Tooltip>
+
+                <Dialog open={showResendConfirm} onOpenChange={setShowResendConfirm}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Reenviar QR Codes</DialogTitle>
+                      <DialogDescription>
+                        Deseja reenviar os QR Codes para todos os {registrations.length} inscrito{registrations.length !== 1 ? "s" : ""}?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowResendConfirm(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleResendQRCodes}>
+                        Reenviar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
