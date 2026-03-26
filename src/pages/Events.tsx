@@ -70,7 +70,7 @@ import { generateEventUrl } from "@/lib/eventUrlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
 import EventQRCode from "@/components/EventQRCode";
 import { EventAffiliateDialog } from "@/components/events/EventAffiliateDialog";
 import { SendEventPhotosDialog } from "@/components/events/SendEventPhotosDialog";
@@ -2131,7 +2131,7 @@ function EventReports({ events }: { events: any[] }) {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip
+                <RechartsTooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
@@ -2188,7 +2188,7 @@ function EventReports({ events }: { events: any[] }) {
                     width={120}
                     stroke="hsl(var(--muted-foreground))"
                   />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -2339,7 +2339,7 @@ function EventReports({ events }: { events: any[] }) {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
