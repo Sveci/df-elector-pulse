@@ -61,8 +61,30 @@ export function useInboxConversations() {
           });
         }
         const conv = phoneMap.get(msg.phone)!;
+        // If we still don't have a name, try from this message
+        if (!conv.contactName && msg.office_contacts?.nome) {
+          conv.contactName = msg.office_contacts.nome;
+        }
         if (msg.direction === "incoming" && msg.status !== "read") {
           conv.unreadCount++;
+        }
+      }
+
+      // For conversations without a contactName, look up by phone in office_contacts
+      const unnamed = Array.from(phoneMap.entries()).filter(([, c]) => !c.contactName);
+      if (unnamed.length > 0) {
+        const phones = unnamed.map(([p]) => p);
+        let cq = supabase
+          .from("office_contacts")
+          .select("telefone_norm, nome")
+          .in("telefone_norm", phones);
+        if (tenantId) cq = cq.eq("tenant_id", tenantId);
+        const { data: contacts } = await cq;
+        if (contacts) {
+          for (const c of contacts) {
+            const conv = phoneMap.get(c.telefone_norm);
+            if (conv && c.nome) conv.contactName = c.nome;
+          }
         }
       }
 
