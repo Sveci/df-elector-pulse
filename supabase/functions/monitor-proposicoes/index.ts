@@ -401,13 +401,15 @@ Deno.serve(async (req) => {
             if (alerta.eventos_criticos_only && !isCritico) continue;
 
             const message = buildNotificationMessage(prop, tram, isCritico);
+            const metaTemplate = buildMetaTemplatePayload(prop, tram);
 
             const sendResult = await sendWhatsAppNotification(
               supabaseUrl,
               serviceKey,
               alerta,
               message,
-              prop.tenant_id
+              prop.tenant_id,
+              metaTemplate
             );
 
             // Registra no log
