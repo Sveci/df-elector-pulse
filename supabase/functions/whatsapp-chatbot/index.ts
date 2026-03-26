@@ -850,7 +850,8 @@ async function sendResponseToUser(
   integrationSettings: any,
   provider: string | undefined,
   phone: string,
-  message: string
+  message: string,
+  tenantId?: string | null
 ): Promise<boolean> {
   const useMetaCloud = provider === 'meta_cloud' ||
     (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
@@ -861,7 +862,7 @@ async function sendResponseToUser(
       return await sendWhatsAppMessageMetaCloud(
         integrationSettings.meta_cloud_phone_number_id,
         integrationSettings.meta_cloud_api_version || "v20.0",
-        metaAccessToken, phone, message, supabase
+        metaAccessToken, phone, message, supabase, tenantId
       );
     }
   }
@@ -1956,7 +1957,7 @@ function splitLongMessage(message: string, maxLen = 1500): string[] {
   return parts;
 }
 
-async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any): Promise<boolean> {
+async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
   let cleanPhone = phone.replace(/[^0-9]/g, "");
   if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
@@ -1974,7 +1975,11 @@ async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: s
       const wamid = result.messages?.[0]?.id;
       console.log("[whatsapp-chatbot] Message sent via Meta Cloud API:", wamid);
       if (supabase && wamid) {
-        try { await supabase.from("whatsapp_messages").insert({ phone: cleanPhone, message: part, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid } }); } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta message:", e); }
+        try {
+          const insertData: Record<string, any> = { phone: cleanPhone, message: part, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid } };
+          if (tenantId) insertData.tenant_id = tenantId;
+          await supabase.from("whatsapp_messages").insert(insertData);
+        } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta message:", e); }
       }
       return true;
     }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud send').catch(err => { console.error("[whatsapp-chatbot] Meta Cloud send failed after retries:", err); return false; });
