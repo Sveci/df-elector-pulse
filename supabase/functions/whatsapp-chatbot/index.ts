@@ -543,12 +543,21 @@ async function handleEventRegistrationStep(
           }
         }
 
-        // Mark QR as sent if successful
+        // Mark QR as sent if successful and persist to inbox
         if (qrSent && registrationId) {
           await supabase
             .from("event_registrations")
             .update({ qr_sent_at: new Date().toISOString() })
             .eq("id", registrationId);
+          // Persist QR image message to whatsapp_messages for Inbox visibility
+          await supabase.from("whatsapp_messages").insert({
+            phone: phone.replace(/[^0-9]/g, ""),
+            message: `🎫 QR Code para Check-in no Evento\n\n📎 Imagem: ${qrCodeImageUrl}`,
+            direction: "outgoing",
+            status: "sent",
+            tenant_id: tenantId,
+            sent_at: new Date().toISOString(),
+          });
         }
 
         // Fallback: always send link if image failed
