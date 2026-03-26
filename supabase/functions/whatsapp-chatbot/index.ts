@@ -1657,7 +1657,7 @@ Deno.serve(async (req) => {
 
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
         // Dynamic functions that work for everyone (leaders + guests)
-        const guestAllowedFunctions = ["cadastro_evento", "ajuda"];
+        const guestAllowedFunctions = ["cadastro_evento", "ajuda", "enviar_pec47"];
         const fnName = matchedKeyword.dynamic_function;
         const fn = dynamicFunctions[fnName];
 
