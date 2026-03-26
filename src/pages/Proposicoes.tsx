@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTenantContext } from "@/contexts/TenantContext";
 import { useProposicoesRealtime } from "@/hooks/proposicoes/useProposicoesRealtime";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +32,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Plus,
   MoreVertical,
@@ -49,9 +65,12 @@ import {
   Users,
   Zap,
   Cloud,
+  X,
+  Activity,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 import { ProposicaoDrawer } from "@/components/proposicoes/ProposicaoDrawer";
 import { AdicionarProposicaoModal } from "@/components/proposicoes/AdicionarProposicaoModal";
@@ -65,6 +84,7 @@ import {
   getSituacaoColor,
   getSituacaoLabel,
   ProposicaoMonitorada,
+  GrupoSituacao,
 } from "@/hooks/proposicoes/useProposicoesMonitoradas";
 import {
   useAlertasConfig,
@@ -331,6 +351,7 @@ function AlertasTab() {
 export default function Proposicoes() {
   const { activeTenant } = useTenantContext();
   useProposicoesRealtime(activeTenant?.id);
+  const queryClient = useQueryClient();
 
   const { data: proposicoes, isLoading, refetch } = useProposicoesMonitoradas();
   const removeProposicao = useRemoveProposicao();
@@ -341,21 +362,43 @@ export default function Proposicoes() {
   const [adicionarOpen, setAdicionarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // ── Filter states ──
+  const [selectedSituacoes, setSelectedSituacoes] = useState<string[]>(["tramitando"]);
+  const [selectedOrgao, setSelectedOrgao] = useState<string>("todos");
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>("qualquer");
+
+  // ── Sync mutation ──
+  const syncProposicoes = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("auto-discover-proposicoes", {});
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["proposicoes-monitoradas"] });
+      toast.success(`Sincronização: ${data?.new_proposicoes || 0} novas proposições encontradas`);
+    },
+    onError: (err: any) => {
+      toast.error("Erro na sincronização: " + err.message);
+    },
+  });
+
   function handleOpenDrawer(p: ProposicaoMonitorada) {
     setSelectedProposicao(p);
     setDrawerOpen(true);
   }
 
-  const filtered = proposicoes?.filter((p) => {
-    const q = searchTerm.toLowerCase();
-    return (
-      !q ||
-      `${p.sigla_tipo} ${p.numero}/${p.ano}`.toLowerCase().includes(q) ||
-      (p.ementa || "").toLowerCase().includes(q) ||
-      (p.autor_nome || "").toLowerCase().includes(q)
-    );
-  });
+  // ── Unique organs for filter ──
+  const uniqueOrgaos = useMemo(() => {
+    if (!proposicoes) return [];
+    const set = new Set<string>();
+    proposicoes.forEach((p) => {
+      if (p.sigla_orgao_situacao) set.add(p.sigla_orgao_situacao);
+    });
+    return Array.from(set).sort();
+  }, [proposicoes]);
 
+  // ── Stats (always from full data, unfiltered) ──
   const stats = {
     total: proposicoes?.length ?? 0,
     tramitando: proposicoes?.filter((p) => getGrupoSituacao(p.cod_situacao) === "tramitando").length ?? 0,
@@ -364,17 +407,120 @@ export default function Proposicoes() {
     arquivadas: proposicoes?.filter((p) => getGrupoSituacao(p.cod_situacao) === "arquivada").length ?? 0,
   };
 
+  // ── Combined filtering ──
+  const filtered = proposicoes?.filter((p) => {
+    // Text search
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      !q ||
+      `${p.sigla_tipo} ${p.numero}/${p.ano}`.toLowerCase().includes(q) ||
+      (p.ementa || "").toLowerCase().includes(q) ||
+      (p.autor_nome || "").toLowerCase().includes(q);
+
+    // Situation filter
+    const grupo = getGrupoSituacao(p.cod_situacao);
+    const matchesSituacao =
+      selectedSituacoes.length === 0 ||
+      selectedSituacoes.includes("todas") ||
+      selectedSituacoes.includes(grupo);
+
+    // Organ filter
+    const matchesOrgao =
+      !selectedOrgao ||
+      selectedOrgao === "todos" ||
+      p.sigla_orgao_situacao === selectedOrgao;
+
+    // Date filter
+    const matchesData =
+      !selectedPeriodo ||
+      selectedPeriodo === "qualquer" ||
+      (() => {
+        if (!p.ultima_data_tramitacao) return false;
+        const d = new Date(p.ultima_data_tramitacao);
+        const now = new Date();
+        const diffDays = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+        switch (selectedPeriodo) {
+          case "semana": return diffDays <= 7;
+          case "mes": return diffDays <= 30;
+          case "trimestre": return diffDays <= 90;
+          case "ano": return diffDays <= 365;
+          default: return true;
+        }
+      })();
+
+    return matchesSearch && matchesSituacao && matchesOrgao && matchesData;
+  });
+
+  const hasActiveFilters =
+    selectedSituacoes.length > 0 && !selectedSituacoes.includes("todas") ||
+    selectedOrgao !== "todos" ||
+    selectedPeriodo !== "qualquer" ||
+    searchTerm.length > 0;
+
+  function handleClearFilters() {
+    setSelectedSituacoes(["tramitando"]);
+    setSelectedOrgao("todos");
+    setSelectedPeriodo("qualquer");
+    setSearchTerm("");
+  }
+
+  function handleSituacaoChange(value: string[]) {
+    if (value.includes("todas")) {
+      // If "todas" was just selected, set only "todas"
+      if (!selectedSituacoes.includes("todas")) {
+        setSelectedSituacoes(["todas"]);
+      } else {
+        // "todas" was already selected and user clicked something else
+        setSelectedSituacoes(value.filter((v) => v !== "todas"));
+      }
+    } else if (value.length === 0) {
+      // Nothing selected = show all
+      setSelectedSituacoes(["todas"]);
+    } else {
+      setSelectedSituacoes(value);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Proposições Legislativas</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Monitoramento em tempo real de PLs, PECs e demais proposições
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Proposições Legislativas</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Monitoramento em tempo real de PLs, PECs e demais proposições
+            </p>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="bg-green-100 text-green-700 border-green-200 gap-1 cursor-default">
+                  <Activity className="h-3 w-3" />
+                  Auto-monitoramento ativo
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                O sistema busca automaticamente novas proposições do parlamentar vinculado a cada 6 horas
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncProposicoes.mutate()}
+            disabled={syncProposicoes.isPending}
+            className="gap-1.5"
+          >
+            {syncProposicoes.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Sincronizar agora
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -391,7 +537,7 @@ export default function Proposicoes() {
           </Button>
           <Button size="sm" onClick={() => setAdicionarOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
-            Adicionar proposição
+            Buscar manualmente
           </Button>
         </div>
       </div>
@@ -455,16 +601,109 @@ export default function Proposicoes() {
 
         {/* ── Tab 1: Proposições monitoradas ── */}
         <TabsContent value="proposicoes" className="space-y-3">
-          {/* Search */}
+          {/* Filters bar */}
           {(proposicoes?.length ?? 0) > 0 && (
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por tipo, número, ementa ou autor..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Situation toggle group */}
+                <ToggleGroup
+                  type="multiple"
+                  value={selectedSituacoes}
+                  onValueChange={handleSituacaoChange}
+                  className="flex-wrap"
+                >
+                  <ToggleGroupItem
+                    value="todas"
+                    className="text-xs h-8 px-3 data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                  >
+                    Todas ({stats.total})
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="tramitando"
+                    className="text-xs h-8 px-3 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-800 data-[state=on]:border-blue-200"
+                  >
+                    Tramitando ({stats.tramitando})
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="atencao"
+                    className="text-xs h-8 px-3 data-[state=on]:bg-yellow-100 data-[state=on]:text-yellow-800 data-[state=on]:border-yellow-200"
+                  >
+                    Atenção ({stats.atencao})
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="aprovada"
+                    className="text-xs h-8 px-3 data-[state=on]:bg-green-100 data-[state=on]:text-green-800 data-[state=on]:border-green-200"
+                  >
+                    Aprovadas ({stats.aprovadas})
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="arquivada"
+                    className="text-xs h-8 px-3 data-[state=on]:bg-red-100 data-[state=on]:text-red-800 data-[state=on]:border-red-200"
+                  >
+                    Arquivadas ({stats.arquivadas})
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                {/* Organ select */}
+                <Select value={selectedOrgao} onValueChange={setSelectedOrgao}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="Filtrar por órgão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os órgãos</SelectItem>
+                    {uniqueOrgaos.map((orgao) => (
+                      <SelectItem key={orgao} value={orgao}>
+                        {orgao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Date select */}
+                <Select value={selectedPeriodo} onValueChange={setSelectedPeriodo}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="Filtrar por data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="qualquer">Qualquer data</SelectItem>
+                    <SelectItem value="semana">Última semana</SelectItem>
+                    <SelectItem value="mes">Último mês</SelectItem>
+                    <SelectItem value="trimestre">Últimos 3 meses</SelectItem>
+                    <SelectItem value="ano">Último ano</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Clear filters */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                    Limpar filtros
+                  </Button>
+                )}
+              </div>
+
+              {/* Search + results count */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por tipo, número, ementa ou autor..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                {hasActiveFilters && filtered && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    Mostrando {filtered.length} de {stats.total} proposições
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -477,15 +716,28 @@ export default function Proposicoes() {
             <div className="flex flex-col items-center gap-4 py-16 border rounded-lg text-muted-foreground">
               <FileText className="h-12 w-12 opacity-30" />
               <div className="text-center">
-                <p className="text-sm font-medium">Nenhuma proposição monitorada</p>
+                <p className="text-sm font-medium">
+                  {(proposicoes?.length ?? 0) > 0
+                    ? "Nenhuma proposição encontrada com os filtros atuais"
+                    : "Nenhuma proposição monitorada"}
+                </p>
                 <p className="text-xs mt-1">
-                  Adicione PLs, PECs e outras proposições para monitorar em tempo real
+                  {(proposicoes?.length ?? 0) > 0
+                    ? "Tente ajustar os filtros ou limpar a busca"
+                    : "Adicione PLs, PECs e outras proposições para monitorar em tempo real"}
                 </p>
               </div>
-              <Button onClick={() => setAdicionarOpen(true)} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Adicionar primeira proposição
-              </Button>
+              {(proposicoes?.length ?? 0) > 0 ? (
+                <Button variant="outline" onClick={handleClearFilters} className="gap-1.5">
+                  <X className="h-4 w-4" />
+                  Limpar filtros
+                </Button>
+              ) : (
+                <Button onClick={() => setAdicionarOpen(true)} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  Adicionar primeira proposição
+                </Button>
+              )}
             </div>
           ) : (
             <div className="border rounded-lg overflow-hidden">
