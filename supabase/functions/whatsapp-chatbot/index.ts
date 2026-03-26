@@ -495,7 +495,7 @@ async function handleEventRegistrationStep(
             console.error("[whatsapp-chatbot] Error sending QR image via Z-API:", imgErr);
             // Fallback: send as link
             await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
         } else if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           // Meta Cloud: send image via API
@@ -529,16 +529,16 @@ async function handleEventRegistrationStep(
             } catch (imgErr) {
               console.error("[whatsapp-chatbot] Error sending QR image via Meta Cloud:", imgErr);
               await sendResponseToUser(supabase, intSettings, provider, phone,
-                `🎫 *Seu QR Code:*\n${checkInUrl}`);
+                `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
             }
           } else {
             await sendResponseToUser(supabase, intSettings, provider, phone,
-              `🎫 *Seu QR Code:*\n${checkInUrl}`);
+              `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
           }
         } else {
           // No image capability, send link
           await sendResponseToUser(supabase, intSettings, provider, phone,
-            `🎫 *Seu QR Code:*\n${checkInUrl}`);
+            `🎫 *Seu QR Code:*\n${checkInUrl}`, tenantId);
         }
       }
 
@@ -1212,7 +1212,7 @@ Deno.serve(async (req) => {
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
         const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
-        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg);
+        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId);
         return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -1751,7 +1751,7 @@ Deno.serve(async (req) => {
           })
           .eq("id", session.id);
 
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg);
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg, tenantId);
 
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
