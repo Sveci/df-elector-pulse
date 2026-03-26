@@ -1897,8 +1897,13 @@ function isKeywordMatch(
   const messageTokens = new Set(messageForMatch.split(" ").filter(Boolean));
 
   return candidates.some((candidate) => {
+    // Exact match
     if (messageForMatch === candidate) return true;
+    // Single-word candidate: check if it's a token in the message
     if (messageTokens.has(candidate)) return true;
+    // Multi-word candidate (e.g. "PEC 47"): check if the message contains it as a substring
+    if (candidate.includes(" ") && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
+    // Short messages: substring match for long-enough candidates
     if (isCommandLikeMessage && candidate.length >= 4 && messageForMatch.includes(candidate)) return true;
     return false;
   });
