@@ -976,20 +976,14 @@ async function handleRegistrationStep(
 
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_email: email, registration_state: "collecting_city" }).eq("id", session.id);
 
-    const { data: cities } = await supabase
-      .from("office_cities")
-      .select("id, nome")
-      .eq("tenant_id", tenantId)
-      .eq("status", "active")
-      .order("nome")
-      .limit(30);
+    const cityOptions = await getEventRegistrationCityOptions(supabase, tenantId, 30);
 
     let msg = `E-mail registrado! 👍\n\nAgora, em qual *cidade/região* você mora?`;
-    if (cities && cities.length > 0) {
-      msg += `\n\n*Cidades cadastradas:*\n${cities.map((c: any, i: number) => `${i + 1}. ${c.nome}`).join("\n")}`;
+    if (cityOptions.length > 0) {
+      msg += `\n\n*Cidades cadastradas:*\n${formatCityOptionsList(cityOptions)}`;
       msg += `\n\nResponda apenas com o *número* da cidade/região.`;
     } else {
-      msg += "\n\nNo momento não há cidades/regiões disponíveis. Tente novamente em instantes.";
+      msg += "\n\nNo momento não há cidades/regiões disponíveis. Tente novamente digitando *CADASTRO* em instantes.";
     }
 
     await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
