@@ -841,6 +841,61 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
     return response;
   },
 
+  // Enviar documento PEC 47 via WhatsApp
+  enviar_pec47: async (supabase: any, leader: any, session: any, tenantId: string, phone: string, provider: string, _intSettings: any) => {
+    const PEC47_DOC_URL = "https://gzqzfqmmudxcnwkjjgux.supabase.co/storage/v1/object/public/whatsapp-media/documentos/PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
+    const PEC47_FILENAME = "PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
+    const PEC47_CAPTION = "📄 Aqui está o material sobre a PEC 47. Boa leitura! 📖";
+    const nome = leader?.nome_completo?.split(" ")[0] || "Olá";
+
+    // Get integration settings to send document
+    let intQuery = supabase
+      .from("integrations_settings")
+      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+    if (tenantId) intQuery = intQuery.eq("tenant_id", tenantId);
+    const { data: intSettings } = await intQuery.limit(1).single();
+
+    const normalizedPhone = phone.replace(/[^0-9]/g, "");
+    const useMetaCloud = provider === 'meta_cloud' ||
+      (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
+
+    let docSent = false;
+
+    if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
+      const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+      if (metaToken) {
+        docSent = await sendDocumentMetaCloud(
+          intSettings.meta_cloud_phone_number_id,
+          intSettings.meta_cloud_api_version || "v20.0",
+          metaToken,
+          normalizedPhone,
+          PEC47_DOC_URL,
+          PEC47_CAPTION,
+          PEC47_FILENAME,
+          supabase,
+          tenantId
+        );
+      }
+    }
+
+    if (!docSent && intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
+      docSent = await sendDocumentZapi(
+        intSettings.zapi_instance_id,
+        intSettings.zapi_token,
+        intSettings.zapi_client_token,
+        normalizedPhone,
+        PEC47_DOC_URL,
+        PEC47_CAPTION,
+        PEC47_FILENAME
+      );
+    }
+
+    if (docSent) {
+      return `${nome}! 👋\n\n${PEC47_CAPTION}\n\nSe tiver dúvidas sobre a PEC 47, pode me perguntar! 😊`;
+    }
+    return `${nome}, não foi possível enviar o documento no momento. Tente novamente mais tarde. 😔`;
+  },
+
   // Cadastro em evento via WhatsApp — starts the multi-step flow
   cadastro_evento: async (supabase, leader, session, tenantId, phone, provider, intSettings) => {
     if (!tenantId || !session) return "Erro ao iniciar inscrição. Tente novamente.";
