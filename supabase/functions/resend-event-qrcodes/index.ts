@@ -145,6 +145,11 @@ serve(async (req) => {
 
         if (imageSent) {
           sent++;
+          // Mark as sent
+          await supabase
+            .from("event_registrations")
+            .update({ qr_sent_at: new Date().toISOString() })
+            .eq("id", reg.id);
         } else {
           failed++;
           errors.push(`${reg.nome} (${reg.whatsapp})`);
