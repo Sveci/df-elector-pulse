@@ -70,7 +70,7 @@ import { generateEventUrl } from "@/lib/eventUrlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
 import EventQRCode from "@/components/EventQRCode";
 import { EventAffiliateDialog } from "@/components/events/EventAffiliateDialog";
 import { SendEventPhotosDialog } from "@/components/events/SendEventPhotosDialog";
