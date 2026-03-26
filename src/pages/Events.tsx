@@ -123,12 +123,11 @@ const Events = () => {
   const { isAdmin, isAtendente } = useUserRole();
   const canManageEvents = isAdmin || isAtendente;
 
-  // Calcula equipe necessária para check-in (1 pessoa a cada 30 participantes esperados)
+  // Calcula equipe necessária para check-in (1 pessoa a cada 75 participantes esperados)
   const getCheckInStaffNeeded = (registrations: number, eventConversionRate?: number) => {
-    const RATIO = 30;
-    // Usa taxa do evento específico ou taxa média geral; mínimo de 50% para planejamento seguro
+    const RATIO = 75;
     const rawRate = eventConversionRate || eventStats?.overallConversionRate || 70;
-    const rate = Math.max(rawRate, 50); // Nunca planeja para menos de 50% de presença
+    const rate = Math.max(rawRate, 50);
     const expectedAttendees = Math.round(registrations * (rate / 100));
     return Math.max(1, Math.ceil(expectedAttendees / RATIO));
   };
