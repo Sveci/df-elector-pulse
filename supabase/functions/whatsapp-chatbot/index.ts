@@ -1991,6 +1991,60 @@ function splitLongMessage(message: string, maxLen = 1500): string[] {
   return parts;
 }
 
+// =====================================================
+// SEND DOCUMENT via Meta Cloud API
+// =====================================================
+async function sendDocumentMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, documentUrl: string, caption: string, filename: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
+  let cleanPhone = phone.replace(/[^0-9]/g, "");
+  if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+
+  const sent = await withRetry(async () => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "document",
+        document: { link: documentUrl, caption, filename },
+      }),
+    });
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Meta Cloud Document HTTP ${response.status}: ${errorText}`); }
+    const result = await response.json();
+    const wamid = result.messages?.[0]?.id;
+    console.log("[whatsapp-chatbot] Document sent via Meta Cloud API:", wamid);
+    if (supabase && wamid) {
+      try {
+        const insertData: Record<string, any> = { phone: cleanPhone, message: `[Documento: ${filename}] ${caption}`, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid, document_url: documentUrl } };
+        if (tenantId) insertData.tenant_id = tenantId;
+        await supabase.from("whatsapp_messages").insert(insertData);
+      } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta document:", e); }
+    }
+    return true;
+  }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud document send').catch(err => { console.error("[whatsapp-chatbot] Meta Cloud document send failed:", err); return false; });
+
+  return sent;
+}
+
+// Send document via Z-API
+async function sendDocumentZapi(instanceId: string, token: string, clientToken: string | null, phone: string, documentUrl: string, caption: string, filename: string): Promise<boolean> {
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-document/${encodeURIComponent(documentUrl)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientToken) headers["Client-Token"] = clientToken;
+
+  const sent = await withRetry(async () => {
+    const response = await fetch(zapiUrl, { method: "POST", headers, body: JSON.stringify({ phone: cleanPhone, document: documentUrl, fileName: filename, caption }) });
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Z-API Document HTTP ${response.status}: ${errorText}`); }
+    return true;
+  }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Z-API document send').catch(err => { console.error("[whatsapp-chatbot] Z-API document send failed:", err); return false; });
+
+  console.log("[whatsapp-chatbot] Document sent successfully via Z-API");
+  return sent;
+}
+
 async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
   let cleanPhone = phone.replace(/[^0-9]/g, "");
   if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
