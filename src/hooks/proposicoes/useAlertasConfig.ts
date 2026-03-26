@@ -36,6 +36,7 @@ export function useAlertasConfig() {
       return data as AlertaConfig[];
     },
     enabled: !!activeTenant?.id,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

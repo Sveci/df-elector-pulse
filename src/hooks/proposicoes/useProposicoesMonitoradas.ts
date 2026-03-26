@@ -82,6 +82,8 @@ export function useProposicoesMonitoradas() {
       return data as ProposicaoMonitorada[];
     },
     enabled: !!activeTenant?.id,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: true,
   });
 }
 

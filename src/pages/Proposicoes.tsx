@@ -1,6 +1,16 @@
 import React, { useState } from "react";
 import { useTenantContext } from "@/contexts/TenantContext";
 import { useProposicoesRealtime } from "@/hooks/proposicoes/useProposicoesRealtime";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -158,6 +168,7 @@ function AlertasTab() {
   const toggleAlerta = useToggleAlerta();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AlertaConfig | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function handleEdit(alerta: AlertaConfig) {
     setEditing(alerta);
@@ -271,7 +282,7 @@ function AlertasTab() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() => deleteAlerta.mutate(alerta.id)}
+                      onClick={() => setDeletingId(alerta.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Excluir
@@ -292,6 +303,26 @@ function AlertasTab() {
         }}
         editingAlerta={editing}
       />
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir alerta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. O alerta será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deletingId && deleteAlerta.mutate(deletingId); setDeletingId(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -425,7 +456,7 @@ export default function Proposicoes() {
         {/* ── Tab 1: Proposições monitoradas ── */}
         <TabsContent value="proposicoes" className="space-y-3">
           {/* Search */}
-          {(proposicoes?.length ?? 0) > 3 && (
+          {(proposicoes?.length ?? 0) > 0 && (
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
