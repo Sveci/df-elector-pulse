@@ -126,8 +126,8 @@ const Events = () => {
   // Calcula equipe necessária para check-in (1 pessoa a cada 30 participantes esperados)
   const getCheckInStaffNeeded = (registrations: number, eventConversionRate?: number) => {
     const RATIO = 30;
-    // Usa taxa do evento específico ou taxa média geral
-    const rate = eventConversionRate ?? eventStats?.overallConversionRate ?? 70;
+    // Usa taxa do evento específico ou taxa média geral; fallback de 70% se taxa for 0 ou indefinida
+    const rate = eventConversionRate || eventStats?.overallConversionRate || 70;
     const expectedAttendees = Math.round(registrations * (rate / 100));
     return Math.max(1, Math.ceil(expectedAttendees / RATIO));
   };
@@ -1936,7 +1936,7 @@ function EventReports({ events }: { events: any[] }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {m.percentage(parseFloat(stats?.overallConversionRate.toFixed(1) || "0"), "rep_conv")}%
+              {m.percentage(parseFloat(stats?.overallConversionRate?.toFixed(1) || "0"), "rep_conv")}%
             </div>
             <p className="text-xs text-muted-foreground">
               {m.number(stats?.totalCheckins || 0, "rep_chk")} de {m.number(stats?.totalRegistrations || 0, "rep_ins")} inscrições
@@ -1951,7 +1951,7 @@ function EventReports({ events }: { events: any[] }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {m.percentage(parseFloat(stats?.averageCapacityUtilization.toFixed(1) || "0"), "rep_caputil")}%
+              {m.percentage(parseFloat(stats?.averageCapacityUtilization?.toFixed(1) || "0"), "rep_caputil")}%
             </div>
             <p className="text-xs text-muted-foreground">
               Utilização média dos eventos
