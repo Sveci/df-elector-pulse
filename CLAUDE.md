@@ -121,29 +121,47 @@ Toda demanda é dividida em sprints. Cada sprint contém:
 **Status:** ✅ Concluída
 **Data:** 2026-03-26
 
-**Achados principais:**
-1. 🔴 Real-Time AUSENTE — nenhum Supabase channel/subscription
-2. 🔴 Todas queries usavam `(supabase as any)` — zero type-safety
-3. 🟡 `useRunMonitor` não invalidava cache após monitoramento
-4. 🟡 Exclusão de alerta sem confirmação (hard delete)
-5. 🟡 Sem paginação nas queries
+**Arquivos auditados (código-fonte completo lido):**
+- src/pages/Proposicoes.tsx
+- src/hooks/proposicoes/useProposicoesMonitoradas.ts
+- src/hooks/proposicoes/useAlertasConfig.ts
+- src/hooks/proposicoes/useProposicaoDetalhe.ts
+- src/components/proposicoes/ProposicaoDrawer.tsx
+- src/components/proposicoes/TramitacoesTimeline.tsx
+- supabase/migrations/20260325200000_proposicoes_module.sql
+
+**Achados da auditoria:**
+1. 🔴 Real-Time AUSENTE — nenhum Supabase channel/subscription existia
+2. 🔴 useRunMonitor não invalidava cache — botão "Verificar agora" rodava mas tela não atualizava
+3. 🟡 Exclusão de alerta sem confirmação (hard delete direto)
+4. 🟡 Sem staleTime nos hooks (refetch desnecessário em cada focus)
+5. 🟡 Input de busca oculto com menos de 4 proposições
+
+**O que já funcionava bem:**
+- Schema com 4 tabelas bem estruturadas + 10 indexes + RLS completo
+- CRUD completo de proposições e alertas
+- Integração com API da Câmara e Senado (busca + detalhes + tramitações live)
+- Timeline de tramitações com classificação por criticidade
+- Cron job via pg_cron a cada 6h
+- Alertas WhatsApp (Z-API + Meta Cloud) com log de notificações
+- Loading/empty/error states em todas as tabs
 
 **Correções aplicadas:**
-- Implementado Supabase Realtime para `proposicoes_monitoradas` e `proposicoes_tramitacoes`
-- Hook `useProposicoesRealtime` com cleanup e filtro por tenant_id
-- Migration para REPLICA IDENTITY FULL e publication
-- `useRunMonitor` agora invalida caches de proposições e tramitações
-- AlertDialog de confirmação antes de excluir alertas
-- staleTime configurado nos hooks principais
-- Input de busca visível com 1+ proposição
+- ✅ Supabase Realtime habilitado (INSERT/UPDATE/DELETE) em proposicoes_monitoradas e proposicoes_tramitacoes
+- ✅ Hook useProposicoesRealtime criado com cleanup e filtro por tenant_id
+- ✅ REPLICA IDENTITY FULL para DELETE events
+- ✅ useRunMonitor agora invalida caches de proposições e tramitações
+- ✅ AlertDialog de confirmação antes de excluir alertas
+- ✅ staleTime configurado (2min proposições, 5min alertas)
+- ✅ Input de busca visível com 1+ proposição
 
-**Real-Time Status:** ✅ Implementado — INSERT/UPDATE/DELETE em proposicoes_monitoradas + tramitacoes
-
-**Tabelas do módulo:**
-- `proposicoes_monitoradas` — proposições com status e metadados
-- `proposicoes_tramitacoes` — cache de tramitações detectadas
-- `proposicoes_alertas_config` — config de alertas WhatsApp
-- `proposicoes_notificacoes_log` — log de notificações enviadas
+**Módulo Proposições — Tabelas:**
+| Tabela | Descrição |
+|---|---|
+| proposicoes_monitoradas | PLs, PECs e proposições acompanhadas |
+| proposicoes_tramitacoes | Cache de tramitações detectadas |
+| proposicoes_alertas_config | Configuração de alertas WhatsApp |
+| proposicoes_notificacoes_log | Log de notificações enviadas |
 
 ---
 
