@@ -181,7 +181,17 @@ function buildMetaTemplatePayload(
   tramitacao: any
 ): { name: string; language: { code: string }; components: any[] } {
   const sigla = `${proposicao.sigla_tipo} ${proposicao.numero}/${proposicao.ano}`;
-  const situacao = `${tramitacao.descricaoSituacao || tramitacao.descricao_situacao || "Nova movimentação"} - ${tramitacao.siglaOrgao || tramitacao.sigla_orgao || ""}`.trim().replace(/ -\s*$/, "");
+
+  // Ementa resumida (até 200 chars para caber no template)
+  const ementa = proposicao.ementa
+    ? proposicao.ementa.length > 200
+      ? proposicao.ementa.substring(0, 197) + "..."
+      : proposicao.ementa
+    : "Sem descrição disponível";
+
+  // Situação + órgão + data combinados
+  const orgao = tramitacao.siglaOrgao || tramitacao.sigla_orgao || "";
+  const descSituacao = tramitacao.descricaoSituacao || tramitacao.descricao_situacao || "Nova movimentação";
   const dataHora = tramitacao.dataHora || tramitacao.data_hora || "";
   const dataBR = dataHora
     ? new Date(dataHora).toLocaleString("pt-BR", {
@@ -191,6 +201,8 @@ function buildMetaTemplatePayload(
         year: "numeric",
       })
     : new Date().toLocaleDateString("pt-BR");
+  const situacao = `${descSituacao}${orgao ? " - " + orgao : ""} em ${dataBR}`;
+
   const despacho = (
     tramitacao.despacho ||
     tramitacao.TextoMovimentacao ||
@@ -206,10 +218,10 @@ function buildMetaTemplatePayload(
       {
         type: "body",
         parameters: [
-          { type: "text", text: sigla },
-          { type: "text", text: situacao },
-          { type: "text", text: dataBR },
-          { type: "text", text: despacho },
+          { type: "text", text: sigla },       // {{1}} - Identificação
+          { type: "text", text: ementa },      // {{2}} - Resumo/Ementa
+          { type: "text", text: situacao },     // {{3}} - Situação + órgão + data
+          { type: "text", text: despacho },     // {{4}} - Despacho
         ],
       },
     ],
