@@ -845,7 +845,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
   enviar_pec47: async (supabase: any, leader: any, session: any, tenantId: string, phone: string, provider: string, _intSettings: any) => {
     const PEC47_DOC_URL = "https://gzqzfqmmudxcnwkjjgux.supabase.co/storage/v1/object/public/whatsapp-media/documentos/PEC47_AMAPA_ESPECIFICO_V5_FINAL.pptx";
     const PEC47_FILENAME = "PEC47_AMAPA_ESPECIFICO_V5_FINAL.pptx";
-    const PEC47_CAPTION = "📄 Aqui está o material sobre a PEC 47. Boa leitura! 📖";
+    const PEC47_CAPTION = "📄 Aqui está o material sobre a PEC 47. Boa leitura! 📖\n\n🔗 Para mais informações, acesse:\nhttps://pec47.acaciofavacho.com.br";
     const nome = leader?.nome_completo?.split(" ")[0] || "Olá";
 
     // Get integration settings to send document
