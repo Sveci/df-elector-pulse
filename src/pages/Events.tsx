@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useTenantId } from "@/hooks/useTenantId";
 import {
   Calendar,
   Plus,
@@ -1241,16 +1242,15 @@ function EventDetailsDialog({ eventId, onClose }: { eventId: string; onClose: ()
   const updateCheckIn = useUpdateCheckIn();
   const { data: events = [] } = useEvents();
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const event = events.find(e => e.id === eventId);
 
   const handleResendQRCodes = async () => {
     if (!event) return;
     setIsResendingQR(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const tenantId = (session?.session?.user?.user_metadata as any)?.tenant_id;
       if (!tenantId) {
-        toast({ title: "Erro", description: "Tenant não identificado", variant: "destructive" });
+        toast({ title: "Erro", description: "Tenant não identificado. Selecione uma organização e tente novamente.", variant: "destructive" });
         return;
       }
       const { data, error } = await supabase.functions.invoke("resend-event-qrcodes", {
