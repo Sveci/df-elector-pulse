@@ -1,0 +1,1 @@
+UPDATE public.whatsapp_chatbot_keywords SET tenant_id = '27ed4243-35e5-45fc-bcfc-1d1f969b7377' WHERE dynamic_function = 'enviar_pec47';
