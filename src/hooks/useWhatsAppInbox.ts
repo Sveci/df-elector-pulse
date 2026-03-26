@@ -27,6 +27,15 @@ export interface InboxMessage {
   metadata: any;
 }
 
+function toPhoneDigits(phone: string): string {
+  return (phone || "").replace(/\D/g, "");
+}
+
+function toPhoneKey(phone: string): string {
+  const digits = toPhoneDigits(phone);
+  return digits.length >= 11 ? digits.slice(-11) : digits;
+}
+
 export function useInboxConversations() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
@@ -61,7 +70,6 @@ export function useInboxConversations() {
           });
         }
         const conv = phoneMap.get(msg.phone)!;
-        // If we still don't have a name, try from this message
         if (!conv.contactName && msg.office_contacts?.nome) {
           conv.contactName = msg.office_contacts.nome;
         }
@@ -70,20 +78,33 @@ export function useInboxConversations() {
         }
       }
 
-      // For conversations without a contactName, look up by phone in office_contacts
+      // Fallback: resolve contact names by normalized phone key (last 11 digits)
       const unnamed = Array.from(phoneMap.entries()).filter(([, c]) => !c.contactName);
       if (unnamed.length > 0) {
-        const phones = unnamed.map(([p]) => p);
-        let cq = supabase
+        let cq = (supabase as any)
           .from("office_contacts")
           .select("telefone_norm, nome")
-          .in("telefone_norm", phones);
+          .range(0, 4999);
+
         if (tenantId) cq = cq.eq("tenant_id", tenantId);
-        const { data: contacts } = await cq;
-        if (contacts) {
-          for (const c of contacts) {
-            const conv = phoneMap.get(c.telefone_norm);
-            if (conv && c.nome) conv.contactName = c.nome;
+
+        const { data: contacts, error: contactsError } = await cq;
+        if (!contactsError && contacts) {
+          const namesByPhoneKey = new Map<string, string>();
+
+          for (const contact of contacts) {
+            const key = toPhoneKey(contact.telefone_norm || "");
+            if (key && contact.nome && !namesByPhoneKey.has(key)) {
+              namesByPhoneKey.set(key, contact.nome);
+            }
+          }
+
+          for (const [phone, conv] of unnamed) {
+            const key = toPhoneKey(phone);
+            const resolvedName = key ? namesByPhoneKey.get(key) : null;
+            if (resolvedName) {
+              conv.contactName = resolvedName;
+            }
           }
         }
       }
