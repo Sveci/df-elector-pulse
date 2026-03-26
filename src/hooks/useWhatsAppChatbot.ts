@@ -349,5 +349,6 @@ export const AVAILABLE_DYNAMIC_FUNCTIONS = [
   { value: "pendentes", label: "Pendentes", description: "Lista subordinados pendentes de verificação" },
   { value: "cadastro_evento", label: "Cadastro em Evento", description: "Inscrição em evento com envio de QR Code para check-in" },
   { value: "ajuda", label: "Ajuda", description: "Lista de comandos disponíveis" },
+  { value: "enviar_pec47", label: "Enviar PEC 47", description: "Envia o documento PPTX da PEC 47 via WhatsApp" },
 ];
 

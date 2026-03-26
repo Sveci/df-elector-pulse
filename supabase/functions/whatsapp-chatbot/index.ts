@@ -841,6 +841,61 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
     return response;
   },
 
+  // Enviar documento PEC 47 via WhatsApp
+  enviar_pec47: async (supabase: any, leader: any, session: any, tenantId: string, phone: string, provider: string, _intSettings: any) => {
+    const PEC47_DOC_URL = "https://gzqzfqmmudxcnwkjjgux.supabase.co/storage/v1/object/public/whatsapp-media/documentos/PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
+    const PEC47_FILENAME = "PEC47_PMs_V4_MP1326_CAMARA_HOJE.pptx";
+    const PEC47_CAPTION = "📄 Aqui está o material sobre a PEC 47. Boa leitura! 📖";
+    const nome = leader?.nome_completo?.split(" ")[0] || "Olá";
+
+    // Get integration settings to send document
+    let intQuery = supabase
+      .from("integrations_settings")
+      .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+    if (tenantId) intQuery = intQuery.eq("tenant_id", tenantId);
+    const { data: intSettings } = await intQuery.limit(1).single();
+
+    const normalizedPhone = phone.replace(/[^0-9]/g, "");
+    const useMetaCloud = provider === 'meta_cloud' ||
+      (provider !== 'zapi' && intSettings?.whatsapp_provider_active === 'meta_cloud');
+
+    let docSent = false;
+
+    if (useMetaCloud && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
+      const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+      if (metaToken) {
+        docSent = await sendDocumentMetaCloud(
+          intSettings.meta_cloud_phone_number_id,
+          intSettings.meta_cloud_api_version || "v20.0",
+          metaToken,
+          normalizedPhone,
+          PEC47_DOC_URL,
+          PEC47_CAPTION,
+          PEC47_FILENAME,
+          supabase,
+          tenantId
+        );
+      }
+    }
+
+    if (!docSent && intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
+      docSent = await sendDocumentZapi(
+        intSettings.zapi_instance_id,
+        intSettings.zapi_token,
+        intSettings.zapi_client_token,
+        normalizedPhone,
+        PEC47_DOC_URL,
+        PEC47_CAPTION,
+        PEC47_FILENAME
+      );
+    }
+
+    if (docSent) {
+      return `${nome}! 👋\n\n${PEC47_CAPTION}\n\nSe tiver dúvidas sobre a PEC 47, pode me perguntar! 😊`;
+    }
+    return `${nome}, não foi possível enviar o documento no momento. Tente novamente mais tarde. 😔`;
+  },
+
   // Cadastro em evento via WhatsApp — starts the multi-step flow
   cadastro_evento: async (supabase, leader, session, tenantId, phone, provider, intSettings) => {
     if (!tenantId || !session) return "Erro ao iniciar inscrição. Tente novamente.";
@@ -1602,7 +1657,7 @@ Deno.serve(async (req) => {
 
       } else if (matchedKeyword.response_type === "dynamic" && matchedKeyword.dynamic_function) {
         // Dynamic functions that work for everyone (leaders + guests)
-        const guestAllowedFunctions = ["cadastro_evento", "ajuda"];
+        const guestAllowedFunctions = ["cadastro_evento", "ajuda", "enviar_pec47"];
         const fnName = matchedKeyword.dynamic_function;
         const fn = dynamicFunctions[fnName];
 
@@ -1989,6 +2044,60 @@ function splitLongMessage(message: string, maxLen = 1500): string[] {
   }
   if (remaining.length > 0) parts.push(remaining);
   return parts;
+}
+
+// =====================================================
+// SEND DOCUMENT via Meta Cloud API
+// =====================================================
+async function sendDocumentMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, documentUrl: string, caption: string, filename: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
+  let cleanPhone = phone.replace(/[^0-9]/g, "");
+  if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+
+  const sent = await withRetry(async () => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "document",
+        document: { link: documentUrl, caption, filename },
+      }),
+    });
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Meta Cloud Document HTTP ${response.status}: ${errorText}`); }
+    const result = await response.json();
+    const wamid = result.messages?.[0]?.id;
+    console.log("[whatsapp-chatbot] Document sent via Meta Cloud API:", wamid);
+    if (supabase && wamid) {
+      try {
+        const insertData: Record<string, any> = { phone: cleanPhone, message: `[Documento: ${filename}] ${caption}`, direction: "outgoing", status: "sent", provider: "meta_cloud", metadata: { wamid, document_url: documentUrl } };
+        if (tenantId) insertData.tenant_id = tenantId;
+        await supabase.from("whatsapp_messages").insert(insertData);
+      } catch (e) { console.warn("[whatsapp-chatbot] Failed to log Meta document:", e); }
+    }
+    return true;
+  }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Meta Cloud document send').catch(err => { console.error("[whatsapp-chatbot] Meta Cloud document send failed:", err); return false; });
+
+  return sent;
+}
+
+// Send document via Z-API
+async function sendDocumentZapi(instanceId: string, token: string, clientToken: string | null, phone: string, documentUrl: string, caption: string, filename: string): Promise<boolean> {
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  const zapiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-document/${encodeURIComponent(documentUrl)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientToken) headers["Client-Token"] = clientToken;
+
+  const sent = await withRetry(async () => {
+    const response = await fetch(zapiUrl, { method: "POST", headers, body: JSON.stringify({ phone: cleanPhone, document: documentUrl, fileName: filename, caption }) });
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Z-API Document HTTP ${response.status}: ${errorText}`); }
+    return true;
+  }, SEND_RETRY_ATTEMPTS, SEND_RETRY_BASE_DELAY_MS, 'Z-API document send').catch(err => { console.error("[whatsapp-chatbot] Z-API document send failed:", err); return false; });
+
+  console.log("[whatsapp-chatbot] Document sent successfully via Z-API");
+  return sent;
 }
 
 async function sendWhatsAppMessageMetaCloud(phoneNumberId: string, apiVersion: string, accessToken: string, phone: string, message: string, supabase?: any, tenantId?: string | null): Promise<boolean> {
