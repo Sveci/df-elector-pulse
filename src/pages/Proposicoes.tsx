@@ -365,7 +365,7 @@ export default function Proposicoes() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
