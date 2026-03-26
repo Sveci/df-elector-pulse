@@ -931,7 +931,7 @@ async function handleRegistrationStep(
     }
 
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_name: userMessage, registration_state: "collecting_email" }).eq("id", session.id);
-    const msg = `Obrigado, *${userMessage.split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*? (Se preferir não informar, digite *PULAR*)`;
+    const msg = `Obrigado, *${userMessage.split(" ")[0]}*! 😊\n\nAgora, qual seu *e-mail*?`;
     await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
     await logRegistration(supabase, phone, userMessage, msg, "registration_name_collected", tenantId, startTime);
     return { success: true, responseType: "registration_name_collected" };
@@ -939,20 +939,14 @@ async function handleRegistrationStep(
 
   // State: collecting_email
   if (state === "collecting_email") {
-    let email: string | null = null;
-    const skipWords = ["PULAR", "NAO", "NAO TENHO", "NADA", "PULA", "SEM"];
-    const isSkip = skipWords.some(w => normalizedInput === w || normalizedInput.startsWith(w + " "));
-
-    if (!isSkip) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userMessage.trim())) {
-        const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um e-mail válido ou *PULAR* para continuar sem:";
-        await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
-        await logRegistration(supabase, phone, userMessage, msg, "registration_retry_email", tenantId, startTime);
-        return { success: true, responseType: "registration_retry_email" };
-      }
-      email = userMessage.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userMessage.trim())) {
+      const msg = "Hmm, esse e-mail não parece válido. 🤔\n\nPor favor, digite um *e-mail válido* (ex: nome@email.com):";
+      await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
+      await logRegistration(supabase, phone, userMessage, msg, "registration_retry_email", tenantId, startTime);
+      return { success: true, responseType: "registration_retry_email" };
     }
+    const email = userMessage.trim().toLowerCase();
 
     await supabase.from("whatsapp_chatbot_sessions").update({ collected_email: email, registration_state: "collecting_city" }).eq("id", session.id);
 
@@ -964,7 +958,7 @@ async function handleRegistrationStep(
       .order("nome")
       .limit(30);
 
-    let msg = `${email ? "E-mail registrado!" : "Tudo bem, sem problemas!"} 👍\n\nAgora, em qual *cidade* você mora?`;
+    let msg = `E-mail registrado! 👍\n\nAgora, em qual *cidade* você mora?`;
     if (cities && cities.length > 0) {
       msg += `\n\nAlgumas opções:\n${cities.map((c: any) => `• ${c.nome}`).join("\n")}`;
       msg += `\n\nDigite o nome da sua cidade:`;
