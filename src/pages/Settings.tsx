@@ -18,7 +18,8 @@ import {
   MessageSquareText,
   FileBarChart,
   FolderOpen,
-  Copy
+  Copy,
+  Brain
 } from "lucide-react";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";

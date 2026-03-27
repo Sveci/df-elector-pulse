@@ -117,6 +117,7 @@ const Gamification = lazy(() => import("./pages/settings/Gamification"));
 const WhatsAppChatbot = lazy(() => import("./pages/settings/WhatsAppChatbot"));
 const Reports = lazy(() => import("./pages/settings/Reports"));
 const RegionMaterials = lazy(() => import("./pages/settings/RegionMaterials"));
+const BrainDashboard = lazy(() => import("./pages/settings/BrainDashboard"));
 const DuplicateContacts = lazy(() => import("./pages/settings/DuplicateContacts"));
 
 // Admin pages
@@ -413,6 +414,7 @@ const App = () => (
                         <Route path="/settings/whatsapp-chatbot" element={<RP roles={[...ADMIN_ROLES]}><WhatsAppChatbot /></RP>} />
                         <Route path="/settings/whatsapp-flow-builder" element={<RP roles={[...ADMIN_ROLES]}><WhatsAppFlowBuilder /></RP>} />
                         <Route path="/settings/region-materials" element={<RP roles={[...ADMIN_ROLES]}><RegionMaterials /></RP>} />
+                        <Route path="/settings/brain" element={<RP roles={[...ADMIN_ROLES]}><BrainDashboard /></RP>} />
                         <Route path="/settings/reports" element={<RP roles={[...ALL_ROLES]}><Reports /></RP>} />
                         <Route path="/settings/duplicates" element={<RP roles={[...ADMIN_ROLES]}><DuplicateContacts /></RP>} />
                         <Route
