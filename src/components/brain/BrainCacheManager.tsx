@@ -83,7 +83,26 @@ export function BrainCacheManager() {
     setShowAddDialog(false);
   };
 
-  const stats = useMemo(() => {
+  const handleStartEdit = (entry: BrainCacheEntry) => {
+    setEditingEntry(entry);
+    setFormPergunta(entry.pergunta_original);
+    setFormResposta(entry.resposta);
+    setFormCategoria(entry.categoria || "geral");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEntry || !formPergunta.trim() || !formResposta.trim()) return;
+    await updateEntry.mutateAsync({
+      id: editingEntry.id,
+      pergunta: formPergunta.trim(),
+      resposta: formResposta.trim(),
+      categoria: formCategoria,
+    });
+    setEditingEntry(null);
+    setFormPergunta("");
+    setFormResposta("");
+    setFormCategoria("geral");
+  };
     if (!entries) return { total: 0, ativos: 0, manuais: 0, ia: 0 };
     return {
       total: entries.length,
