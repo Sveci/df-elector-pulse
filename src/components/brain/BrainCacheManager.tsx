@@ -103,6 +103,8 @@ export function BrainCacheManager() {
     setFormResposta("");
     setFormCategoria("geral");
   };
+
+  const stats = useMemo(() => {
     if (!entries) return { total: 0, ativos: 0, manuais: 0, ia: 0 };
     return {
       total: entries.length,
