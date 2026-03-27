@@ -1390,8 +1390,9 @@ Deno.serve(async (req) => {
             // Brain needs AI fallback
             const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
             if (lovableApiKey) {
+              const smartEscapeContext = (brainData.systemInstruction ? brainData.systemInstruction + "\n\n" : "") + (brainData.brainContext || "");
               const aiResponse = await generateAIResponse(
-                lovableApiKey, message, actor, brainData.brainContext || "",
+                lovableApiKey, message, actor, smartEscapeContext,
                 "", supabase, tenantId, session?.conversation_history
               );
               const resposta = aiResponse + flowPendingNote;
@@ -1878,6 +1879,10 @@ Deno.serve(async (req) => {
                 brainIntencao = brainData.brainIntencao || null;
                 brainEmbedding = brainData.embedding || null;
                 brainSource = brainData.source || "ai";
+                // Prepend systemInstruction from brain-resolve to brain context
+                if (brainData.systemInstruction) {
+                  brainContext = brainData.systemInstruction + "\n\n" + brainContext;
+                }
                 console.log(`[whatsapp-chatbot] [CÉREBRO] Falling back to AI with context (source=${brainSource})`);
               }
             } else {
