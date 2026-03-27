@@ -1878,6 +1878,10 @@ Deno.serve(async (req) => {
                 brainIntencao = brainData.brainIntencao || null;
                 brainEmbedding = brainData.embedding || null;
                 brainSource = brainData.source || "ai";
+                // Prepend systemInstruction from brain-resolve to brain context
+                if (brainData.systemInstruction) {
+                  brainContext = brainData.systemInstruction + "\n\n" + brainContext;
+                }
                 console.log(`[whatsapp-chatbot] [CÉREBRO] Falling back to AI with context (source=${brainSource})`);
               }
             } else {

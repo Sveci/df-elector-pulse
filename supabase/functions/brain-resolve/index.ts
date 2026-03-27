@@ -376,17 +376,21 @@ Deno.serve(async (req) => {
     // ─── PASSO 4: Buscar no KB ───────────────────────────────
     const kbResult = await buscarKB(supabase, tenantId, embedding);
 
+    // ─── PASSO 4.5: Enriquecer contexto com dados reais do banco ──
+    const dadosReais = await enriquecerContexto(supabase, tenantId, intencao, message);
+
     // ─── PASSO 5: Montar contexto para a IA ──────────────────
     const contextoPartes: string[] = [];
     if (cacheResult.contexto) contextoPartes.push(cacheResult.contexto);
     if (kbResult.contexto) contextoPartes.push(kbResult.contexto);
+    if (dadosReais) contextoPartes.push(dadosReais);
 
     const contextoStr = contextoPartes.length > 0
       ? `\n\nCONTEXTO DO CÉREBRO IA:\n${contextoPartes.join("\n\n")}`
       : "";
 
     // Se não tem NENHUM contexto e a intenção é vaga → clarificação
-    if (!kbResult.found && cacheResult.similaridade < 0.50 && !intencao && !skipAI) {
+    if (!kbResult.found && cacheResult.similaridade < 0.50 && !intencao && !skipAI && !dadosReais) {
       const clarificacao = gerarClarificacao(null);
       console.log(`[brain-resolve] CLARIFICAÇÃO (sem contexto)`);
       await registrarMetrica(supabase, tenantId, "clarificacao");
@@ -403,20 +407,39 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Se tem intenção mas NÃO tem dados reais nem KB → clarificação contextualizada
+    if (intencao && !kbResult.found && cacheResult.similaridade < 0.50 && !dadosReais && !skipAI) {
+      const clarificacao = gerarClarificacao(intencao);
+      console.log(`[brain-resolve] CLARIFICAÇÃO com intenção: ${intencao}`);
+      await registrarMetrica(supabase, tenantId, "clarificacao");
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          response: clarificacao,
+          source: "clarificacao",
+          intencao: intencao,
+          fallbackToAI: false,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ─── PASSO 6: Retornar contexto para que o caller use a IA ──
-    // O brain-resolve NÃO chama a IA diretamente — ele retorna o contexto
-    // enriquecido para que o whatsapp-chatbot use no generateAIResponse
-    console.log(`[brain-resolve] Returning context for AI (${contextoPartes.length} parts, kb=${kbResult.found})`);
+    const systemInstruction = "REGRA ABSOLUTA: Você NUNCA deve dizer que não sabe, não encontrou ou não tem informações. Se os dados estão no CONTEXTO abaixo, USE-OS para responder. Se não tiver dados suficientes, faça perguntas para entender melhor o que o usuário precisa. Sempre ofereça alternativas ou opções relacionadas. Seja proativo e útil. NUNCA diga 'não encontrei', 'não tenho informações' ou 'desculpe'.";
+
+    console.log(`[brain-resolve] Returning context for AI (${contextoPartes.length} parts, kb=${kbResult.found}, dados_reais=${!!dadosReais})`);
 
     return new Response(
       JSON.stringify({
         success: true,
         response: null,
-        source: kbResult.found ? "kb_context" : "partial_context",
+        source: kbResult.found ? "kb_context" : (dadosReais ? "enriched_context" : "partial_context"),
         fallbackToAI: true,
         brainContext: contextoStr,
         brainIntencao: intencao,
-        embedding: embedding, // Return for caching after AI responds
+        embedding: embedding,
+        systemInstruction: systemInstruction,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
