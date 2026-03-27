@@ -198,6 +198,121 @@ async function registrarMetrica(supabase: any, tenantId: string, camada: string)
   }
 }
 
+// ─── ENRIQUECER CONTEXTO COM DADOS REAIS DO TENANT ────────────
+async function enriquecerContexto(
+  supabase: any,
+  tenantId: string,
+  intencao: string | null,
+  mensagem: string
+): Promise<string | null> {
+  if (!intencao) return null;
+
+  try {
+    switch (intencao) {
+      case "eventos": {
+        const { data: eventos } = await supabase
+          .from("events")
+          .select("id, name, date, time, location, region, address, description, status")
+          .eq("tenant_id", tenantId)
+          .in("status", ["published", "active", "upcoming"])
+          .gte("date", new Date().toISOString().split("T")[0])
+          .order("date", { ascending: true })
+          .limit(5);
+
+        if (eventos && eventos.length > 0) {
+          const lista = eventos.map((e: any) => {
+            const data = e.date ? new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR") : "";
+            return `- ${e.name} | ${data}${e.time ? " às " + e.time : ""} | ${e.location || ""}${e.address ? " — " + e.address : ""} | ${e.region || ""}`;
+          }).join("\n");
+          return `EVENTOS AGENDADOS (dados reais do banco de dados):\n${lista}\n\nIMPORTANTE: Esses dados são REAIS e ATUALIZADOS. Use-os para responder sobre eventos. Liste os eventos disponíveis quando perguntarem.`;
+        }
+        return "Não há eventos futuros cadastrados no momento. Informe ao usuário que o calendário será atualizado em breve e pergunte se pode ajudar com outra coisa.";
+      }
+
+      case "liderancas": {
+        const { data: lideres, count } = await supabase
+          .from("lideres")
+          .select("id, nome_completo, localidade, is_coordinator, status", { count: "exact" })
+          .eq("tenant_id", tenantId)
+          .eq("is_active", true)
+          .limit(5);
+
+        if (count && count > 0) {
+          return `LIDERANÇAS: ${count} líderes cadastrados ativos. Exemplos: ${(lideres || []).map((l: any) => `${l.nome_completo} (${l.localidade || "sem localidade"})`).join(", ")}. Pergunte ao usuário de qual região ou líder específico precisa informação.`;
+        }
+        return null;
+      }
+
+      case "proposicoes": {
+        const { data: props } = await supabase
+          .from("proposicoes_monitoradas")
+          .select("sigla_tipo, numero, ano, ementa, descricao_situacao")
+          .eq("tenant_id", tenantId)
+          .eq("ativo", true)
+          .order("updated_at", { ascending: false })
+          .limit(5);
+
+        if (props && props.length > 0) {
+          const lista = props.map((p: any) =>
+            `- ${p.sigla_tipo} ${p.numero}/${p.ano}: ${(p.ementa || "").substring(0, 100)} [${p.descricao_situacao || "Em tramitação"}]`
+          ).join("\n");
+          return `PROPOSIÇÕES MONITORADAS (dados reais):\n${lista}\n\nUse esses dados para responder. São reais e atualizados.`;
+        }
+        return null;
+      }
+
+      case "contatos": {
+        const { count } = await supabase
+          .from("office_contacts")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantId);
+
+        if (count && count > 0) {
+          return `O gabinete possui ${count} contatos cadastrados. Pergunte ao usuário qual contato específico ou de qual região precisa informação.`;
+        }
+        return null;
+      }
+
+      case "campanhas": {
+        const { data: campanhas } = await supabase
+          .from("campaigns")
+          .select("id, nome, status")
+          .eq("tenant_id", tenantId)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (campanhas && campanhas.length > 0) {
+          const lista = campanhas.map((c: any) => `- ${c.nome} (${c.status})`).join("\n");
+          return `CAMPANHAS RECENTES:\n${lista}`;
+        }
+        return null;
+      }
+
+      case "materiais": {
+        const { data: materiais } = await supabase
+          .from("campaign_materials")
+          .select("id, nome, tipo, estoque_atual")
+          .eq("tenant_id", tenantId)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (materiais && materiais.length > 0) {
+          const lista = materiais.map((m: any) => `- ${m.nome} (${m.tipo}) — estoque: ${m.estoque_atual}`).join("\n");
+          return `MATERIAIS DISPONÍVEIS:\n${lista}`;
+        }
+        return null;
+      }
+
+      default:
+        return null;
+    }
+  } catch (err) {
+    console.error(`[brain-resolve] Error enriching context for ${intencao}:`, err);
+    return null;
+  }
+}
+
 // ─── HANDLER PRINCIPAL ──────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
