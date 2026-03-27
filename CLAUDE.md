@@ -1,7 +1,7 @@
 # CLAUDE.md — df-elector-pulse
 
 > Arquivo de referência para o Claude Code. Atualizado a cada sprint/mudança.
-> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 02 — Concluída
+> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 03 — Concluída
 
 ---
 
@@ -116,6 +116,28 @@ Toda demanda é dividida em sprints. Cada sprint contém:
 ---
 
 ## 📊 Histórico de Sprints
+
+### Sprint 03 — Filtros, Auto-Discovery e Verificação Real-Time/WhatsApp
+**Status:** ✅ Concluída
+**Data:** 2026-03-26
+
+**Novos recursos:**
+1. Filtros na tab principal: Situação (chips, default=Tramitando), Órgão (select dinâmico), Data (período)
+2. Auto-discovery de proposições via edge function `auto-discover-proposicoes`
+3. Cron de auto-discovery a cada 12 horas
+4. Botão "Sincronizar agora" no cabeçalho
+5. Indicador visual de auto-monitoramento ativo
+
+**Verificação WhatsApp (CONFIRMADO):**
+- Edge function `monitor-proposicoes` detecta mudanças de situação → classifica → envia WhatsApp
+- Fluxo: API Câmara/Senado → nova tramitação → CODIGOS_CRITICOS check → `send-whatsapp` → log
+- Providers: Z-API e Meta Cloud com template `alerta_legislativo`
+- Cron existente: a cada 6h para monitoramento
+- Cron novo: a cada 12h para auto-discovery
+
+**Filtros são frontend-only — NÃO afetam alertas WhatsApp.**
+
+---
 
 ### Sprint 02 — Auditoria Completa: Tela Proposições
 **Status:** ✅ Concluída
