@@ -1,7 +1,7 @@
 # CLAUDE.md — df-elector-pulse
 
 > Arquivo de referência para o Claude Code. Atualizado a cada sprint/mudança.
-> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 03 — Concluída
+> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 04 — Concluída
 
 ---
 
@@ -116,6 +116,29 @@ Toda demanda é dividida em sprints. Cada sprint contém:
 ---
 
 ## 📊 Histórico de Sprints
+
+### Sprint 04 — Cérebro IA: Fundação
+**Status:** ✅ Concluída
+**Data:** 2026-03-26
+
+**O que foi implementado:**
+
+1. **4 tabelas novas:** brain_cache (cache semântico com pgvector HNSW), brain_sessions (contexto multi-turn), brain_metrics (métricas por camada), brain_feedback
+2. **Colunas novas em kb_chunks:** embedding (vector 1536), categoria, tags, resumo
+3. **4 RPCs:** brain_search_cache, brain_search_kb, brain_cache_hit, brain_record_metric
+4. **Edge function brain-embed:** Gera embeddings via Lovable AI Gateway
+5. **Edge function brain-resolve:** Orquestrador da cascata (Flow → Cache → KB → IA → Aprendizado)
+6. **Integração com WhatsApp:** webhook agora roteia por brain-resolve antes da IA
+7. **Dashboard de métricas:** Economia de tokens, resoluções por camada
+
+**Arquitetura Cascata:**
+```
+Pergunta → Flow Match → Cache Semântico → KB Search → IA Generativa → Aprendizado
+   ↓           ↓              ↓               ↓              ↓              ↓
+ embed    exact match    similarity >0.85   similarity >0.7   LLM call   cache resposta
+```
+
+---
 
 ### Sprint 03 — Filtros, Auto-Discovery e Verificação Real-Time/WhatsApp
 **Status:** ✅ Concluída
