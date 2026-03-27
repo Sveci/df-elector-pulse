@@ -44,8 +44,10 @@ export function BrainCacheManager() {
   const addEntry = useAddBrainCacheEntry();
   const toggleEntry = useToggleBrainCacheEntry();
   const deleteEntry = useDeleteBrainCacheEntry();
+  const updateEntry = useUpdateBrainCacheEntry();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<BrainCacheEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("todas");
   const [filterOrigem, setFilterOrigem] = useState("todas");
