@@ -1396,7 +1396,7 @@ Deno.serve(async (req) => {
                 const smartEscapeContext = [brainSystemRule, brainCtx].filter(Boolean).join("\n\n");
               const aiResponse = await generateAIResponse(
                 lovableApiKey, message, actor, smartEscapeContext,
-                "", supabase, tenantId, session?.conversation_history
+                brainSystemRule, supabase, tenantId, session?.conversation_history
               );
               const resposta = aiResponse + flowPendingNote;
               await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId);
@@ -2595,7 +2595,7 @@ function kbLacksSpecificAnswer(userMessage: string, rankedChunks: RankedKBChunk[
   return true;
 }
 
-async function searchPerplexityFallback(question: string, supabase?: any, tenantId?: string): Promise<string | null> {
+async function searchPerplexityFallback(question: string, supabase?: any, tenantId?: string, keywordContext?: string): Promise<string | null> {
   const perplexityKey = Deno.env.get("PERPLEXITY_API_KEY");
   if (!perplexityKey) return null;
   let orgName = "", orgCargo = "";
@@ -2605,6 +2605,9 @@ async function searchPerplexityFallback(question: string, supabase?: any, tenant
   const scopeEntity = orgName ? `${orgCargo} ${orgName}`.trim() : "";
   if (!scopeEntity) { console.log("[whatsapp-chatbot] Perplexity skipped: no org context"); return null; }
   try {
+    const brainContextSection = (keywordContext || "").trim()
+      ? `\n\nDADOS DO SISTEMA (BANCO DE DADOS - USE PRIORITARIAMENTE):\n${(keywordContext || "").trim()}\n\nREGRA CRÍTICA: Se os dados acima contêm a resposta, use-os e NÃO diga que não encontrou informações.`
+      : "";
     console.log("[whatsapp-chatbot] Trying Perplexity fallback (scoped to: " + scopeEntity + ")...");
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -2620,6 +2623,8 @@ REGRA OBRIGATÓRIA DE ESCOPO:
 - Se o tema NÃO tiver NENHUMA relação comprovada com ${scopeEntity}, retorne EXATAMENTE: SEM_VINCULO_TENANT
 - Não responda sobre temas genéricos de política ou legislação que não envolvam ${scopeEntity}.
 - Responda de forma clara (máximo 800 chars). Cite fontes. Use emojis moderadamente.
+
+${brainContextSection}
 
 Exemplos de SEM_VINCULO_TENANT:
 - Pergunta sobre PEC de outro deputado sem relação com ${scopeEntity} → SEM_VINCULO_TENANT
@@ -2793,7 +2798,7 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
       if (groundedFallback) { console.log("[whatsapp-chatbot] AI denied known info, returning grounded fallback"); return groundedFallback; }
     }
     if (responseDeniesKnowledge(aiAnswer) || !aiAnswer || kbMissesSpecific) {
-      const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
+      const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId, keywordContext);
       if (perplexityResult) { console.log("[whatsapp-chatbot] Using Perplexity web search fallback"); return perplexityResult; }
     }
     if (!aiAnswer) { const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks); if (groundedFallback) return groundedFallback; }
@@ -2810,7 +2815,7 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
     console.error("[whatsapp-chatbot] AI error:", err);
     const groundedFallback = buildGroundedFallbackResponse(userMessage, kbRankedChunks);
     if (groundedFallback) return groundedFallback;
-    const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId);
+    const perplexityResult = await searchPerplexityFallback(userMessage, supabase, tenantId, keywordContext);
     if (perplexityResult) return perplexityResult;
     return hasLeader ? `Olá ${leaderName}! Digite AJUDA para ver os comandos disponíveis.` : "Olá! Não consegui processar sua mensagem agora.";
   }
