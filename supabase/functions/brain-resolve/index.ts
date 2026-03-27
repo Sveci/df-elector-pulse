@@ -212,17 +212,17 @@ async function enriquecerContexto(
       case "eventos": {
         const { data: eventos } = await supabase
           .from("events")
-          .select("id, name, date, time, location, region, address, description, status")
+          .select("id, name, date, time, location, address, status")
           .eq("tenant_id", tenantId)
-          .in("status", ["published", "active", "upcoming"])
+          .in("status", ["active", "published"])
           .gte("date", new Date().toISOString().split("T")[0])
           .order("date", { ascending: true })
-          .limit(5);
+          .limit(10);
 
         if (eventos && eventos.length > 0) {
           const lista = eventos.map((e: any) => {
             const data = e.date ? new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR") : "";
-            return `- ${e.name} | ${data}${e.time ? " às " + e.time : ""} | ${e.location || ""}${e.address ? " — " + e.address : ""} | ${e.region || ""}`;
+            return `- ${e.name} | ${data}${e.time ? " às " + e.time : ""} | ${e.location || ""}${e.address ? " — " + e.address : ""}`;
           }).join("\n");
           return `EVENTOS AGENDADOS (dados reais do banco de dados):\n${lista}\n\nIMPORTANTE: Esses dados são REAIS e ATUALIZADOS. Use-os para responder sobre eventos. Liste os eventos disponíveis quando perguntarem.`;
         }
