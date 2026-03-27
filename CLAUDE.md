@@ -1,7 +1,7 @@
 # CLAUDE.md — df-elector-pulse
 
 > Arquivo de referência para o Claude Code. Atualizado a cada sprint/mudança.
-> **Última atualização:** 2026-03-26 | **Sprint atual:** Sprint 04 — Concluída
+> **Última atualização:** 2026-03-27 | **Sprint atual:** Sprint 05 — Concluída
 
 ---
 
@@ -116,6 +116,28 @@ Toda demanda é dividida em sprints. Cada sprint contém:
 ---
 
 ## 📊 Histórico de Sprints
+
+### Sprint 05 — Fix Crítico: brain-embed + KB Reindex
+**Status:** ✅ Concluída
+**Data:** 2026-03-27
+
+**Problema encontrado na auditoria:**
+O Lovable implementou brain-embed com hash local (generateLocalEmbedding) em vez de embeddings reais via IA. Isso fazia com que perguntas semanticamente similares mas com texto diferente não fossem detectadas como similares, quebrando todo o cache semântico.
+
+**Correção:**
+- brain-embed agora usa Lovable AI Gateway (text-embedding-3-small, 1536 dims)
+- Cache antigo com embeddings ruins foi limpo
+- Nova edge function brain-kb-reindex para gerar embeddings nos kb_chunks existentes
+
+**Status do Cérebro IA após correção:**
+- ✅ brain-embed — Embeddings reais via IA
+- ✅ brain-resolve — Cascata correta (cache → KB → clarificação → IA)
+- ✅ brain-learn — Aprendizado automático após cada resposta da IA
+- ✅ whatsapp-chatbot — Integração correta (chama brain-resolve primeiro)
+- ✅ brain-kb-reindex — Indexação dos chunks existentes
+- ✅ Migration — 4 tabelas + pgvector + HNSW + RPCs + RLS + cron
+
+---
 
 ### Sprint 04 — Cérebro IA: Fundação
 **Status:** ✅ Concluída
