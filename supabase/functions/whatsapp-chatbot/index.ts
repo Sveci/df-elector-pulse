@@ -1306,6 +1306,129 @@ Deno.serve(async (req) => {
       }
     }
 
+    // =====================================================
+    // SMART ESCAPE: Detect genuine questions during active flows
+    // =====================================================
+    const activeFlowState = session?.registration_state && !session.registration_completed_at
+      ? session.registration_state
+      : session?.event_reg_state || null;
+
+    if (activeFlowState) {
+      // Handle CONTINUAR command — resume flow
+      if (normalizedMsgUpper === "CONTINUAR") {
+        const flowType = (activeFlowState.includes("evt") || activeFlowState.includes("event") || activeFlowState === "selecting_event")
+          ? "inscrição em evento" : "cadastro";
+        let resumeMsg = `Retomando seu processo de ${flowType}! 😊\n\n`;
+        
+        // Remind user what's expected based on state
+        const expectedType = getExpectedInputType(activeFlowState);
+        if (expectedType === "confirmation") resumeMsg += "Responda *SIM* para confirmar ou *NÃO* para cancelar.";
+        else if (expectedType === "number") resumeMsg += "Por favor, digite o *número* da opção desejada.";
+        else if (expectedType === "email") resumeMsg += "Por favor, digite seu *e-mail*.";
+        else if (expectedType === "date") resumeMsg += "Por favor, digite sua *data de nascimento* (DD/MM/AAAA).";
+        else if (expectedType === "name") resumeMsg += "Por favor, digite seu *nome completo*.";
+        else if (expectedType === "city") resumeMsg += "Por favor, digite o *número* da sua cidade/região.";
+        else resumeMsg += "Continue de onde parou!";
+
+        let intSettingsQuery = supabase.from("integrations_settings")
+          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+        if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
+        const { data: intSettings } = await intSettingsQuery.limit(1).single();
+        await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resumeMsg, tenantId);
+
+        return new Response(JSON.stringify({ success: true, responseType: "flow_resume" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Check if it's a genuine question that should escape to brain-resolve
+      const expectedType = getExpectedInputType(activeFlowState);
+      if (isGenuineQuestion(message, expectedType)) {
+        console.log(`[whatsapp-chatbot] Smart escape: user asked question during flow state "${activeFlowState}"`);
+
+        let intSettingsQuery = supabase.from("integrations_settings")
+          .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
+        if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
+        const { data: intSettings } = await intSettingsQuery.limit(1).single();
+
+        const flowType = (activeFlowState.includes("evt") || activeFlowState.includes("event") || activeFlowState === "selecting_event")
+          ? "inscrição em evento" : "cadastro";
+        const flowPendingNote = `\n\n---\n💬 _Você ainda tem um processo de ${flowType} em andamento. Digite *CONTINUAR* para retomar ou *CANCELAR* para sair._`;
+
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const brainResp = await fetch(`${supabaseUrl}/functions/v1/brain-resolve`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              message: message,
+              phone: normalizedPhone,
+              tenantId: tenantId,
+            }),
+          });
+
+          if (brainResp.ok) {
+            const brainData = await brainResp.json();
+
+            if (brainData.success && !brainData.fallbackToAI && brainData.response) {
+              // Brain answered directly (cache or KB)
+              const resposta = brainData.response + flowPendingNote;
+              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId);
+              await supabase.from("whatsapp_chatbot_logs").insert({
+                leader_id: actor?.id || null, phone: normalizedPhone, message_in: message,
+                message_out: resposta, keyword_matched: null, response_type: `smart_escape_brain_${brainData.source}`,
+                processing_time_ms: Date.now() - startTime,
+                ...(tenantId ? { tenant_id: tenantId } : {}),
+              });
+              return new Response(JSON.stringify({ success: true, responseType: "smart_escape_brain" }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+
+            // Brain needs AI fallback
+            const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+            if (lovableApiKey) {
+              const aiResponse = await generateAIResponse(
+                lovableApiKey, message, actor, brainData.brainContext || "",
+                "", supabase, tenantId, session?.conversation_history
+              );
+              const resposta = aiResponse + flowPendingNote;
+              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId);
+
+              // Learn from this interaction
+              if (brainData.embedding) {
+                try {
+                  await fetch(`${supabaseUrl}/functions/v1/brain-learn`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+                    body: JSON.stringify({
+                      tenantId, pergunta: message, resposta: aiResponse,
+                      embedding: brainData.embedding, intencao: brainData.brainIntencao || null, origem: "ai",
+                    }),
+                  });
+                } catch (learnErr) { console.warn("[whatsapp-chatbot] brain-learn error:", learnErr); }
+              }
+
+              await supabase.from("whatsapp_chatbot_logs").insert({
+                leader_id: actor?.id || null, phone: normalizedPhone, message_in: message,
+                message_out: resposta, keyword_matched: null, response_type: "smart_escape_ai",
+                processing_time_ms: Date.now() - startTime,
+                ...(tenantId ? { tenant_id: tenantId } : {}),
+              });
+              return new Response(JSON.stringify({ success: true, responseType: "smart_escape_ai" }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }
+          }
+        } catch (brainErr) {
+          console.warn("[whatsapp-chatbot] Smart escape brain-resolve error:", brainErr);
+        }
+        // If brain-resolve failed, fall through to normal flow processing
+        console.log("[whatsapp-chatbot] Smart escape: brain-resolve failed, falling through to flow");
+      }
+    }
+
     // Check if user is in a registration flow step
     if (session?.registration_state && !session.registration_completed_at) {
       const regResult = await handleRegistrationStep(
