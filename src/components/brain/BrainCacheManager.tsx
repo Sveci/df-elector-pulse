@@ -8,8 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useBrainCache, useAddBrainCacheEntry, useToggleBrainCacheEntry, useDeleteBrainCacheEntry } from "@/hooks/useBrainCache";
-import { Plus, Search, Trash2, MessageSquare, Database, Loader2, Eye, EyeOff, Bot, User, BookOpen } from "lucide-react";
+import { useBrainCache, useAddBrainCacheEntry, useToggleBrainCacheEntry, useDeleteBrainCacheEntry, useUpdateBrainCacheEntry } from "@/hooks/useBrainCache";
+import { Plus, Search, Trash2, MessageSquare, Database, Loader2, Eye, EyeOff, Bot, User, BookOpen, Pencil } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
