@@ -180,6 +180,231 @@ export type Database = {
           },
         ]
       }
+      brain_cache: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          created_at: string
+          embedding: string
+          expira_em: string | null
+          feedback_negativo: number
+          feedback_positivo: number
+          fonte_id: string | null
+          id: string
+          intencao: string | null
+          origem: string
+          pergunta_normalizada: string
+          pergunta_original: string
+          resposta: string
+          resposta_tipo: string
+          score_confianca: number
+          tags: string[] | null
+          tenant_id: string
+          ultima_utilizacao: string | null
+          updated_at: string
+          vezes_utilizada: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          embedding: string
+          expira_em?: string | null
+          feedback_negativo?: number
+          feedback_positivo?: number
+          fonte_id?: string | null
+          id?: string
+          intencao?: string | null
+          origem?: string
+          pergunta_normalizada: string
+          pergunta_original: string
+          resposta: string
+          resposta_tipo?: string
+          score_confianca?: number
+          tags?: string[] | null
+          tenant_id?: string
+          ultima_utilizacao?: string | null
+          updated_at?: string
+          vezes_utilizada?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          created_at?: string
+          embedding?: string
+          expira_em?: string | null
+          feedback_negativo?: number
+          feedback_positivo?: number
+          fonte_id?: string | null
+          id?: string
+          intencao?: string | null
+          origem?: string
+          pergunta_normalizada?: string
+          pergunta_original?: string
+          resposta?: string
+          resposta_tipo?: string
+          score_confianca?: number
+          tags?: string[] | null
+          tenant_id?: string
+          ultima_utilizacao?: string | null
+          updated_at?: string
+          vezes_utilizada?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_cache_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brain_feedback: {
+        Row: {
+          cache_entry_id: string | null
+          correcao_texto: string | null
+          created_at: string
+          id: string
+          phone: string | null
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          cache_entry_id?: string | null
+          correcao_texto?: string | null
+          created_at?: string
+          id?: string
+          phone?: string | null
+          tenant_id?: string
+          tipo: string
+        }
+        Update: {
+          cache_entry_id?: string | null
+          correcao_texto?: string | null
+          created_at?: string
+          id?: string
+          phone?: string | null
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_feedback_cache_entry_id_fkey"
+            columns: ["cache_entry_id"]
+            isOneToOne: false
+            referencedRelation: "brain_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brain_feedback_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brain_metrics: {
+        Row: {
+          clarificacoes: number
+          created_at: string
+          id: string
+          periodo: string
+          resolvidas_por_cache: number
+          resolvidas_por_flow: number
+          resolvidas_por_ia: number
+          resolvidas_por_kb: number
+          tenant_id: string
+          tokens_economizados: number
+          tokens_gastos: number
+          total_mensagens: number
+        }
+        Insert: {
+          clarificacoes?: number
+          created_at?: string
+          id?: string
+          periodo: string
+          resolvidas_por_cache?: number
+          resolvidas_por_flow?: number
+          resolvidas_por_ia?: number
+          resolvidas_por_kb?: number
+          tenant_id?: string
+          tokens_economizados?: number
+          tokens_gastos?: number
+          total_mensagens?: number
+        }
+        Update: {
+          clarificacoes?: number
+          created_at?: string
+          id?: string
+          periodo?: string
+          resolvidas_por_cache?: number
+          resolvidas_por_flow?: number
+          resolvidas_por_ia?: number
+          resolvidas_por_kb?: number
+          tenant_id?: string
+          tokens_economizados?: number
+          tokens_gastos?: number
+          total_mensagens?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_metrics_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brain_sessions: {
+        Row: {
+          caminho: string[] | null
+          contexto: Json
+          created_at: string
+          estado: string
+          expires_at: string
+          id: string
+          intencao_atual: string | null
+          phone: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          caminho?: string[] | null
+          contexto?: Json
+          created_at?: string
+          estado?: string
+          expires_at?: string
+          id?: string
+          intencao_atual?: string | null
+          phone: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          caminho?: string[] | null
+          contexto?: Json
+          created_at?: string
+          estado?: string
+          expires_at?: string
+          id?: string
+          intencao_atual?: string | null
+          phone?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brain_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_materials: {
         Row: {
           created_at: string
@@ -1263,30 +1488,42 @@ export type Database = {
       }
       kb_chunks: {
         Row: {
+          categoria: string | null
           chunk_index: number
           content: string
           created_at: string
           document_id: string
+          embedding: string | null
           id: string
           metadata: Json | null
+          resumo: string | null
+          tags: string[] | null
           tenant_id: string
         }
         Insert: {
+          categoria?: string | null
           chunk_index: number
           content: string
           created_at?: string
           document_id: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
+          resumo?: string | null
+          tags?: string[] | null
           tenant_id?: string
         }
         Update: {
+          categoria?: string | null
           chunk_index?: number
           content?: string
           created_at?: string
           document_id?: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
+          resumo?: string | null
+          tags?: string[] | null
           tenant_id?: string
         }
         Relationships: [
@@ -5012,6 +5249,43 @@ export type Database = {
       award_leader_points: {
         Args: { _leader_id: string; _points: number; _reason?: string }
         Returns: undefined
+      }
+      brain_cache_hit: { Args: { p_cache_id: string }; Returns: undefined }
+      brain_record_metric: {
+        Args: { p_camada: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      brain_search_cache: {
+        Args: {
+          p_embedding: string
+          p_limit?: number
+          p_tenant_id: string
+          p_threshold?: number
+        }
+        Returns: {
+          categoria: string
+          id: string
+          pergunta_original: string
+          resposta: string
+          resposta_tipo: string
+          score_confianca: number
+          similaridade: number
+        }[]
+      }
+      brain_search_kb: {
+        Args: {
+          p_embedding: string
+          p_limit?: number
+          p_tenant_id: string
+          p_threshold?: number
+        }
+        Returns: {
+          categoria: string
+          content: string
+          id: string
+          resumo: string
+          similaridade: number
+        }[]
       }
       calculate_sms_next_retry: {
         Args: { _retry_count: number }

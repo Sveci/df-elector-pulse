@@ -18,7 +18,8 @@ import {
   MessageSquareText,
   FileBarChart,
   FolderOpen,
-  Copy
+  Copy,
+  Brain
 } from "lucide-react";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -125,6 +126,14 @@ const Settings = () => {
       description: "Configure materiais exclusivos para cada RA enviados após verificação",
       icon: FolderOpen,
       href: "/settings/region-materials",
+      available: true,
+      roles: ['super_admin', 'admin'],
+    },
+    {
+      title: "Cérebro IA",
+      description: "Métricas de aprendizado, cache semântico e economia de tokens",
+      icon: Brain,
+      href: "/settings/brain",
       available: true,
       roles: ['super_admin', 'admin'],
     },

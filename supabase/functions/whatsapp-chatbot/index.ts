@@ -1714,20 +1714,102 @@ Deno.serve(async (req) => {
         responseType = "event_reg_status";
         responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
       } else {
-        console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] [IA] No keyword match — using AI + KB + Perplexity pipeline`);
+        console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] [IA] No keyword match — using Brain → Cache → KB → AI pipeline`);
         responseType = "ai";
 
         if (lovableApiKey) {
-          responseMessage = await generateAIResponse(
-            lovableApiKey,
-            message,
-            actor,
-            "",
-            chatbotConfig.ai_system_prompt || "",
-            supabase,
-            tenantId,
-            session?.conversation_history
-          );
+          // ── CÉREBRO IA: Cascata Cache → KB → IA ──
+          let brainContext = "";
+          let brainIntencao: string | null = null;
+          let brainEmbedding: number[] | null = null;
+          let brainSource = "ai";
+
+          try {
+            const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+            const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            const brainResp = await fetch(`${supabaseUrl}/functions/v1/brain-resolve`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceKey}`,
+              },
+              body: JSON.stringify({
+                message: message,
+                phone: normalizedPhone,
+                tenantId: tenantId,
+              }),
+            });
+
+            if (brainResp.ok) {
+              const brainData = await brainResp.json();
+              
+              if (brainData.success && !brainData.fallbackToAI && brainData.response) {
+                // Cache HIT ou clarificação — resposta direta
+                responseMessage = brainData.response;
+                responseType = `brain_${brainData.source}`;
+                brainSource = brainData.source;
+                console.log(`[whatsapp-chatbot] [CÉREBRO] ${brainData.source.toUpperCase()} — resposta direta`);
+              } else {
+                // Precisa da IA, mas com contexto enriquecido
+                brainContext = brainData.brainContext || "";
+                brainIntencao = brainData.brainIntencao || null;
+                brainEmbedding = brainData.embedding || null;
+                brainSource = brainData.source || "ai";
+                console.log(`[whatsapp-chatbot] [CÉREBRO] Falling back to AI with context (source=${brainSource})`);
+              }
+            } else {
+              console.warn("[whatsapp-chatbot] [CÉREBRO] brain-resolve failed, falling back to direct AI");
+            }
+          } catch (brainErr) {
+            console.warn("[whatsapp-chatbot] [CÉREBRO] brain-resolve error, falling back to direct AI:", brainErr);
+          }
+
+          // Se o cérebro não retornou resposta direta, chamar a IA
+          if (!responseMessage) {
+            responseMessage = await generateAIResponse(
+              lovableApiKey,
+              message,
+              actor,
+              brainContext,  // Passa contexto do cérebro como keywordContext
+              chatbotConfig.ai_system_prompt || "",
+              supabase,
+              tenantId,
+              session?.conversation_history
+            );
+
+            // ── APRENDIZADO: Salvar no cache para uso futuro ──
+            if (responseMessage && brainEmbedding && responseMessage.length >= 20) {
+              try {
+                const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+                const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+                fetch(`${supabaseUrl}/functions/v1/brain-learn`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${serviceKey}`,
+                  },
+                  body: JSON.stringify({
+                    tenantId: tenantId,
+                    pergunta: message,
+                    resposta: responseMessage,
+                    embedding: brainEmbedding,
+                    intencao: brainIntencao,
+                    origem: brainSource === "kb_context" ? "kb" : "ai",
+                  }),
+                }).catch(e => console.warn("[whatsapp-chatbot] [CÉREBRO] brain-learn fire-and-forget error:", e));
+              } catch { /* ignore learn errors */ }
+            }
+          }
+
+          // Registrar métrica de flow para keywords que já foram processadas
+          if (brainSource === "cache" || brainSource === "clarificacao") {
+            try {
+              const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+              const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+              const metricSupabase = createClient(supabaseUrl, serviceKey);
+              await metricSupabase.rpc("brain_record_metric", { p_tenant_id: tenantId, p_camada: "ia" });
+            } catch { /* ignore */ }
+          }
         } else {
           responseType = "fallback";
           responseMessage = chatbotConfig.fallback_message ||
