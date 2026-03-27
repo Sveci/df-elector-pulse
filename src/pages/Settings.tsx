@@ -130,6 +130,13 @@ const Settings = () => {
       roles: ['super_admin', 'admin'],
     },
     {
+      title: "Cérebro IA",
+      description: "Métricas de aprendizado, cache semântico e economia de tokens",
+      icon: Brain,
+      href: "/settings/brain",
+      available: true,
+      roles: ['super_admin', 'admin'],
+    {
       title: "Faturamento",
       description: "Gerencie seu plano, pagamentos e uso da plataforma",
       icon: CreditCard,
