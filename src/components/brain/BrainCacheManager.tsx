@@ -356,6 +356,73 @@ export function BrainCacheManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingEntry} onOpenChange={(open) => {
+        if (!open) {
+          setEditingEntry(null);
+          setFormPergunta("");
+          setFormResposta("");
+          setFormCategoria("geral");
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Pergunta/Resposta</DialogTitle>
+            <DialogDescription>
+              Altere a pergunta, resposta ou categoria desta entrada do cache.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Pergunta</label>
+              <Textarea
+                value={formPergunta}
+                onChange={(e) => setFormPergunta(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Resposta</label>
+              <Textarea
+                value={formResposta}
+                onChange={(e) => setFormResposta(e.target.value)}
+                rows={6}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Categoria</label>
+              <Select value={formCategoria} onValueChange={setFormCategoria}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEntry(null)}>Cancelar</Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!formPergunta.trim() || !formResposta.trim() || updateEntry.isPending}
+            >
+              {updateEntry.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+              ) : (
+                <><Pencil className="h-4 w-4 mr-1" /> Salvar</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
