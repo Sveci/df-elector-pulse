@@ -250,12 +250,21 @@ export function BrainCacheManager() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <Switch
                         checked={entry.ativo}
                         onCheckedChange={(checked) => toggleEntry.mutate({ id: entry.id, ativo: checked })}
                         title={entry.ativo ? "Desativar" : "Ativar"}
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleStartEdit(entry)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
