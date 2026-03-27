@@ -26,12 +26,12 @@ function detectarIntencao(texto: string): string | null {
   const norm = normalizar(texto);
   const mapa: Record<string, string[]> = {
     proposicoes: ["proposicao", "proposicoes", "monitorad", "pl ", "pec", "projeto de lei", "legislat", "tramita", "votacao", "plenario", "camara", "senado"],
-    eventos: ["evento", "eventos", "proximos", "inscricao", "checkin", "check-in", "agenda", "reuniao", "encontro"],
-    liderancas: ["lider", "lideranca", "coordenador", "base eleitoral", "apoiador"],
-    contatos: ["contato", "telefone", "email", "whatsapp", "numero"],
-    campanhas: ["campanha", "marketing", "propaganda", "material", "panfleto", "santinho"],
-    materiais: ["material", "documento", "arquivo", "pdf", "download"],
-    pesquisas: ["pesquisa", "enquete", "survey", "opiniao", "resultado"],
+    eventos: ["evento", "eventos", "inscricao", "checkin", "check-in", "agenda", "reuniao", "encontro", "proximo", "proximos"],
+    liderancas: ["lider", "lideres", "lideranca", "liderancas", "coordenador", "base eleitoral", "apoiador", "apoiadores"],
+    contatos: ["contato", "contatos", "telefone", "email", "whatsapp", "numero"],
+    campanhas: ["campanha", "campanhas", "marketing", "propaganda", "panfleto", "santinho"],
+    materiais: ["material", "materiais", "documento", "documentos", "arquivo", "pdf", "download"],
+    pesquisas: ["pesquisa", "pesquisas", "enquete", "survey", "opiniao", "resultado"],
   };
   for (const [cat, keywords] of Object.entries(mapa)) {
     if (keywords.some(kw => norm.includes(kw))) return cat;
