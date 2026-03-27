@@ -212,12 +212,12 @@ async function enriquecerContexto(
       case "eventos": {
         const { data: eventos } = await supabase
           .from("events")
-          .select("id, name, date, time, location, region, address, description, status")
+          .select("id, name, date, time, location, address, status")
           .eq("tenant_id", tenantId)
-          .in("status", ["published", "active", "upcoming"])
+          .in("status", ["active", "published"])
           .gte("date", new Date().toISOString().split("T")[0])
           .order("date", { ascending: true })
-          .limit(5);
+          .limit(10);
 
         if (eventos && eventos.length > 0) {
           const lista = eventos.map((e: any) => {
