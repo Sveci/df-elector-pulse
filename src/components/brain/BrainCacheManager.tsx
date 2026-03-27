@@ -15,8 +15,10 @@ import { ptBR } from "date-fns/locale";
 
 const CATEGORIAS = [
   { value: "geral", label: "Geral" },
-  { value: "proposicoes", label: "Proposições" },
   { value: "eventos", label: "Eventos" },
+  { value: "programas", label: "Programas" },
+  { value: "legislacao", label: "Legislação" },
+  { value: "proposicoes", label: "Proposições" },
   { value: "liderancas", label: "Lideranças" },
   { value: "contatos", label: "Contatos" },
   { value: "campanhas", label: "Campanhas" },
