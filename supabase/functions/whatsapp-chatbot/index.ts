@@ -2728,10 +2728,26 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
 - Rejeite perguntas claramente fora do contexto político (ex: receitas, jogos, entretenimento).`
     : "";
 
-  const existingSystemPrompt = `${systemPrompt}\n${scopeRestriction}\n${leaderContext}\n${kbSection}\n\nREGRAS OBRIGATÓRIAS:\n- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.\n- ${kbContext ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}\n- REGRA CRÍTICA SOBRE ESPECIFICIDADE: Se o usuário perguntar sobre algo ESPECÍFICO e a base de conhecimento NÃO contém informação sobre esse item específico, diga EXATAMENTE: "Não encontrei informação específica sobre [item] na base disponível."\n- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que é exclusivo para líderes cadastrados."}\n- ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas. Responda APENAS sobre o conteúdo institucional." : ""}\n- NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema".\n- Se o líder não tem cadastros, diga que pode compartilhar seu link de indicação.\n- NUNCA faça suposições sobre dados que você não tem.`;
-
   const brainPreface = (keywordContext || "").trim();
-  const fullSystemPrompt = brainPreface ? `${brainPreface}\n\n${existingSystemPrompt}` : existingSystemPrompt;
+  const hasBrainData = brainPreface.length > 0;
+
+  // When brain-resolve provides enriched context with real DB data, adjust rules so AI uses it
+  const notFoundRule = hasBrainData
+    ? "DADOS REAIS DO BANCO DE DADOS foram fornecidos acima na seção DADOS DO SISTEMA. Você DEVE usá-los para responder. NUNCA diga 'não encontrei informações' se os dados estão acima."
+    : (kbContext
+      ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte."
+      : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível.");
+
+  const specificityRule = hasBrainData
+    ? "Se os DADOS DO SISTEMA contêm informações relevantes à pergunta, USE-OS. Resuma e apresente de forma amigável."
+    : "REGRA CRÍTICA SOBRE ESPECIFICIDADE: Se o usuário perguntar sobre algo ESPECÍFICO e a base de conhecimento NÃO contém informação sobre esse item específico, diga EXATAMENTE: \"Não encontrei informação específica sobre [item] na base disponível.\"";
+
+  const existingSystemPrompt = `${systemPrompt}\n${scopeRestriction}\n${leaderContext}\n${kbSection}\n\nREGRAS OBRIGATÓRIAS:\n- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.\n- ${notFoundRule}\n- ${specificityRule}\n- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que é exclusivo para líderes cadastrados."}\n- ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas. Responda APENAS sobre o conteúdo institucional." : ""}\n- NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema".\n- Se o líder não tem cadastros, diga que pode compartilhar seu link de indicação.\n- NUNCA faça suposições sobre dados que você não tem.`;
+
+  const brainPrefaceSection = hasBrainData
+    ? `=== DADOS DO SISTEMA (PRIORIDADE MÁXIMA) ===\n${brainPreface}\n=== FIM DOS DADOS DO SISTEMA ===\n\nINSTRUÇÃO CRÍTICA: Os dados acima são REAIS e vieram diretamente do banco de dados. Você DEVE usá-los para responder. NUNCA diga "não tenho informações" ou "não encontrei" quando os dados estão acima.\n\n`
+    : "";
+  const fullSystemPrompt = brainPrefaceSection + existingSystemPrompt;
 
   try {
     const messages: Array<{ role: string; content: string }> = [{ role: "system", content: fullSystemPrompt }];
