@@ -8,15 +8,17 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useBrainCache, useAddBrainCacheEntry, useToggleBrainCacheEntry, useDeleteBrainCacheEntry } from "@/hooks/useBrainCache";
-import { Plus, Search, Trash2, MessageSquare, Database, Loader2, Eye, EyeOff, Bot, User, BookOpen } from "lucide-react";
+import { useBrainCache, useAddBrainCacheEntry, useToggleBrainCacheEntry, useDeleteBrainCacheEntry, useUpdateBrainCacheEntry, type BrainCacheEntry } from "@/hooks/useBrainCache";
+import { Plus, Search, Trash2, MessageSquare, Database, Loader2, Eye, EyeOff, Bot, User, BookOpen, Pencil } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const CATEGORIAS = [
   { value: "geral", label: "Geral" },
-  { value: "proposicoes", label: "Proposições" },
   { value: "eventos", label: "Eventos" },
+  { value: "programas", label: "Programas" },
+  { value: "legislacao", label: "Legislação" },
+  { value: "proposicoes", label: "Proposições" },
   { value: "liderancas", label: "Lideranças" },
   { value: "contatos", label: "Contatos" },
   { value: "campanhas", label: "Campanhas" },
@@ -44,8 +46,10 @@ export function BrainCacheManager() {
   const addEntry = useAddBrainCacheEntry();
   const toggleEntry = useToggleBrainCacheEntry();
   const deleteEntry = useDeleteBrainCacheEntry();
+  const updateEntry = useUpdateBrainCacheEntry();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<BrainCacheEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("todas");
   const [filterOrigem, setFilterOrigem] = useState("todas");
@@ -79,6 +83,27 @@ export function BrainCacheManager() {
     setFormResposta("");
     setFormCategoria("geral");
     setShowAddDialog(false);
+  };
+
+  const handleStartEdit = (entry: BrainCacheEntry) => {
+    setEditingEntry(entry);
+    setFormPergunta(entry.pergunta_original);
+    setFormResposta(entry.resposta);
+    setFormCategoria(entry.categoria || "geral");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEntry || !formPergunta.trim() || !formResposta.trim()) return;
+    await updateEntry.mutateAsync({
+      id: editingEntry.id,
+      pergunta: formPergunta.trim(),
+      resposta: formResposta.trim(),
+      categoria: formCategoria,
+    });
+    setEditingEntry(null);
+    setFormPergunta("");
+    setFormResposta("");
+    setFormCategoria("geral");
   };
 
   const stats = useMemo(() => {
@@ -227,12 +252,21 @@ export function BrainCacheManager() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <Switch
                         checked={entry.ativo}
                         onCheckedChange={(checked) => toggleEntry.mutate({ id: entry.id, ativo: checked })}
                         title={entry.ativo ? "Desativar" : "Ativar"}
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleStartEdit(entry)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
@@ -319,6 +353,73 @@ export function BrainCacheManager() {
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
               ) : (
                 <><Plus className="h-4 w-4 mr-1" /> Adicionar</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingEntry} onOpenChange={(open) => {
+        if (!open) {
+          setEditingEntry(null);
+          setFormPergunta("");
+          setFormResposta("");
+          setFormCategoria("geral");
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Pergunta/Resposta</DialogTitle>
+            <DialogDescription>
+              Altere a pergunta, resposta ou categoria desta entrada do cache.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Pergunta</label>
+              <Textarea
+                value={formPergunta}
+                onChange={(e) => setFormPergunta(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Resposta</label>
+              <Textarea
+                value={formResposta}
+                onChange={(e) => setFormResposta(e.target.value)}
+                rows={6}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Categoria</label>
+              <Select value={formCategoria} onValueChange={setFormCategoria}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIAS.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEntry(null)}>Cancelar</Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!formPergunta.trim() || !formResposta.trim() || updateEntry.isPending}
+            >
+              {updateEntry.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+              ) : (
+                <><Pencil className="h-4 w-4 mr-1" /> Salvar</>
               )}
             </Button>
           </DialogFooter>

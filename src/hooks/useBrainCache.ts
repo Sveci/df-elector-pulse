@@ -104,6 +104,42 @@ export function useToggleBrainCacheEntry() {
   });
 }
 
+export function useUpdateBrainCacheEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, pergunta, resposta, categoria }: { id: string; pergunta?: string; resposta?: string; categoria?: string }) => {
+      const updates: Record<string, any> = {};
+      if (resposta !== undefined) updates.resposta = resposta;
+      if (categoria !== undefined) updates.categoria = categoria;
+      if (pergunta !== undefined) {
+        updates.pergunta_original = pergunta;
+        updates.pergunta_normalizada = pergunta
+          .toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^\w\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        // Re-generate embedding for updated question
+        const { data: embedData, error: embedError } = await supabase.functions.invoke("brain-embed", {
+          body: { text: pergunta },
+        });
+        if (!embedError && embedData?.success) {
+          updates.embedding = JSON.stringify(embedData.embeddings);
+        }
+      }
+      const { error } = await supabase.from("brain_cache").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brain-cache"] });
+      toast.success("Entrada atualizada!");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao atualizar: " + err.message);
+    },
+  });
+}
+
 export function useDeleteBrainCacheEntry() {
   const queryClient = useQueryClient();
   return useMutation({
