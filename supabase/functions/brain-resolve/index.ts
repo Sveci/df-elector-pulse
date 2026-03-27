@@ -222,7 +222,7 @@ async function enriquecerContexto(
         if (eventos && eventos.length > 0) {
           const lista = eventos.map((e: any) => {
             const data = e.date ? new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR") : "";
-            return `- ${e.name} | ${data}${e.time ? " às " + e.time : ""} | ${e.location || ""}${e.address ? " — " + e.address : ""} | ${e.region || ""}`;
+            return `- ${e.name} | ${data}${e.time ? " às " + e.time : ""} | ${e.location || ""}${e.address ? " — " + e.address : ""}`;
           }).join("\n");
           return `EVENTOS AGENDADOS (dados reais do banco de dados):\n${lista}\n\nIMPORTANTE: Esses dados são REAIS e ATUALIZADOS. Use-os para responder sobre eventos. Liste os eventos disponíveis quando perguntarem.`;
         }
