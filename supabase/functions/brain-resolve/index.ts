@@ -25,8 +25,8 @@ function normalizar(texto: string): string {
 function detectarIntencao(texto: string): string | null {
   const norm = normalizar(texto);
   const mapa: Record<string, string[]> = {
-    proposicoes: ["proposicao", "pl ", "pec", "projeto de lei", "legislat", "tramita", "votacao", "plenario", "camara", "senado"],
-    eventos: ["evento", "inscricao", "checkin", "check-in", "agenda", "reuniao", "encontro"],
+    proposicoes: ["proposicao", "proposicoes", "monitorad", "pl ", "pec", "projeto de lei", "legislat", "tramita", "votacao", "plenario", "camara", "senado"],
+    eventos: ["evento", "eventos", "proximos", "inscricao", "checkin", "check-in", "agenda", "reuniao", "encontro"],
     liderancas: ["lider", "lideranca", "coordenador", "base eleitoral", "apoiador"],
     contatos: ["contato", "telefone", "email", "whatsapp", "numero"],
     campanhas: ["campanha", "marketing", "propaganda", "material", "panfleto", "santinho"],
