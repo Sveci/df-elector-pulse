@@ -1003,7 +1003,7 @@ async function handleRegistrationStep(
       await logRegistration(supabase, phone, userMessage, msg, "registration_confirm", tenantId, startTime);
       return { success: true, responseType: "registration_confirm" };
     } else {
-      const msg = "Sem problemas! 😊 Se mudar de ideia, é só me dizer que quer se cadastrar.";
+      const msg = "Tudo bem, vamos prosseguir sem o cadastro por enquanto. 😊\n\nPosso ajudar com algo mais? É só perguntar!";
       await sendResponseToUser(supabase, intSettings, provider, phone, msg, tenantId);
       await supabase.from("whatsapp_chatbot_sessions").update({ registration_state: "declined", registration_completed_at: new Date().toISOString() }).eq("id", session.id);
       await logRegistration(supabase, phone, userMessage, msg, "registration_declined", tenantId, startTime);
@@ -2075,6 +2075,88 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// =====================================================
+// SMART ESCAPE DETECTION HELPERS
+// =====================================================
+
+/**
+ * Verifica se uma mensagem parece uma pergunta genuína do usuário
+ * (e não uma resposta esperada pelo fluxo ativo).
+ * Retorna true se a mensagem deve ser encaminhada ao brain-resolve.
+ */
+function isGenuineQuestion(message: string, expectedInputType: string): boolean {
+  const msg = message.trim().toLowerCase();
+  const msgLen = msg.length;
+
+  // Respostas curtas típicas de fluxo — NÃO são perguntas
+  if (expectedInputType === 'confirmation') {
+    const confirmWords = ['sim', 'não', 'nao', 'yes', 'no', 's', 'n', 'ok', 'cancelar', 'sair', 'quero', 'claro', 'pode ser', 'aceito', 'bora', 'vamos', 'pode', 'cadastrar', 'eu quero', 'continuar'];
+    if (confirmWords.includes(msg)) return false;
+    // Short positive/negative phrases
+    if (msgLen <= 15 && !msg.includes('?')) return false;
+  }
+
+  if (expectedInputType === 'number') {
+    if (/^\d{1,3}$/.test(msg)) return false;
+  }
+
+  if (expectedInputType === 'email') {
+    if (msg.includes('@') && msg.includes('.')) return false;
+  }
+
+  if (expectedInputType === 'date') {
+    if (/\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2,4}/.test(msg)) return false;
+  }
+
+  if (expectedInputType === 'name' || expectedInputType === 'city') {
+    const wordCount = msg.split(/\s+/).length;
+    if (wordCount <= 3 && !msg.includes('?') && msgLen < 40) return false;
+  }
+
+  // INDICADORES DE PERGUNTA GENUÍNA:
+
+  // Contém interrogação
+  if (msg.includes('?')) return true;
+
+  // Começa com palavra interrogativa
+  const interrogativas = ['qual', 'quais', 'como', 'quando', 'onde', 'quem', 'por que', 'porque',
+    'quanto', 'quantos', 'quantas', 'o que', 'que', 'cadê', 'cade', 'existe', 'tem', 'posso',
+    'pode', 'preciso', 'gostaria', 'quero saber', 'me explica', 'me diz', 'me fala', 'me conta'];
+  if (interrogativas.some(q => msg.startsWith(q + ' ') || msg === q)) return true;
+
+  // Mensagem longa demais para ser resposta ao fluxo
+  if (['confirmation', 'number'].includes(expectedInputType) && msgLen > 50) return true;
+
+  // Contém keywords de funcionalidades do sistema
+  const keywords = ['evento', 'proposic', 'lider', 'campanha', 'material', 'pesquisa',
+    'contato', 'agenda', 'cadastr', 'inscr', 'votação', 'votacao', 'tramit', 'projeto de lei',
+    'pec', 'mandato', 'gabinete', 'deputado'];
+  if (keywords.some(kw => msg.includes(kw)) && msgLen > 15) return true;
+
+  return false;
+}
+
+/**
+ * Mapeia cada estado de sessão para o tipo de input esperado.
+ */
+function getExpectedInputType(sessionState: string): string {
+  const map: Record<string, string> = {
+    'selecting_event': 'number',
+    'collecting_evt_name': 'name',
+    'collecting_evt_email': 'email',
+    'collecting_evt_birthday': 'date',
+    'collecting_evt_city': 'city',
+    'awaiting_confirmation': 'confirmation',
+    'collecting_name': 'name',
+    'collecting_email': 'email',
+    'collecting_city': 'city',
+    'event_reg_retry_select': 'number',
+    'event_reg_event_selected': 'confirmation',
+    'registration_confirm': 'confirmation',
+  };
+  return map[sessionState] || 'unknown';
+}
 
 function getFirstName(leader: Leader | null): string {
   if (!leader?.nome_completo) return "amigo(a)";
