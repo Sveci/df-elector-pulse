@@ -154,3 +154,23 @@ export function useDeleteBrainCacheEntry() {
     },
   });
 }
+
+export function useReindexKB() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("brain-kb-reindex", {});
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      if (data.processed > 0) {
+        toast.success(`${data.processed} chunks indexados. ${data.remaining} restantes.`);
+      } else {
+        toast.info("Todos os chunks já estão indexados.");
+      }
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao reindexar: " + err.message);
+    },
+  });
+}
