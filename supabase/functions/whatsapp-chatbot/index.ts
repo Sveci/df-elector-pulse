@@ -1387,10 +1387,13 @@ Deno.serve(async (req) => {
                 { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
             }
 
-            // Brain needs AI fallback
-            const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-            if (lovableApiKey) {
-              const smartEscapeContext = (brainData.systemInstruction ? brainData.systemInstruction + "\n\n" : "") + (brainData.brainContext || "");
+            // Brain needs AI fallback with enriched context/system instructions
+            if (brainData.success && brainData.fallbackToAI) {
+              const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+              if (lovableApiKey) {
+                const brainSystemRule = brainData.systemInstruction || "";
+                const brainCtx = brainData.brainContext || "";
+                const smartEscapeContext = [brainSystemRule, brainCtx].filter(Boolean).join("\n\n");
               const aiResponse = await generateAIResponse(
                 lovableApiKey, message, actor, smartEscapeContext,
                 "", supabase, tenantId, session?.conversation_history
@@ -1420,6 +1423,7 @@ Deno.serve(async (req) => {
               });
               return new Response(JSON.stringify({ success: true, responseType: "smart_escape_ai" }),
                 { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              }
             }
           }
         } catch (brainErr) {
@@ -1873,16 +1877,14 @@ Deno.serve(async (req) => {
                 responseType = `brain_${brainData.source}`;
                 brainSource = brainData.source;
                 console.log(`[whatsapp-chatbot] [CÉREBRO] ${brainData.source.toUpperCase()} — resposta direta`);
-              } else {
+              } else if (brainData.success && brainData.fallbackToAI) {
                 // Precisa da IA, mas com contexto enriquecido
-                brainContext = brainData.brainContext || "";
+                const brainSystemRule = brainData.systemInstruction || "";
+                const brainCtx = brainData.brainContext || "";
+                brainContext = [brainSystemRule, brainCtx].filter(Boolean).join("\n\n");
                 brainIntencao = brainData.brainIntencao || null;
                 brainEmbedding = brainData.embedding || null;
                 brainSource = brainData.source || "ai";
-                // Prepend systemInstruction from brain-resolve to brain context
-                if (brainData.systemInstruction) {
-                  brainContext = brainData.systemInstruction + "\n\n" + brainContext;
-                }
                 console.log(`[whatsapp-chatbot] [CÉREBRO] Falling back to AI with context (source=${brainSource})`);
               }
             } else {
@@ -2729,10 +2731,10 @@ REGRA DE ESCOPO VINCULADA AO TENANT:
   const existingSystemPrompt = `${systemPrompt}\n${scopeRestriction}\n${leaderContext}\n${kbSection}\n\nREGRAS OBRIGATÓRIAS:\n- Responda de forma breve (máximo 600 caracteres) e amigável. Use emojis moderadamente.\n- ${kbContext ? "A BASE DE CONHECIMENTO ACIMA CONTÉM INFORMAÇÕES REAIS. Leia com atenção e USE-AS para responder. NÃO ignore o conteúdo da base. Se a pergunta do usuário pode ser respondida com as informações acima, RESPONDA. SEMPRE cite a fonte." : "Se não houver contexto suficiente, diga que não encontrou essa informação na base disponível."}\n- REGRA CRÍTICA SOBRE ESPECIFICIDADE: Se o usuário perguntar sobre algo ESPECÍFICO e a base de conhecimento NÃO contém informação sobre esse item específico, diga EXATAMENTE: "Não encontrei informação específica sobre [item] na base disponível."\n- ${hasLeader ? "Se a pergunta for sobre dados específicos que você não tem, sugira usar comandos como ARVORE, CADASTROS, PONTOS ou RANKING." : "Se a pergunta for sobre acompanhamento individual de liderança, diga que é exclusivo para líderes cadastrados."}\n- ${!hasLeader ? "REGRA CRÍTICA: Este usuário NÃO é um líder cadastrado. NUNCA sugira funcionalidades internas. Responda APENAS sobre o conteúdo institucional." : ""}\n- NUNCA afirme que o líder "não tem cadastros" ou que "precisa encontrar/adicionar pessoas no sistema".\n- Se o líder não tem cadastros, diga que pode compartilhar seu link de indicação.\n- NUNCA faça suposições sobre dados que você não tem.`;
 
   const brainPreface = (keywordContext || "").trim();
-  const fullPrompt = brainPreface ? `${brainPreface}\n\n${existingSystemPrompt}` : existingSystemPrompt;
+  const fullSystemPrompt = brainPreface ? `${brainPreface}\n\n${existingSystemPrompt}` : existingSystemPrompt;
 
   try {
-    const messages: Array<{ role: string; content: string }> = [{ role: "system", content: fullPrompt }];
+    const messages: Array<{ role: string; content: string }> = [{ role: "system", content: fullSystemPrompt }];
     if (conversationHistory && conversationHistory.length > 0) {
       const recentHistory = conversationHistory.slice(-MAX_CONVERSATION_TURNS * 2);
       for (const turn of recentHistory) { if (turn.role === 'user' || turn.role === 'assistant') messages.push({ role: turn.role, content: turn.content }); }
