@@ -136,6 +136,7 @@ const Settings = () => {
       href: "/settings/brain",
       available: true,
       roles: ['super_admin', 'admin'],
+    },
     {
       title: "Faturamento",
       description: "Gerencie seu plano, pagamentos e uso da plataforma",
