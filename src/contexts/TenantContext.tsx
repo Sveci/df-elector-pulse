@@ -27,8 +27,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (persistChoice) {
       if (tenant) {
         localStorage.setItem("active_tenant_id", tenant.id);
+        if (tenant.custom_domain) {
+          localStorage.setItem("active_tenant_domain", tenant.custom_domain.replace(/\/+$/, ""));
+        } else {
+          localStorage.removeItem("active_tenant_domain");
+        }
       } else {
         localStorage.removeItem("active_tenant_id");
+        localStorage.removeItem("active_tenant_domain");
       }
     }
   };
@@ -43,6 +49,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         const savedTenant = userTenants.find((ut) => ut.tenant_id === savedTenantId);
         if (savedTenant) {
           setActiveTenantState(savedTenant.tenant);
+          if (savedTenant.tenant.custom_domain) {
+            localStorage.setItem("active_tenant_domain", savedTenant.tenant.custom_domain.replace(/\/+$/, ""));
+          } else {
+            localStorage.removeItem("active_tenant_domain");
+          }
         }
       }
       // Não força modal aqui — só mostra quando o usuário pedir ou ao navegar do /admin
@@ -51,6 +62,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const defaultTenant = userTenants.find((ut) => ut.is_default) || userTenants[0];
       if (defaultTenant) {
         setActiveTenantState(defaultTenant.tenant);
+        if (defaultTenant.tenant.custom_domain) {
+          localStorage.setItem("active_tenant_domain", defaultTenant.tenant.custom_domain.replace(/\/+$/, ""));
+        } else {
+          localStorage.removeItem("active_tenant_domain");
+        }
       }
     }
   }, [user, userTenants, isLoading, isSuperAdmin]);
