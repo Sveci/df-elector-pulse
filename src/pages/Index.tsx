@@ -784,7 +784,7 @@ const Index = () => {
           {/* Bottom section — Legal */}
           <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Eleitor 360.ai — Todos os direitos reservados. Desenvolvida por{" "}
+              © {new Date().getFullYear()} Jam.ai — Todos os direitos reservados. Desenvolvida por{" "}
               <span className="text-foreground/70 font-medium">MEGA GLOBAL DIGITAL</span>
             </p>
             <div className="flex items-center gap-6">
