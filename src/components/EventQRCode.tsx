@@ -6,6 +6,7 @@ import { Download, Copy, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from 'qrcode';
 import { generateEventRegistrationUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 interface EventQRCodeProps {
   event: {
