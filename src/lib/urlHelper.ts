@@ -17,11 +17,19 @@ function getAppBaseUrl(): string {
   return "https://app.eleitor360.ai";
 }
 
+function getCachedTenantDomain(): string | null {
+  if (typeof window === "undefined") return null;
+  const cachedDomain = localStorage.getItem("active_tenant_domain");
+  return cachedDomain ? cachedDomain.replace(/\/+$/, "") : null;
+}
+
 /**
  * Retorna a URL base da aplicação.
  * Usa o domínio atual do navegador — funciona automaticamente com domínio customizado.
  */
 export function getBaseUrl(): string {
+  const cachedDomain = getCachedTenantDomain();
+  if (cachedDomain) return cachedDomain;
   return getAppBaseUrl();
 }
 
@@ -34,6 +42,8 @@ export function getTenantBaseUrl(customDomain?: string | null): string {
     // Garantir que não tenha barra no final
     return customDomain.replace(/\/+$/, "");
   }
+  const cachedDomain = getCachedTenantDomain();
+  if (cachedDomain) return cachedDomain;
   return getAppBaseUrl();
 }
 
