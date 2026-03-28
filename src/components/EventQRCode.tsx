@@ -32,12 +32,13 @@ const generateTrackingCode = (eventId: string, eventName: string) => {
 };
 
 const EventQRCode = ({ event }: EventQRCodeProps) => {
+  const tenantDomain = useTenantDomain();
   const [trackingCode] = useState(() => generateTrackingCode(event.id, event.name));
   const [eventQR, setEventQR] = useState<string>("");
   const { toast } = useToast();
 
   // URL do evento
-  const eventURL = generateEventRegistrationUrl(event.slug, event.id, trackingCode);
+  const eventURL = generateEventRegistrationUrl(event.slug, event.id, trackingCode, tenantDomain);
 
   useEffect(() => {
     const generateQRCode = async () => {
