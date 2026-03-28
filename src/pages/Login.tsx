@@ -193,7 +193,7 @@ const Login = () => {
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-600 py-6 relative z-10">
-        © 2026 Eleitor 360.ai — Desenvolvida por MEGA GLOBAL DIGITAL
+        © 2026 Jam.ai — Desenvolvida por MEGA GLOBAL DIGITAL
       </p>
     </div>
   );
