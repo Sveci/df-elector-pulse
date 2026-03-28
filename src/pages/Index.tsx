@@ -187,7 +187,7 @@ const Index = () => {
       {/* ─── HEADER ─── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <img src={logo} alt="Eleitor 360.ai" className="h-8 w-auto" />
+          <img src={logo} alt="JAM.ai" className="h-8 w-auto" />
           <nav className="hidden md:flex items-center gap-8">
             <button onClick={() => document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth" })} className="text-gray-400 hover:text-white text-sm transition-colors">Como funciona</button>
             <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-gray-400 hover:text-white text-sm transition-colors">Recursos</button>
@@ -228,7 +228,7 @@ const Index = () => {
               </motion.h1>
 
               <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-400 mb-8 leading-relaxed max-w-xl">
-                O Eleitor 360.ai é a plataforma que cuida da sua captação, comunicação e análise territorial como uma equipe de 10 pessoas faria — mas 24h por dia, sem erros e com IA integrada.
+                O JAM.ai é a plataforma que cuida da sua captação, comunicação e análise territorial como uma equipe de 10 pessoas faria — mas 24h por dia, sem erros e com IA integrada.
               </motion.p>
 
               <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -344,7 +344,7 @@ const Index = () => {
               <span className="bg-gradient-to-r from-primary to-primary-400 bg-clip-text text-transparent">que nunca dorme.</span>
             </motion.h2>
             <motion.p variants={fadeUp} custom={2} className="text-gray-400 text-lg max-w-3xl mx-auto">
-              O Eleitor 360.ai combina automação, dados e IA para cuidar da sua gestão com a mesma qualidade de uma equipe completa — mas 24h por dia.
+              O JAM.ai combina automação, dados e IA para cuidar da sua gestão com a mesma qualidade de uma equipe completa — mas 24h por dia.
             </motion.p>
           </motion.div>
 
@@ -459,7 +459,7 @@ const Index = () => {
             {/* After */}
             <motion.div variants={fadeUp} custom={1} className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] p-8">
               <h3 className="flex items-center gap-2 text-lg font-bold text-white mb-6">
-                <span className="text-2xl">🚀</span> Depois — Com Eleitor 360.ai
+                <span className="text-2xl">🚀</span> Depois — Com JAM.ai
               </h3>
               <ul className="space-y-4">
                 {beforeAfter.after.map((item, i) => (
@@ -686,7 +686,7 @@ const Index = () => {
               <span className="bg-gradient-to-r from-primary to-primary-400 bg-clip-text text-transparent">custo em resultado?</span>
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">
-              Configure sua organização em minutos e veja o que o Eleitor 360.ai já identificaria na sua operação hoje.
+              Configure sua organização em minutos e veja o que o JAM.ai já identificaria na sua operação hoje.
             </motion.p>
             <motion.div variants={fadeUp} custom={2} className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <Button onClick={() => navigate("/login")} size="lg" className="bg-primary hover:bg-primary-600 text-gray-900 font-bold text-lg px-10 py-6 shadow-[0_0_50px_hsl(54_100%_50%/0.12)]">
@@ -714,7 +714,7 @@ const Index = () => {
           <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
             {/* Brand */}
             <div className="lg:col-span-2 space-y-4">
-              <img src={logo} alt="Eleitor 360.ai" className="h-8 w-auto" />
+              <img src={logo} alt="JAM.ai" className="h-8 w-auto" />
               <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
                 A plataforma mais completa de gestão política com inteligência artificial.
                 Transforme dados em votos e relacionamentos em resultados.
