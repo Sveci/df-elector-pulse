@@ -85,7 +85,7 @@ const Login = () => {
         <img
           src={logo}
           alt="Eleitor 360.ai"
-          className="h-28 md:h-36 object-contain mb-14 drop-shadow-[0_0_40px_rgba(240,229,0,0.12)]"
+          className="h-20 md:h-25 object-contain mb-14 drop-shadow-[0_0_40px_rgba(240,229,0,0.12)]"
         />
 
         {/* Form */}
