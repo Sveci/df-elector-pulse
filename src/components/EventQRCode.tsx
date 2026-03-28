@@ -6,6 +6,7 @@ import { Download, Copy, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from 'qrcode';
 import { generateEventRegistrationUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 interface EventQRCodeProps {
   event: {
@@ -31,12 +32,13 @@ const generateTrackingCode = (eventId: string, eventName: string) => {
 };
 
 const EventQRCode = ({ event }: EventQRCodeProps) => {
+  const tenantDomain = useTenantDomain();
   const [trackingCode] = useState(() => generateTrackingCode(event.id, event.name));
   const [eventQR, setEventQR] = useState<string>("");
   const { toast } = useToast();
 
   // URL do evento
-  const eventURL = generateEventRegistrationUrl(event.slug, event.id, trackingCode);
+  const eventURL = generateEventRegistrationUrl(event.slug, event.id, trackingCode, tenantDomain);
 
   useEffect(() => {
     const generateQRCode = async () => {

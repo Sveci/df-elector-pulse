@@ -43,7 +43,8 @@ import {
 import { CreateFunnelDialog } from "./CreateFunnelDialog";
 import { FunnelReportDialog } from "./FunnelReportDialog";
 import { toast } from "@/hooks/use-toast";
-import { getBaseUrl } from "@/lib/urlHelper";
+import { getTenantBaseUrl } from "@/lib/urlHelper";
+import { useTenantDomain } from "@/hooks/useTenantDomain";
 
 interface FunnelCardProps {
   funnel: LeadFunnel;
@@ -51,6 +52,7 @@ interface FunnelCardProps {
 
 export function FunnelCard({ funnel }: FunnelCardProps) {
   const { isDemoMode, m } = useDemoMask();
+  const tenantDomain = useTenantDomain();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -59,7 +61,7 @@ export function FunnelCard({ funnel }: FunnelCardProps) {
   const duplicateFunnel = useDuplicateFunnel();
   const deleteFunnel = useDeleteFunnel();
 
-  const funnelUrl = `${getBaseUrl()}/captacao/${funnel.slug}`;
+  const funnelUrl = `${getTenantBaseUrl(tenantDomain)}/captacao/${funnel.slug}`;
 
   const conversionRate = funnel.views_count > 0
     ? ((funnel.leads_count / funnel.views_count) * 100).toFixed(1)
