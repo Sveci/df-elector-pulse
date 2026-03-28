@@ -20,7 +20,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logoIcon from "@/assets/logo-collapsed.png";
-import logo from "@/assets/logo-eleitor360.svg";
+import logo from "@/assets/logo-eleitor360.png";
 
 
 type AppRole = 'super_admin' | 'admin' | 'atendente' | 'checkin_operator';
