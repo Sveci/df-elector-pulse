@@ -7,5 +7,13 @@ import { useTenantContext } from "@/contexts/TenantContext";
 export function useTenantDomain(): string | null {
   // Hook must be called unconditionally — never inside try/catch
   const ctx = useTenantContext();
-  return ctx?.activeTenant?.custom_domain ?? null;
+  const tenantDomain = ctx?.activeTenant?.custom_domain;
+  if (tenantDomain) return tenantDomain;
+
+  if (typeof window !== "undefined") {
+    const cachedTenantDomain = localStorage.getItem("active_tenant_domain");
+    if (cachedTenantDomain) return cachedTenantDomain;
+  }
+
+  return null;
 }
