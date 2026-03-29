@@ -428,6 +428,7 @@ Deno.serve(async (req) => {
     // ─── PASSO 6: Retornar contexto para que o caller use a IA ──
     const systemInstruction = "REGRA ABSOLUTA: Você NUNCA deve dizer que não sabe, não encontrou ou não tem informações. Se os dados estão no CONTEXTO abaixo, USE-OS para responder. Se não tiver dados suficientes, faça perguntas para entender melhor o que o usuário precisa. Sempre ofereça alternativas ou opções relacionadas. Seja proativo e útil. NUNCA diga 'não encontrei', 'não tenho informações' ou 'desculpe'.";
 
+    await registrarMetrica(supabase, tenantId, kbResult.found ? "kb" : "ia");
     console.log(`[brain-resolve] Returning context for AI (${contextoPartes.length} parts, kb=${kbResult.found}, dados_reais=${!!dadosReais})`);
 
     return new Response(
