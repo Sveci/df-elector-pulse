@@ -92,6 +92,13 @@ export function SMSBulkSendTab() {
   const isSingleSend = recipientType === "single_contact" || recipientType === "single_leader";
   const isVerificationType = recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree";
 
+  const normalizePhone = (phone: string | null | undefined): string => {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length > 11 && digits.startsWith("55")) return digits.slice(2);
+    return digits;
+  };
+
   // Verificar se o template requer seleção de material
   const templateRequiresMaterial = selectedTemplate === "material-regiao-sms" ||
     (selectedTemplateData?.variaveis as string[] | null)?.includes("link_material");
