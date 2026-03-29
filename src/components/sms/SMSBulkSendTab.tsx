@@ -85,6 +85,7 @@ export function SMSBulkSendTab() {
   const [totalCount, setTotalCount] = useState(0);
   const [waitingForConfirmation, setWaitingForConfirmation] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [dedupResult, setDedupResult] = useState<{ duplicateCount: number; originalCount: number; finalCount: number } | null>(null);
 
   const activeTemplates = templates?.filter((t) => t.is_active) || [];
   const selectedTemplateData = templates?.find((t) => t.slug === selectedTemplate);
