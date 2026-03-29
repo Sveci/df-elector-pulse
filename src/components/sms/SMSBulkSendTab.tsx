@@ -1082,7 +1082,7 @@ export function SMSBulkSendTab() {
                     Lote {currentBatch} de {totalBatches}
                   </span>
                   <span>
-                    {sentCount}/{totalCount} enviados
+                    {sentCount}/{totalCount} enviados{dedupResult?.duplicateCount ? ` • ${dedupResult.duplicateCount.toLocaleString('pt-BR')} ignorados` : ""}
                   </span>
                 </div>
                 <Progress value={sendProgress} />
