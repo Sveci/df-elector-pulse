@@ -506,13 +506,22 @@ export function SMSBulkSendTab() {
       : selectedTemplate;
 
     let finalRecipients = recipients;
+    setDedupResult(null);
 
     if (!isSingleSend && recipients.length > 1) {
       toast.info("Verificando duplicatas dos últimos 7 dias...");
-      const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, templateToCheck);
+      console.log("[Dedup] Verificando", recipients.length, "destinatários para template:", templateToCheck);
+      const { uniqueRecipients, duplicateCount, duplicatePhones } = await deduplicateSMSRecipients(recipients, templateToCheck);
+      console.log("[Dedup] Resultado:", { duplicateCount, uniqueCount: uniqueRecipients.length, duplicatePhones: duplicatePhones.slice(0, 5) });
+
+      setDedupResult({
+        duplicateCount,
+        originalCount: recipients.length,
+        finalCount: uniqueRecipients.length,
+      });
 
       if (duplicateCount > 0) {
-        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`, { duration: 10000 });
       }
 
       if (uniqueRecipients.length === 0) {
