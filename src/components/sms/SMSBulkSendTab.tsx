@@ -160,6 +160,12 @@ export function SMSBulkSendTab() {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+      // Determinar template slug para buscar em scheduled_messages também
+      const templateSlug = isVerificationType
+        ? (recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
+          ? "verificacao-lider-sms" : "verificacao-link-sms")
+        : selectedTemplate;
+
       // Determinar padrão de mensagem baseado no tipo de destinatário
       let messagePattern = "";
       if (recipientType === "waiting_verification" || recipientType === "sms_not_sent" || recipientType === "coordinator_tree") {
@@ -174,37 +180,63 @@ export function SMSBulkSendTab() {
         }
       }
 
-      if (!messagePattern) return new Set<string>();
+      if (!messagePattern && !templateSlug) return new Set<string>();
 
-      // Buscar telefones com paginação
+      // Buscar telefones com paginação em sms_messages
       const allPhones: string[] = [];
       const pageSize = 1000;
-      let page = 0;
-      let hasMore = true;
 
-      while (hasMore) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-
-        const { data, error } = await supabase
-          .from("sms_messages")
-          .select("phone")
-          .eq("direction", "outgoing")
-          .gte("created_at", sevenDaysAgo.toISOString())
-          .ilike("message", messagePattern)
-          .range(from, to);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          allPhones.push(...data.map(m => m.phone));
-          hasMore = data.length === pageSize;
-          page++;
-        } else {
-          hasMore = false;
+      if (messagePattern) {
+        let page = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          const { data, error } = await supabase
+            .from("sms_messages")
+            .select("phone")
+            .eq("direction", "outgoing")
+            .gte("created_at", sevenDaysAgo.toISOString())
+            .ilike("message", messagePattern)
+            .range(from, to);
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allPhones.push(...data.map(m => m.phone));
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
         }
       }
 
+      // Também buscar em scheduled_messages pelo template_slug
+      if (templateSlug) {
+        let page = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          const { data, error } = await supabase
+            .from("scheduled_messages")
+            .select("recipient_phone")
+            .eq("message_type", "sms")
+            .eq("template_slug", templateSlug)
+            .gte("created_at", sevenDaysAgo.toISOString())
+            .in("status", ["pending", "processing", "sent"])
+            .range(from, to);
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allPhones.push(...data.map(m => m.recipient_phone).filter(Boolean));
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        }
+      }
+
+      console.log("[Dedup Preview] Encontrados", allPhones.length, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
       return new Set(allPhones);
     },
     enabled: !!(recipientType && (isVerificationType || selectedTemplate)),
