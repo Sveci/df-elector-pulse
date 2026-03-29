@@ -85,6 +85,7 @@ export function SMSBulkSendTab() {
   const [totalCount, setTotalCount] = useState(0);
   const [waitingForConfirmation, setWaitingForConfirmation] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [dedupResult, setDedupResult] = useState<{ duplicateCount: number; originalCount: number; finalCount: number } | null>(null);
 
   const activeTemplates = templates?.filter((t) => t.is_active) || [];
   const selectedTemplateData = templates?.find((t) => t.slug === selectedTemplate);
@@ -159,6 +160,12 @@ export function SMSBulkSendTab() {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+      // Determinar template slug para buscar em scheduled_messages também
+      const templateSlug = isVerificationType
+        ? (recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
+          ? "verificacao-lider-sms" : "verificacao-link-sms")
+        : selectedTemplate;
+
       // Determinar padrão de mensagem baseado no tipo de destinatário
       let messagePattern = "";
       if (recipientType === "waiting_verification" || recipientType === "sms_not_sent" || recipientType === "coordinator_tree") {
@@ -173,37 +180,63 @@ export function SMSBulkSendTab() {
         }
       }
 
-      if (!messagePattern) return new Set<string>();
+      if (!messagePattern && !templateSlug) return new Set<string>();
 
-      // Buscar telefones com paginação
+      // Buscar telefones com paginação em sms_messages
       const allPhones: string[] = [];
       const pageSize = 1000;
-      let page = 0;
-      let hasMore = true;
 
-      while (hasMore) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-
-        const { data, error } = await supabase
-          .from("sms_messages")
-          .select("phone")
-          .eq("direction", "outgoing")
-          .gte("created_at", sevenDaysAgo.toISOString())
-          .ilike("message", messagePattern)
-          .range(from, to);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          allPhones.push(...data.map(m => m.phone));
-          hasMore = data.length === pageSize;
-          page++;
-        } else {
-          hasMore = false;
+      if (messagePattern) {
+        let page = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          const { data, error } = await supabase
+            .from("sms_messages")
+            .select("phone")
+            .eq("direction", "outgoing")
+            .gte("created_at", sevenDaysAgo.toISOString())
+            .ilike("message", messagePattern)
+            .range(from, to);
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allPhones.push(...data.map(m => m.phone));
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
         }
       }
 
+      // Também buscar em scheduled_messages pelo template_slug
+      if (templateSlug) {
+        let page = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          const { data, error } = await supabase
+            .from("scheduled_messages")
+            .select("recipient_phone")
+            .eq("message_type", "sms")
+            .eq("template_slug", templateSlug)
+            .gte("created_at", sevenDaysAgo.toISOString())
+            .in("status", ["pending", "processing", "sent"])
+            .range(from, to);
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allPhones.push(...data.map(m => m.recipient_phone).filter(Boolean));
+            hasMore = data.length === pageSize;
+            page++;
+          } else {
+            hasMore = false;
+          }
+        }
+      }
+
+      console.log("[Dedup Preview] Encontrados", allPhones.length, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
       return new Set(allPhones);
     },
     enabled: !!(recipientType && (isVerificationType || selectedTemplate)),
@@ -505,13 +538,22 @@ export function SMSBulkSendTab() {
       : selectedTemplate;
 
     let finalRecipients = recipients;
+    setDedupResult(null);
 
     if (!isSingleSend && recipients.length > 1) {
       toast.info("Verificando duplicatas dos últimos 7 dias...");
-      const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, templateToCheck);
+      console.log("[Dedup] Verificando", recipients.length, "destinatários para template:", templateToCheck);
+      const { uniqueRecipients, duplicateCount, duplicatePhones } = await deduplicateSMSRecipients(recipients, templateToCheck);
+      console.log("[Dedup] Resultado:", { duplicateCount, uniqueCount: uniqueRecipients.length, duplicatePhones: duplicatePhones.slice(0, 5) });
+
+      setDedupResult({
+        duplicateCount,
+        originalCount: recipients.length,
+        finalCount: uniqueRecipients.length,
+      });
 
       if (duplicateCount > 0) {
-        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`, { duration: 10000 });
       }
 
       if (uniqueRecipients.length === 0) {
@@ -1047,11 +1089,23 @@ export function SMSBulkSendTab() {
               </div>
             )}
 
-            {duplicateInfo.count > 0 && (
+            {duplicateInfo.count > 0 && !isSending && (
               <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
-                  <strong>{duplicateInfo.count.toLocaleString('pt-BR')}</strong> de {recipients?.length.toLocaleString('pt-BR')} destinatários ({duplicateInfo.percentage}%) já receberam esta mensagem nos últimos 7 dias.
+                  <strong>⚠️ {duplicateInfo.count.toLocaleString('pt-BR')}</strong> de {recipients?.length.toLocaleString('pt-BR')} destinatários ({duplicateInfo.percentage}%) já receberam esta mensagem nos últimos 7 dias e <strong>serão ignorados automaticamente</strong>.
+                  {duplicateInfo.count < (recipients?.length || 0) && (
+                    <span className="block mt-1">Serão enviados apenas para <strong>{((recipients?.length || 0) - duplicateInfo.count).toLocaleString('pt-BR')}</strong> destinatários novos.</span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {dedupResult && dedupResult.duplicateCount > 0 && isSending && (
+              <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <strong>✅ {dedupResult.duplicateCount.toLocaleString('pt-BR')}</strong> destinatário(s) ignorados (já receberam nos últimos 7 dias). Enviando para <strong>{dedupResult.finalCount.toLocaleString('pt-BR')}</strong> de {dedupResult.originalCount.toLocaleString('pt-BR')}.
                 </AlertDescription>
               </Alert>
             )}
