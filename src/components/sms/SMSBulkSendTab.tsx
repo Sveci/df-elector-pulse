@@ -1089,11 +1089,23 @@ export function SMSBulkSendTab() {
               </div>
             )}
 
-            {duplicateInfo.count > 0 && (
+            {duplicateInfo.count > 0 && !isSending && (
               <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
-                  <strong>{duplicateInfo.count.toLocaleString('pt-BR')}</strong> de {recipients?.length.toLocaleString('pt-BR')} destinatários ({duplicateInfo.percentage}%) já receberam esta mensagem nos últimos 7 dias.
+                  <strong>⚠️ {duplicateInfo.count.toLocaleString('pt-BR')}</strong> de {recipients?.length.toLocaleString('pt-BR')} destinatários ({duplicateInfo.percentage}%) já receberam esta mensagem nos últimos 7 dias e <strong>serão ignorados automaticamente</strong>.
+                  {duplicateInfo.count < (recipients?.length || 0) && (
+                    <span className="block mt-1">Serão enviados apenas para <strong>{((recipients?.length || 0) - duplicateInfo.count).toLocaleString('pt-BR')}</strong> destinatários novos.</span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {dedupResult && dedupResult.duplicateCount > 0 && isSending && (
+              <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/30">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <strong>✅ {dedupResult.duplicateCount.toLocaleString('pt-BR')}</strong> destinatário(s) ignorados (já receberam nos últimos 7 dias). Enviando para <strong>{dedupResult.finalCount.toLocaleString('pt-BR')}</strong> de {dedupResult.originalCount.toLocaleString('pt-BR')}.
                 </AlertDescription>
               </Alert>
             )}
