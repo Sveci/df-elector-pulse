@@ -500,9 +500,11 @@ export function SMSBulkSendTab() {
 
     // Deduplicação: filtrar quem já recebeu nos últimos 7 dias
     const templateToCheck = isVerificationType
-      ? (recipientType === "leaders" || recipientType === "single_leader" || recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
+      ? (recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
         ? "verificacao-lider-sms" : "verificacao-link-sms")
       : selectedTemplate;
+
+    let finalRecipients = recipients;
 
     if (!isSingleSend && recipients.length > 1) {
       toast.info("Verificando duplicatas dos últimos 7 dias...");
@@ -517,8 +519,7 @@ export function SMSBulkSendTab() {
         return;
       }
 
-      // Replace recipients with deduplicated list
-      recipients = uniqueRecipients as typeof recipients;
+      finalRecipients = uniqueRecipients as typeof recipients;
     }
 
     setIsSending(true);
