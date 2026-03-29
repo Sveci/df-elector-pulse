@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
       embedding = await gerarEmbedding(supabaseUrl, serviceKey, message);
     } catch (err) {
       console.error("[brain-resolve] Embedding failed, falling back to AI:", err);
-      // If embedding fails, return null so the caller falls back to AI
+      await registrarMetrica(supabase, tenantId, "ia");
       return new Response(
         JSON.stringify({
           success: true,
