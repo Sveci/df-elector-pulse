@@ -535,11 +535,11 @@ export function SMSBulkSendTab() {
       console.log("Link encurtado:", shortenedMaterialUrl);
     }
 
-    const batchSizeNum = batchSize === "all" ? recipients.length : parseInt(batchSize);
-    const batches = Math.ceil(recipients.length / batchSizeNum);
+    const batchSizeNum = batchSize === "all" ? finalRecipients.length : parseInt(batchSize);
+    const batches = Math.ceil(finalRecipients.length / batchSizeNum);
 
     setTotalBatches(batches);
-    setTotalCount(recipients.length);
+    setTotalCount(finalRecipients.length);
 
     for (let batchIndex = currentBatch; batchIndex < batches; batchIndex++) {
       setCurrentBatch(batchIndex + 1);
