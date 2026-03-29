@@ -498,6 +498,29 @@ export function SMSBulkSendTab() {
       return;
     }
 
+    // Deduplicação: filtrar quem já recebeu nos últimos 7 dias
+    const templateToCheck = isVerificationType
+      ? (recipientType === "leaders" || recipientType === "single_leader" || recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
+        ? "verificacao-lider-sms" : "verificacao-link-sms")
+      : selectedTemplate;
+
+    if (!isSingleSend && recipients.length > 1) {
+      toast.info("Verificando duplicatas dos últimos 7 dias...");
+      const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, templateToCheck);
+
+      if (duplicateCount > 0) {
+        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+      }
+
+      if (uniqueRecipients.length === 0) {
+        toast.error("Todos os destinatários já receberam este SMS nos últimos 7 dias.");
+        return;
+      }
+
+      // Replace recipients with deduplicated list
+      recipients = uniqueRecipients as typeof recipients;
+    }
+
     setIsSending(true);
     setWaitingForConfirmation(false);
     setSentCount(0);
