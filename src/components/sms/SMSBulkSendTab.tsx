@@ -1123,15 +1123,28 @@ export function SMSBulkSendTab() {
         onSchedule={async (scheduledFor) => {
           if (!recipients?.length || !selectedTemplate) return;
 
+          // Deduplicação antes de agendar
+          let recipientsToSchedule = recipients;
+          if (recipients.length > 1) {
+            const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, selectedTemplate);
+            if (duplicateCount > 0) {
+              toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+            }
+            if (uniqueRecipients.length === 0) {
+              toast.error("Todos os destinatários já receberam este SMS nos últimos 7 dias.");
+              return;
+            }
+            recipientsToSchedule = uniqueRecipients as typeof recipients;
+          }
+
           const batchId = crypto.randomUUID();
-          const messages = recipients.map((r) => ({
+          const messages = recipientsToSchedule.map((r) => ({
             message_type: "sms" as const,
             recipient_phone: r.phone,
             recipient_name: r.nome,
             template_slug: selectedTemplate,
             variables: {
               nome: r.nome || "",
-              // SEMPRE usa URL de produção para links de afiliado
               ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token, tenantDomain) } : {}),
             },
             scheduled_for: scheduledFor.toISOString(),
