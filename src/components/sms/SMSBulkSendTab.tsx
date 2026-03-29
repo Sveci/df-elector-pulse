@@ -649,7 +649,7 @@ export function SMSBulkSendTab() {
 
         // Update progress
         const totalSent = start + i + 1;
-        setSendProgress((totalSent / recipients.length) * 100);
+        setSendProgress((totalSent / finalRecipients.length) * 100);
 
         // Add delay between messages
         if (i < batchRecipients.length - 1) {
