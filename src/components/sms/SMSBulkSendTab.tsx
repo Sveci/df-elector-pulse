@@ -545,8 +545,8 @@ export function SMSBulkSendTab() {
       setCurrentBatch(batchIndex + 1);
 
       const start = batchIndex * batchSizeNum;
-      const end = Math.min(start + batchSizeNum, recipients.length);
-      const batchRecipients = recipients.slice(start, end);
+      const end = Math.min(start + batchSizeNum, finalRecipients.length);
+      const batchRecipients = finalRecipients.slice(start, end);
 
       for (let i = 0; i < batchRecipients.length; i++) {
         const recipient = batchRecipients[i];
