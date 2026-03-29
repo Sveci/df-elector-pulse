@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { generateVerificationUrl, generateLeaderReferralUrl, generateLeaderVerificationUrl, getProductionUrl } from "@/lib/urlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
+import { deduplicateSMSRecipients } from "@/hooks/sms/useSMSDeduplication";
 
 type RecipientType = "contacts" | "leaders" | "event" | "single_contact" | "single_leader" | "sms_not_sent" | "waiting_verification" | "coordinator_tree";
 type BatchSize = "10" | "20" | "30" | "50" | "100" | "all";
@@ -497,6 +498,30 @@ export function SMSBulkSendTab() {
       return;
     }
 
+    // Deduplicação: filtrar quem já recebeu nos últimos 7 dias
+    const templateToCheck = isVerificationType
+      ? (recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree"
+        ? "verificacao-lider-sms" : "verificacao-link-sms")
+      : selectedTemplate;
+
+    let finalRecipients = recipients;
+
+    if (!isSingleSend && recipients.length > 1) {
+      toast.info("Verificando duplicatas dos últimos 7 dias...");
+      const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, templateToCheck);
+
+      if (duplicateCount > 0) {
+        toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+      }
+
+      if (uniqueRecipients.length === 0) {
+        toast.error("Todos os destinatários já receberam este SMS nos últimos 7 dias.");
+        return;
+      }
+
+      finalRecipients = uniqueRecipients as typeof recipients;
+    }
+
     setIsSending(true);
     setWaitingForConfirmation(false);
     setSentCount(0);
@@ -510,18 +535,18 @@ export function SMSBulkSendTab() {
       console.log("Link encurtado:", shortenedMaterialUrl);
     }
 
-    const batchSizeNum = batchSize === "all" ? recipients.length : parseInt(batchSize);
-    const batches = Math.ceil(recipients.length / batchSizeNum);
+    const batchSizeNum = batchSize === "all" ? finalRecipients.length : parseInt(batchSize);
+    const batches = Math.ceil(finalRecipients.length / batchSizeNum);
 
     setTotalBatches(batches);
-    setTotalCount(recipients.length);
+    setTotalCount(finalRecipients.length);
 
     for (let batchIndex = currentBatch; batchIndex < batches; batchIndex++) {
       setCurrentBatch(batchIndex + 1);
 
       const start = batchIndex * batchSizeNum;
-      const end = Math.min(start + batchSizeNum, recipients.length);
-      const batchRecipients = recipients.slice(start, end);
+      const end = Math.min(start + batchSizeNum, finalRecipients.length);
+      const batchRecipients = finalRecipients.slice(start, end);
 
       for (let i = 0; i < batchRecipients.length; i++) {
         const recipient = batchRecipients[i];
@@ -624,7 +649,7 @@ export function SMSBulkSendTab() {
 
         // Update progress
         const totalSent = start + i + 1;
-        setSendProgress((totalSent / recipients.length) * 100);
+        setSendProgress((totalSent / finalRecipients.length) * 100);
 
         // Add delay between messages
         if (i < batchRecipients.length - 1) {
@@ -1098,15 +1123,28 @@ export function SMSBulkSendTab() {
         onSchedule={async (scheduledFor) => {
           if (!recipients?.length || !selectedTemplate) return;
 
+          // Deduplicação antes de agendar
+          let recipientsToSchedule = recipients;
+          if (recipients.length > 1) {
+            const { uniqueRecipients, duplicateCount } = await deduplicateSMSRecipients(recipients, selectedTemplate);
+            if (duplicateCount > 0) {
+              toast.warning(`${duplicateCount} destinatário(s) já receberam este SMS nos últimos 7 dias e serão ignorados.`);
+            }
+            if (uniqueRecipients.length === 0) {
+              toast.error("Todos os destinatários já receberam este SMS nos últimos 7 dias.");
+              return;
+            }
+            recipientsToSchedule = uniqueRecipients as typeof recipients;
+          }
+
           const batchId = crypto.randomUUID();
-          const messages = recipients.map((r) => ({
+          const messages = recipientsToSchedule.map((r) => ({
             message_type: "sms" as const,
             recipient_phone: r.phone,
             recipient_name: r.nome,
             template_slug: selectedTemplate,
             variables: {
               nome: r.nome || "",
-              // SEMPRE usa URL de produção para links de afiliado
               ...(r.affiliate_token ? { link_indicacao: generateLeaderReferralUrl(r.affiliate_token, tenantDomain) } : {}),
             },
             scheduled_for: scheduledFor.toISOString(),
