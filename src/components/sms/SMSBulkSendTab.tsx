@@ -495,13 +495,7 @@ export function SMSBulkSendTab() {
       return { count: 0, percentage: 0 };
     }
 
-    // Função para normalizar telefone (remover +55 e outros caracteres não numéricos)
-    const normalizePhone = (phone: string | null): string => {
-      if (!phone) return "";
-      return phone.replace(/^\+55/, "").replace(/\D/g, "");
-    };
-
-    const duplicateCount = recipients.filter(r => {
+    const duplicateCount = recipients.filter((r) => {
       if (!r.phone) return false;
       const normalizedPhone = normalizePhone(r.phone);
       return recentRecipientPhones.has(normalizedPhone);
