@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { generateVerificationUrl, generateLeaderReferralUrl, generateLeaderVerificationUrl, getProductionUrl } from "@/lib/urlHelper";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
+import { deduplicateSMSRecipients } from "@/hooks/sms/useSMSDeduplication";
 
 type RecipientType = "contacts" | "leaders" | "event" | "single_contact" | "single_leader" | "sms_not_sent" | "waiting_verification" | "coordinator_tree";
 type BatchSize = "10" | "20" | "30" | "50" | "100" | "all";
