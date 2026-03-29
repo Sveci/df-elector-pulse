@@ -208,7 +208,7 @@ export function SMSBulkSendTab() {
             .range(from, to);
           if (error) throw error;
           if (data && data.length > 0) {
-            allPhones.push(...data.map(m => m.phone));
+            allPhones.push(...data.map(m => normalizePhone(m.phone)).filter(Boolean));
             hasMore = data.length === pageSize;
             page++;
           } else {
@@ -234,7 +234,7 @@ export function SMSBulkSendTab() {
             .range(from, to);
           if (error) throw error;
           if (data && data.length > 0) {
-            allPhones.push(...data.map(m => m.recipient_phone).filter(Boolean));
+            allPhones.push(...data.map(m => normalizePhone(m.recipient_phone)).filter(Boolean));
             hasMore = data.length === pageSize;
             page++;
           } else {
@@ -243,8 +243,9 @@ export function SMSBulkSendTab() {
         }
       }
 
-      console.log("[Dedup Preview] Encontrados", allPhones.length, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
-      return new Set(allPhones);
+      const phoneSet = new Set(allPhones);
+      console.log("[Dedup Preview] Encontrados", phoneSet.size, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
+      return phoneSet;
     },
     enabled: !!(recipientType && (isVerificationType || selectedTemplate)),
   });
