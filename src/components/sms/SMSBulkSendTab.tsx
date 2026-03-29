@@ -92,6 +92,13 @@ export function SMSBulkSendTab() {
   const isSingleSend = recipientType === "single_contact" || recipientType === "single_leader";
   const isVerificationType = recipientType === "sms_not_sent" || recipientType === "waiting_verification" || recipientType === "coordinator_tree";
 
+  const normalizePhone = (phone: string | null | undefined): string => {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length > 11 && digits.startsWith("55")) return digits.slice(2);
+    return digits;
+  };
+
   // Verificar se o template requer seleção de material
   const templateRequiresMaterial = selectedTemplate === "material-regiao-sms" ||
     (selectedTemplateData?.variaveis as string[] | null)?.includes("link_material");
@@ -201,7 +208,7 @@ export function SMSBulkSendTab() {
             .range(from, to);
           if (error) throw error;
           if (data && data.length > 0) {
-            allPhones.push(...data.map(m => m.phone));
+            allPhones.push(...data.map(m => normalizePhone(m.phone)).filter(Boolean));
             hasMore = data.length === pageSize;
             page++;
           } else {
@@ -227,7 +234,7 @@ export function SMSBulkSendTab() {
             .range(from, to);
           if (error) throw error;
           if (data && data.length > 0) {
-            allPhones.push(...data.map(m => m.recipient_phone).filter(Boolean));
+            allPhones.push(...data.map(m => normalizePhone(m.recipient_phone)).filter(Boolean));
             hasMore = data.length === pageSize;
             page++;
           } else {
@@ -236,8 +243,9 @@ export function SMSBulkSendTab() {
         }
       }
 
-      console.log("[Dedup Preview] Encontrados", allPhones.length, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
-      return new Set(allPhones);
+      const phoneSet = new Set(allPhones);
+      console.log("[Dedup Preview] Encontrados", phoneSet.size, "telefones recentes para pattern:", messagePattern, "slug:", templateSlug);
+      return phoneSet;
     },
     enabled: !!(recipientType && (isVerificationType || selectedTemplate)),
   });
@@ -487,13 +495,7 @@ export function SMSBulkSendTab() {
       return { count: 0, percentage: 0 };
     }
 
-    // Função para normalizar telefone (remover +55 e outros caracteres não numéricos)
-    const normalizePhone = (phone: string | null): string => {
-      if (!phone) return "";
-      return phone.replace(/^\+55/, "").replace(/\D/g, "");
-    };
-
-    const duplicateCount = recipients.filter(r => {
+    const duplicateCount = recipients.filter((r) => {
       if (!r.phone) return false;
       const normalizedPhone = normalizePhone(r.phone);
       return recentRecipientPhones.has(normalizedPhone);
@@ -1082,7 +1084,7 @@ export function SMSBulkSendTab() {
                     Lote {currentBatch} de {totalBatches}
                   </span>
                   <span>
-                    {sentCount}/{totalCount} enviados
+                    {sentCount}/{totalCount} enviados{dedupResult?.duplicateCount ? ` • ${dedupResult.duplicateCount.toLocaleString('pt-BR')} ignorados` : ""}
                   </span>
                 </div>
                 <Progress value={sendProgress} />
