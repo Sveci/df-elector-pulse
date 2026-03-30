@@ -41,7 +41,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
 
-type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts";
+type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts" | "recent_interactions";
 
 // Templates que precisam de evento destino
 const EVENT_INVITE_TEMPLATES = ["evento-convite", "lideranca-evento-link"];
@@ -53,6 +53,8 @@ const SURVEY_INVITE_TEMPLATES = ["pesquisa-convite", "lideranca-pesquisa-link"];
 const LEADER_AFFILIATE_LINK_TEMPLATES = ["lideranca-reuniao-link", "lideranca-cadastro-link"];
 // Templates de verificação (para contatos não verificados)
 const VERIFICATION_TEMPLATES = ["verificacao-cadastro"];
+// Templates para envio via Cloud API (janela 24h)
+const CLOUD_API_TEMPLATES = ["habita-amapa-2026-cloud"];
 
 // Templates de convite permitidos por tipo de destinatário
 const CONVITE_TEMPLATES_LEADERS = [
@@ -372,23 +374,49 @@ export function WhatsAppBulkSendTab() {
         return { count: filteredData.length, recipients: filteredData };
       }
 
+      if (recipientType === "recent_interactions") {
+        // Buscar telefones que enviaram mensagem nas últimas 24h (janela Cloud API)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentMessages, error: msgError } = await supabase
+          .from("whatsapp_messages")
+          .select("phone")
+          .eq("direction", "incoming")
+          .gte("created_at", twentyFourHoursAgo);
+        if (msgError) throw msgError;
+
+        // Deduplicate phones
+        const uniquePhones = [...new Set((recentMessages || []).map(m => m.phone))];
+        const recipients = uniquePhones.map(phone => ({
+          id: phone,
+          nome: "Contato",
+          telefone_norm: phone,
+        }));
+        return { count: recipients.length, recipients };
+      }
+
       return { count: 0, recipients: [] };
     },
     enabled:
       recipientType === "leaders" ||
       recipientType === "all_contacts" ||
       recipientType === "unverified_contacts" ||
+      recipientType === "recent_interactions" ||
       (recipientType === "single_contact" && !!selectedSingleContact) ||
       (recipientType === "single_leader" && !!selectedSingleLeader) ||
       (recipientType === "event_contacts" && !!selectedEvent) ||
       (recipientType === "funnel_contacts" && !!selectedFunnel),
   });
 
-  // Filter templates based on recipient type - only invitation templates
+  // Filter templates based on recipient type
   const filteredTemplates = useMemo(() => {
     if (!templates) return [];
 
     const activeTemplates = templates.filter((t) => t.is_active);
+
+    // Templates para interações recentes (Cloud API 24h)
+    if (recipientType === "recent_interactions") {
+      return activeTemplates.filter((t) => CLOUD_API_TEMPLATES.includes(t.slug));
+    }
 
     // Templates de verificação para contatos não verificados
     if (recipientType === "unverified_contacts") {
@@ -416,6 +444,7 @@ export function WhatsAppBulkSendTab() {
     (recipientType === "leaders" ||
       recipientType === "all_contacts" ||
       recipientType === "unverified_contacts" ||
+      recipientType === "recent_interactions" ||
       (recipientType === "single_contact" && selectedSingleContact) ||
       (recipientType === "single_leader" && selectedSingleLeader) ||
       (recipientType === "event_contacts" && selectedEvent) ||
@@ -735,6 +764,7 @@ export function WhatsAppBulkSendTab() {
                 message,
                 contactId,
                 tenantId,
+                ...(recipientType === "recent_interactions" ? { providerOverride: "meta_cloud" } : {}),
               },
             });
 
@@ -835,26 +865,37 @@ export function WhatsAppBulkSendTab() {
           onDismiss={dismissDialog}
         />
       )}
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="space-y-1">
-          <p>
-            Certifique-se de que a integração Z-API está configurada e ativa antes de
-            realizar envios em massa.
-          </p>
-          {(recipientsData?.count || 0) > 0 && (
-            <p className="flex items-center gap-1 text-xs">
-              <Clock className="h-3 w-3" />
-              Intervalo de 3-6 segundos entre mensagens para evitar bloqueios.
-              {estimatedMinutes > 0 && (
-                <span className="font-medium">
-                  {" "}Tempo estimado: ~{estimatedMinutes} min
-                </span>
-              )}
+      {recipientType === "recent_interactions" ? (
+        <Alert className="border-green-200 bg-green-50">
+          <AlertCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="space-y-1 text-green-800">
+            <p>
+              <strong>Cloud API — Janela de 24h:</strong> Serão selecionados apenas contatos que enviaram mensagem nas últimas 24 horas, respeitando a política da Meta.
             </p>
-          )}
-        </AlertDescription>
-      </Alert>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="space-y-1">
+            <p>
+              Certifique-se de que a integração Z-API está configurada e ativa antes de
+              realizar envios em massa.
+            </p>
+            {(recipientsData?.count || 0) > 0 && (
+              <p className="flex items-center gap-1 text-xs">
+                <Clock className="h-3 w-3" />
+                Intervalo de 3-6 segundos entre mensagens para evitar bloqueios.
+                {estimatedMinutes > 0 && (
+                  <span className="font-medium">
+                    {" "}Tempo estimado: ~{estimatedMinutes} min
+                  </span>
+                )}
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Recipient Selection */}
@@ -951,6 +992,12 @@ export function WhatsAppBulkSendTab() {
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
                       Contatos Não Verificados
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="recent_interactions">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Interações últimas 24h (Cloud API)
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -1204,7 +1251,7 @@ export function WhatsAppBulkSendTab() {
                   {selectedTemplateData.mensagem}
                 </div>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {selectedTemplateData.variaveis.map((v, i) => (
+                  {Array.isArray(selectedTemplateData.variaveis) && selectedTemplateData.variaveis.map((v, i) => (
                     <Badge key={i} variant="outline" className="text-xs">
                       {`{{${v}}}`}
                     </Badge>
