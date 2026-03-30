@@ -101,7 +101,7 @@ export function SMSBulkSendTab() {
 
   // Verificar se o template requer seleção de material
   const templateRequiresMaterial = selectedTemplate === "material-regiao-sms" ||
-    (selectedTemplateData?.variaveis as string[] | null)?.includes("link_material");
+    (Array.isArray(selectedTemplateData?.variaveis) && selectedTemplateData.variaveis.includes("link_material"));
 
   // Search contacts (include verification_code for SMS verification links)
   const { data: contactSearchResults } = useQuery({
