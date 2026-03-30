@@ -41,7 +41,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getProductionUrl, getTenantBaseUrl, generateEventAffiliateUrl, generateAffiliateUrl, generateLeaderReferralUrl, generateSurveyAffiliateUrl, generateLeaderVerificationUrl, generateVerificationUrl } from "@/lib/urlHelper";
 
-type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts";
+type RecipientType = "leaders" | "event_contacts" | "funnel_contacts" | "all_contacts" | "single_contact" | "single_leader" | "unverified_contacts" | "recent_interactions";
 
 // Templates que precisam de evento destino
 const EVENT_INVITE_TEMPLATES = ["evento-convite", "lideranca-evento-link"];
@@ -53,6 +53,8 @@ const SURVEY_INVITE_TEMPLATES = ["pesquisa-convite", "lideranca-pesquisa-link"];
 const LEADER_AFFILIATE_LINK_TEMPLATES = ["lideranca-reuniao-link", "lideranca-cadastro-link"];
 // Templates de verificação (para contatos não verificados)
 const VERIFICATION_TEMPLATES = ["verificacao-cadastro"];
+// Templates para envio via Cloud API (janela 24h)
+const CLOUD_API_TEMPLATES = ["habita-amapa-2026-cloud"];
 
 // Templates de convite permitidos por tipo de destinatário
 const CONVITE_TEMPLATES_LEADERS = [
