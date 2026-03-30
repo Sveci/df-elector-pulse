@@ -1239,7 +1239,7 @@ export function WhatsAppBulkSendTab() {
                   {selectedTemplateData.mensagem}
                 </div>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {selectedTemplateData.variaveis.map((v, i) => (
+                  {Array.isArray(selectedTemplateData.variaveis) && selectedTemplateData.variaveis.map((v, i) => (
                     <Badge key={i} variant="outline" className="text-xs">
                       {`{{${v}}}`}
                     </Badge>
