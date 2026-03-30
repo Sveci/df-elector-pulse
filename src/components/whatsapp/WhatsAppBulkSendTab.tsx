@@ -865,37 +865,46 @@ export function WhatsAppBulkSendTab() {
           onDismiss={dismissDialog}
         />
       )}
-      {recipientType === "recent_interactions" ? (
+      {selectedTemplateData && CLOUD_API_TEMPLATES.includes(selectedTemplateData.slug) && (
         <Alert className="border-green-200 bg-green-50">
           <AlertCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="space-y-1 text-green-800">
             <p>
-              <strong>Cloud API — Janela de 24h:</strong> Serão selecionados apenas contatos que enviaram mensagem nas últimas 24 horas, respeitando a política da Meta.
+              <strong>Cloud API — Janela de 24h:</strong> Este template será enviado via Meta Cloud API. Apenas contatos que interagiram nas últimas 24 horas poderão receber a mensagem.
             </p>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="space-y-1">
-            <p>
-              Certifique-se de que a integração Z-API está configurada e ativa antes de
-              realizar envios em massa.
-            </p>
-            {(recipientsData?.count || 0) > 0 && (
-              <p className="flex items-center gap-1 text-xs">
-                <Clock className="h-3 w-3" />
-                Intervalo de 3-6 segundos entre mensagens para evitar bloqueios.
-                {estimatedMinutes > 0 && (
-                  <span className="font-medium">
-                    {" "}Tempo estimado: ~{estimatedMinutes} min
-                  </span>
+            {recipientType === "recent_interactions" && (
+              <p className="flex items-center gap-1 text-sm font-medium mt-1">
+                <Users className="h-4 w-4" />
+                {recipientsLoading ? (
+                  <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Carregando...</span>
+                ) : (
+                  <span>{recipientsData?.count || 0} contato(s) habilitado(s) para envio (janela 24h ativa)</span>
                 )}
               </p>
             )}
           </AlertDescription>
         </Alert>
       )}
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="space-y-1">
+          <p>
+            Certifique-se de que a integração Z-API está configurada e ativa antes de
+            realizar envios em massa.
+          </p>
+          {(recipientsData?.count || 0) > 0 && (
+            <p className="flex items-center gap-1 text-xs">
+              <Clock className="h-3 w-3" />
+              Intervalo de 3-6 segundos entre mensagens para evitar bloqueios.
+              {estimatedMinutes > 0 && (
+                <span className="font-medium">
+                  {" "}Tempo estimado: ~{estimatedMinutes} min
+                </span>
+              )}
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Recipient Selection */}
