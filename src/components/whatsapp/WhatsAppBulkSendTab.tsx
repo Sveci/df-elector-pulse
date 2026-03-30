@@ -374,6 +374,26 @@ export function WhatsAppBulkSendTab() {
         return { count: filteredData.length, recipients: filteredData };
       }
 
+      if (recipientType === "recent_interactions") {
+        // Buscar telefones que enviaram mensagem nas últimas 24h (janela Cloud API)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentMessages, error: msgError } = await supabase
+          .from("whatsapp_messages")
+          .select("phone")
+          .eq("direction", "incoming")
+          .gte("created_at", twentyFourHoursAgo);
+        if (msgError) throw msgError;
+
+        // Deduplicate phones
+        const uniquePhones = [...new Set((recentMessages || []).map(m => m.phone))];
+        const recipients = uniquePhones.map(phone => ({
+          id: phone,
+          nome: "Contato",
+          telefone_norm: phone,
+        }));
+        return { count: recipients.length, recipients };
+      }
+
       return { count: 0, recipients: [] };
     },
     enabled:
