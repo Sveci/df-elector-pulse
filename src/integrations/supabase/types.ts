@@ -5772,6 +5772,10 @@ export type Database = {
           phone: string
         }[]
       }
+      get_recent_whatsapp_phones_json: {
+        Args: { hours_ago?: number }
+        Returns: Json
+      }
       get_registration_by_qr: {
         Args: { _qr_code: string }
         Returns: {
