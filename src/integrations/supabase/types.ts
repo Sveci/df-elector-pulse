@@ -5766,6 +5766,12 @@ export type Database = {
           leader_form_title: string
         }[]
       }
+      get_recent_whatsapp_phones: {
+        Args: { hours_ago?: number }
+        Returns: {
+          phone: string
+        }[]
+      }
       get_registration_by_qr: {
         Args: { _qr_code: string }
         Returns: {
