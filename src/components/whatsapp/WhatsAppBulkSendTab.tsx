@@ -400,17 +400,23 @@ export function WhatsAppBulkSendTab() {
       recipientType === "leaders" ||
       recipientType === "all_contacts" ||
       recipientType === "unverified_contacts" ||
+      recipientType === "recent_interactions" ||
       (recipientType === "single_contact" && !!selectedSingleContact) ||
       (recipientType === "single_leader" && !!selectedSingleLeader) ||
       (recipientType === "event_contacts" && !!selectedEvent) ||
       (recipientType === "funnel_contacts" && !!selectedFunnel),
   });
 
-  // Filter templates based on recipient type - only invitation templates
+  // Filter templates based on recipient type
   const filteredTemplates = useMemo(() => {
     if (!templates) return [];
 
     const activeTemplates = templates.filter((t) => t.is_active);
+
+    // Templates para interações recentes (Cloud API 24h)
+    if (recipientType === "recent_interactions") {
+      return activeTemplates.filter((t) => CLOUD_API_TEMPLATES.includes(t.slug));
+    }
 
     // Templates de verificação para contatos não verificados
     if (recipientType === "unverified_contacts") {
