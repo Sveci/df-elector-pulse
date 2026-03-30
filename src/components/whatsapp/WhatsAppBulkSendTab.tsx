@@ -376,14 +376,18 @@ export function WhatsAppBulkSendTab() {
 
       if (recipientType === "recent_interactions") {
         // Buscar telefones únicos via RPC (evita limite de 1000 linhas)
-        const { data: recentPhones, error: rpcError } = await supabase
-          .rpc("get_recent_whatsapp_phones", { hours_ago: 24 });
+        const { data: recentPhonesJson, error: rpcError } = await supabase
+          .rpc("get_recent_whatsapp_phones_json", { hours_ago: 24 });
         if (rpcError) throw rpcError;
 
-        const recipients = (recentPhones || []).map((r: { phone: string }) => ({
-          id: r.phone,
+        const phoneList = Array.isArray(recentPhonesJson)
+          ? recentPhonesJson
+          : [];
+
+        const recipients = phoneList.map((phone: string) => ({
+          id: phone,
           nome: "Contato",
-          telefone_norm: r.phone,
+          telefone_norm: phone,
         }));
         return { count: recipients.length, recipients };
       }
