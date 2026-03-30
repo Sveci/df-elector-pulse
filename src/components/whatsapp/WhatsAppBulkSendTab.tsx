@@ -375,21 +375,15 @@ export function WhatsAppBulkSendTab() {
       }
 
       if (recipientType === "recent_interactions") {
-        // Buscar telefones que enviaram mensagem nas últimas 24h (janela Cloud API)
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data: recentMessages, error: msgError } = await supabase
-          .from("whatsapp_messages")
-          .select("phone")
-          .eq("direction", "incoming")
-          .gte("created_at", twentyFourHoursAgo);
-        if (msgError) throw msgError;
+        // Buscar telefones únicos via RPC (evita limite de 1000 linhas)
+        const { data: recentPhones, error: rpcError } = await supabase
+          .rpc("get_recent_whatsapp_phones", { hours_ago: 24 });
+        if (rpcError) throw rpcError;
 
-        // Deduplicate phones
-        const uniquePhones = [...new Set((recentMessages || []).map(m => m.phone))];
-        const recipients = uniquePhones.map(phone => ({
-          id: phone,
+        const recipients = (recentPhones || []).map((r: { phone: string }) => ({
+          id: r.phone,
           nome: "Contato",
-          telefone_norm: phone,
+          telefone_norm: r.phone,
         }));
         return { count: recipients.length, recipients };
       }
