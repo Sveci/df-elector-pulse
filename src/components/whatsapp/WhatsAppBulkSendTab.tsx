@@ -982,6 +982,12 @@ export function WhatsAppBulkSendTab() {
                       Contatos Não Verificados
                     </div>
                   </SelectItem>
+                  <SelectItem value="recent_interactions">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Interações últimas 24h (Cloud API)
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
