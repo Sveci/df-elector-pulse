@@ -444,6 +444,7 @@ export function WhatsAppBulkSendTab() {
     (recipientType === "leaders" ||
       recipientType === "all_contacts" ||
       recipientType === "unverified_contacts" ||
+      recipientType === "recent_interactions" ||
       (recipientType === "single_contact" && selectedSingleContact) ||
       (recipientType === "single_leader" && selectedSingleLeader) ||
       (recipientType === "event_contacts" && selectedEvent) ||
