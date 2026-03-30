@@ -434,7 +434,7 @@ export function WhatsAppBulkSendTab() {
       return activeTemplates.filter((t) => CONVITE_TEMPLATES_LEADERS.includes(t.slug));
     }
 
-    return activeTemplates.filter((t) => CONVITE_TEMPLATES_CONTACTS.includes(t.slug));
+    return activeTemplates.filter((t) => CONVITE_TEMPLATES_CONTACTS.includes(t.slug) || CLOUD_API_TEMPLATES.includes(t.slug));
   }, [templates, recipientType]);
 
   const canSend =
