@@ -764,6 +764,7 @@ export function WhatsAppBulkSendTab() {
                 message,
                 contactId,
                 tenantId,
+                ...(recipientType === "recent_interactions" ? { providerOverride: "meta_cloud" } : {}),
               },
             });
 
