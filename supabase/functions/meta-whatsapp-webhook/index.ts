@@ -170,7 +170,8 @@ async function handleConversationalFlow(
   from: string,
   normalizedPhone: string,
   messageText: string,
-  tenantId: string | null
+  tenantId: string | null,
+  replyPhoneNumberId?: string | null
 ): Promise<boolean> {
   if (!tenantId) return false;
 
