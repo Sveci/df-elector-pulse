@@ -25,9 +25,10 @@ interface ChatbotKeyword {
   keyword: string;
   aliases: string[];
   description: string | null;
-  response_type: "static" | "dynamic" | "ai";
+  response_type: "static" | "dynamic" | "ai" | "flow";
   static_response: string | null;
   dynamic_function: string | null;
+  flow_id: string | null;
   is_active: boolean;
   priority: number;
 }
