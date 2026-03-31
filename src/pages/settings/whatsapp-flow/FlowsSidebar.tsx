@@ -126,11 +126,12 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
         tags: [],
         color: newForm.color,
         icon: newForm.icon,
+        phone_number_ids: newForm.phone_number_ids.length > 0 ? newForm.phone_number_ids : null,
       },
       {
         onSuccess: (flow) => {
           setNewFlowOpen(false);
-          setNewForm({ name: "", description: "", color: "#3b82f6", icon: "📋" });
+          setNewForm({ name: "", description: "", color: "#3b82f6", icon: "📋", phone_number_ids: [] });
           onSelectFlow(flow);
         },
       }
@@ -152,6 +153,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
         tags: rest.tags || [],
         color: rest.color || "#3b82f6",
         icon: rest.icon || "📋",
+        phone_number_ids: null,
       } as any,
       {
         onSuccess: (flow) => {
@@ -165,7 +167,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
   const handleSaveEdit = () => {
     if (!editFlow) return;
     update.mutate(
-      { id: editFlow.id, name: editFlow.name, description: editFlow.description, color: editFlow.color, icon: editFlow.icon },
+      { id: editFlow.id, name: editFlow.name, description: editFlow.description, color: editFlow.color, icon: editFlow.icon, phone_number_ids: editFlow.phone_number_ids },
       { onSuccess: () => setEditFlow(null) }
     );
   };
