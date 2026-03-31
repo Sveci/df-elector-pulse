@@ -104,6 +104,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
       meta_cloud_api_version: apiVersion,
       meta_cloud_fallback_enabled: fallbackEnabled,
       meta_cloud_phone: metaCloudPhone || null,
+      // Número 2
+      meta_cloud_phone_number_id_2: phoneNumberId2 || null,
+      meta_cloud_waba_id_2: wabaId2 || null,
+      meta_cloud_phone_2: metaCloudPhone2 || null,
+      meta_cloud_enabled_2: metaCloudEnabled2,
     });
   };
 
