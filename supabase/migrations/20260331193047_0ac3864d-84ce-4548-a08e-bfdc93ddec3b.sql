@@ -1,0 +1,2 @@
+ALTER TABLE public.whatsapp_chatbot_keywords DROP CONSTRAINT whatsapp_chatbot_keywords_response_type_check;
+ALTER TABLE public.whatsapp_chatbot_keywords ADD CONSTRAINT whatsapp_chatbot_keywords_response_type_check CHECK (response_type IN ('static', 'dynamic', 'ai', 'flow'));
