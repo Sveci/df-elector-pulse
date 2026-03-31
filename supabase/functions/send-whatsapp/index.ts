@@ -35,6 +35,7 @@ interface SendWhatsAppRequest {
   metaTemplate?: MetaTemplatePayload;
   bypassAutoCheck?: boolean;
   tenantId?: string; // Tenant isolation
+  phoneNumberIdOverride?: string; // Use a specific Meta Cloud phone number ID
 }
 
 // Replace template variables {{var}} with actual values
