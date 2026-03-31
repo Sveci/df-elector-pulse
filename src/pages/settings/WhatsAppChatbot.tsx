@@ -862,7 +862,7 @@ const WhatsAppChatbot = () => {
               <Label>Tipo de Resposta *</Label>
               <Select
                 value={keywordForm.response_type}
-                onValueChange={(value: "static" | "dynamic" | "ai") =>
+                onValueChange={(value: "static" | "dynamic" | "ai" | "flow") =>
                   setKeywordForm({ ...keywordForm, response_type: value })
                 }
               >
@@ -883,6 +883,11 @@ const WhatsAppChatbot = () => {
                   <SelectItem value="ai">
                     <div className="flex items-center gap-2">
                       <Brain className="h-4 w-4" /> IA (resposta inteligente)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="flow">
+                    <div className="flex items-center gap-2">
+                      <Workflow className="h-4 w-4" /> Fluxo (Flow Builder)
                     </div>
                   </SelectItem>
                 </SelectContent>
