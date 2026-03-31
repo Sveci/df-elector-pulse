@@ -677,14 +677,14 @@ serve(async (req) => {
                   
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Você saiu do fluxo atual.\n\nSe precisar de algo, é só digitar:\n📋 *AJUDA* - Ver comandos disponíveis\n🎫 *EVENTO* - Inscrição em eventos\n\nOu envie qualquer pergunta que responderei com prazer! 😊`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] Active flow cleared for ${normalizedPhone}`);
                 } else {
                   // No active flow - just acknowledge
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `Não há nenhum fluxo ativo no momento.\n\nDigite *AJUDA* para ver os comandos disponíveis. 😊`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] No active flow for ${normalizedPhone}, sent info message`);
                 }
@@ -708,7 +708,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `Você foi removido(a) da nossa lista. Para voltar a receber mensagens, envie VOLTAR.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 }
                 continue;
@@ -728,7 +728,7 @@ serve(async (req) => {
 
                 await sendMetaCloudMessage(supabase, normalizedPhone,
                   `Você foi adicionado(a) novamente à nossa lista. Bem-vindo(a) de volta!`,
-                  tenantId
+                  tenantId, webhookPhoneNumberId
                 );
                 continue;
               }
@@ -748,7 +748,7 @@ serve(async (req) => {
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Código de retirada *${code}* não encontrado. Verifique se digitou corretamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -763,7 +763,7 @@ serve(async (req) => {
                 if (!leader || !leader.telefone || leader.telefone.replace(/\D/g, '').slice(-8) !== last8) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Este código de retirada não pertence a este número de telefone.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -771,7 +771,7 @@ serve(async (req) => {
                 if (reservation.status === 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Esta retirada já foi confirmada anteriormente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -779,7 +779,7 @@ serve(async (req) => {
                 if (reservation.status !== 'reserved') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Esta reserva não está mais ativa (status: ${reservation.status}).`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -798,7 +798,7 @@ serve(async (req) => {
                   console.error('[Meta Webhook] Error confirming withdrawal:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Erro ao confirmar retirada. Tente novamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -809,7 +809,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Retirada confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade: ${reservation.quantidade}\n👤 ${leader.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] ✅ Withdrawal confirmed for reservation ${reservation.id}`);
                 }
@@ -831,7 +831,7 @@ serve(async (req) => {
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Código de devolução *${code}* não encontrado. Verifique se digitou corretamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -846,7 +846,7 @@ serve(async (req) => {
                 if (!leaderRet || !leaderRet.telefone || leaderRet.telefone.replace(/\D/g, '').slice(-8) !== last8ret) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Este código de devolução não pertence a este número de telefone.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -854,7 +854,7 @@ serve(async (req) => {
                 if (reservation.status !== 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Esta reserva não está no status de retirada (status: ${reservation.status}).`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -862,7 +862,7 @@ serve(async (req) => {
                 if (reservation.return_confirmed_via) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Esta devolução já foi confirmada anteriormente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -871,7 +871,7 @@ serve(async (req) => {
                 if (returnable <= 0) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Todo o material já foi devolvido.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -894,7 +894,7 @@ serve(async (req) => {
                   console.error('[Meta Webhook] Error confirming return:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Erro ao confirmar devolução. Tente novamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -905,7 +905,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Devolução confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade devolvida: ${returnQty}\n👤 ${leaderRet.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] ✅ Return confirmed for reservation ${reservation.id}`);
                 }
@@ -1081,12 +1081,12 @@ serve(async (req) => {
                   if (leaderToVerify?.is_verified) {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
                       `Seu cadastro já foi verificado! Se você precisa do seu link de indicação, entre em contato com nossa equipe.`,
-                      tenantId
+                      tenantId, webhookPhoneNumberId
                     );
                   } else {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
                       `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`,
-                      tenantId
+                      tenantId, webhookPhoneNumberId
                     );
                   }
                   continue;
