@@ -21,6 +21,10 @@ interface MetaCloudConfigCardProps {
     meta_cloud_api_version?: string;
     meta_cloud_fallback_enabled?: boolean;
     meta_cloud_phone?: string | null;
+    meta_cloud_phone_number_id_2?: string | null;
+    meta_cloud_waba_id_2?: string | null;
+    meta_cloud_phone_2?: string | null;
+    meta_cloud_enabled_2?: boolean;
     zapi_enabled?: boolean;
   } | null;
   onProviderChange?: (provider: 'zapi' | 'meta_cloud') => void;
