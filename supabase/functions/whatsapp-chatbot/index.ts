@@ -566,7 +566,7 @@ async function handleEventRegistrationStep(
         if (!qrSent) {
           console.log("[whatsapp-chatbot] QR image failed, sending link fallback");
           await sendResponseToUser(supabase, intSettings, provider, phone,
-            `🎫 *Seu QR Code de Check-in:*\n${checkInUrl}\n\nApresente este link na entrada do evento.`, tenantId);
+            `🎫 *Seu QR Code de Check-in:*\n${checkInUrl}\n\nApresente este link na entrada do evento.`, tenantId, phoneNumberIdOverride);
           // Mark as sent even for fallback (user received the link)
           if (registrationId) {
             await supabase
@@ -1304,7 +1304,7 @@ Deno.serve(async (req) => {
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
         const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
-        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId);
+        await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId, phoneNumberIdOverride);
         return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -1338,7 +1338,7 @@ Deno.serve(async (req) => {
           .select("zapi_instance_id, zapi_token, zapi_client_token, zapi_enabled, meta_cloud_enabled, meta_cloud_phone_number_id, meta_cloud_api_version, whatsapp_provider_active");
         if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
-        await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resumeMsg, tenantId);
+        await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resumeMsg, tenantId, phoneNumberIdOverride);
 
         return new Response(JSON.stringify({ success: true, responseType: "flow_resume" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -1380,7 +1380,7 @@ Deno.serve(async (req) => {
             if (brainData.success && !brainData.fallbackToAI && brainData.response) {
               // Brain answered directly (cache or KB)
               const resposta = brainData.response + flowPendingNote;
-              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId);
+              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId, phoneNumberIdOverride);
               await supabase.from("whatsapp_chatbot_logs").insert({
                 leader_id: actor?.id || null, phone: normalizedPhone, message_in: message,
                 message_out: resposta, keyword_matched: null, response_type: `smart_escape_brain_${brainData.source}`,
@@ -1403,7 +1403,7 @@ Deno.serve(async (req) => {
                 brainSystemRule, supabase, tenantId, session?.conversation_history
               );
               const resposta = aiResponse + flowPendingNote;
-              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId);
+              await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resposta, tenantId, phoneNumberIdOverride);
 
               // Learn from this interaction
               if (brainData.embedding) {
@@ -2056,7 +2056,7 @@ Deno.serve(async (req) => {
           })
           .eq("id", session.id);
 
-        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg, tenantId);
+        await sendResponseToUser(supabase, integrationSettings, provider, normalizedPhone, regInviteMsg, tenantId, phoneNumberIdOverride);
 
         await supabase.from("whatsapp_chatbot_logs").insert({
           leader_id: null, phone: normalizedPhone, message_in: "[auto-trigger-30min]",
