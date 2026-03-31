@@ -1452,7 +1452,7 @@ Deno.serve(async (req) => {
     // Check if user is in an EVENT registration flow step
     if (session?.event_reg_state) {
       const evtRegResult = await handleEventRegistrationStep(
-        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime, phoneNumberIdOverride
       );
       if (evtRegResult) {
         return new Response(JSON.stringify(evtRegResult),
