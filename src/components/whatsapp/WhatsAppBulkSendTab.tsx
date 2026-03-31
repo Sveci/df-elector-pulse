@@ -869,10 +869,29 @@ export function WhatsAppBulkSendTab() {
       {selectedTemplateData && CLOUD_API_TEMPLATES.includes(selectedTemplateData.slug) && (
         <Alert className="border-green-200 bg-green-50">
           <AlertCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="space-y-1 text-green-800">
+          <AlertDescription className="space-y-2 text-green-800">
             <p>
               <strong>Cloud API — Janela de 24h:</strong> Este template será enviado via Meta Cloud API. Apenas contatos que interagiram nas últimas 24 horas poderão receber a mensagem.
             </p>
+            {/* Seletor de número Cloud API */}
+            {intSettings?.meta_cloud_enabled_2 && intSettings?.meta_cloud_phone_number_id_2 && (
+              <div className="flex items-center gap-3 bg-white/60 rounded-md p-2">
+                <Label className="text-sm font-medium text-green-800 whitespace-nowrap">Enviar pelo número:</Label>
+                <Select value={selectedCloudNumber} onValueChange={(v) => setSelectedCloudNumber(v as "1" | "2")}>
+                  <SelectTrigger className="h-8 w-auto min-w-[220px] bg-white border-green-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">
+                      Número 1 — {intSettings?.meta_cloud_phone || intSettings?.meta_cloud_phone_number_id || "Principal"}
+                    </SelectItem>
+                    <SelectItem value="2">
+                      Número 2 — {intSettings?.meta_cloud_phone_2 || intSettings?.meta_cloud_phone_number_id_2 || "Secundário"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {recipientType === "recent_interactions" && (
               <p className="flex items-center gap-1 text-sm font-medium mt-1">
                 <Users className="h-4 w-4" />
