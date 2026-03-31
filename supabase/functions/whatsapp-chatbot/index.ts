@@ -1981,6 +1981,13 @@ Deno.serve(async (req) => {
         console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Inscrição em Evento'}] Event registration status intent detected`);
         responseType = "event_reg_status";
         responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
+      } else if (!isBrainResolveEnabled) {
+        // Brain-resolve disabled for this phone number (secondary number) — stay silent
+        console.log(`[whatsapp-chatbot] [BRAIN] Skipping AI fallback — brain-resolve disabled for phone ${currentPhoneNumberId}`);
+        return new Response(
+          JSON.stringify({ success: true, responseType: "brain_disabled_silent" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       } else {
         console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] [IA] No keyword match — using Brain → Cache → KB → AI pipeline`);
         responseType = "ai";
