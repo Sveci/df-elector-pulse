@@ -183,6 +183,7 @@ const WhatsAppChatbot = () => {
       response_type: keywordForm.response_type,
       static_response: keywordForm.response_type === "static" ? keywordForm.static_response : null,
       dynamic_function: keywordForm.response_type === "dynamic" ? keywordForm.dynamic_function : null,
+      flow_id: keywordForm.response_type === "flow" ? keywordForm.flow_id || null : null,
       is_active: keywordForm.is_active,
       priority: keywordForm.priority
     };
