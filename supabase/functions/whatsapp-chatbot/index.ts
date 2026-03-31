@@ -508,7 +508,7 @@ async function handleEventRegistrationStep(
           const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
           if (metaAccessToken) {
             const apiVersion = intSettings.meta_cloud_api_version || "v20.0";
-            const graphUrl = `https://graph.facebook.com/${apiVersion}/${intSettings.meta_cloud_phone_number_id}/messages`;
+            const graphUrl = `https://graph.facebook.com/${apiVersion}/${phoneNumberIdOverride || intSettings.meta_cloud_phone_number_id}/messages`;
             let cleanPhone = phone.replace(/[^0-9]/g, "");
             if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) {
               cleanPhone = "55" + cleanPhone;
@@ -866,7 +866,7 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
       const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
       if (metaToken) {
         docSent = await sendDocumentMetaCloud(
-          intSettings.meta_cloud_phone_number_id,
+          (phoneNumberIdOverride || intSettings.meta_cloud_phone_number_id),
           intSettings.meta_cloud_api_version || "v20.0",
           metaToken,
           normalizedPhone,
@@ -951,7 +951,7 @@ async function sendResponseToUser(
     const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
     if (metaAccessToken) {
       return await sendWhatsAppMessageMetaCloud(
-        integrationSettings.meta_cloud_phone_number_id,
+        (phoneNumberIdOverride || integrationSettings.meta_cloud_phone_number_id),
         integrationSettings.meta_cloud_api_version || "v20.0",
         metaAccessToken, phone, message, supabase, tenantId
       );
@@ -1571,7 +1571,7 @@ Deno.serve(async (req) => {
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseAlready, supabase, tenantId);
+          if (metaToken) await sendWhatsAppMessageMetaCloud((phoneNumberIdOverride || intSettings.meta_cloud_phone_number_id), intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseAlready, supabase, tenantId);
         } else if (intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
           await sendWhatsAppMessage(intSettings.zapi_instance_id, intSettings.zapi_token, intSettings.zapi_client_token, normalizedPhone, responseAlready);
         }
@@ -1601,7 +1601,7 @@ Deno.serve(async (req) => {
 
         if (useMetaCloudForVerif && intSettings?.meta_cloud_enabled && intSettings.meta_cloud_phone_number_id) {
           const metaToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-          if (metaToken) await sendWhatsAppMessageMetaCloud(intSettings.meta_cloud_phone_number_id, intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseWrongCode, supabase, tenantId);
+          if (metaToken) await sendWhatsAppMessageMetaCloud((phoneNumberIdOverride || intSettings.meta_cloud_phone_number_id), intSettings.meta_cloud_api_version || "v20.0", metaToken, normalizedPhone, responseWrongCode, supabase, tenantId);
         } else if (intSettings?.zapi_enabled && intSettings.zapi_instance_id && intSettings.zapi_token) {
           await sendWhatsAppMessage(intSettings.zapi_instance_id, intSettings.zapi_token, intSettings.zapi_client_token, normalizedPhone, responseWrongCode);
         }
@@ -1965,7 +1965,7 @@ Deno.serve(async (req) => {
       const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
       if (metaAccessToken) {
         messageSent = await sendWhatsAppMessageMetaCloud(
-          integrationSettings.meta_cloud_phone_number_id,
+          (phoneNumberIdOverride || integrationSettings.meta_cloud_phone_number_id),
           integrationSettings.meta_cloud_api_version || "v20.0",
           metaAccessToken,
           normalizedPhone,
