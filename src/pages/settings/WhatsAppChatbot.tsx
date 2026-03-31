@@ -170,7 +170,8 @@ const WhatsAppChatbot = () => {
       dynamic_function: kw.dynamic_function || "",
       flow_id: kw.flow_id || "",
       is_active: kw.is_active,
-      priority: kw.priority
+      priority: kw.priority,
+      phone_number_ids: (kw as any).phone_number_ids || [],
     });
     setKeywordDialogOpen(true);
   };
