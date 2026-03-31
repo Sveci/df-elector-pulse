@@ -86,6 +86,9 @@ import {
 import { useWhatsAppCommunities, useUpdateCommunity, useWhatsAppChatStates } from "@/hooks/useWhatsAppCommunities";
 import { useChatbotFlows } from "@/hooks/useWhatsAppFlows";
 import { useTutorial } from "@/hooks/useTutorial";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import type { Step } from "react-joyride";
