@@ -63,7 +63,8 @@ import {
   TrendingUp,
   RefreshCw,
   Activity,
-  GitBranch
+  GitBranch,
+  Workflow
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
@@ -83,6 +84,7 @@ import {
   AVAILABLE_DYNAMIC_FUNCTIONS
 } from "@/hooks/useWhatsAppChatbot";
 import { useWhatsAppCommunities, useUpdateCommunity, useWhatsAppChatStates } from "@/hooks/useWhatsAppCommunities";
+import { useChatbotFlows } from "@/hooks/useWhatsAppFlows";
 import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
@@ -109,9 +111,10 @@ const WhatsAppChatbot = () => {
     keyword: "",
     aliases: "",
     description: "",
-    response_type: "dynamic" as "static" | "dynamic" | "ai",
+    response_type: "dynamic" as "static" | "dynamic" | "ai" | "flow",
     static_response: "",
     dynamic_function: "",
+    flow_id: "",
     is_active: true,
     priority: 0
   });
@@ -124,6 +127,7 @@ const WhatsAppChatbot = () => {
   const { data: chatStates, isLoading: loadingChatStates } = useWhatsAppChatStates();
   const { data: sessions, isLoading: loadingSessions } = useChatbotSessions(50);
   const { data: stats, isLoading: loadingStats } = useChatbotStats();
+  const { data: availableFlows } = useChatbotFlows();
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
@@ -146,6 +150,7 @@ const WhatsAppChatbot = () => {
       response_type: "dynamic",
       static_response: "",
       dynamic_function: "",
+      flow_id: "",
       is_active: true,
       priority: 0
     });
@@ -161,6 +166,7 @@ const WhatsAppChatbot = () => {
       response_type: kw.response_type,
       static_response: kw.static_response || "",
       dynamic_function: kw.dynamic_function || "",
+      flow_id: kw.flow_id || "",
       is_active: kw.is_active,
       priority: kw.priority
     });
@@ -180,6 +186,7 @@ const WhatsAppChatbot = () => {
       response_type: keywordForm.response_type,
       static_response: keywordForm.response_type === "static" ? keywordForm.static_response : null,
       dynamic_function: keywordForm.response_type === "dynamic" ? keywordForm.dynamic_function : null,
+      flow_id: keywordForm.response_type === "flow" ? keywordForm.flow_id || null : null,
       is_active: keywordForm.is_active,
       priority: keywordForm.priority
     };
@@ -207,6 +214,8 @@ const WhatsAppChatbot = () => {
         return <Badge variant="default"><Zap className="w-3 h-3 mr-1" /> Dinâmica</Badge>;
       case "ai":
         return <Badge className="bg-purple-500"><Brain className="w-3 h-3 mr-1" /> IA</Badge>;
+      case "flow":
+        return <Badge className="bg-emerald-600 text-white"><Workflow className="w-3 h-3 mr-1" /> Fluxo</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -282,7 +291,7 @@ const WhatsAppChatbot = () => {
             <Inbox className="h-4 w-4" /> Inbox
           </TabsTrigger>
         </TabsList>
-
+  
 
         {/* Config Tab */}
         <TabsContent value="config" className="space-y-4">
@@ -853,7 +862,7 @@ const WhatsAppChatbot = () => {
               <Label>Tipo de Resposta *</Label>
               <Select
                 value={keywordForm.response_type}
-                onValueChange={(value: "static" | "dynamic" | "ai") =>
+                onValueChange={(value: "static" | "dynamic" | "ai" | "flow") =>
                   setKeywordForm({ ...keywordForm, response_type: value })
                 }
               >
@@ -874,6 +883,11 @@ const WhatsAppChatbot = () => {
                   <SelectItem value="ai">
                     <div className="flex items-center gap-2">
                       <Brain className="h-4 w-4" /> IA (resposta inteligente)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="flow">
+                    <div className="flex items-center gap-2">
+                      <Workflow className="h-4 w-4" /> Fluxo (Flow Builder)
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -919,6 +933,35 @@ const WhatsAppChatbot = () => {
               </div>
             )}
 
+            {keywordForm.response_type === "flow" && (
+              <div className="space-y-2">
+                <Label>Fluxo do Flow Builder *</Label>
+                <Select
+                  value={keywordForm.flow_id}
+                  onValueChange={(value) => setKeywordForm({ ...keywordForm, flow_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um fluxo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(availableFlows || []).map((flow: any) => (
+                      <SelectItem key={flow.id} value={flow.id}>
+                        <div>
+                          <div className="font-medium">{flow.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {flow.is_published ? "Publicado" : "Rascunho"}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Quando a palavra-chave for detectada, o fluxo selecionado será executado.
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center gap-4">
               <div className="flex-1 space-y-2">
                 <Label>Prioridade</Label>
@@ -948,7 +991,8 @@ const WhatsAppChatbot = () => {
               onClick={handleSaveKeyword}
               disabled={!keywordForm.keyword ||
                 (keywordForm.response_type === "static" && !keywordForm.static_response) ||
-                (keywordForm.response_type === "dynamic" && !keywordForm.dynamic_function)
+                (keywordForm.response_type === "dynamic" && !keywordForm.dynamic_function) ||
+                (keywordForm.response_type === "flow" && !keywordForm.flow_id)
               }
             >
               {editingKeyword ? "Salvar" : "Criar"}
