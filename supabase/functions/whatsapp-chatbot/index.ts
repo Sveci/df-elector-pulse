@@ -1441,7 +1441,7 @@ Deno.serve(async (req) => {
     // Check if user is in a registration flow step
     if (session?.registration_state && !session.registration_completed_at) {
       const regResult = await handleRegistrationStep(
-        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime
+        supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime, phoneNumberIdOverride
       );
       if (regResult) {
         return new Response(JSON.stringify(regResult),
