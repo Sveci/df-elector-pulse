@@ -429,7 +429,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestBody: SendWhatsAppRequest = await req.json();
-    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck, tenantId: requestTenantId } = requestBody;
+    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck, tenantId: requestTenantId, phoneNumberIdOverride } = requestBody;
 
     console.log(`[send-whatsapp] REQUEST - templateSlug: ${templateSlug}, phone: ${phone?.substring(0, 6)}..., providerOverride: ${providerOverride}, bypassAutoCheck: ${bypassAutoCheck}, tenantId: ${requestTenantId || 'auto'}`);
 
