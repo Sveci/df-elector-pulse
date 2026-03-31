@@ -261,7 +261,59 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
           </div>
         </div>
 
-        {/* Access Token Warning */}
+        {/* Segundo Número Cloud API */}
+        <div className="space-y-4 bg-blue-50/50 rounded-lg p-4 border border-blue-200/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base font-medium">Segundo Número (Cloud API)</Label>
+              <p className="text-xs text-muted-foreground">
+                Configure um segundo número para envios via Cloud API
+              </p>
+            </div>
+            <Switch
+              checked={metaCloudEnabled2}
+              onCheckedChange={setMetaCloudEnabled2}
+            />
+          </div>
+
+          {metaCloudEnabled2 && (
+            <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone-number-id-2">Phone Number ID *</Label>
+                  <Input
+                    id="phone-number-id-2"
+                    placeholder="Ex: 123456789012345"
+                    value={phoneNumberId2}
+                    onChange={(e) => setPhoneNumberId2(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="waba-id-2">WABA ID (opcional)</Label>
+                  <Input
+                    id="waba-id-2"
+                    placeholder="Ex: 123456789012345"
+                    value={wabaId2}
+                    onChange={(e) => setWabaId2(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meta-phone-2">Número do WhatsApp 2 *</Label>
+                <Input
+                  id="meta-phone-2"
+                  placeholder="Ex: 5596999999999"
+                  value={metaCloudPhone2}
+                  onChange={(e) => setMetaCloudPhone2(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Segundo número cadastrado na Cloud API (DDI + DDD + Número)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
