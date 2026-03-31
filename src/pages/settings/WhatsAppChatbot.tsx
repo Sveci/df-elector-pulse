@@ -988,6 +988,35 @@ const WhatsAppChatbot = () => {
               </div>
             )}
 
+            {/* Phone number restriction */}
+            {phoneNumbers && phoneNumbers.length > 1 && (
+              <div className="space-y-2">
+                <Label>Números de WhatsApp</Label>
+                <p className="text-xs text-muted-foreground">
+                  Selecione em quais números esta palavra-chave deve funcionar. Se nenhum for marcado, funciona em todos.
+                </p>
+                <div className="space-y-2">
+                  {phoneNumbers.map((pn: any) => (
+                    <div key={pn.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`kw-phone-${pn.id}`}
+                        checked={keywordForm.phone_number_ids.includes(pn.id)}
+                        onCheckedChange={(checked) => {
+                          setKeywordForm(prev => ({
+                            ...prev,
+                            phone_number_ids: checked
+                              ? [...prev.phone_number_ids, pn.id]
+                              : prev.phone_number_ids.filter((id: string) => id !== pn.id),
+                          }));
+                        }}
+                      />
+                      <label htmlFor={`kw-phone-${pn.id}`} className="text-sm cursor-pointer">{pn.label}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-4">
               <div className="flex-1 space-y-2">
                 <Label>Prioridade</Label>
