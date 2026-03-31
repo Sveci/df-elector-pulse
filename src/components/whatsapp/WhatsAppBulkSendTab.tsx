@@ -90,6 +90,7 @@ export function WhatsAppBulkSendTab() {
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [selectedFunnel, setSelectedFunnel] = useState<string>("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedCloudNumber, setSelectedCloudNumber] = useState<"1" | "2">("1");
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
 
