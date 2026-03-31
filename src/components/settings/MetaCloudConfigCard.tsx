@@ -407,8 +407,20 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
             {testConnection.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : null}
-            Testar Conexão
+            Testar Número 1
           </Button>
+          {metaCloudEnabled2 && phoneNumberId2 && (
+            <Button
+              variant="outline"
+              onClick={() => testConnection.mutate({ phoneNumberId: phoneNumberId2, apiVersion })}
+              disabled={testConnection.isPending}
+            >
+              {testConnection.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Testar Número 2
+            </Button>
+          )}
           <Button
             onClick={handleSave}
             disabled={updateSettings.isPending}
