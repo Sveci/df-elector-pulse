@@ -127,6 +127,7 @@ const WhatsAppChatbot = () => {
   const { data: chatStates, isLoading: loadingChatStates } = useWhatsAppChatStates();
   const { data: sessions, isLoading: loadingSessions } = useChatbotSessions(50);
   const { data: stats, isLoading: loadingStats } = useChatbotStats();
+  const { data: availableFlows } = useChatbotFlows();
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
