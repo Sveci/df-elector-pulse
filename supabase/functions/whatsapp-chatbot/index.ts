@@ -1642,7 +1642,7 @@ Deno.serve(async (req) => {
       .eq("is_published", true);
 
     // Filter flows by phone_number_id if available
-    const currentPhoneNumberId = phoneNumberId || null;
+    const currentPhoneNumberId = phoneNumberIdOverride || null;
     const allFlows = (publishedFlows || []) as Array<{
       id: string;
       name: string;
