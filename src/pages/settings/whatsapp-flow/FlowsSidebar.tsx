@@ -382,6 +382,38 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
                   ))}
                 </div>
               </div>
+              {/* Phone number selector */}
+              {phoneNumbers.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label>Números WhatsApp</Label>
+                  <p className="text-[11px] text-muted-foreground">Sem seleção = todos os números.</p>
+                  <div className="space-y-2">
+                    {phoneNumbers.map((pn) => (
+                      <label key={pn.id} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={(editFlow.phone_number_ids || []).includes(pn.id)}
+                          onCheckedChange={(checked) => {
+                            setEditFlow((f) => {
+                              if (!f) return f;
+                              const current = f.phone_number_ids || [];
+                              return {
+                                ...f,
+                                phone_number_ids: checked
+                                  ? [...current, pn.id]
+                                  : current.filter((id) => id !== pn.id),
+                              };
+                            });
+                          }}
+                        />
+                        <span className="text-sm flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          {pn.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditFlow(null)}>
