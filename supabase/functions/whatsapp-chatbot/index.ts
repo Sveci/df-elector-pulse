@@ -980,7 +980,8 @@ async function handleRegistrationStep(
   userMessage: string,
   tenantId: string,
   provider: string | undefined,
-  startTime: number
+  startTime: number,
+  phoneNumberIdOverride?: string | null
 ): Promise<any | null> {
   const { data: intSettings } = await supabase
     .from("integrations_settings")
