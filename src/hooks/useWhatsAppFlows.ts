@@ -87,6 +87,7 @@ export interface ChatbotFlow {
   icon: string | null;
   trigger_count: number;
   execution_count: number;
+  phone_number_ids: string[] | null;
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────

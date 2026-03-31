@@ -1636,21 +1636,31 @@ Deno.serve(async (req) => {
     // Load all published flows for this tenant
     const { data: publishedFlows } = await supabase
       .from("whatsapp_chatbot_flows")
-      .select("id, name, nodes, edges, is_active, is_published")
+      .select("id, name, nodes, edges, is_active, is_published, phone_number_ids")
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .eq("is_published", true);
 
-    const flows = (publishedFlows || []) as Array<{
+    // Filter flows by phone_number_id if available
+    const currentPhoneNumberId = phoneNumberIdOverride || null;
+    const allFlows = (publishedFlows || []) as Array<{
       id: string;
       name: string;
       nodes: Array<{ id: string; type: string; data: Record<string, any> }>;
       edges: Array<{ id: string; source: string; target: string; sourceHandle?: string; label?: string }>;
       is_active: boolean;
       is_published: boolean;
+      phone_number_ids: string[] | null;
     }>;
 
-    console.log(`[whatsapp-chatbot] [FLUXOS] Loaded ${flows.length} published flows for tenant ${tenantId}`);
+    // Only include flows that match this phone number (or have no restriction)
+    const flows = allFlows.filter(f => {
+      if (!f.phone_number_ids || f.phone_number_ids.length === 0) return true; // no restriction = all numbers
+      if (!currentPhoneNumberId) return true; // no phone context = show all
+      return f.phone_number_ids.includes(currentPhoneNumberId);
+    });
+
+    console.log(`[whatsapp-chatbot] [FLUXOS] Loaded ${allFlows.length} published flows, ${flows.length} match phone_number_id ${currentPhoneNumberId || 'any'}`);
 
     // ── FLOW MATCHING: find the right flow for this message ──
     // Priority 1: Keyword flows (match against keyword nodes)

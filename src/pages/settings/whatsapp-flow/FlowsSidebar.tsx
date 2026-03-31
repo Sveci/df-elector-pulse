@@ -3,13 +3,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Plus, Search, ChevronRight, Copy, Trash2, Pencil,
-  CheckCircle2, Circle, Clock, Zap, GitBranch, Layers
+  CheckCircle2, Circle, Clock, Zap, GitBranch, Layers, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -32,7 +33,40 @@ import {
   useUpdateChatbotFlow,
   DEFAULT_FLOW_TEMPLATES,
 } from "@/hooks/useWhatsAppFlows";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+// Hook to get available phone numbers from integrations_settings
+function usePhoneNumbers() {
+  return useQuery({
+    queryKey: ["whatsapp-phone-numbers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_phone, meta_cloud_phone_number_id, meta_cloud_enabled, meta_cloud_phone_2, meta_cloud_phone_number_id_2, meta_cloud_enabled_2")
+        .limit(1)
+        .single();
+      if (!data) return [];
+      const numbers: { id: string; phone: string; label: string }[] = [];
+      if (data.meta_cloud_enabled && data.meta_cloud_phone_number_id) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id,
+          phone: data.meta_cloud_phone || "Número 1",
+          label: `Nº1 — ${data.meta_cloud_phone || "Principal"}`,
+        });
+      }
+      if (data.meta_cloud_enabled_2 && data.meta_cloud_phone_number_id_2) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id_2,
+          phone: data.meta_cloud_phone_2 || "Número 2",
+          label: `Nº2 — ${data.meta_cloud_phone_2 || "Secundário"}`,
+        });
+      }
+      return numbers;
+    },
+  });
+}
 
 interface FlowsSidebarProps {
   activeFlowId: string | null;
@@ -63,9 +97,11 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
     description: "",
     color: "#3b82f6",
     icon: "📋",
+    phone_number_ids: [] as string[],
   });
 
   const { data: flows = [], isLoading } = useChatbotFlows();
+  const { data: phoneNumbers = [] } = usePhoneNumbers();
   const create = useCreateChatbotFlow();
   const del = useDeleteChatbotFlow();
   const duplicate = useDuplicateChatbotFlow();
@@ -90,11 +126,12 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
         tags: [],
         color: newForm.color,
         icon: newForm.icon,
+        phone_number_ids: newForm.phone_number_ids.length > 0 ? newForm.phone_number_ids : null,
       },
       {
         onSuccess: (flow) => {
           setNewFlowOpen(false);
-          setNewForm({ name: "", description: "", color: "#3b82f6", icon: "📋" });
+          setNewForm({ name: "", description: "", color: "#3b82f6", icon: "📋", phone_number_ids: [] });
           onSelectFlow(flow);
         },
       }
@@ -116,6 +153,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
         tags: rest.tags || [],
         color: rest.color || "#3b82f6",
         icon: rest.icon || "📋",
+        phone_number_ids: null,
       } as any,
       {
         onSuccess: (flow) => {
@@ -129,7 +167,7 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
   const handleSaveEdit = () => {
     if (!editFlow) return;
     update.mutate(
-      { id: editFlow.id, name: editFlow.name, description: editFlow.description, color: editFlow.color, icon: editFlow.icon },
+      { id: editFlow.id, name: editFlow.name, description: editFlow.description, color: editFlow.color, icon: editFlow.icon, phone_number_ids: editFlow.phone_number_ids },
       { onSuccess: () => setEditFlow(null) }
     );
   };
@@ -264,6 +302,34 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
                   ))}
                 </div>
               </div>
+              {/* Phone number selector */}
+              {phoneNumbers.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label>Números WhatsApp</Label>
+                  <p className="text-[11px] text-muted-foreground">Selecione em quais números este fluxo será executado. Sem seleção = todos.</p>
+                  <div className="space-y-2">
+                    {phoneNumbers.map((pn) => (
+                      <label key={pn.id} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={newForm.phone_number_ids.includes(pn.id)}
+                          onCheckedChange={(checked) => {
+                            setNewForm((f) => ({
+                              ...f,
+                              phone_number_ids: checked
+                                ? [...f.phone_number_ids, pn.id]
+                                : f.phone_number_ids.filter((id) => id !== pn.id),
+                            }));
+                          }}
+                        />
+                        <span className="text-sm flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          {pn.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -316,6 +382,38 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
                   ))}
                 </div>
               </div>
+              {/* Phone number selector */}
+              {phoneNumbers.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label>Números WhatsApp</Label>
+                  <p className="text-[11px] text-muted-foreground">Sem seleção = todos os números.</p>
+                  <div className="space-y-2">
+                    {phoneNumbers.map((pn) => (
+                      <label key={pn.id} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={(editFlow.phone_number_ids || []).includes(pn.id)}
+                          onCheckedChange={(checked) => {
+                            setEditFlow((f) => {
+                              if (!f) return f;
+                              const current = f.phone_number_ids || [];
+                              return {
+                                ...f,
+                                phone_number_ids: checked
+                                  ? [...current, pn.id]
+                                  : current.filter((id) => id !== pn.id),
+                              };
+                            });
+                          }}
+                        />
+                        <span className="text-sm flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          {pn.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditFlow(null)}>
@@ -419,6 +517,12 @@ function FlowCard({ flow, active, onSelect, onDuplicate, onDelete, onEdit, onTog
             {!flow.is_active && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 opacity-60">
                 Inativo
+              </Badge>
+            )}
+            {flow.phone_number_ids && flow.phone_number_ids.length > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Phone className="h-2.5 w-2.5 mr-1" />
+                {flow.phone_number_ids.length === 1 ? "1 número" : `${flow.phone_number_ids.length} números`}
               </Badge>
             )}
           </div>
