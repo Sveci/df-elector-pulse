@@ -63,7 +63,8 @@ import {
   TrendingUp,
   RefreshCw,
   Activity,
-  GitBranch
+  GitBranch,
+  Workflow
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
