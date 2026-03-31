@@ -1519,6 +1519,23 @@ Deno.serve(async (req) => {
     // Determine current phone number ID for filtering
     const currentPhoneNumberId = phoneNumberIdOverride || null;
 
+    // Determine if brain-resolve (AI fallback) is enabled for this phone number
+    // Brain-resolve only runs on the PRIMARY number (meta_cloud_phone_number_id)
+    let isBrainResolveEnabled = true;
+    if (currentPhoneNumberId) {
+      const { data: intSettingsForBrain } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_phone_number_id")
+        .eq("tenant_id", tenantId)
+        .limit(1)
+        .single();
+      const primaryPhoneNumberId = intSettingsForBrain?.meta_cloud_phone_number_id || null;
+      if (primaryPhoneNumberId && currentPhoneNumberId !== primaryPhoneNumberId) {
+        isBrainResolveEnabled = false;
+        console.log(`[whatsapp-chatbot] [BRAIN] Disabled for secondary number ${currentPhoneNumberId} (primary: ${primaryPhoneNumberId})`);
+      }
+    }
+
     // Filter keywords by phone number (same logic as flows)
     console.log(`[whatsapp-chatbot] [KEYWORDS] Total: ${(keywords || []).length}, currentPhoneNumberId: ${currentPhoneNumberId || 'none'}`);
     const activeKeywords = ((keywords as ChatbotKeyword[]) || []).filter(kw => {
