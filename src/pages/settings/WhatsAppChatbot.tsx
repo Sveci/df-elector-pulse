@@ -147,6 +147,7 @@ const WhatsAppChatbot = () => {
       response_type: "dynamic",
       static_response: "",
       dynamic_function: "",
+      flow_id: "",
       is_active: true,
       priority: 0
     });
