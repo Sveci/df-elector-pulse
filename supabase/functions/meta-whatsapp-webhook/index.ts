@@ -16,10 +16,11 @@ function normalizePhone(phone: string): string {
   return "+" + clean;
 }
 
-// Resolve tenant_id from the phone_number_id in the webhook payload
+// Resolve tenant_id from the phone_number_id in the webhook payload (checks both numbers)
 async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: string): Promise<string | null> {
   if (!phoneNumberId) return null;
 
+  // Try primary number first
   const { data } = await supabase
     .from('integrations_settings')
     .select('tenant_id')
@@ -27,7 +28,18 @@ async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: stri
     .limit(1)
     .single();
 
-  return data?.tenant_id || null;
+  if (data?.tenant_id) return data.tenant_id;
+
+  // Try second number
+  const { data: data2 } = await supabase
+    .from('integrations_settings')
+    .select('tenant_id')
+    .eq('meta_cloud_phone_number_id_2', phoneNumberId)
+    .eq('meta_cloud_enabled_2', true)
+    .limit(1)
+    .single();
+
+  return data2?.tenant_id || null;
 }
 
 async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null) {
