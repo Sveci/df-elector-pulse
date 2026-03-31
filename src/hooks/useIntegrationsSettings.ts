@@ -110,6 +110,11 @@ interface UpdateIntegrationsDTO {
   meta_cloud_api_version?: string;
   meta_cloud_fallback_enabled?: boolean;
   meta_cloud_phone?: string | null;
+  // Segundo número Cloud API
+  meta_cloud_phone_number_id_2?: string | null;
+  meta_cloud_waba_id_2?: string | null;
+  meta_cloud_phone_2?: string | null;
+  meta_cloud_enabled_2?: boolean;
 
   // Controles de mensagens automáticas de WhatsApp
   wa_auto_verificacao_enabled?: boolean;

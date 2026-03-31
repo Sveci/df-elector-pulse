@@ -272,7 +272,8 @@ async function sendViaMetaCloud(
   settings: IntegrationSettings,
   phone: string,
   message: string,
-  metaTemplate?: MetaTemplatePayload
+  metaTemplate?: MetaTemplatePayload,
+  phoneNumberIdOverride?: string
 ): Promise<SendResult> {
   const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
 
@@ -284,7 +285,9 @@ async function sendViaMetaCloud(
     };
   }
 
-  if (!settings.meta_cloud_phone_number_id) {
+  const effectivePhoneNumberId = phoneNumberIdOverride || settings.meta_cloud_phone_number_id;
+
+  if (!effectivePhoneNumberId) {
     return {
       success: false,
       error: "Phone Number ID não configurado",
@@ -293,7 +296,7 @@ async function sendViaMetaCloud(
   }
 
   const apiVersion = settings.meta_cloud_api_version || "v20.0";
-  const graphUrl = `https://graph.facebook.com/${apiVersion}/${settings.meta_cloud_phone_number_id}/messages`;
+  const graphUrl = `https://graph.facebook.com/${apiVersion}/${effectivePhoneNumberId}/messages`;
 
   // Format phone for Graph API (needs country code without +)
   let formattedPhone = phone.replace(/\D/g, "");
