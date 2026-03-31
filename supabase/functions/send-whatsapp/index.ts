@@ -35,6 +35,7 @@ interface SendWhatsAppRequest {
   metaTemplate?: MetaTemplatePayload;
   bypassAutoCheck?: boolean;
   tenantId?: string; // Tenant isolation
+  phoneNumberIdOverride?: string; // Use a specific Meta Cloud phone number ID
 }
 
 // Replace template variables {{var}} with actual values
@@ -271,7 +272,8 @@ async function sendViaMetaCloud(
   settings: IntegrationSettings,
   phone: string,
   message: string,
-  metaTemplate?: MetaTemplatePayload
+  metaTemplate?: MetaTemplatePayload,
+  phoneNumberIdOverride?: string
 ): Promise<SendResult> {
   const accessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
 
@@ -283,7 +285,9 @@ async function sendViaMetaCloud(
     };
   }
 
-  if (!settings.meta_cloud_phone_number_id) {
+  const effectivePhoneNumberId = phoneNumberIdOverride || settings.meta_cloud_phone_number_id;
+
+  if (!effectivePhoneNumberId) {
     return {
       success: false,
       error: "Phone Number ID não configurado",
@@ -292,7 +296,7 @@ async function sendViaMetaCloud(
   }
 
   const apiVersion = settings.meta_cloud_api_version || "v20.0";
-  const graphUrl = `https://graph.facebook.com/${apiVersion}/${settings.meta_cloud_phone_number_id}/messages`;
+  const graphUrl = `https://graph.facebook.com/${apiVersion}/${effectivePhoneNumberId}/messages`;
 
   // Format phone for Graph API (needs country code without +)
   let formattedPhone = phone.replace(/\D/g, "");
@@ -425,7 +429,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestBody: SendWhatsAppRequest = await req.json();
-    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck, tenantId: requestTenantId } = requestBody;
+    const { phone, message, templateSlug, variables, visitId, contactId, imageUrl, providerOverride, clientMessageId, metaTemplate, bypassAutoCheck, tenantId: requestTenantId, phoneNumberIdOverride } = requestBody;
 
     console.log(`[send-whatsapp] REQUEST - templateSlug: ${templateSlug}, phone: ${phone?.substring(0, 6)}..., providerOverride: ${providerOverride}, bypassAutoCheck: ${bypassAutoCheck}, tenantId: ${requestTenantId || 'auto'}`);
 
@@ -481,6 +485,7 @@ Deno.serve(async (req) => {
         whatsapp_provider_active, meta_cloud_enabled, meta_cloud_test_mode,
         meta_cloud_whitelist, meta_cloud_phone_number_id, meta_cloud_api_version,
         meta_cloud_fallback_enabled,
+        meta_cloud_phone_number_id_2, meta_cloud_enabled_2,
         wa_auto_verificacao_enabled, wa_auto_captacao_enabled, wa_auto_pesquisa_enabled,
         wa_auto_evento_enabled, wa_auto_lideranca_enabled, wa_auto_membro_enabled,
         wa_auto_visita_enabled, wa_auto_optout_enabled, wa_auto_sms_fallback_enabled
@@ -672,7 +677,7 @@ Deno.serve(async (req) => {
     let result: SendResult;
 
     if (activeProvider === 'meta_cloud') {
-      result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate);
+      result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate, phoneNumberIdOverride);
 
       // Fallback to Z-API if Meta Cloud fails and fallback is enabled
       if (!result.success && typedSettings.meta_cloud_fallback_enabled && typedSettings.zapi_enabled) {

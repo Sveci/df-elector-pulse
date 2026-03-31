@@ -21,6 +21,10 @@ interface MetaCloudConfigCardProps {
     meta_cloud_api_version?: string;
     meta_cloud_fallback_enabled?: boolean;
     meta_cloud_phone?: string | null;
+    meta_cloud_phone_number_id_2?: string | null;
+    meta_cloud_waba_id_2?: string | null;
+    meta_cloud_phone_2?: string | null;
+    meta_cloud_enabled_2?: boolean;
     zapi_enabled?: boolean;
   } | null;
   onProviderChange?: (provider: 'zapi' | 'meta_cloud') => void;
@@ -30,7 +34,7 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
   const updateSettings = useUpdateIntegrationsSettings();
   const testConnection = useTestMetaCloudConnection();
 
-  // State
+  // State - Número 1
   const [whatsappProvider, setWhatsappProvider] = useState<'zapi' | 'meta_cloud'>('zapi');
   const [metaCloudEnabled, setMetaCloudEnabled] = useState(false);
   const [testMode, setTestMode] = useState(true);
@@ -41,6 +45,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
   const [apiVersion, setApiVersion] = useState("v20.0");
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
   const [metaCloudPhone, setMetaCloudPhone] = useState("");
+  // State - Número 2
+  const [phoneNumberId2, setPhoneNumberId2] = useState("");
+  const [wabaId2, setWabaId2] = useState("");
+  const [metaCloudPhone2, setMetaCloudPhone2] = useState("");
+  const [metaCloudEnabled2, setMetaCloudEnabled2] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -53,6 +62,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
       setApiVersion(settings.meta_cloud_api_version || "v20.0");
       setFallbackEnabled(settings.meta_cloud_fallback_enabled || false);
       setMetaCloudPhone(settings.meta_cloud_phone || "");
+      // Número 2
+      setPhoneNumberId2(settings.meta_cloud_phone_number_id_2 || "");
+      setWabaId2(settings.meta_cloud_waba_id_2 || "");
+      setMetaCloudPhone2(settings.meta_cloud_phone_2 || "");
+      setMetaCloudEnabled2(settings.meta_cloud_enabled_2 || false);
     }
   }, [settings]);
 
@@ -90,6 +104,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
       meta_cloud_api_version: apiVersion,
       meta_cloud_fallback_enabled: fallbackEnabled,
       meta_cloud_phone: metaCloudPhone || null,
+      // Número 2
+      meta_cloud_phone_number_id_2: phoneNumberId2 || null,
+      meta_cloud_waba_id_2: wabaId2 || null,
+      meta_cloud_phone_2: metaCloudPhone2 || null,
+      meta_cloud_enabled_2: metaCloudEnabled2,
     });
   };
 
@@ -242,7 +261,59 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
           </div>
         </div>
 
-        {/* Access Token Warning */}
+        {/* Segundo Número Cloud API */}
+        <div className="space-y-4 bg-blue-50/50 rounded-lg p-4 border border-blue-200/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base font-medium">Segundo Número (Cloud API)</Label>
+              <p className="text-xs text-muted-foreground">
+                Configure um segundo número para envios via Cloud API
+              </p>
+            </div>
+            <Switch
+              checked={metaCloudEnabled2}
+              onCheckedChange={setMetaCloudEnabled2}
+            />
+          </div>
+
+          {metaCloudEnabled2 && (
+            <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone-number-id-2">Phone Number ID *</Label>
+                  <Input
+                    id="phone-number-id-2"
+                    placeholder="Ex: 123456789012345"
+                    value={phoneNumberId2}
+                    onChange={(e) => setPhoneNumberId2(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="waba-id-2">WABA ID (opcional)</Label>
+                  <Input
+                    id="waba-id-2"
+                    placeholder="Ex: 123456789012345"
+                    value={wabaId2}
+                    onChange={(e) => setWabaId2(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meta-phone-2">Número do WhatsApp 2 *</Label>
+                <Input
+                  id="meta-phone-2"
+                  placeholder="Ex: 5596999999999"
+                  value={metaCloudPhone2}
+                  onChange={(e) => setMetaCloudPhone2(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Segundo número cadastrado na Cloud API (DDI + DDD + Número)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">

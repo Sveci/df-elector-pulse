@@ -1298,11 +1298,15 @@ export type Database = {
           id: string
           meta_cloud_api_version: string | null
           meta_cloud_enabled: boolean | null
+          meta_cloud_enabled_2: boolean | null
           meta_cloud_fallback_enabled: boolean | null
           meta_cloud_phone: string | null
+          meta_cloud_phone_2: string | null
           meta_cloud_phone_number_id: string | null
+          meta_cloud_phone_number_id_2: string | null
           meta_cloud_test_mode: boolean | null
           meta_cloud_waba_id: string | null
+          meta_cloud_waba_id_2: string | null
           meta_cloud_whitelist: Json | null
           passkit_api_base_url: string | null
           passkit_api_token: string | null
@@ -1362,11 +1366,15 @@ export type Database = {
           id?: string
           meta_cloud_api_version?: string | null
           meta_cloud_enabled?: boolean | null
+          meta_cloud_enabled_2?: boolean | null
           meta_cloud_fallback_enabled?: boolean | null
           meta_cloud_phone?: string | null
+          meta_cloud_phone_2?: string | null
           meta_cloud_phone_number_id?: string | null
+          meta_cloud_phone_number_id_2?: string | null
           meta_cloud_test_mode?: boolean | null
           meta_cloud_waba_id?: string | null
+          meta_cloud_waba_id_2?: string | null
           meta_cloud_whitelist?: Json | null
           passkit_api_base_url?: string | null
           passkit_api_token?: string | null
@@ -1426,11 +1434,15 @@ export type Database = {
           id?: string
           meta_cloud_api_version?: string | null
           meta_cloud_enabled?: boolean | null
+          meta_cloud_enabled_2?: boolean | null
           meta_cloud_fallback_enabled?: boolean | null
           meta_cloud_phone?: string | null
+          meta_cloud_phone_2?: string | null
           meta_cloud_phone_number_id?: string | null
+          meta_cloud_phone_number_id_2?: string | null
           meta_cloud_test_mode?: boolean | null
           meta_cloud_waba_id?: string | null
+          meta_cloud_waba_id_2?: string | null
           meta_cloud_whitelist?: Json | null
           passkit_api_base_url?: string | null
           passkit_api_token?: string | null
