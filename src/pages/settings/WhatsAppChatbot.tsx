@@ -86,6 +86,9 @@ import {
 import { useWhatsAppCommunities, useUpdateCommunity, useWhatsAppChatStates } from "@/hooks/useWhatsAppCommunities";
 import { useChatbotFlows } from "@/hooks/useWhatsAppFlows";
 import { useTutorial } from "@/hooks/useTutorial";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { TutorialButton } from "@/components/TutorialButton";
 import type { Step } from "react-joyride";
@@ -116,7 +119,8 @@ const WhatsAppChatbot = () => {
     dynamic_function: "",
     flow_id: "",
     is_active: true,
-    priority: 0
+    priority: 0,
+    phone_number_ids: [] as string[],
   });
 
   // Queries
@@ -128,6 +132,25 @@ const WhatsAppChatbot = () => {
   const { data: sessions, isLoading: loadingSessions } = useChatbotSessions(50);
   const { data: stats, isLoading: loadingStats } = useChatbotStats();
   const { data: availableFlows } = useChatbotFlows();
+  const { data: phoneNumbers } = useQuery({
+    queryKey: ["whatsapp-phone-numbers"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("integrations_settings")
+        .select("meta_cloud_phone, meta_cloud_phone_number_id, meta_cloud_enabled, meta_cloud_phone_2, meta_cloud_phone_number_id_2, meta_cloud_enabled_2")
+        .limit(1)
+        .single();
+      if (!data) return [];
+      const numbers: { id: string; phone: string; label: string }[] = [];
+      if (data.meta_cloud_enabled && data.meta_cloud_phone_number_id) {
+        numbers.push({ id: data.meta_cloud_phone_number_id, phone: data.meta_cloud_phone || "Número 1", label: `Nº1 — ${data.meta_cloud_phone || "Principal"}` });
+      }
+      if (data.meta_cloud_enabled_2 && data.meta_cloud_phone_number_id_2) {
+        numbers.push({ id: data.meta_cloud_phone_number_id_2, phone: data.meta_cloud_phone_2 || "Número 2", label: `Nº2 — ${data.meta_cloud_phone_2 || "Secundário"}` });
+      }
+      return numbers;
+    },
+  });
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
@@ -152,7 +175,8 @@ const WhatsAppChatbot = () => {
       dynamic_function: "",
       flow_id: "",
       is_active: true,
-      priority: 0
+      priority: 0,
+      phone_number_ids: [],
     });
     setKeywordDialogOpen(true);
   };
@@ -168,7 +192,8 @@ const WhatsAppChatbot = () => {
       dynamic_function: kw.dynamic_function || "",
       flow_id: kw.flow_id || "",
       is_active: kw.is_active,
-      priority: kw.priority
+      priority: kw.priority,
+      phone_number_ids: (kw as any).phone_number_ids || [],
     });
     setKeywordDialogOpen(true);
   };
@@ -188,7 +213,8 @@ const WhatsAppChatbot = () => {
       dynamic_function: keywordForm.response_type === "dynamic" ? keywordForm.dynamic_function : null,
       flow_id: keywordForm.response_type === "flow" ? keywordForm.flow_id || null : null,
       is_active: keywordForm.is_active,
-      priority: keywordForm.priority
+      priority: keywordForm.priority,
+      phone_number_ids: keywordForm.phone_number_ids.length > 0 ? keywordForm.phone_number_ids : null,
     };
 
     if (editingKeyword) {
@@ -959,6 +985,35 @@ const WhatsAppChatbot = () => {
                 <p className="text-xs text-muted-foreground">
                   Quando a palavra-chave for detectada, o fluxo selecionado será executado.
                 </p>
+              </div>
+            )}
+
+            {/* Phone number restriction */}
+            {phoneNumbers && phoneNumbers.length > 1 && (
+              <div className="space-y-2">
+                <Label>Números de WhatsApp</Label>
+                <p className="text-xs text-muted-foreground">
+                  Selecione em quais números esta palavra-chave deve funcionar. Se nenhum for marcado, funciona em todos.
+                </p>
+                <div className="space-y-2">
+                  {phoneNumbers.map((pn: any) => (
+                    <div key={pn.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`kw-phone-${pn.id}`}
+                        checked={keywordForm.phone_number_ids.includes(pn.id)}
+                        onCheckedChange={(checked) => {
+                          setKeywordForm(prev => ({
+                            ...prev,
+                            phone_number_ids: checked
+                              ? [...prev.phone_number_ids, pn.id]
+                              : prev.phone_number_ids.filter((id: string) => id !== pn.id),
+                          }));
+                        }}
+                      />
+                      <label htmlFor={`kw-phone-${pn.id}`} className="text-sm cursor-pointer">{pn.label}</label>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
