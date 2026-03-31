@@ -16,10 +16,11 @@ function normalizePhone(phone: string): string {
   return "+" + clean;
 }
 
-// Resolve tenant_id from the phone_number_id in the webhook payload
+// Resolve tenant_id from the phone_number_id in the webhook payload (checks both numbers)
 async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: string): Promise<string | null> {
   if (!phoneNumberId) return null;
 
+  // Try primary number first
   const { data } = await supabase
     .from('integrations_settings')
     .select('tenant_id')
@@ -27,10 +28,21 @@ async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: stri
     .limit(1)
     .single();
 
-  return data?.tenant_id || null;
+  if (data?.tenant_id) return data.tenant_id;
+
+  // Try second number
+  const { data: data2 } = await supabase
+    .from('integrations_settings')
+    .select('tenant_id')
+    .eq('meta_cloud_phone_number_id_2', phoneNumberId)
+    .eq('meta_cloud_enabled_2', true)
+    .limit(1)
+    .single();
+
+  return data2?.tenant_id || null;
 }
 
-async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null) {
+async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null, phoneNumberIdOverride?: string | null) {
   const accessToken = Deno.env.get('META_WA_ACCESS_TOKEN');
 
   if (!accessToken) {
@@ -45,13 +57,16 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
   if (tenantId) settingsQuery = settingsQuery.eq('tenant_id', tenantId);
   const { data: settings } = await settingsQuery.limit(1).single();
 
-  if (!settings?.meta_cloud_phone_number_id) {
-    console.error('[Meta Webhook] meta_cloud_phone_number_id not configured');
+  // Use override (the number that received the message) or fall back to primary
+  const effectivePhoneNumberId = phoneNumberIdOverride || settings?.meta_cloud_phone_number_id;
+
+  if (!effectivePhoneNumberId) {
+    console.error('[Meta Webhook] No phone_number_id available for sending');
     return { success: false, error: 'Phone Number ID not configured' };
   }
 
-  const apiVersion = settings.meta_cloud_api_version || 'v20.0';
-  const graphUrl = `https://graph.facebook.com/${apiVersion}/${settings.meta_cloud_phone_number_id}/messages`;
+  const apiVersion = settings?.meta_cloud_api_version || 'v20.0';
+  const graphUrl = `https://graph.facebook.com/${apiVersion}/${effectivePhoneNumberId}/messages`;
 
   const formattedPhone = phone.replace(/\D/g, '');
 
@@ -155,7 +170,8 @@ async function handleConversationalFlow(
   from: string,
   normalizedPhone: string,
   messageText: string,
-  tenantId: string | null
+  tenantId: string | null,
+  replyPhoneNumberId?: string | null
 ): Promise<boolean> {
   if (!tenantId) return false;
 
@@ -282,7 +298,7 @@ async function handleConversationalFlow(
       welcomeMsg += `*${c.numero_lista}* - ${c.municipio}\n`;
     }
 
-    await sendMetaCloudMessage(supabase, normalizedPhone, welcomeMsg, tenantId);
+    await sendMetaCloudMessage(supabase, normalizedPhone, welcomeMsg, tenantId, replyPhoneNumberId);
     console.log('[Meta Webhook] Sent welcome message with municipality list');
     return true;
   }
@@ -312,7 +328,7 @@ async function handleConversationalFlow(
       for (const c of communities) {
         retryMsg += `*${c.numero_lista}* - ${c.municipio}\n`;
       }
-      await sendMetaCloudMessage(supabase, normalizedPhone, retryMsg, tenantId);
+      await sendMetaCloudMessage(supabase, normalizedPhone, retryMsg, tenantId, replyPhoneNumberId);
       return true;
     }
 
@@ -331,11 +347,11 @@ async function handleConversationalFlow(
       let successMsg = `✅ Ótimo! Você é de *${matchedCommunity.municipio}*!\n\n`;
       successMsg += `🔗 Entre na nossa Comunidade WhatsApp do seu município:\n${matchedCommunity.community_link}\n\n`;
       successMsg += `Lá você vai receber informações específicas da sua região! 📢`;
-      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId);
+      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId, replyPhoneNumberId);
     } else {
       let successMsg = `✅ Ótimo! Você é de *${matchedCommunity.municipio}*!\n\n`;
       successMsg += `A Comunidade WhatsApp do seu município está sendo preparada. Assim que estiver pronta, enviaremos o link para você! 📢`;
-      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId);
+      await sendMetaCloudMessage(supabase, normalizedPhone, successMsg, tenantId, replyPhoneNumberId);
     }
 
     console.log(`[Meta Webhook] User ${from} registered for municipality: ${matchedCommunity.municipio}`);
@@ -346,7 +362,7 @@ async function handleConversationalFlow(
   if (chatState.state === 'registered') {
     // Check if user wants to see menu or specific options
     if (upperMessage === 'MENU' || upperMessage === 'OPCOES' || upperMessage === 'OPÇÕES') {
-      await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+      await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId, replyPhoneNumberId);
       return true;
     }
 
@@ -356,15 +372,15 @@ async function handleConversationalFlow(
         const kbResponse = await queryKnowledgeBase(supabase, "projetos programas do deputado", tenantId);
         if (kbResponse) {
           const msg = `📋 *Projetos e Programas*\n\n${kbResponse}\n\nDigite *MENU* para ver outras opções ou faça uma pergunta específica.`;
-          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
         } else {
           const msg = `📋 *Projetos e Programas*\n\nNo momento não encontrei informações detalhadas na base. Faça uma pergunta específica sobre um projeto e tentarei ajudar!\n\nDigite *MENU* para ver outras opções.`;
-          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
         }
       } catch (err) {
         console.error('[Meta Webhook] Error querying KB for projects:', err);
         const msg = `📋 *Projetos e Programas*\n\nOcorreu um erro ao buscar as informações. Tente novamente ou faça uma pergunta específica.\n\nDigite *MENU* para ver outras opções.`;
-        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
       }
       return true;
     }
@@ -393,15 +409,15 @@ async function handleConversationalFlow(
             msg += `   📍 ${event.location || 'Local a confirmar'}\n\n`;
           }
           msg += `Digite *MENU* para ver outras opções.`;
-          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
         } else {
           const msg = `📅 *Eventos*\n\nNo momento não há eventos programados. Fique atento às nossas comunicações!\n\nDigite *MENU* para ver outras opções.`;
-          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+          await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
         }
       } catch (err) {
         console.error('[Meta Webhook] Error fetching events:', err);
         const msg = `📅 *Eventos*\n\nOcorreu um erro ao buscar os eventos. Tente novamente mais tarde.\n\nDigite *MENU* para ver outras opções.`;
-        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
       }
       return true;
     }
@@ -417,10 +433,10 @@ async function handleConversationalFlow(
 
       if (community?.community_link) {
         const msg = `🔗 *Comunidade ${community.municipio}*\n\n${community.community_link}\n\nDigite *MENU* para ver outras opções.`;
-        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
       } else {
         const msg = `A Comunidade do seu município ainda está sendo preparada. Em breve enviaremos o link!\n\nDigite *MENU* para ver outras opções.`;
-        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+        await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
       }
       return true;
     }
@@ -443,7 +459,7 @@ async function handleConversationalFlow(
         `Sua solicitação foi registrada! Um membro da nossa equipe entrará em contato em breve.\n\n` +
         `Enquanto isso, você pode fazer perguntas diretamente aqui que tentarei ajudar.\n\n` +
         `Digite *MENU* para ver outras opções.`;
-      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId);
+      await sendMetaCloudMessage(supabase, normalizedPhone, msg, tenantId, replyPhoneNumberId);
       return true;
     }
 
@@ -479,7 +495,7 @@ async function handleConversationalFlow(
       if (menuCommands.includes(upperMessage) || /^[1-4]$/.test(upperMessage.trim())) {
         // Let menu options be handled above (they already are for 1-4)
         // For other short non-keyword messages, forward to AI chatbot
-        await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId);
+        await sendMenuMessage(supabase, normalizedPhone, chatState.municipio, tenantId, replyPhoneNumberId);
         return true;
       }
 
@@ -496,7 +512,7 @@ async function handleConversationalFlow(
   return false;
 }
 
-async function sendMenuMessage(supabase: any, phone: string, municipio: string | null, tenantId: string | null) {
+async function sendMenuMessage(supabase: any, phone: string, municipio: string | null, tenantId: string | null, replyPhoneNumberId?: string | null) {
   let menuMsg = `🏛️ *Menu Principal*\n\n`;
   menuMsg += `Escolha uma opção:\n\n`;
   menuMsg += `*1* - 📋 Projetos e Programas\n`;
@@ -504,7 +520,7 @@ async function sendMenuMessage(supabase: any, phone: string, municipio: string |
   menuMsg += `*3* - 🔗 Comunidade${municipio ? ` (${municipio})` : ''}\n`;
   menuMsg += `*4* - 📞 Falar com atendente\n`;
   menuMsg += `\nDigite o número da opção desejada.`;
-  await sendMetaCloudMessage(supabase, phone, menuMsg, tenantId);
+  await sendMetaCloudMessage(supabase, phone, menuMsg, tenantId, replyPhoneNumberId);
 }
 
 serve(async (req) => {
@@ -661,14 +677,14 @@ serve(async (req) => {
                   
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Você saiu do fluxo atual.\n\nSe precisar de algo, é só digitar:\n📋 *AJUDA* - Ver comandos disponíveis\n🎫 *EVENTO* - Inscrição em eventos\n\nOu envie qualquer pergunta que responderei com prazer! 😊`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] Active flow cleared for ${normalizedPhone}`);
                 } else {
                   // No active flow - just acknowledge
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `Não há nenhum fluxo ativo no momento.\n\nDigite *AJUDA* para ver os comandos disponíveis. 😊`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] No active flow for ${normalizedPhone}, sent info message`);
                 }
@@ -692,7 +708,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `Você foi removido(a) da nossa lista. Para voltar a receber mensagens, envie VOLTAR.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 }
                 continue;
@@ -712,7 +728,7 @@ serve(async (req) => {
 
                 await sendMetaCloudMessage(supabase, normalizedPhone,
                   `Você foi adicionado(a) novamente à nossa lista. Bem-vindo(a) de volta!`,
-                  tenantId
+                  tenantId, webhookPhoneNumberId
                 );
                 continue;
               }
@@ -732,7 +748,7 @@ serve(async (req) => {
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Código de retirada *${code}* não encontrado. Verifique se digitou corretamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -747,7 +763,7 @@ serve(async (req) => {
                 if (!leader || !leader.telefone || leader.telefone.replace(/\D/g, '').slice(-8) !== last8) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Este código de retirada não pertence a este número de telefone.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -755,7 +771,7 @@ serve(async (req) => {
                 if (reservation.status === 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Esta retirada já foi confirmada anteriormente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -763,7 +779,7 @@ serve(async (req) => {
                 if (reservation.status !== 'reserved') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Esta reserva não está mais ativa (status: ${reservation.status}).`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -782,7 +798,7 @@ serve(async (req) => {
                   console.error('[Meta Webhook] Error confirming withdrawal:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Erro ao confirmar retirada. Tente novamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -793,7 +809,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Retirada confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade: ${reservation.quantidade}\n👤 ${leader.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] ✅ Withdrawal confirmed for reservation ${reservation.id}`);
                 }
@@ -815,7 +831,7 @@ serve(async (req) => {
                 if (resErr || !reservation) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Código de devolução *${code}* não encontrado. Verifique se digitou corretamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -830,7 +846,7 @@ serve(async (req) => {
                 if (!leaderRet || !leaderRet.telefone || leaderRet.telefone.replace(/\D/g, '').slice(-8) !== last8ret) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Este código de devolução não pertence a este número de telefone.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -838,7 +854,7 @@ serve(async (req) => {
                 if (reservation.status !== 'withdrawn') {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `⚠️ Esta reserva não está no status de retirada (status: ${reservation.status}).`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -846,7 +862,7 @@ serve(async (req) => {
                 if (reservation.return_confirmed_via) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Esta devolução já foi confirmada anteriormente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -855,7 +871,7 @@ serve(async (req) => {
                 if (returnable <= 0) {
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Todo o material já foi devolvido.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   continue;
                 }
@@ -878,7 +894,7 @@ serve(async (req) => {
                   console.error('[Meta Webhook] Error confirming return:', updateErr);
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `❌ Erro ao confirmar devolução. Tente novamente.`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                 } else {
                   const { data: material } = await supabase
@@ -889,7 +905,7 @@ serve(async (req) => {
 
                   await sendMetaCloudMessage(supabase, normalizedPhone,
                     `✅ Devolução confirmada com sucesso!\n\n📦 *${material?.nome || 'Material'}*\n📊 Quantidade devolvida: ${returnQty}\n👤 ${leaderRet.nome_completo}\n🕐 ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
-                    tenantId
+                    tenantId, webhookPhoneNumberId
                   );
                   console.log(`[Meta Webhook] ✅ Return confirmed for reservation ${reservation.id}`);
                 }
@@ -918,7 +934,7 @@ serve(async (req) => {
                   console.log(`[Meta Webhook] Sending consent question to ${normalizedPhone}`);
 
                   try {
-                    await sendMetaCloudMessage(supabase, normalizedPhone, consentMessage, tenantId);
+                    await sendMetaCloudMessage(supabase, normalizedPhone, consentMessage, tenantId, webhookPhoneNumberId);
 
                     await supabase
                       .from('contact_verifications')
@@ -938,7 +954,7 @@ serve(async (req) => {
                   } else {
                     errorMessage = `Não encontramos um cadastro pendente com esse código. Verifique se digitou corretamente ou entre em contato conosco.`;
                   }
-                  await sendMetaCloudMessage(supabase, normalizedPhone, errorMessage, tenantId);
+                  await sendMetaCloudMessage(supabase, normalizedPhone, errorMessage, tenantId, webhookPhoneNumberId);
                 }
                 continue;
               }
@@ -983,6 +999,7 @@ serve(async (req) => {
                         messageId: messageId,
                         provider: 'meta_cloud',
                         tenantId: tenantId,
+                        phoneNumberId: webhookPhoneNumberId,
                       }),
                     }
                   );
@@ -1010,7 +1027,7 @@ serve(async (req) => {
 
                 if (consentData?.success) {
                   const confirmMessage = `✅ Cadastro confirmado com sucesso!\n\nVocê receberá seu link de indicação em instantes.`;
-                  await sendMetaCloudMessage(supabase, normalizedPhone, confirmMessage, tenantId);
+                  await sendMetaCloudMessage(supabase, normalizedPhone, confirmMessage, tenantId, webhookPhoneNumberId);
 
                   try {
                     console.log(`[Meta Webhook] Calling send-leader-affiliate-links for ${consentData.contact_type} ${consentData.contact_id}`);
@@ -1065,12 +1082,12 @@ serve(async (req) => {
                   if (leaderToVerify?.is_verified) {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
                       `Seu cadastro já foi verificado! Se você precisa do seu link de indicação, entre em contato com nossa equipe.`,
-                      tenantId
+                      tenantId, webhookPhoneNumberId
                     );
                   } else {
                     await sendMetaCloudMessage(supabase, normalizedPhone,
                       `Para confirmar seu cadastro, use o formato: CONFIRMAR [código]\n\nExemplo: CONFIRMAR ${code}`,
-                      tenantId
+                      tenantId, webhookPhoneNumberId
                     );
                   }
                   continue;
@@ -1144,7 +1161,7 @@ serve(async (req) => {
               // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
               if (!handledAsVerification && messageText.trim()) {
                 const handledByFlow = await handleConversationalFlow(
-                  supabase, from, normalizedPhone, messageText, tenantId
+                  supabase, from, normalizedPhone, messageText, tenantId, webhookPhoneNumberId
                 );
 
                 if (handledByFlow) {
@@ -1169,6 +1186,7 @@ serve(async (req) => {
                         messageId: messageId,
                         provider: 'meta_cloud',
                         tenantId: tenantId,
+                        phoneNumberId: webhookPhoneNumberId,
                       }),
                     }
                   );
