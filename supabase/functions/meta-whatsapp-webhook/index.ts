@@ -42,7 +42,7 @@ async function resolveTenantFromPhoneNumberId(supabase: any, phoneNumberId: stri
   return data2?.tenant_id || null;
 }
 
-async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null) {
+async function sendMetaCloudMessage(supabase: any, phone: string, message: string, tenantId?: string | null, phoneNumberIdOverride?: string | null) {
   const accessToken = Deno.env.get('META_WA_ACCESS_TOKEN');
 
   if (!accessToken) {
@@ -57,13 +57,16 @@ async function sendMetaCloudMessage(supabase: any, phone: string, message: strin
   if (tenantId) settingsQuery = settingsQuery.eq('tenant_id', tenantId);
   const { data: settings } = await settingsQuery.limit(1).single();
 
-  if (!settings?.meta_cloud_phone_number_id) {
-    console.error('[Meta Webhook] meta_cloud_phone_number_id not configured');
+  // Use override (the number that received the message) or fall back to primary
+  const effectivePhoneNumberId = phoneNumberIdOverride || settings?.meta_cloud_phone_number_id;
+
+  if (!effectivePhoneNumberId) {
+    console.error('[Meta Webhook] No phone_number_id available for sending');
     return { success: false, error: 'Phone Number ID not configured' };
   }
 
-  const apiVersion = settings.meta_cloud_api_version || 'v20.0';
-  const graphUrl = `https://graph.facebook.com/${apiVersion}/${settings.meta_cloud_phone_number_id}/messages`;
+  const apiVersion = settings?.meta_cloud_api_version || 'v20.0';
+  const graphUrl = `https://graph.facebook.com/${apiVersion}/${effectivePhoneNumberId}/messages`;
 
   const formattedPhone = phone.replace(/\D/g, '');
 
