@@ -284,6 +284,34 @@ export function VerificationSettingsCard() {
                   <Label>
                     Número do WhatsApp {isMetaCloudMethod ? "(Cloud API)" : "(Z-API)"}
                   </Label>
+                  {isMetaCloudMethod && settings?.meta_cloud_enabled_2 && settings?.meta_cloud_phone_number_id_2 && (
+                    <div className="space-y-2 mb-2">
+                      <Label className="text-xs text-muted-foreground">Selecione o número Cloud API:</Label>
+                      <RadioGroup
+                        value={verificationWaZapiPhone === (settings?.meta_cloud_phone_2 || '') ? '2' : '1'}
+                        onValueChange={(v) => {
+                          if (v === '2') {
+                            setVerificationWaZapiPhone(settings?.meta_cloud_phone_2?.replace(/[\s\-\+\(\)]/g, '') || '');
+                          } else {
+                            setVerificationWaZapiPhone(settings?.meta_cloud_phone?.replace(/[\s\-\+\(\)]/g, '') || '');
+                          }
+                        }}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="1" id="cloud-num-1" />
+                          <Label htmlFor="cloud-num-1" className="font-normal cursor-pointer text-sm">
+                            Número 1 — {settings?.meta_cloud_phone || settings?.meta_cloud_phone_number_id || "Principal"}
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="2" id="cloud-num-2" />
+                          <Label htmlFor="cloud-num-2" className="font-normal cursor-pointer text-sm">
+                            Número 2 — {settings?.meta_cloud_phone_2 || settings?.meta_cloud_phone_number_id_2 || "Secundário"}
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
                   <div className="relative">
                   <Input
                       placeholder="5561999999999"
