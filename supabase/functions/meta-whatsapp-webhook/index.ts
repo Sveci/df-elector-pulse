@@ -999,6 +999,7 @@ serve(async (req) => {
                         messageId: messageId,
                         provider: 'meta_cloud',
                         tenantId: tenantId,
+                        phoneNumberId: webhookPhoneNumberId,
                       }),
                     }
                   );
