@@ -1348,7 +1348,22 @@ Deno.serve(async (req) => {
 
       // Check if it's a genuine question that should escape to brain-resolve
       const expectedType = getExpectedInputType(activeFlowState);
-      if (isGenuineQuestion(message, expectedType)) {
+      // Check if brain-resolve is enabled for this phone number (only primary number)
+      const smartEscapePhoneId = phoneNumberIdOverride || null;
+      let smartEscapeBrainEnabled = true;
+      if (smartEscapePhoneId) {
+        const { data: seIntSettings } = await supabase
+          .from("integrations_settings")
+          .select("meta_cloud_phone_number_id")
+          .eq("tenant_id", tenantId)
+          .limit(1)
+          .single();
+        if (seIntSettings?.meta_cloud_phone_number_id && smartEscapePhoneId !== seIntSettings.meta_cloud_phone_number_id) {
+          smartEscapeBrainEnabled = false;
+        }
+      }
+
+      if (isGenuineQuestion(message, expectedType) && smartEscapeBrainEnabled) {
         console.log(`[whatsapp-chatbot] Smart escape: user asked question during flow state "${activeFlowState}"`);
 
         let intSettingsQuery = supabase.from("integrations_settings")
