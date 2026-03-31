@@ -3,13 +3,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Plus, Search, ChevronRight, Copy, Trash2, Pencil,
-  CheckCircle2, Circle, Clock, Zap, GitBranch, Layers
+  CheckCircle2, Circle, Clock, Zap, GitBranch, Layers, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -32,7 +33,40 @@ import {
   useUpdateChatbotFlow,
   DEFAULT_FLOW_TEMPLATES,
 } from "@/hooks/useWhatsAppFlows";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+// Hook to get available phone numbers from integrations_settings
+function usePhoneNumbers() {
+  return useQuery({
+    queryKey: ["whatsapp-phone-numbers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_phone, meta_cloud_phone_number_id, meta_cloud_enabled, meta_cloud_phone_2, meta_cloud_phone_number_id_2, meta_cloud_enabled_2")
+        .limit(1)
+        .single();
+      if (!data) return [];
+      const numbers: { id: string; phone: string; label: string }[] = [];
+      if (data.meta_cloud_enabled && data.meta_cloud_phone_number_id) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id,
+          phone: data.meta_cloud_phone || "Número 1",
+          label: `Nº1 — ${data.meta_cloud_phone || "Principal"}`,
+        });
+      }
+      if (data.meta_cloud_enabled_2 && data.meta_cloud_phone_number_id_2) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id_2,
+          phone: data.meta_cloud_phone_2 || "Número 2",
+          label: `Nº2 — ${data.meta_cloud_phone_2 || "Secundário"}`,
+        });
+      }
+      return numbers;
+    },
+  });
+}
 
 interface FlowsSidebarProps {
   activeFlowId: string | null;
