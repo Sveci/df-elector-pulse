@@ -191,7 +191,8 @@ const WhatsAppChatbot = () => {
       dynamic_function: keywordForm.response_type === "dynamic" ? keywordForm.dynamic_function : null,
       flow_id: keywordForm.response_type === "flow" ? keywordForm.flow_id || null : null,
       is_active: keywordForm.is_active,
-      priority: keywordForm.priority
+      priority: keywordForm.priority,
+      phone_number_ids: keywordForm.phone_number_ids.length > 0 ? keywordForm.phone_number_ids : null,
     };
 
     if (editingKeyword) {
