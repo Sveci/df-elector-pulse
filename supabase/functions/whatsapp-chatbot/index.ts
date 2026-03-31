@@ -942,7 +942,8 @@ async function sendResponseToUser(
   provider: string | undefined,
   phone: string,
   message: string,
-  tenantId?: string | null
+  tenantId?: string | null,
+  phoneNumberIdOverride?: string | null
 ): Promise<boolean> {
   const useMetaCloud = provider === 'meta_cloud' ||
     (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
