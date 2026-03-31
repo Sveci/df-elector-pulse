@@ -1837,16 +1837,82 @@ Deno.serve(async (req) => {
           responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
         }
       } else if (matchedKeyword.response_type === "flow" && matchedKeyword.flow_id) {
-        // Find and execute the linked flow
+        // Find and execute the linked flow's nodes
         const linkedFlow = flows.find(f => f.id === matchedKeyword!.flow_id);
         if (linkedFlow) {
           matchedFlowId = linkedFlow.id;
           matchedFlowName = linkedFlow.name;
           responseType = "flow";
           console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Keyword "${matchedKeyword.keyword}" linked to flow "${linkedFlow.name}"`);
-          // Let the flow execution engine handle it below (responseMessage will be empty, flow engine takes over)
+
+          // Walk the flow nodes to build a response
+          const flowNodes = linkedFlow.nodes || [];
+          const flowEdges = linkedFlow.edges || [];
+
+          // Find keyword/trigger nodes that match, then follow edges to response nodes
+          const triggerNodeIds = flowNodes
+            .filter((n: any) => n.type === "keyword" || n.type === "trigger")
+            .map((n: any) => n.id);
+
+          // BFS to find connected response nodes
+          const visited = new Set<string>();
+          const queue = [...triggerNodeIds];
+          const responseMessages: string[] = [];
+
+          while (queue.length > 0) {
+            const nodeId = queue.shift()!;
+            if (visited.has(nodeId)) continue;
+            visited.add(nodeId);
+
+            const node = flowNodes.find((n: any) => n.id === nodeId);
+            if (!node) continue;
+
+            // Process response nodes
+            if (node.type === "message" && node.data?.messageText) {
+              let msg = node.data.messageText
+                .replace("{{nome}}", getFirstName(actor))
+                .replace("{{nome_completo}}", actor?.nome_completo || "Visitante");
+              responseMessages.push(msg);
+            } else if (node.type === "automation" && node.data?.automationFunction) {
+              const fnName = node.data.automationFunction;
+              const fn = dynamicFunctions[fnName];
+              if (fn) {
+                try {
+                  const guestAllowed = ["cadastro_evento", "ajuda", "enviar_pec47"];
+                  let result: string | null = null;
+                  if (guestAllowed.includes(fnName)) {
+                    result = await fn(supabase, actor as any, session, tenantId, normalizedPhone, provider, null);
+                  } else if (actor) {
+                    result = await fn(supabase, actor);
+                  }
+                  if (result) responseMessages.push(result);
+                } catch (e) {
+                  console.error(`[whatsapp-chatbot] [KEYWORD→FLOW] Error executing automation "${fnName}":`, e);
+                }
+              }
+            } else if (node.type === "ai_response" && lovableApiKey) {
+              const aiResult = await generateAIResponse(
+                lovableApiKey, message, actor,
+                node.data?.aiPrompt || matchedKeyword!.description || "",
+                chatbotConfig.ai_system_prompt || "",
+                supabase, tenantId, session?.conversation_history
+              );
+              if (aiResult) responseMessages.push(aiResult);
+            }
+
+            // Follow edges to next nodes
+            const nextEdges = flowEdges.filter((e: any) => e.source === nodeId);
+            for (const edge of nextEdges) {
+              queue.push(edge.target);
+            }
+          }
+
+          responseMessage = responseMessages.join("\n\n");
+          if (!responseMessage) {
+            responseType = "fallback";
+            responseMessage = chatbotConfig.fallback_message || "Esse comando não está disponível no momento.";
+          }
         } else {
-          // Flow not found or not published - fallback
           responseType = "fallback";
           responseMessage = chatbotConfig.fallback_message || "Esse comando não está disponível no momento.";
           console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Flow ${matchedKeyword.flow_id} not found/published for keyword "${matchedKeyword.keyword}"`);
