@@ -765,7 +765,10 @@ export function WhatsAppBulkSendTab() {
                 message,
                 contactId,
                 tenantId,
-                ...(recipientType === "recent_interactions" ? { providerOverride: "meta_cloud" } : {}),
+                ...(recipientType === "recent_interactions" ? { 
+                  providerOverride: "meta_cloud",
+                  ...(selectedCloudNumber === "2" && intSettings?.meta_cloud_phone_number_id_2 ? { phoneNumberIdOverride: intSettings.meta_cloud_phone_number_id_2 } : {}),
+                } : {}),
               },
             });
 
