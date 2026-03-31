@@ -62,6 +62,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
       setApiVersion(settings.meta_cloud_api_version || "v20.0");
       setFallbackEnabled(settings.meta_cloud_fallback_enabled || false);
       setMetaCloudPhone(settings.meta_cloud_phone || "");
+      // Número 2
+      setPhoneNumberId2(settings.meta_cloud_phone_number_id_2 || "");
+      setWabaId2(settings.meta_cloud_waba_id_2 || "");
+      setMetaCloudPhone2(settings.meta_cloud_phone_2 || "");
+      setMetaCloudEnabled2(settings.meta_cloud_enabled_2 || false);
     }
   }, [settings]);
 
