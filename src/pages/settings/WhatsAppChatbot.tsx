@@ -213,6 +213,8 @@ const WhatsAppChatbot = () => {
         return <Badge variant="default"><Zap className="w-3 h-3 mr-1" /> Dinâmica</Badge>;
       case "ai":
         return <Badge className="bg-purple-500"><Brain className="w-3 h-3 mr-1" /> IA</Badge>;
+      case "flow":
+        return <Badge className="bg-emerald-600 text-white"><Workflow className="w-3 h-3 mr-1" /> Fluxo</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
