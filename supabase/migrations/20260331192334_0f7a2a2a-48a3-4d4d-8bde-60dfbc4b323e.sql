@@ -1,0 +1,1 @@
+ALTER TABLE public.whatsapp_chatbot_keywords ADD COLUMN flow_id uuid REFERENCES public.whatsapp_chatbot_flows(id) ON DELETE SET NULL DEFAULT NULL;

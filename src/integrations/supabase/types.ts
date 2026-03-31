@@ -4902,6 +4902,7 @@ export type Database = {
           created_at: string
           description: string | null
           dynamic_function: string | null
+          flow_id: string | null
           id: string
           is_active: boolean
           keyword: string
@@ -4916,6 +4917,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           dynamic_function?: string | null
+          flow_id?: string | null
           id?: string
           is_active?: boolean
           keyword: string
@@ -4930,6 +4932,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           dynamic_function?: string | null
+          flow_id?: string | null
           id?: string
           is_active?: boolean
           keyword?: string
@@ -4940,6 +4943,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "whatsapp_chatbot_keywords_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_chatbot_flows"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "whatsapp_chatbot_keywords_tenant_id_fkey"
             columns: ["tenant_id"]
