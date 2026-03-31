@@ -92,7 +92,20 @@ export function FlowToolbar({
   onUndo,
   onRedo,
   isSaving,
+  onPhoneNumbersChange,
 }: FlowToolbarProps) {
+  const { data: phoneNumbers = [] } = usePhoneNumbers();
+  const currentPhoneIds = flow?.phone_number_ids || [];
+  const hasPhoneFilter = currentPhoneIds.length > 0;
+
+  const togglePhone = (phoneId: string, checked: boolean) => {
+    if (!onPhoneNumbersChange) return;
+    const updated = checked
+      ? [...currentPhoneIds, phoneId]
+      : currentPhoneIds.filter((id) => id !== phoneId);
+    onPhoneNumbersChange(updated.length > 0 ? updated : null);
+  };
+
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b bg-background/95 backdrop-blur z-10">
       {/* Flow name + status */}
