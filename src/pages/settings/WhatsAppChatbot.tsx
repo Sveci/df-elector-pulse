@@ -933,6 +933,35 @@ const WhatsAppChatbot = () => {
               </div>
             )}
 
+            {keywordForm.response_type === "flow" && (
+              <div className="space-y-2">
+                <Label>Fluxo do Flow Builder *</Label>
+                <Select
+                  value={keywordForm.flow_id}
+                  onValueChange={(value) => setKeywordForm({ ...keywordForm, flow_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um fluxo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(availableFlows || []).map((flow: any) => (
+                      <SelectItem key={flow.id} value={flow.id}>
+                        <div>
+                          <div className="font-medium">{flow.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {flow.is_published ? "Publicado" : "Rascunho"}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Quando a palavra-chave for detectada, o fluxo selecionado será executado.
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center gap-4">
               <div className="flex-1 space-y-2">
                 <Label>Prioridade</Label>
