@@ -519,6 +519,12 @@ function FlowCard({ flow, active, onSelect, onDuplicate, onDelete, onEdit, onTog
                 Inativo
               </Badge>
             )}
+            {flow.phone_number_ids && flow.phone_number_ids.length > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                <Phone className="h-2.5 w-2.5 mr-1" />
+                {flow.phone_number_ids.length === 1 ? "1 número" : `${flow.phone_number_ids.length} números`}
+              </Badge>
+            )}
           </div>
           {/* Updated at */}
           <p className="text-[10px] text-muted-foreground/60 mt-1.5 flex items-center gap-1">
