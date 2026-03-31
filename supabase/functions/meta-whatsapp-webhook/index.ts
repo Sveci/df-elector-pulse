@@ -576,6 +576,21 @@ serve(async (req) => {
           const tenantId = await resolveTenantFromPhoneNumberId(supabase, webhookPhoneNumberId);
           console.log(`[Meta Webhook] Resolved tenant: ${tenantId} from phone_number_id: ${webhookPhoneNumberId}`);
 
+          // Determine if this is a secondary number (disable conversational flow + hardcoded responses)
+          let isSecondaryNumber = false;
+          if (tenantId && webhookPhoneNumberId) {
+            const { data: intSet } = await supabase
+              .from('integrations_settings')
+              .select('meta_cloud_phone_number_id')
+              .eq('tenant_id', tenantId)
+              .limit(1)
+              .single();
+            if (intSet && intSet.meta_cloud_phone_number_id !== webhookPhoneNumberId) {
+              isSecondaryNumber = true;
+              console.log(`[Meta Webhook] Secondary number detected: ${webhookPhoneNumberId} (primary: ${intSet.meta_cloud_phone_number_id})`);
+            }
+          }
+
           // Process incoming messages
           if (value.messages) {
             for (const message of value.messages) {
@@ -1159,6 +1174,12 @@ serve(async (req) => {
               }
 
               // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
+              // Skip conversational flow and chatbot for secondary numbers
+              if (isSecondaryNumber) {
+                console.log(`[Meta Webhook] Secondary number — no keyword/flow match, staying silent`);
+                continue;
+              }
+
               if (!handledAsVerification && messageText.trim()) {
                 const handledByFlow = await handleConversationalFlow(
                   supabase, from, normalizedPhone, messageText, tenantId, webhookPhoneNumberId
