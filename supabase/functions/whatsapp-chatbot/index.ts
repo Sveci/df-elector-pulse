@@ -1176,7 +1176,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: ChatbotRequest = await req.json();
-    const { phone, messageId, provider, tenantId: requestTenantId } = body;
+    const { phone, messageId, provider, tenantId: requestTenantId, phoneNumberId: phoneNumberIdOverride } = body;
 
     // ── INPUT SANITIZATION ────────────────────────────────────────
     if (!phone || typeof phone !== 'string') {
