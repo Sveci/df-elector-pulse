@@ -51,6 +51,7 @@ interface ChatbotRequest {
   messageId?: string;
   provider?: 'zapi' | 'meta_cloud';
   tenantId?: string;
+  phoneNumberId?: string; // Override: reply via this specific Meta phone number ID
 }
 
 // =====================================================
