@@ -1516,7 +1516,12 @@ Deno.serve(async (req) => {
 
     const { data: keywords } = await keywordsQuery;
 
-    const activeKeywords = (keywords as ChatbotKeyword[]) || [];
+    // Filter keywords by phone number (same logic as flows)
+    const activeKeywords = ((keywords as ChatbotKeyword[]) || []).filter(kw => {
+      if (!kw.phone_number_ids || kw.phone_number_ids.length === 0) return true; // no restriction = all numbers
+      if (!currentPhoneNumberId) return true; // no phone context = show all
+      return kw.phone_number_ids.includes(currentPhoneNumberId);
+    });
 
     // Try to match message with a keyword
     const normalizedMessage = normalizeTextForMatch(message.trim());

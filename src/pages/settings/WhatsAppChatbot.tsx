@@ -116,7 +116,8 @@ const WhatsAppChatbot = () => {
     dynamic_function: "",
     flow_id: "",
     is_active: true,
-    priority: 0
+    priority: 0,
+    phone_number_ids: [] as string[],
   });
 
   // Queries
