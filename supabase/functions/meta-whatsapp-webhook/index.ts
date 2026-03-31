@@ -1174,6 +1174,12 @@ serve(async (req) => {
               }
 
               // === CONVERSATIONAL FLOW (Welcome → Municipality → Community) ===
+              // Skip conversational flow and chatbot for secondary numbers
+              if (isSecondaryNumber) {
+                console.log(`[Meta Webhook] Secondary number — no keyword/flow match, staying silent`);
+                continue;
+              }
+
               if (!handledAsVerification && messageText.trim()) {
                 const handledByFlow = await handleConversationalFlow(
                   supabase, from, normalizedPhone, messageText, tenantId, webhookPhoneNumberId
