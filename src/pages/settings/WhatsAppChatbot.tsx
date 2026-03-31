@@ -109,9 +109,10 @@ const WhatsAppChatbot = () => {
     keyword: "",
     aliases: "",
     description: "",
-    response_type: "dynamic" as "static" | "dynamic" | "ai",
+    response_type: "dynamic" as "static" | "dynamic" | "ai" | "flow",
     static_response: "",
     dynamic_function: "",
+    flow_id: "",
     is_active: true,
     priority: 0
   });
