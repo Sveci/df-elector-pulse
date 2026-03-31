@@ -4846,6 +4846,7 @@ export type Database = {
           is_published: boolean
           name: string
           nodes: Json
+          phone_number_ids: string[] | null
           published_at: string | null
           tags: string[]
           tenant_id: string
@@ -4865,6 +4866,7 @@ export type Database = {
           is_published?: boolean
           name: string
           nodes?: Json
+          phone_number_ids?: string[] | null
           published_at?: string | null
           tags?: string[]
           tenant_id?: string
@@ -4884,6 +4886,7 @@ export type Database = {
           is_published?: boolean
           name?: string
           nodes?: Json
+          phone_number_ids?: string[] | null
           published_at?: string | null
           tags?: string[]
           tenant_id?: string
