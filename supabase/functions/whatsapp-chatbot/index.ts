@@ -1516,6 +1516,9 @@ Deno.serve(async (req) => {
 
     const { data: keywords } = await keywordsQuery;
 
+    // Determine current phone number ID for filtering
+    const currentPhoneNumberId = phoneNumberIdOverride || null;
+
     // Filter keywords by phone number (same logic as flows)
     const activeKeywords = ((keywords as ChatbotKeyword[]) || []).filter(kw => {
       if (!kw.phone_number_ids || kw.phone_number_ids.length === 0) return true; // no restriction = all numbers
