@@ -1348,7 +1348,22 @@ Deno.serve(async (req) => {
 
       // Check if it's a genuine question that should escape to brain-resolve
       const expectedType = getExpectedInputType(activeFlowState);
-      if (isGenuineQuestion(message, expectedType)) {
+      // Check if brain-resolve is enabled for this phone number (only primary number)
+      const smartEscapePhoneId = phoneNumberIdOverride || null;
+      let smartEscapeBrainEnabled = true;
+      if (smartEscapePhoneId) {
+        const { data: seIntSettings } = await supabase
+          .from("integrations_settings")
+          .select("meta_cloud_phone_number_id")
+          .eq("tenant_id", tenantId)
+          .limit(1)
+          .single();
+        if (seIntSettings?.meta_cloud_phone_number_id && smartEscapePhoneId !== seIntSettings.meta_cloud_phone_number_id) {
+          smartEscapeBrainEnabled = false;
+        }
+      }
+
+      if (isGenuineQuestion(message, expectedType) && smartEscapeBrainEnabled) {
         console.log(`[whatsapp-chatbot] Smart escape: user asked question during flow state "${activeFlowState}"`);
 
         let intSettingsQuery = supabase.from("integrations_settings")
@@ -1518,6 +1533,23 @@ Deno.serve(async (req) => {
 
     // Determine current phone number ID for filtering
     const currentPhoneNumberId = phoneNumberIdOverride || null;
+
+    // Determine if brain-resolve (AI fallback) is enabled for this phone number
+    // Brain-resolve only runs on the PRIMARY number (meta_cloud_phone_number_id)
+    let isBrainResolveEnabled = true;
+    if (currentPhoneNumberId) {
+      const { data: intSettingsForBrain } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_phone_number_id")
+        .eq("tenant_id", tenantId)
+        .limit(1)
+        .single();
+      const primaryPhoneNumberId = intSettingsForBrain?.meta_cloud_phone_number_id || null;
+      if (primaryPhoneNumberId && currentPhoneNumberId !== primaryPhoneNumberId) {
+        isBrainResolveEnabled = false;
+        console.log(`[whatsapp-chatbot] [BRAIN] Disabled for secondary number ${currentPhoneNumberId} (primary: ${primaryPhoneNumberId})`);
+      }
+    }
 
     // Filter keywords by phone number (same logic as flows)
     console.log(`[whatsapp-chatbot] [KEYWORDS] Total: ${(keywords || []).length}, currentPhoneNumberId: ${currentPhoneNumberId || 'none'}`);
@@ -1949,6 +1981,13 @@ Deno.serve(async (req) => {
         console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Inscrição em Evento'}] Event registration status intent detected`);
         responseType = "event_reg_status";
         responseMessage = await getEventRegistrationStatusResponse(supabase, tenantId, normalizedPhone);
+      } else if (!isBrainResolveEnabled) {
+        // Brain-resolve disabled for this phone number (secondary number) — stay silent
+        console.log(`[whatsapp-chatbot] [BRAIN] Skipping AI fallback — brain-resolve disabled for phone ${currentPhoneNumberId}`);
+        return new Response(
+          JSON.stringify({ success: true, responseType: "brain_disabled_silent" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       } else {
         console.log(`[whatsapp-chatbot] [FLUXO: ${matchedFlowName || 'Saudação IA'}] [IA] No keyword match — using Brain → Cache → KB → AI pipeline`);
         responseType = "ai";
