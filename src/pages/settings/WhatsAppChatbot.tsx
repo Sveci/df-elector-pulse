@@ -290,7 +290,7 @@ const WhatsAppChatbot = () => {
             <Inbox className="h-4 w-4" /> Inbox
           </TabsTrigger>
         </TabsList>
-
+  const { data: availableFlows } = useChatbotFlows();
 
         {/* Config Tab */}
         <TabsContent value="config" className="space-y-4">
