@@ -163,6 +163,7 @@ const WhatsAppChatbot = () => {
       response_type: kw.response_type,
       static_response: kw.static_response || "",
       dynamic_function: kw.dynamic_function || "",
+      flow_id: kw.flow_id || "",
       is_active: kw.is_active,
       priority: kw.priority
     });
