@@ -97,9 +97,11 @@ export function FlowsSidebar({ activeFlowId, onSelectFlow }: FlowsSidebarProps) 
     description: "",
     color: "#3b82f6",
     icon: "📋",
+    phone_number_ids: [] as string[],
   });
 
   const { data: flows = [], isLoading } = useChatbotFlows();
+  const { data: phoneNumbers = [] } = usePhoneNumbers();
   const create = useCreateChatbotFlow();
   const del = useDeleteChatbotFlow();
   const duplicate = useDuplicateChatbotFlow();
