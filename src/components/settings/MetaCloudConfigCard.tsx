@@ -34,7 +34,7 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
   const updateSettings = useUpdateIntegrationsSettings();
   const testConnection = useTestMetaCloudConnection();
 
-  // State
+  // State - Número 1
   const [whatsappProvider, setWhatsappProvider] = useState<'zapi' | 'meta_cloud'>('zapi');
   const [metaCloudEnabled, setMetaCloudEnabled] = useState(false);
   const [testMode, setTestMode] = useState(true);
@@ -45,6 +45,11 @@ export const MetaCloudConfigCard = ({ settings, onProviderChange }: MetaCloudCon
   const [apiVersion, setApiVersion] = useState("v20.0");
   const [fallbackEnabled, setFallbackEnabled] = useState(false);
   const [metaCloudPhone, setMetaCloudPhone] = useState("");
+  // State - Número 2
+  const [phoneNumberId2, setPhoneNumberId2] = useState("");
+  const [wabaId2, setWabaId2] = useState("");
+  const [metaCloudPhone2, setMetaCloudPhone2] = useState("");
+  const [metaCloudEnabled2, setMetaCloudEnabled2] = useState(false);
 
   useEffect(() => {
     if (settings) {
