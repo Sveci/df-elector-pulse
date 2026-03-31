@@ -31,6 +31,7 @@ interface ChatbotKeyword {
   flow_id: string | null;
   is_active: boolean;
   priority: number;
+  phone_number_ids: string[] | null;
 }
 
 interface Leader {
