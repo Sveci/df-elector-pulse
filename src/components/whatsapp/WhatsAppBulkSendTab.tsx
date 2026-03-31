@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTenantId } from "@/hooks/useTenantId";
+import { useIntegrationsSettings } from "@/hooks/useIntegrationsSettings";
 import { useTenantDomain } from "@/hooks/useTenantDomain";
 import { useQuery } from "@tanstack/react-query";
 import {
