@@ -991,7 +991,8 @@ const WhatsAppChatbot = () => {
               onClick={handleSaveKeyword}
               disabled={!keywordForm.keyword ||
                 (keywordForm.response_type === "static" && !keywordForm.static_response) ||
-                (keywordForm.response_type === "dynamic" && !keywordForm.dynamic_function)
+                (keywordForm.response_type === "dynamic" && !keywordForm.dynamic_function) ||
+                (keywordForm.response_type === "flow" && !keywordForm.flow_id)
               }
             >
               {editingKeyword ? "Salvar" : "Criar"}
