@@ -1,0 +1,1 @@
+ALTER TABLE public.whatsapp_chatbot_keywords ADD COLUMN phone_number_ids text[] DEFAULT NULL;

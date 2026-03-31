@@ -4906,6 +4906,7 @@ export type Database = {
           id: string
           is_active: boolean
           keyword: string
+          phone_number_ids: string[] | null
           priority: number
           response_type: string
           static_response: string | null
@@ -4921,6 +4922,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           keyword: string
+          phone_number_ids?: string[] | null
           priority?: number
           response_type?: string
           static_response?: string | null
@@ -4936,6 +4938,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           keyword?: string
+          phone_number_ids?: string[] | null
           priority?: number
           response_type?: string
           static_response?: string | null
