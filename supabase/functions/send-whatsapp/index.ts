@@ -676,7 +676,7 @@ Deno.serve(async (req) => {
     let result: SendResult;
 
     if (activeProvider === 'meta_cloud') {
-      result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate);
+      result = await sendViaMetaCloud(typedSettings, cleanPhone, finalMessage, metaTemplate, phoneNumberIdOverride);
 
       // Fallback to Z-API if Meta Cloud fails and fallback is enabled
       if (!result.success && typedSettings.meta_cloud_fallback_enabled && typedSettings.zapi_enabled) {
