@@ -1836,6 +1836,21 @@ Deno.serve(async (req) => {
         } else {
           responseMessage = chatbotConfig.fallback_message || "Não consegui processar sua mensagem.";
         }
+      } else if (matchedKeyword.response_type === "flow" && matchedKeyword.flow_id) {
+        // Find and execute the linked flow
+        const linkedFlow = flows.find(f => f.id === matchedKeyword!.flow_id);
+        if (linkedFlow) {
+          matchedFlowId = linkedFlow.id;
+          matchedFlowName = linkedFlow.name;
+          responseType = "flow";
+          console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Keyword "${matchedKeyword.keyword}" linked to flow "${linkedFlow.name}"`);
+          // Let the flow execution engine handle it below (responseMessage will be empty, flow engine takes over)
+        } else {
+          // Flow not found or not published - fallback
+          responseType = "fallback";
+          responseMessage = chatbotConfig.fallback_message || "Esse comando não está disponível no momento.";
+          console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Flow ${matchedKeyword.flow_id} not found/published for keyword "${matchedKeyword.keyword}"`);
+        }
       }
 
     } else {
