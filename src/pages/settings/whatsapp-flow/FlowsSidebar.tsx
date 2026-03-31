@@ -547,7 +547,7 @@ function FlowCard({ flow, active, onSelect, onDuplicate, onDelete, onEdit, onTog
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-              <Pencil className="h-3.5 w-3.5 mr-2" /> Renomear
+              <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleActive(); }}>
               <Zap className="h-3.5 w-3.5 mr-2" />

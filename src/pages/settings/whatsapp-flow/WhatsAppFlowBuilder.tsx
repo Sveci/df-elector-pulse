@@ -393,6 +393,18 @@ function FlowBuilderInner() {
               onFitView={handleFitView}
               onAutoLayout={handleAutoLayout}
               isSaving={updateFlow.isPending || publishFlow.isPending}
+              onPhoneNumbersChange={(phoneNumberIds) => {
+                if (!activeFlow) return;
+                updateFlow.mutate(
+                  { id: activeFlow.id, phone_number_ids: phoneNumberIds },
+                  {
+                    onSuccess: () => {
+                      setActiveFlow((f) => f ? { ...f, phone_number_ids: phoneNumberIds } : f);
+                      toast.success("Números atualizados!");
+                    },
+                  }
+                );
+              }}
             />
 
             {/* Canvas */}

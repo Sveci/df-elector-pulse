@@ -1,20 +1,57 @@
 import { useState } from "react";
 import {
   Save, Upload, Play, Undo2, Redo2, ZoomIn, ZoomOut, Maximize2,
-  Plus, Download, Settings2, Info, ChevronDown, LayoutGrid
+  Plus, Download, Settings2, Info, ChevronDown, LayoutGrid, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { FlowNodeType } from "@/hooks/useWhatsAppFlows";
 import { NODE_CONFIG } from "./FlowNodes";
 import type { ChatbotFlow } from "@/hooks/useWhatsAppFlows";
 import { cn } from "@/lib/utils";
+
+// Hook to get available phone numbers
+function usePhoneNumbers() {
+  return useQuery({
+    queryKey: ["whatsapp-phone-numbers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("integrations_settings")
+        .select("meta_cloud_phone, meta_cloud_phone_number_id, meta_cloud_enabled, meta_cloud_phone_2, meta_cloud_phone_number_id_2, meta_cloud_enabled_2")
+        .limit(1)
+        .single();
+      if (!data) return [];
+      const numbers: { id: string; phone: string; label: string }[] = [];
+      if (data.meta_cloud_enabled && data.meta_cloud_phone_number_id) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id,
+          phone: data.meta_cloud_phone || "Número 1",
+          label: `Nº1 — ${data.meta_cloud_phone || "Principal"}`,
+        });
+      }
+      if (data.meta_cloud_enabled_2 && data.meta_cloud_phone_number_id_2) {
+        numbers.push({
+          id: data.meta_cloud_phone_number_id_2,
+          phone: data.meta_cloud_phone_2 || "Número 2",
+          label: `Nº2 — ${data.meta_cloud_phone_2 || "Secundário"}`,
+        });
+      }
+      return numbers;
+    },
+  });
+}
 
 interface FlowToolbarProps {
   flow: ChatbotFlow | null;
@@ -29,6 +66,7 @@ interface FlowToolbarProps {
   onUndo?: () => void;
   onRedo?: () => void;
   isSaving?: boolean;
+  onPhoneNumbersChange?: (phoneNumberIds: string[] | null) => void;
 }
 
 const NODE_CATEGORIES: Array<{
@@ -54,7 +92,20 @@ export function FlowToolbar({
   onUndo,
   onRedo,
   isSaving,
+  onPhoneNumbersChange,
 }: FlowToolbarProps) {
+  const { data: phoneNumbers = [] } = usePhoneNumbers();
+  const currentPhoneIds = flow?.phone_number_ids || [];
+  const hasPhoneFilter = currentPhoneIds.length > 0;
+
+  const togglePhone = (phoneId: string, checked: boolean) => {
+    if (!onPhoneNumbersChange) return;
+    const updated = checked
+      ? [...currentPhoneIds, phoneId]
+      : currentPhoneIds.filter((id) => id !== phoneId);
+    onPhoneNumbersChange(updated.length > 0 ? updated : null);
+  };
+
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b bg-background/95 backdrop-blur z-10">
       {/* Flow name + status */}
@@ -170,6 +221,58 @@ export function FlowToolbar({
         </TooltipTrigger>
         <TooltipContent>Organizar nós automaticamente</TooltipContent>
       </Tooltip>
+
+      {/* Phone number routing */}
+      {flow && phoneNumbers.length > 1 && (
+        <>
+          <Separator orientation="vertical" className="h-6 mx-0.5" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={hasPhoneFilter ? "default" : "outline"}
+                size="sm"
+                className={cn("h-8 gap-1.5", hasPhoneFilter && "bg-primary text-primary-foreground")}
+              >
+                <Phone className="h-3.5 w-3.5" />
+                {hasPhoneFilter
+                  ? `${currentPhoneIds.length} número${currentPhoneIds.length > 1 ? "s" : ""}`
+                  : "Todos os números"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Números WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione em quais números este fluxo deve funcionar. Sem seleção = todos.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {phoneNumbers.map((pn) => (
+                    <label key={pn.id} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={currentPhoneIds.includes(pn.id)}
+                        onCheckedChange={(checked) => togglePhone(pn.id, !!checked)}
+                      />
+                      <span className="text-sm">{pn.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {hasPhoneFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => onPhoneNumbersChange?.(null)}
+                  >
+                    Limpar (usar todos)
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />
