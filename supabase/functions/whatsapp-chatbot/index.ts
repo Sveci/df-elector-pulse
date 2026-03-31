@@ -1520,11 +1520,15 @@ Deno.serve(async (req) => {
     const currentPhoneNumberId = phoneNumberIdOverride || null;
 
     // Filter keywords by phone number (same logic as flows)
+    console.log(`[whatsapp-chatbot] [KEYWORDS] Total: ${(keywords || []).length}, currentPhoneNumberId: ${currentPhoneNumberId || 'none'}`);
     const activeKeywords = ((keywords as ChatbotKeyword[]) || []).filter(kw => {
       if (!kw.phone_number_ids || kw.phone_number_ids.length === 0) return true; // no restriction = all numbers
       if (!currentPhoneNumberId) return true; // no phone context = show all
-      return kw.phone_number_ids.includes(currentPhoneNumberId);
+      const matches = kw.phone_number_ids.includes(currentPhoneNumberId);
+      if (!matches) console.log(`[whatsapp-chatbot] [KEYWORDS] Filtered out "${kw.keyword}" — restricted to [${kw.phone_number_ids.join(',')}]`);
+      return matches;
     });
+    console.log(`[whatsapp-chatbot] [KEYWORDS] Active after filter: ${activeKeywords.length} — [${activeKeywords.map(k => k.keyword).join(', ')}]`);
 
     // Try to match message with a keyword
     const normalizedMessage = normalizeTextForMatch(message.trim());
