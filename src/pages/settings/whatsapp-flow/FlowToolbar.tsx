@@ -222,6 +222,58 @@ export function FlowToolbar({
         <TooltipContent>Organizar nós automaticamente</TooltipContent>
       </Tooltip>
 
+      {/* Phone number routing */}
+      {flow && phoneNumbers.length > 1 && (
+        <>
+          <Separator orientation="vertical" className="h-6 mx-0.5" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={hasPhoneFilter ? "default" : "outline"}
+                size="sm"
+                className={cn("h-8 gap-1.5", hasPhoneFilter && "bg-primary text-primary-foreground")}
+              >
+                <Phone className="h-3.5 w-3.5" />
+                {hasPhoneFilter
+                  ? `${currentPhoneIds.length} número${currentPhoneIds.length > 1 ? "s" : ""}`
+                  : "Todos os números"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Números WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione em quais números este fluxo deve funcionar. Sem seleção = todos.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {phoneNumbers.map((pn) => (
+                    <label key={pn.id} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={currentPhoneIds.includes(pn.id)}
+                        onCheckedChange={(checked) => togglePhone(pn.id, !!checked)}
+                      />
+                      <span className="text-sm">{pn.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {hasPhoneFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => onPhoneNumbersChange?.(null)}
+                  >
+                    Limpar (usar todos)
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
+
       {/* Spacer */}
       <div className="flex-1" />
 
