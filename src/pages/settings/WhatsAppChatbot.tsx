@@ -132,6 +132,25 @@ const WhatsAppChatbot = () => {
   const { data: sessions, isLoading: loadingSessions } = useChatbotSessions(50);
   const { data: stats, isLoading: loadingStats } = useChatbotStats();
   const { data: availableFlows } = useChatbotFlows();
+  const { data: phoneNumbers } = useQuery({
+    queryKey: ["whatsapp-phone-numbers"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("integrations_settings")
+        .select("meta_cloud_phone, meta_cloud_phone_number_id, meta_cloud_enabled, meta_cloud_phone_2, meta_cloud_phone_number_id_2, meta_cloud_enabled_2")
+        .limit(1)
+        .single();
+      if (!data) return [];
+      const numbers: { id: string; phone: string; label: string }[] = [];
+      if (data.meta_cloud_enabled && data.meta_cloud_phone_number_id) {
+        numbers.push({ id: data.meta_cloud_phone_number_id, phone: data.meta_cloud_phone || "Número 1", label: `Nº1 — ${data.meta_cloud_phone || "Principal"}` });
+      }
+      if (data.meta_cloud_enabled_2 && data.meta_cloud_phone_number_id_2) {
+        numbers.push({ id: data.meta_cloud_phone_number_id_2, phone: data.meta_cloud_phone_2 || "Número 2", label: `Nº2 — ${data.meta_cloud_phone_2 || "Secundário"}` });
+      }
+      return numbers;
+    },
+  });
 
   // Mutations
   const updateConfig = useUpdateChatbotConfig();
