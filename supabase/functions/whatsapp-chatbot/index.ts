@@ -1332,8 +1332,7 @@ Deno.serve(async (req) => {
         if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
         const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
         await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId, phoneNumberIdOverride);
-        return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "flow_exit" });
       }
     }
 
