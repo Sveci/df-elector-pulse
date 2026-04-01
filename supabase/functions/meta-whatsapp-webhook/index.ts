@@ -627,6 +627,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
             message: messageText,
             provider: 'evadesk',
             tenantId: tenantId,
+            phoneNumberId: evadeskPhoneNumberId,
           }),
         }
       );
