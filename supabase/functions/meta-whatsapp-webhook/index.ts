@@ -557,12 +557,24 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
     // Look up tenant by matching channel phone to meta_cloud_phone or meta_cloud_phone_2
     const { data: tenantRow } = await supabase
       .from('integrations_settings')
-      .select('tenant_id, meta_cloud_phone_number_id_2')
+      .select('tenant_id, meta_cloud_phone_number_id, meta_cloud_phone_number_id_2, meta_cloud_phone, meta_cloud_phone_2')
       .or(`meta_cloud_phone.eq.${normalizedChannel},meta_cloud_phone_2.eq.${normalizedChannel},meta_cloud_phone.eq.${channelKey},meta_cloud_phone_2.eq.${channelKey}`)
       .limit(1)
       .maybeSingle();
 
     let tenantId = tenantRow?.tenant_id || null;
+    // Determine which phone_number_id corresponds to the EVAdesk channel
+    let evadeskPhoneNumberId: string | null = null;
+    if (tenantRow) {
+      const channelMatchesPrimary = tenantRow.meta_cloud_phone === normalizedChannel || tenantRow.meta_cloud_phone === channelKey;
+      const channelMatchesSecondary = tenantRow.meta_cloud_phone_2 === normalizedChannel || tenantRow.meta_cloud_phone_2 === channelKey;
+      if (channelMatchesSecondary && tenantRow.meta_cloud_phone_number_id_2) {
+        evadeskPhoneNumberId = tenantRow.meta_cloud_phone_number_id_2;
+      } else if (channelMatchesPrimary && tenantRow.meta_cloud_phone_number_id) {
+        evadeskPhoneNumberId = tenantRow.meta_cloud_phone_number_id;
+      }
+      console.log(`[Meta Webhook] [EVAdesk] Resolved phoneNumberId: ${evadeskPhoneNumberId}`);
+    }
 
     // Fallback: try to find any tenant with this channel phone in the phone fields
     if (!tenantId) {
