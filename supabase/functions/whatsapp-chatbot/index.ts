@@ -1366,8 +1366,7 @@ Deno.serve(async (req) => {
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
         await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resumeMsg, tenantId, phoneNumberIdOverride);
 
-        return new Response(JSON.stringify({ success: true, responseType: "flow_resume" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "flow_resume" });
       }
 
       // Check if it's a genuine question that should escape to brain-resolve
