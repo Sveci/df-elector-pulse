@@ -995,6 +995,92 @@ async function sendResponseToUser(
 }
 
 // =====================================================
+// SEND MEDIA (document/image/video/audio) TO USER
+// =====================================================
+async function sendMediaToUser(
+  supabase: any,
+  integrationSettings: any,
+  provider: string | undefined,
+  phone: string,
+  mediaUrl: string,
+  mediaType: string,
+  caption: string,
+  tenantId?: string | null,
+  phoneNumberIdOverride?: string | null
+): Promise<boolean> {
+  if (!mediaUrl) return false;
+
+  // EVAdesk provider: append media link to accumulator
+  if (provider === 'evadesk') {
+    const mediaLabel = mediaType === 'document' ? '📄 Documento' : mediaType === 'image' ? '🖼️ Imagem' : mediaType === 'video' ? '🎥 Vídeo' : '🔊 Áudio';
+    const mediaMessage = caption ? `${caption}\n\n${mediaLabel}: ${mediaUrl}` : `${mediaLabel}: ${mediaUrl}`;
+    _evadeskResponseAccumulator.push(mediaMessage);
+    console.log(`[whatsapp-chatbot] [EVAdesk] Accumulated media (${mediaType}): "${mediaUrl.substring(0, 80)}"`);
+    return true;
+  }
+
+  const useMetaCloud = provider === 'meta_cloud' ||
+    (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
+
+  if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
+    const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+    if (metaAccessToken) {
+      const phoneNumId = phoneNumberIdOverride || integrationSettings.meta_cloud_phone_number_id;
+      const apiVersion = integrationSettings.meta_cloud_api_version || "v20.0";
+
+      if (mediaType === 'document') {
+        const filename = mediaUrl.split('/').pop()?.split('?')[0] || 'document';
+        return await sendDocumentMetaCloud(phoneNumId, apiVersion, metaAccessToken, phone, mediaUrl, caption, filename, supabase, tenantId);
+      }
+
+      // Image, video, audio via Meta Cloud
+      let cleanPhone = phone.replace(/[^0-9]/g, "");
+      if (!cleanPhone.startsWith("55") && cleanPhone.length <= 11) cleanPhone = "55" + cleanPhone;
+      const url = `https://graph.facebook.com/${apiVersion}/${phoneNumId}/messages`;
+
+      const mediaBody: Record<string, any> = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: mediaType,
+        [mediaType]: { link: mediaUrl },
+      };
+      if (caption && (mediaType === 'image' || mediaType === 'video')) {
+        mediaBody[mediaType].caption = caption;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${metaAccessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify(mediaBody),
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[whatsapp-chatbot] Meta Cloud ${mediaType} send failed: ${response.status} ${errorText}`);
+          return false;
+        }
+        const result = await response.json();
+        console.log(`[whatsapp-chatbot] ${mediaType} sent via Meta Cloud:`, result.messages?.[0]?.id);
+        return true;
+      } catch (e) {
+        console.error(`[whatsapp-chatbot] Meta Cloud ${mediaType} send error:`, e);
+        return false;
+      }
+    }
+  }
+
+  // Z-API fallback for documents
+  if (mediaType === 'document' && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
+    const filename = mediaUrl.split('/').pop()?.split('?')[0] || 'document';
+    return await sendDocumentZapi(integrationSettings.zapi_instance_id, integrationSettings.zapi_token, integrationSettings.zapi_client_token, phone, mediaUrl, caption, filename);
+  }
+
+  console.warn(`[whatsapp-chatbot] No provider available to send media (${mediaType})`);
+  return false;
+}
+
+// =====================================================
 // REGISTRATION FLOW HANDLER
 // =====================================================
 async function handleRegistrationStep(
