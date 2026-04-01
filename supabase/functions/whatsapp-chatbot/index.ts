@@ -2029,9 +2029,8 @@ Deno.serve(async (req) => {
                 pendingMediaAttachments.push({
                   mediaUrl: node.data.mediaUrl,
                   mediaType: node.data.mediaType,
-                  caption: node.data?.messageText
-                    ? node.data.messageText.replace("{{nome}}", getFirstName(actor)).replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
-                    : "",
+                  // Don't duplicate caption — the messageText was already added to responseMessages above
+                  caption: "",
                 });
                 console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Collected media attachment: ${node.data.mediaType} → ${node.data.mediaUrl.substring(0, 80)}`);
               }
