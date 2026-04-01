@@ -700,7 +700,7 @@ serve(async (req) => {
       console.log('[Meta Webhook] Received payload:', JSON.stringify(body, null, 2));
 
       // ===== EVAdesk PAYLOAD DETECTION =====
-      if (body.companyId && body.channel && body.lastContactMessage !== undefined) {
+      if (body.companyId && body.channel && (body.lastContactMessage !== undefined || body.lastMessage)) {
         console.log('[Meta Webhook] EVAdesk payload detected');
         return await handleEvadeskPayload(body);
       }
