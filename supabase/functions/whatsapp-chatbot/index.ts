@@ -51,7 +51,7 @@ interface ChatbotRequest {
   phone: string;
   message: string;
   messageId?: string;
-  provider?: 'zapi' | 'meta_cloud';
+  provider?: 'zapi' | 'meta_cloud' | 'evadesk';
   tenantId?: string;
   phoneNumberId?: string; // Override: reply via this specific Meta phone number ID
 }
@@ -2115,37 +2115,46 @@ Deno.serve(async (req) => {
     if (tenantId) intSettingsQuery = intSettingsQuery.eq("tenant_id", tenantId);
     const { data: integrationSettings } = await intSettingsQuery.limit(1).single();
 
-    const useMetaCloud = provider === 'meta_cloud' ||
-      (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
-
     let messageSent = false;
 
-    if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
-      const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
-      if (metaAccessToken) {
-        messageSent = await sendWhatsAppMessageMetaCloud(
-          (phoneNumberIdOverride || integrationSettings.meta_cloud_phone_number_id),
-          integrationSettings.meta_cloud_api_version || "v20.0",
-          metaAccessToken,
-          normalizedPhone,
-          responseMessage,
-          supabase,
-          tenantId
-        );
-      } else {
-        console.log("[whatsapp-chatbot] META_WA_ACCESS_TOKEN not configured");
-      }
+    // EVAdesk provider: accumulate instead of sending via API
+    if (provider === 'evadesk') {
+      _evadeskResponseAccumulator.push(responseMessage);
+      console.log(`[whatsapp-chatbot] [EVAdesk] Accumulated main response: "${responseMessage.substring(0, 100)}"`);
+      messageSent = true;
     }
 
-    if (!messageSent && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
-      await sendWhatsAppMessage(
-        integrationSettings.zapi_instance_id,
-        integrationSettings.zapi_token,
-        integrationSettings.zapi_client_token,
-        normalizedPhone,
-        responseMessage
-      );
-      messageSent = true;
+    if (!messageSent) {
+      const useMetaCloud = provider === 'meta_cloud' ||
+        (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
+
+      if (useMetaCloud && integrationSettings?.meta_cloud_enabled && integrationSettings.meta_cloud_phone_number_id) {
+        const metaAccessToken = Deno.env.get("META_WA_ACCESS_TOKEN");
+        if (metaAccessToken) {
+          messageSent = await sendWhatsAppMessageMetaCloud(
+            (phoneNumberIdOverride || integrationSettings.meta_cloud_phone_number_id),
+            integrationSettings.meta_cloud_api_version || "v20.0",
+            metaAccessToken,
+            normalizedPhone,
+            responseMessage,
+            supabase,
+            tenantId
+          );
+        } else {
+          console.log("[whatsapp-chatbot] META_WA_ACCESS_TOKEN not configured");
+        }
+      }
+
+      if (!messageSent && integrationSettings?.zapi_enabled && integrationSettings.zapi_instance_id && integrationSettings.zapi_token) {
+        await sendWhatsAppMessage(
+          integrationSettings.zapi_instance_id,
+          integrationSettings.zapi_token,
+          integrationSettings.zapi_client_token,
+          normalizedPhone,
+          responseMessage
+        );
+        messageSent = true;
+      }
     }
 
     if (!messageSent) {
