@@ -2223,6 +2223,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    const evadeskResponse = _evadeskResponseAccumulator.join('\n\n');
     return new Response(
       JSON.stringify({
         success: true,
@@ -2230,6 +2231,7 @@ Deno.serve(async (req) => {
         keywordMatched: matchedKeyword?.keyword || null,
         flowId: matchedFlowId || null,
         flowName: matchedFlowName || null,
+        ...(evadeskResponse ? { response: evadeskResponse } : {}),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
