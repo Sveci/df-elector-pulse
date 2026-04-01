@@ -659,7 +659,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
   } catch (error) {
     console.error('[Meta Webhook] [EVAdesk] Error:', error);
-return new Response(JSON.stringify({ response: '' }), {
+    return new Response(JSON.stringify({ response: '', messages: [] }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
