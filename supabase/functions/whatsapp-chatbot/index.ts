@@ -1486,8 +1486,7 @@ Deno.serve(async (req) => {
         supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime, phoneNumberIdOverride
       );
       if (regResult) {
-        return new Response(JSON.stringify(regResult),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse(regResult);
       }
     }
 
