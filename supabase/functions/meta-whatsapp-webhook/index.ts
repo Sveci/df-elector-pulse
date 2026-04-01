@@ -576,6 +576,23 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
       console.log(`[Meta Webhook] [EVAdesk] Resolved phoneNumberId: ${evadeskPhoneNumberId}`);
     }
 
+    // If we have a phoneNumberId, check which tenant actually has keywords/flows for it
+    // (the EVAdesk channel might be configured in one tenant but keywords/flows in another)
+    if (evadeskPhoneNumberId) {
+      const { data: kwTenant } = await supabase
+        .from('whatsapp_chatbot_keywords')
+        .select('tenant_id')
+        .contains('phone_number_ids', [evadeskPhoneNumberId])
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (kwTenant?.tenant_id && kwTenant.tenant_id !== tenantId) {
+        console.log(`[Meta Webhook] [EVAdesk] Overriding tenant from ${tenantId} to ${kwTenant.tenant_id} (keywords tenant)`);
+        tenantId = kwTenant.tenant_id;
+      }
+    }
+
     // Fallback: try to find any tenant with this channel phone in the phone fields
     if (!tenantId) {
       const { data: fallbackTenant } = await supabase
@@ -586,7 +603,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
       tenantId = fallbackTenant?.tenant_id || null;
     }
 
-    console.log(`[Meta Webhook] [EVAdesk] Resolved tenant: ${tenantId}`);
+    console.log(`[Meta Webhook] [EVAdesk] Resolved tenant: ${tenantId}, phoneNumberId: ${evadeskPhoneNumberId}`);
 
     if (!tenantId) {
       console.log('[Meta Webhook] [EVAdesk] No tenant found, ignoring');
