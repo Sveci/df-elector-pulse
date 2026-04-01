@@ -523,6 +523,142 @@ async function sendMenuMessage(supabase: any, phone: string, municipio: string |
   await sendMetaCloudMessage(supabase, phone, menuMsg, tenantId, replyPhoneNumberId);
 }
 
+// ===== EVAdesk PAYLOAD HANDLER =====
+async function handleEvadeskPayload(body: any): Promise<Response> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  try {
+    // Extract fields from EVAdesk format
+    const channelKey = body.channel?.key; // e.g. "5596920007557"
+    const contactPhone = body.contact?.phonenumber; // e.g. "+55|96999014846"
+    const contactName = body.contact?.name || '';
+    const messageText = (body.lastMessage?.text || body.lastContactMessage || '').trim();
+    const sessionId = body.sessionId;
+
+    if (!messageText) {
+      console.log('[Meta Webhook] [EVAdesk] Empty message, ignoring');
+      return new Response(JSON.stringify({ text: '' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Normalize phone: "+55|96999014846" → "+5596999014846"
+    const rawPhone = (contactPhone || '').replace(/\|/g, '').replace(/[^0-9+]/g, '');
+    const normalizedPhone = normalizePhone(rawPhone);
+    const from = normalizedPhone.replace('+', '');
+
+    console.log(`[Meta Webhook] [EVAdesk] Message from ${normalizedPhone}: "${messageText.substring(0, 100)}" via channel ${channelKey}`);
+
+    // Resolve tenant from channel key (the EVAdesk channel phone number)
+    const normalizedChannel = normalizePhone(channelKey || '');
+    // Look up tenant by matching channel phone to meta_cloud_phone or meta_cloud_phone_2
+    const { data: tenantRow } = await supabase
+      .from('integrations_settings')
+      .select('tenant_id, meta_cloud_phone_number_id_2')
+      .or(`meta_cloud_phone.eq.${normalizedChannel},meta_cloud_phone_2.eq.${normalizedChannel},meta_cloud_phone.eq.${channelKey},meta_cloud_phone_2.eq.${channelKey}`)
+      .limit(1)
+      .maybeSingle();
+
+    let tenantId = tenantRow?.tenant_id || null;
+
+    // Fallback: try to find any tenant with this channel phone in the phone fields
+    if (!tenantId) {
+      const { data: fallbackTenant } = await supabase
+        .from('integrations_settings')
+        .select('tenant_id')
+        .limit(1)
+        .single();
+      tenantId = fallbackTenant?.tenant_id || null;
+    }
+
+    console.log(`[Meta Webhook] [EVAdesk] Resolved tenant: ${tenantId}`);
+
+    if (!tenantId) {
+      console.log('[Meta Webhook] [EVAdesk] No tenant found, ignoring');
+      return new Response(JSON.stringify({ text: '' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log the incoming message
+    await supabase.from('whatsapp_messages').insert({
+      phone: from,
+      message: messageText,
+      direction: 'incoming',
+      status: 'received',
+      provider: 'evadesk',
+      tenant_id: tenantId,
+      metadata: {
+        evadesk_session_id: sessionId,
+        evadesk_channel_key: channelKey,
+        contact_name: contactName,
+      },
+    });
+
+    // Forward to chatbot (keywords only — secondary number behavior)
+    // Get the phone_number_id_2 to pass as phoneNumberId so the chatbot uses secondary number filtering
+    const phoneNumberId2 = tenantRow?.meta_cloud_phone_number_id_2 || 'evadesk_secondary';
+
+    try {
+      const chatbotResponse = await fetch(
+        `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            phone: from,
+            message: messageText,
+            provider: 'evadesk',
+            tenantId: tenantId,
+            phoneNumberId: phoneNumberId2,
+          }),
+        }
+      );
+      const chatbotResult = await chatbotResponse.json();
+      console.log('[Meta Webhook] [EVAdesk] Chatbot response:', JSON.stringify(chatbotResult));
+
+      // Extract response text from chatbot result
+      const responseText = chatbotResult?.response || chatbotResult?.message || '';
+
+      if (responseText) {
+        console.log(`[Meta Webhook] [EVAdesk] Responding with: "${responseText.substring(0, 100)}"`);
+        return new Response(JSON.stringify({ text: responseText }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // No response (brain disabled for secondary, no keyword match)
+      console.log('[Meta Webhook] [EVAdesk] No response from chatbot, returning empty');
+      return new Response(JSON.stringify({ text: '' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (chatbotError) {
+      console.error('[Meta Webhook] [EVAdesk] Chatbot error:', chatbotError);
+      return new Response(JSON.stringify({ text: '' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+  } catch (error) {
+    console.error('[Meta Webhook] [EVAdesk] Error:', error);
+    return new Response(JSON.stringify({ text: '' }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 serve(async (req) => {
   const url = new URL(req.url);
 
