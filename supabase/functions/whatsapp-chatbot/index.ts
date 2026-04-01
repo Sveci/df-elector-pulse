@@ -2070,7 +2070,8 @@ Deno.serve(async (req) => {
           }
 
           responseMessage = responseMessages.join("\n\n");
-          if (!responseMessage) {
+          flowMediaAttachments = pendingMediaAttachments;
+          if (!responseMessage && flowMediaAttachments.length === 0) {
             responseType = "fallback";
             responseMessage = chatbotConfig.fallback_message || "Esse comando não está disponível no momento.";
           }
