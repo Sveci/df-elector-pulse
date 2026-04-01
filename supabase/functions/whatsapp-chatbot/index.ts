@@ -942,6 +942,18 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
 // Global accumulator for EVAdesk responses (provider=evadesk skips send, collects text)
 let _evadeskResponseAccumulator: string[] = [];
 
+/** Build a JSON response enriched with EVAdesk accumulated text when applicable */
+function buildResponse(result: Record<string, any>, status = 200): Response {
+  const evadeskResponse = _evadeskResponseAccumulator.join('\n\n');
+  const body = evadeskResponse
+    ? { ...result, response: evadeskResponse }
+    : result;
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 async function sendResponseToUser(
   supabase: any,
   integrationSettings: any,
@@ -1320,8 +1332,7 @@ Deno.serve(async (req) => {
         if (tenantId) exitIntQuery = exitIntQuery.eq("tenant_id", tenantId);
         const { data: exitIntSettings } = await exitIntQuery.limit(1).single();
         await sendResponseToUser(supabase, exitIntSettings, provider, normalizedPhone, exitMsg, tenantId, phoneNumberIdOverride);
-        return new Response(JSON.stringify({ success: true, responseType: "flow_exit" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "flow_exit" });
       }
     }
 
@@ -1355,8 +1366,7 @@ Deno.serve(async (req) => {
         const { data: intSettings } = await intSettingsQuery.limit(1).single();
         await sendResponseToUser(supabase, intSettings, provider, normalizedPhone, resumeMsg, tenantId, phoneNumberIdOverride);
 
-        return new Response(JSON.stringify({ success: true, responseType: "flow_resume" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "flow_resume" });
       }
 
       // Check if it's a genuine question that should escape to brain-resolve
@@ -1417,8 +1427,7 @@ Deno.serve(async (req) => {
                 processing_time_ms: Date.now() - startTime,
                 ...(tenantId ? { tenant_id: tenantId } : {}),
               });
-              return new Response(JSON.stringify({ success: true, responseType: "smart_escape_brain" }),
-                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              return buildResponse({ success: true, responseType: "smart_escape_brain" });
             }
 
             // Brain needs AI fallback with enriched context/system instructions
@@ -1455,8 +1464,7 @@ Deno.serve(async (req) => {
                 processing_time_ms: Date.now() - startTime,
                 ...(tenantId ? { tenant_id: tenantId } : {}),
               });
-              return new Response(JSON.stringify({ success: true, responseType: "smart_escape_ai" }),
-                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              return buildResponse({ success: true, responseType: "smart_escape_ai" });
               }
             }
           }
@@ -1474,8 +1482,7 @@ Deno.serve(async (req) => {
         supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime, phoneNumberIdOverride
       );
       if (regResult) {
-        return new Response(JSON.stringify(regResult),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse(regResult);
       }
     }
 
@@ -1485,8 +1492,7 @@ Deno.serve(async (req) => {
         supabase, session, normalizedPhone, message.trim(), tenantId, provider, startTime, phoneNumberIdOverride
       );
       if (evtRegResult) {
-        return new Response(JSON.stringify(evtRegResult),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse(evtRegResult);
       }
     }
 
@@ -1645,8 +1651,7 @@ Deno.serve(async (req) => {
           ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
-        return new Response(JSON.stringify({ success: true, responseType: "verification_already" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "verification_already" });
       }
 
       if (leaderVerificationStatus?.verification_code && leaderVerificationStatus.verification_code !== code) {
@@ -1675,8 +1680,7 @@ Deno.serve(async (req) => {
           ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
-        return new Response(JSON.stringify({ success: true, responseType: "verification_wrong_code" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "verification_wrong_code" });
       }
 
       console.log(`[whatsapp-chatbot] Code matches leader, deferring to verification flow`);
