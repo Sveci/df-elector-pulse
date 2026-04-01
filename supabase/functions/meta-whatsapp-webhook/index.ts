@@ -539,7 +539,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
     if (!messageText) {
       console.log('[Meta Webhook] [EVAdesk] Empty message, ignoring');
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -578,7 +578,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
     if (!tenantId) {
       console.log('[Meta Webhook] [EVAdesk] No tenant found, ignoring');
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -637,7 +637,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
             evadesk_channel_key: channelKey,
           },
         });
-        return new Response(JSON.stringify({ message: responseText }), {
+        return new Response(JSON.stringify({ response: responseText }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -645,13 +645,13 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
       // No response from chatbot (silent)
       console.log('[Meta Webhook] [EVAdesk] No response from chatbot, staying silent');
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (chatbotError) {
       console.error('[Meta Webhook] [EVAdesk] Chatbot error:', chatbotError);
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -659,7 +659,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
   } catch (error) {
     console.error('[Meta Webhook] [EVAdesk] Error:', error);
-    return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
