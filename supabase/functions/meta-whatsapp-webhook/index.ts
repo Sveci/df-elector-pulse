@@ -659,7 +659,7 @@ return new Response(JSON.stringify({ response: '' }), {
 
   } catch (error) {
     console.error('[Meta Webhook] [EVAdesk] Error:', error);
-    return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
