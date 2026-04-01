@@ -1651,8 +1651,7 @@ Deno.serve(async (req) => {
           ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
-        return new Response(JSON.stringify({ success: true, responseType: "verification_already" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "verification_already" });
       }
 
       if (leaderVerificationStatus?.verification_code && leaderVerificationStatus.verification_code !== code) {
