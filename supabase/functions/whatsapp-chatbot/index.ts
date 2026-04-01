@@ -942,6 +942,18 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
 // Global accumulator for EVAdesk responses (provider=evadesk skips send, collects text)
 let _evadeskResponseAccumulator: string[] = [];
 
+/** Build a JSON response enriched with EVAdesk accumulated text when applicable */
+function buildResponse(result: Record<string, any>, status = 200): Response {
+  const evadeskResponse = _evadeskResponseAccumulator.join('\n\n');
+  const body = evadeskResponse
+    ? { ...result, response: evadeskResponse }
+    : result;
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 async function sendResponseToUser(
   supabase: any,
   integrationSettings: any,
