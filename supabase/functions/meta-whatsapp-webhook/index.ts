@@ -637,7 +637,7 @@ return new Response(JSON.stringify({ response: '' }), {
             evadesk_channel_key: channelKey,
           },
         });
-        return new Response(JSON.stringify({ message: responseText }), {
+        return new Response(JSON.stringify({ response: responseText }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
