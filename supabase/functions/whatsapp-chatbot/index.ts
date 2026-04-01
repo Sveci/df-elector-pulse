@@ -2005,6 +2005,7 @@ Deno.serve(async (req) => {
           const visited = new Set<string>();
           const queue = [...triggerNodeIds];
           const responseMessages: string[] = [];
+          const pendingMediaAttachments: Array<{ mediaUrl: string; mediaType: string; caption: string }> = [];
 
           while (queue.length > 0) {
             const nodeId = queue.shift()!;
