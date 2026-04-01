@@ -2016,11 +2016,24 @@ Deno.serve(async (req) => {
             if (!node) continue;
 
             // Process response nodes
-            if (node.type === "message" && node.data?.messageText) {
-              let msg = node.data.messageText
-                .replace("{{nome}}", getFirstName(actor))
-                .replace("{{nome_completo}}", actor?.nome_completo || "Visitante");
-              responseMessages.push(msg);
+            if (node.type === "message") {
+              if (node.data?.messageText) {
+                let msg = node.data.messageText
+                  .replace("{{nome}}", getFirstName(actor))
+                  .replace("{{nome_completo}}", actor?.nome_completo || "Visitante");
+                responseMessages.push(msg);
+              }
+              // Collect media attachment if present
+              if (node.data?.mediaUrl && node.data?.mediaType) {
+                pendingMediaAttachments.push({
+                  mediaUrl: node.data.mediaUrl,
+                  mediaType: node.data.mediaType,
+                  caption: node.data?.messageText
+                    ? node.data.messageText.replace("{{nome}}", getFirstName(actor)).replace("{{nome_completo}}", actor?.nome_completo || "Visitante")
+                    : "",
+                });
+                console.log(`[whatsapp-chatbot] [KEYWORD→FLOW] Collected media attachment: ${node.data.mediaType} → ${node.data.mediaUrl.substring(0, 80)}`);
+              }
             } else if (node.type === "automation" && node.data?.automationFunction) {
               const fnName = node.data.automationFunction;
               const fn = dynamicFunctions[fnName];
