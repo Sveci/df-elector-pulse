@@ -2267,6 +2267,18 @@ Deno.serve(async (req) => {
       console.log("[whatsapp-chatbot] No WhatsApp provider configured, skipping send");
     }
 
+    // ── SEND MEDIA ATTACHMENTS FROM FLOW NODES ──
+    if (flowMediaAttachments.length > 0) {
+      console.log(`[whatsapp-chatbot] Sending ${flowMediaAttachments.length} media attachment(s) from flow`);
+      for (const media of flowMediaAttachments) {
+        await sendMediaToUser(
+          supabase, integrationSettings, provider, normalizedPhone,
+          media.mediaUrl, media.mediaType, media.caption,
+          tenantId, phoneNumberIdOverride
+        );
+      }
+    }
+
     // ── UPDATE CONVERSATION HISTORY (for AI context in future turns) ──
     if (session?.id && responseMessage) {
       await (supabase.rpc as any)('append_conversation_turn', {
