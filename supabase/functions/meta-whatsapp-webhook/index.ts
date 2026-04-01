@@ -539,7 +539,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
     if (!messageText) {
       console.log('[Meta Webhook] [EVAdesk] Empty message, ignoring');
-return new Response(JSON.stringify({ response: '' }), {
+      return new Response(JSON.stringify({ response: '', messages: [] }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
