@@ -1922,6 +1922,7 @@ Deno.serve(async (req) => {
 
     let responseMessage = "";
     let responseType = "unknown";
+    let flowMediaAttachments: Array<{ mediaUrl: string; mediaType: string; caption: string }> = [];
 
     if (matchedKeyword) {
       // ============================================================
