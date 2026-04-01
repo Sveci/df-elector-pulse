@@ -1184,6 +1184,9 @@ Deno.serve(async (req) => {
 
   const startTime = Date.now();
 
+    // Reset EVAdesk response accumulator for each request
+    _evadeskResponseAccumulator = [];
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
