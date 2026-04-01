@@ -578,7 +578,7 @@ return new Response(JSON.stringify({ response: '' }), {
 
     if (!tenantId) {
       console.log('[Meta Webhook] [EVAdesk] No tenant found, ignoring');
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
