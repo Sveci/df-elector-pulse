@@ -1,31 +1,39 @@
 
 
-## Plano: Corrigir extração de texto do EVAdesk via `lastMessage.text`
+## Plano: Adicionar suporte a envio de mídia nos nós de fluxo do chatbot
 
 ### Problema
-A detecção do payload EVAdesk na linha 703 usa `body.lastContactMessage !== undefined`. Quando o EVAdesk envia um payload onde `lastContactMessage` está **ausente** (undefined) mas `lastMessage.text` contém o texto real, o sistema **não reconhece** como payload EVAdesk e tenta processar como Meta Cloud API — falhando silenciosamente.
+O nó de mensagem no Flow Builder permite configurar `mediaUrl` e `mediaType` (imagem, vídeo, documento, áudio), mas o motor de execução do chatbot (`whatsapp-chatbot/index.ts`, linhas 1932-1936) **só lê `messageText`** e ignora completamente esses campos. O fluxo "Ebook - Mucujá" tem um documento do Google Drive configurado como `mediaUrl`, mas ele nunca é enviado.
 
-### Correção (1 arquivo)
+### Causa Raiz
+No BFS de execução de fluxos (linha 1932):
+```typescript
+if (node.type === "message" && node.data?.messageText) {
+  let msg = node.data.messageText.replace(...);
+  responseMessages.push(msg);
+}
+```
+Não há tratamento para `node.data.mediaUrl` ou `node.data.mediaType`.
 
-**`supabase/functions/meta-whatsapp-webhook/index.ts`**
+### Correção
 
-1. **Linha 703** — Ampliar a condição de detecção do EVAdesk para incluir `lastMessage`:
-   ```typescript
-   // ANTES
-   if (body.companyId && body.channel && body.lastContactMessage !== undefined)
+**Arquivo: `supabase/functions/whatsapp-chatbot/index.ts`**
 
-   // DEPOIS  
-   if (body.companyId && body.channel && (body.lastContactMessage !== undefined || body.lastMessage))
-   ```
+1. **No BFS de execução de fluxos (após linha 1936)**: Após processar `messageText`, verificar se o nó tem `mediaUrl` e `mediaType`. Se tiver, enviar a mídia via Meta Cloud API ou incluir o link na resposta para EVAdesk.
 
-2. **Linha 537** — A extração de texto já está correta (`body.lastMessage?.text || body.lastContactMessage`), mas inverter a prioridade para dar preferência ao campo estruturado:
-   ```typescript
-   // Manter como está (já prioriza lastMessage.text)
-   const messageText = (body.lastMessage?.text || body.lastContactMessage || '').trim();
-   ```
+2. **Para o provider `meta_cloud`**: Usar a Graph API para enviar documento/imagem/vídeo/áudio como mensagem separada (endpoint `POST /{phone_number_id}/messages` com tipo `document`, `image`, etc.).
 
-3. **Redeploy** da edge function.
+3. **Para o provider `evadesk`**: Como o EVAdesk recebe resposta via HTTP body, incluir o `mediaUrl` como link adicional no texto da resposta (já que o EVAdesk não suporta mídia inline no webhook de retorno).
+
+4. **Implementação concreta**:
+   - Criar função `sendMediaMessage(supabase, intSettings, provider, phone, mediaUrl, mediaType, caption, tenantId, phoneNumberIdOverride)` que:
+     - Para Meta Cloud: envia via Graph API como mensagem de mídia
+     - Para EVAdesk: acumula o link no `_evadeskResponseAccumulator`
+   - No BFS, após `responseMessages.push(msg)`, chamar `sendMediaMessage` se `node.data.mediaUrl` existir
+   - Acumular metadados de mídia na resposta para EVAdesk incluir no payload de retorno
+
+5. **Redeploy** da edge function.
 
 ### Resultado
-Payloads do EVAdesk serão detectados mesmo quando `lastContactMessage` estiver ausente, desde que `lastMessage` exista. O texto será extraído de `lastMessage.text` corretamente.
+Quando "Mucujá" ou "ebook" for enviado, o chatbot enviará tanto o texto quanto o documento PDF/link do Google Drive ao usuário.
 
