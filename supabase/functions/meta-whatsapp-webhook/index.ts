@@ -578,7 +578,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
 
     if (!tenantId) {
       console.log('[Meta Webhook] [EVAdesk] No tenant found, ignoring');
-      return new Response(JSON.stringify({ text: '' }), {
+      return new Response(JSON.stringify({ message: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
