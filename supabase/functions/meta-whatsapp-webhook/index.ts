@@ -651,7 +651,7 @@ return new Response(JSON.stringify({ response: '' }), {
       });
     } catch (chatbotError) {
       console.error('[Meta Webhook] [EVAdesk] Chatbot error:', chatbotError);
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
