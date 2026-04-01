@@ -599,56 +599,14 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
       },
     });
 
-    // Forward to chatbot (keywords only — secondary number behavior)
-    // Get the phone_number_id_2 to pass as phoneNumberId so the chatbot uses secondary number filtering
-    const phoneNumberId2 = tenantRow?.meta_cloud_phone_number_id_2 || 'evadesk_secondary';
+    // === TESTE: Responder com mensagem de teste para validar integração EVAdesk ===
+    const testResponse = `👋 Olá, ${contactName || 'tudo bem'}!\n\nObrigado por entrar em contato pelo nosso WhatsApp. Esta é uma mensagem automática de teste confirmando que recebemos sua mensagem: "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"\n\n✅ Integração EVAdesk funcionando corretamente!\n\n_Em breve este canal estará com atendimento completo._`;
 
-    try {
-      const chatbotResponse = await fetch(
-        `${supabaseUrl}/functions/v1/whatsapp-chatbot`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            phone: from,
-            message: messageText,
-            provider: 'evadesk',
-            tenantId: tenantId,
-            phoneNumberId: phoneNumberId2,
-          }),
-        }
-      );
-      const chatbotResult = await chatbotResponse.json();
-      console.log('[Meta Webhook] [EVAdesk] Chatbot response:', JSON.stringify(chatbotResult));
-
-      // Extract response text from chatbot result
-      const responseText = chatbotResult?.response || chatbotResult?.message || '';
-
-      if (responseText) {
-        console.log(`[Meta Webhook] [EVAdesk] Responding with: "${responseText.substring(0, 100)}"`);
-        return new Response(JSON.stringify({ text: responseText }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // No response (brain disabled for secondary, no keyword match)
-      console.log('[Meta Webhook] [EVAdesk] No response from chatbot, returning empty');
-      return new Response(JSON.stringify({ text: '' }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-
-    } catch (chatbotError) {
-      console.error('[Meta Webhook] [EVAdesk] Chatbot error:', chatbotError);
-      return new Response(JSON.stringify({ text: '' }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log(`[Meta Webhook] [EVAdesk] Responding with test message to ${normalizedPhone}`);
+    return new Response(JSON.stringify({ text: testResponse }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('[Meta Webhook] [EVAdesk] Error:', error);
