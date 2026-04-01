@@ -1680,8 +1680,7 @@ Deno.serve(async (req) => {
           ...(tenantId ? { tenant_id: tenantId } : {}),
         });
 
-        return new Response(JSON.stringify({ success: true, responseType: "verification_wrong_code" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return buildResponse({ success: true, responseType: "verification_wrong_code" });
       }
 
       console.log(`[whatsapp-chatbot] Code matches leader, deferring to verification flow`);
