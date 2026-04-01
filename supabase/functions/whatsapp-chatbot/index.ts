@@ -1464,8 +1464,7 @@ Deno.serve(async (req) => {
                 processing_time_ms: Date.now() - startTime,
                 ...(tenantId ? { tenant_id: tenantId } : {}),
               });
-              return new Response(JSON.stringify({ success: true, responseType: "smart_escape_ai" }),
-                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+              return buildResponse({ success: true, responseType: "smart_escape_ai" });
               }
             }
           }
