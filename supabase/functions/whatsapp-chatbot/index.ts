@@ -939,6 +939,9 @@ const dynamicFunctions: Record<string, (supabase: any, leader: Leader, session?:
 // =====================================================
 // HELPER: Send response via configured provider
 // =====================================================
+// Global accumulator for EVAdesk responses (provider=evadesk skips send, collects text)
+let _evadeskResponseAccumulator: string[] = [];
+
 async function sendResponseToUser(
   supabase: any,
   integrationSettings: any,
@@ -948,6 +951,13 @@ async function sendResponseToUser(
   tenantId?: string | null,
   phoneNumberIdOverride?: string | null
 ): Promise<boolean> {
+  // EVAdesk provider: don't send via API, accumulate for HTTP response body
+  if (provider === 'evadesk') {
+    _evadeskResponseAccumulator.push(message);
+    console.log(`[whatsapp-chatbot] [EVAdesk] Accumulated response: "${message.substring(0, 100)}"`);
+    return true;
+  }
+
   const useMetaCloud = provider === 'meta_cloud' ||
     (provider !== 'zapi' && integrationSettings?.whatsapp_provider_active === 'meta_cloud');
 
@@ -1173,6 +1183,9 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
+
+    // Reset EVAdesk response accumulator for each request
+    _evadeskResponseAccumulator = [];
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -2210,6 +2223,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    const evadeskResponse = _evadeskResponseAccumulator.join('\n\n');
     return new Response(
       JSON.stringify({
         success: true,
@@ -2217,6 +2231,7 @@ Deno.serve(async (req) => {
         keywordMatched: matchedKeyword?.keyword || null,
         flowId: matchedFlowId || null,
         flowName: matchedFlowName || null,
+        ...(evadeskResponse ? { response: evadeskResponse } : {}),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
