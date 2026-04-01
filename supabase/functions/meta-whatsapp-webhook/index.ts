@@ -556,6 +556,12 @@ serve(async (req) => {
       const body = await req.json();
       console.log('[Meta Webhook] Received payload:', JSON.stringify(body, null, 2));
 
+      // ===== EVAdesk PAYLOAD DETECTION =====
+      if (body.companyId && body.channel && body.lastContactMessage !== undefined) {
+        console.log('[Meta Webhook] EVAdesk payload detected');
+        return await handleEvadeskPayload(body);
+      }
+
       if (body.object !== 'whatsapp_business_account') {
         console.log('[Meta Webhook] Not a WhatsApp event, ignoring');
         return new Response('OK', { status: 200, headers: corsHeaders });
