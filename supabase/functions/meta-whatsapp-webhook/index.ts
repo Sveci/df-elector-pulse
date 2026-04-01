@@ -645,7 +645,7 @@ return new Response(JSON.stringify({ response: '' }), {
 
       // No response from chatbot (silent)
       console.log('[Meta Webhook] [EVAdesk] No response from chatbot, staying silent');
-      return new Response(JSON.stringify({ message: '' }), {
+return new Response(JSON.stringify({ response: '' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
