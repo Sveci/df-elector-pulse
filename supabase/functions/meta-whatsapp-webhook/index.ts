@@ -637,7 +637,7 @@ async function handleEvadeskPayload(body: any): Promise<Response> {
             evadesk_channel_key: channelKey,
           },
         });
-        return new Response(JSON.stringify({ response: responseText }), {
+        return new Response(JSON.stringify({ response: responseText, messages: [{ text: responseText }] }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
